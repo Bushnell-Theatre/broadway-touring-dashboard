@@ -571,13 +571,13 @@ tbody td:last-child{border-right:none;}
   <div class="main-pane">
 
     <nav class="nav-tabs">
-      <div class="nav-tab active" onclick="showTab('charts')">Charts</div>
+      <div class="nav-tab active" onclick="showTab('table')">Data Table</div>
+      <div class="nav-tab" onclick="showTab('charts')">Charts</div>
       <div class="nav-tab" onclick="showTab('rankings')">Rankings</div>
-      <div class="nav-tab" onclick="showTab('table')">Data Table</div>
     </nav>
 
     <!-- TABLE PANEL -->
-    <div class="panel" id="tab-table">
+    <div class="panel active" id="tab-table">
       <div class="section-divider">
         <h2>Engagement Data</h2>
         <div class="section-divider-line"></div>
@@ -607,7 +607,7 @@ tbody td:last-child{border-right:none;}
     </div>
 
     <!-- CHARTS PANEL -->
-    <div class="panel active" id="tab-charts">
+    <div class="panel" id="tab-charts">
       <div class="section-divider">
         <h2>Performance Charts</h2>
         <div class="section-divider-line"></div>
@@ -688,8 +688,6 @@ tbody td:last-child{border-right:none;}
 // the null. The dashboard will fetch live data automatically. No other changes
 // needed. Leave as null to use embedded seed data.
 const DATA_JSON_URL = 'https://white-pebble-01710020f.7.azurestaticapps.net/data.json';
-// Example when ready:
-// const DATA_ENDPOINT = 'https://prod-xx.eastus.logic.azure.com/workflows/xxx/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=xxx';
 
 // ── SEED DATA ──────────────────────────────────────────────────────────────────
 const SEED = [
@@ -783,34 +781,19 @@ async function saveData(records) {
 }
 
 async function initData() {
-  // If a live endpoint is configured, fetch from it directly
-  if (DATA_ENDPOINT) {
+  if (DATA_JSON_URL) {
     try {
-      const res = await fetch(DATA_ENDPOINT);
+      const res = await fetch(DATA_JSON_URL);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
-      // Expects an array of row objects. Adjust field mapping here if SharePoint
-      // column names differ from dashboard field names.
-      ALL_DATA = json.value || json;
+      ALL_DATA = Array.isArray(json) ? json : (json.value || []);
       boot();
       return;
     } catch(e) {
-      console.warn('Endpoint fetch failed, falling back to local data:', e);
+      console.warn('data.json fetch failed, falling back to seed data:', e);
     }
   }
-
-  // Local storage fallback (used during GitHub Pages / seed phase)
-  let stored = null;
-  try {
-    if (window.storage) {
-      const res = await window.storage.get(STORAGE_KEY);
-      if (res) stored = JSON.parse(res.value);
-    } else {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) stored = JSON.parse(raw);
-    }
-  } catch(e){}
-  ALL_DATA = (stored && stored.length > 0) ? stored : [...SEED];
-  if (!stored || stored.length === 0) await saveData(ALL_DATA);
+  ALL_DATA = [...SEED];
   boot();
 }
 
@@ -941,7 +924,7 @@ function resetFilters() {
 }
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
-const fmt$ = v => v==null?'—': v>=1e9?'$'+(v/1e9).toFixed(2)+'B': v>=1e6?'$'+(v/1e6).toFixed(2)+'M': v>=1e3?'$'+(v/1e3).toFixed(0)+'K':'$'+v.toFixed(0);
+const fmt$ = v => v==null?'—': v>=1e6?'$'+(v/1e6).toFixed(2)+'M': v>=1e3?'$'+(v/1e3).toFixed(0)+'K':'$'+v.toFixed(0);
 const fmtN = (v,d=1) => v==null?'—':v.toFixed(d);
 const avg = arr => { const v=arr.filter(x=>x!=null); return v.length?v.reduce((a,b)=>a+b,0)/v.length:null; };
 const fmtWeek = d => {
@@ -954,7 +937,7 @@ const fmtWeek = d => {
 // ── KPIs ──────────────────────────────────────────────────────────────────────
 function renderKPIs() {
   const wg = FILTERED.filter(d=>d.gross_gross!=null);
-  document.getElementById('kCount').textContent = wg.length.toLocaleString();
+  document.getElementById('kCount').textContent = wg.length;
   document.getElementById('kGross').textContent = fmt$(wg.reduce((a,d)=>a+d.gross_gross,0));
   const ac = avg(FILTERED.map(d=>d.pct_capacity_paid));
   document.getElementById('kCap').textContent = ac?fmtN(ac)+'%':'—';
@@ -983,7 +966,7 @@ function renderTable() {
     return SORT_DIR*(av>bv?1:av<bv?-1:0);
   });
   const tb = document.getElementById('tableBody');
-  document.getElementById('tableCount').textContent = `${sorted.length.toLocaleString()} engagements`;
+  document.getElementById('tableCount').textContent = `${sorted.length} engagements`;
   if(!sorted.length){tb.innerHTML='<tr><td colspan="14" class="no-data">No data matches current filters</td></tr>';return;}
   tb.innerHTML = sorted.map(d=>{
     const pct=d.pct_capacity_paid;
@@ -1171,7 +1154,7 @@ function renderRankings() {
 
 // ── TABS ──────────────────────────────────────────────────────────────────────
 function showTab(name) {
-  const names=['charts','rankings','table'];
+  const names=['table','charts','rankings'];
   document.querySelectorAll('.nav-tab').forEach((t,i)=>{t.classList.toggle('active',names[i]===name);});
   document.querySelectorAll('.panel').forEach(p=>{p.classList.toggle('active',p.id==='tab-'+name);});
   if(name==='charts') renderCharts();
@@ -1272,10 +1255,8 @@ async function processFile(file) {
 */
 
 async function clearAllData() {
-  if(!confirm('Reset to the original 3 weeks of seed data?')) return;
-  ALL_DATA=[...SEED];
-  await saveData(ALL_DATA);
-  populateWeekDropdown(); populateShowList(); updateDataStatus(); applyFilters();
+  if(!confirm('Reload data from source?')) return;
+  await initData();
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
