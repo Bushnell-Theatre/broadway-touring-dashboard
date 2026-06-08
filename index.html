@@ -536,6 +536,14 @@ tbody td:last-child{border-right:none;}
     </div>
 
     <div class="sidebar-section">
+      <span class="sidebar-label">Peer Venues</span>
+      <div class="pill-row">
+        <button class="pill active" data-peer="" onclick="setPeer(this,'')">All</button>
+        <button class="pill" data-peer="1" onclick="setPeer(this,'1')">Peer Only</button>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
       <span class="sidebar-label">Gross Gross ($)</span>
       <div class="range-row">
         <input type="number" id="fGrossMin" placeholder="Min" step="100000" oninput="applyFilters()">
@@ -702,111 +710,16 @@ tbody td:last-child{border-right:none;}
 // needed. Leave as null to use embedded seed data.
 const DATA_JSON_URL = 'https://white-pebble-01710020f.7.azurestaticapps.net/data.json';
 
-// ── SEED DATA ──────────────────────────────────────────────────────────────────
-const SEED = [
-  {report_date:"2025-10-12",tier:"Primary",show:"& Juliet",theatre:"San Jose Center For The Perf. Arts",city:"San Jose",ticket_range:"$45.00-$115.00",top_paid_price:125,num_performances:8,gross_gross:1324024,gross_potential:1783320,gg_pct_gp:74.2,paid_tickets:16430,total_tickets:16534,total_capacity:20632,pct_capacity_paid:79.6,pct_capacity_total:80.1,on_subscription:1,avg_paid_admission:80.08},
-  {report_date:"2025-10-12",tier:"Primary",show:"A Beautiful Noise, The Neil Diamond Musical",theatre:"Orpheum Theatre - Memphis",city:"Memphis",ticket_range:"$10.00-$126.00",top_paid_price:136,num_performances:8,gross_gross:892851,gross_potential:1505688,gg_pct_gp:59.3,paid_tickets:11913,total_tickets:12215,total_capacity:18944,pct_capacity_paid:62.9,pct_capacity_total:64.5,on_subscription:1,avg_paid_admission:73.09},
-  {report_date:"2025-10-12",tier:"Primary",show:"Beauty and the Beast - 30th Anniversary",theatre:"Fisher Theatre",city:"Detroit",ticket_range:"$21.00-$139.00",top_paid_price:199,num_performances:8,gross_gross:1315097,gross_potential:1386216,gg_pct_gp:94.9,paid_tickets:16202,total_tickets:16211,total_capacity:16464,pct_capacity_paid:98.4,pct_capacity_total:98.5,on_subscription:1,avg_paid_admission:81.12},
-  {report_date:"2025-10-12",tier:"Primary",show:"Hamilton (Angelica)",theatre:"Opera House",city:"Boston",ticket_range:"$8.00-$194.00",top_paid_price:294,num_performances:8,gross_gross:2388258,gross_potential:2437520,gg_pct_gp:98,paid_tickets:18735,total_tickets:19134,total_capacity:20720,pct_capacity_paid:90.4,pct_capacity_total:92.4,on_subscription:0,avg_paid_admission:124.82},
-  {report_date:"2025-10-12",tier:"Primary",show:"Harry Potter and the Cursed Child 2024",theatre:"Ohio Theatre",city:"Columbus",ticket_range:"$45.00-$155.00",top_paid_price:225,num_performances:2,gross_gross:528819,gross_potential:578740,gg_pct_gp:91.4,paid_tickets:4974,total_tickets:4982,total_capacity:5514,pct_capacity_paid:90.2,pct_capacity_total:90.4,on_subscription:1,avg_paid_admission:106.15},
-  {report_date:"2025-10-12",tier:"Primary",show:"Hell's Kitchen",theatre:"KeyBank State Theatre",city:"Cleveland",ticket_range:"$25.00-$105.00",top_paid_price:105,num_performances:4,gross_gross:590555,gross_potential:883280,gg_pct_gp:66.9,paid_tickets:8015,total_tickets:8534,total_capacity:11632,pct_capacity_paid:68.9,pct_capacity_total:73.4,on_subscription:1,avg_paid_admission:69.2},
-  {report_date:"2025-10-12",tier:"Primary",show:"Kimberly Akimbo",theatre:"Saenger Theatre",city:"New Orleans",ticket_range:"$25.00-$110.00",top_paid_price:114.53,num_performances:8,gross_gross:816790,gross_potential:1578796,gg_pct_gp:51.7,paid_tickets:10536,total_tickets:10808,total_capacity:20264,pct_capacity_paid:52,pct_capacity_total:53.3,on_subscription:1,avg_paid_admission:75.57},
-  {report_date:"2025-10-12",tier:"Primary",show:"Les Misérables 2022",theatre:"Pantages Theatre",city:"Los Angeles",ticket_range:"$41.00-$221.00",top_paid_price:616.25,num_performances:8,gross_gross:2292170,gross_potential:2250360,gg_pct_gp:101.9,paid_tickets:21496,total_tickets:21550,total_capacity:21624,pct_capacity_paid:99.4,pct_capacity_total:99.7,on_subscription:0,avg_paid_admission:106.37},
-  {report_date:"2025-10-12",tier:"Primary",show:"Life of Pi",theatre:"Fox Theatre",city:"St. Louis",ticket_range:"$33.00-$101.00",top_paid_price:121,num_performances:8,gross_gross:904731,gross_potential:2267488,gg_pct_gp:39.9,paid_tickets:12880,total_tickets:14073,total_capacity:33008,pct_capacity_paid:39,pct_capacity_total:42.6,on_subscription:1,avg_paid_admission:64.29},
-  {report_date:"2025-10-12",tier:"Primary",show:"MJ",theatre:"Ed Mirvish Theatre",city:"Toronto",ticket_range:"$39.00-$119.00",top_paid_price:235,num_performances:8,gross_gross:1210850,gross_potential:989872,gg_pct_gp:122.3,paid_tickets:15317,total_tickets:15334,total_capacity:15968,pct_capacity_paid:95.9,pct_capacity_total:96,on_subscription:1,avg_paid_admission:78.97},
-  {report_date:"2025-10-12",tier:"Primary",show:"Shucked",theatre:"Buell Theatre",city:"Denver",ticket_range:"$40.00-$125.00",top_paid_price:125,num_performances:8,gross_gross:1050620,gross_potential:1852800,gg_pct_gp:56.7,paid_tickets:14667,total_tickets:15533,total_capacity:22176,pct_capacity_paid:66.1,pct_capacity_total:70,on_subscription:1,avg_paid_admission:67.64},
-  {report_date:"2025-10-12",tier:"Primary",show:"SIX: The Musical (Boleyn)",theatre:"Benedum Center",city:"Pittsburgh",ticket_range:"$35.75-$120.75",top_paid_price:138.75,num_performances:8,gross_gross:1906865,gross_potential:2069658,gg_pct_gp:92.1,paid_tickets:20336,total_tickets:20386,total_capacity:22744,pct_capacity_paid:89.4,pct_capacity_total:89.6,on_subscription:0,avg_paid_admission:93.54},
-  {report_date:"2025-10-12",tier:"Primary",show:"Some Like it Hot",theatre:"Segerstrom Center for the Arts",city:"Costa Mesa",ticket_range:"$25.00-$120.00",top_paid_price:125.86,num_performances:8,gross_gross:893455,gross_potential:1736940,gg_pct_gp:51.4,paid_tickets:10638,total_tickets:11244,total_capacity:24144,pct_capacity_paid:44.1,pct_capacity_total:46.6,on_subscription:1,avg_paid_admission:79.46},
-  {report_date:"2025-10-12",tier:"Primary",show:"Stereophonic",theatre:"Paramount Theatre",city:"Seattle",ticket_range:"$35.00-$100.00",top_paid_price:135,num_performances:8,gross_gross:1108567,gross_potential:1866720,gg_pct_gp:59.4,paid_tickets:14820,total_tickets:15220,total_capacity:23128,pct_capacity_paid:64.1,pct_capacity_total:65.8,on_subscription:1,avg_paid_admission:72.84},
-  {report_date:"2025-10-12",tier:"Primary",show:"Suffs",theatre:"The Smith Center",city:"Las Vegas",ticket_range:"$25.00-$155.00",top_paid_price:155,num_performances:8,gross_gross:1214218,gross_potential:1606080,gg_pct_gp:75.6,paid_tickets:11758,total_tickets:11776,total_capacity:15832,pct_capacity_paid:74.3,pct_capacity_total:74.4,on_subscription:1,avg_paid_admission:103.11},
-  {report_date:"2025-10-12",tier:"Primary",show:"The Lion King Rafiki",theatre:"Cadillac Palace Theatre",city:"Chicago",ticket_range:"$30.00-$261.00",top_paid_price:261,num_performances:9,gross_gross:2288690,gross_potential:2202663,gg_pct_gp:103.9,paid_tickets:19505,total_tickets:19563,total_capacity:20826,pct_capacity_paid:93.7,pct_capacity_total:93.9,on_subscription:0,avg_paid_admission:116.99},
-  {report_date:"2025-10-12",tier:"Primary",show:"The Notebook",theatre:"Shea's Performing Arts Center",city:"Buffalo",ticket_range:"$37.00-$97.00",top_paid_price:117,num_performances:8,gross_gross:1568841,gross_potential:1689324,gg_pct_gp:92.9,paid_tickets:22027,total_tickets:22188,total_capacity:24152,pct_capacity_paid:91.2,pct_capacity_total:91.9,on_subscription:1,avg_paid_admission:70.71},
-  {report_date:"2025-10-12",tier:"Primary",show:"The Outsiders",theatre:"",city:"Tulsa",ticket_range:null,top_paid_price:null,num_performances:null,gross_gross:1673217,gross_potential:null,gg_pct_gp:null,paid_tickets:null,total_tickets:null,total_capacity:null,pct_capacity_paid:null,pct_capacity_total:null,on_subscription:0,avg_paid_admission:null},
-  {report_date:"2025-10-12",tier:"Primary",show:"The Sound of Music 2025",theatre:"",city:"Durham",ticket_range:null,top_paid_price:null,num_performances:null,gross_gross:1257184,gross_potential:null,gg_pct_gp:null,paid_tickets:null,total_tickets:null,total_capacity:null,pct_capacity_paid:null,pct_capacity_total:null,on_subscription:0,avg_paid_admission:null},
-  {report_date:"2025-10-12",tier:"Primary",show:"The Wiz 2025",theatre:"",city:"Miami",ticket_range:null,top_paid_price:null,num_performances:null,gross_gross:1041096,gross_potential:null,gg_pct_gp:null,paid_tickets:null,total_tickets:null,total_capacity:null,pct_capacity_paid:null,pct_capacity_total:null,on_subscription:0,avg_paid_admission:null},
-  {report_date:"2025-10-12",tier:"Primary",show:"Wicked 2",theatre:"",city:"Charlotte",ticket_range:null,top_paid_price:null,num_performances:null,gross_gross:1407930,gross_potential:null,gg_pct_gp:null,paid_tickets:null,total_tickets:null,total_capacity:null,pct_capacity_paid:null,pct_capacity_total:null,on_subscription:0,avg_paid_admission:null},
-  {report_date:"2025-10-12",tier:"Secondary",show:"Mrs. Doubtfire n/e",theatre:"Opera House In Lexington",city:"Lexington",ticket_range:"$65.00-$125.00",top_paid_price:150,num_performances:5,gross_gross:228317,gross_potential:441600,gg_pct_gp:51.7,paid_tickets:2513,total_tickets:2571,total_capacity:4320,pct_capacity_paid:58.2,pct_capacity_total:59.5,on_subscription:1,avg_paid_admission:88.8},
-  {report_date:"2025-10-12",tier:"Secondary",show:"The Book of Mormon n/e 2022",theatre:"Civic Center Music Hall",city:"Oklahoma City",ticket_range:"$19.33-$120.00",top_paid_price:130,num_performances:5,gross_gross:595568,gross_potential:938233,gg_pct_gp:63.5,paid_tickets:7701,total_tickets:7715,total_capacity:12145,pct_capacity_paid:63.4,pct_capacity_total:63.5,on_subscription:0,avg_paid_admission:77.2},
-  {report_date:"2025-10-12",tier:"Secondary",show:"Water for Elephants n/e",theatre:"DeVos Hall",city:"Grand Rapids",ticket_range:"$35.50-$115.50",top_paid_price:145.5,num_performances:8,gross_gross:1298980,gross_potential:1529872,gg_pct_gp:84.9,paid_tickets:15614,total_tickets:15763,total_capacity:18384,pct_capacity_paid:84.9,pct_capacity_total:85.7,on_subscription:1,avg_paid_admission:82.41},
-  {report_date:"2025-10-19",tier:"Primary",show:"& Juliet",theatre:"San Diego Civic Theatre",city:"San Diego",ticket_range:"$36.00-$141.00",top_paid_price:181,num_performances:8,gross_gross:1663084,gross_potential:1912584,gg_pct_gp:87,paid_tickets:19287,total_tickets:19770,total_capacity:23520,pct_capacity_paid:82,pct_capacity_total:84.1,on_subscription:1,avg_paid_admission:84.12},
-  {report_date:"2025-10-19",tier:"Primary",show:"A Beautiful Noise, The Neil Diamond Musical",theatre:"Walton Arts Center",city:"Fayetteville",ticket_range:"$38.00-$101.00",top_paid_price:115,num_performances:8,gross_gross:613591,gross_potential:780578,gg_pct_gp:78.6,paid_tickets:8375,total_tickets:8483,total_capacity:9608,pct_capacity_paid:87.2,pct_capacity_total:88.3,on_subscription:1,avg_paid_admission:72.33},
-  {report_date:"2025-10-19",tier:"Primary",show:"Back to the Future: The Musical",theatre:"Washington Pavilion",city:"Sioux Falls",ticket_range:"$39.00-$137.00",top_paid_price:157,num_performances:8,gross_gross:614631,gross_potential:1351624,gg_pct_gp:45.5,paid_tickets:8142,total_tickets:8197,total_capacity:14600,pct_capacity_paid:55.8,pct_capacity_total:56.1,on_subscription:0,avg_paid_admission:74.98},
-  {report_date:"2025-10-19",tier:"Primary",show:"Beauty and the Beast - 30th Anniversary",theatre:"Wharton Center for the Performing Arts",city:"East Lansing",ticket_range:"$25.50-$108.50",top_paid_price:150.5,num_performances:8,gross_gross:1447119,gross_potential:1489366,gg_pct_gp:97.2,paid_tickets:17211,total_tickets:17455,total_capacity:18032,pct_capacity_paid:95.4,pct_capacity_total:96.8,on_subscription:0,avg_paid_admission:82.91},
-  {report_date:"2025-10-19",tier:"Primary",show:"Hamilton (Angelica)",theatre:"Opera House",city:"Boston",ticket_range:"$8.00-$194.00",top_paid_price:294,num_performances:8,gross_gross:2345607,gross_potential:2437520,gg_pct_gp:96.2,paid_tickets:19438,total_tickets:19781,total_capacity:20720,pct_capacity_paid:93.8,pct_capacity_total:95.5,on_subscription:0,avg_paid_admission:118.58},
-  {report_date:"2025-10-19",tier:"Primary",show:"Harry Potter and the Cursed Child 2024",theatre:"Ohio Theatre",city:"Columbus",ticket_range:"$45.00-$155.00",top_paid_price:225,num_performances:8,gross_gross:1952948,gross_potential:2314960,gg_pct_gp:84.4,paid_tickets:18113,total_tickets:18300,total_capacity:22056,pct_capacity_paid:82.1,pct_capacity_total:83,on_subscription:1,avg_paid_admission:106.72},
-  {report_date:"2025-10-19",tier:"Primary",show:"Hell's Kitchen",theatre:"KeyBank State Theatre",city:"Cleveland",ticket_range:"$25.00-$105.00",top_paid_price:105,num_performances:8,gross_gross:1155631,gross_potential:1766560,gg_pct_gp:65.4,paid_tickets:15637,total_tickets:16479,total_capacity:23264,pct_capacity_paid:67.2,pct_capacity_total:70.8,on_subscription:1,avg_paid_admission:70.13},
-  {report_date:"2025-10-19",tier:"Primary",show:"Kimberly Akimbo",theatre:"Fox Theatre",city:"Atlanta",ticket_range:"$40.00-$115.00",top_paid_price:115,num_performances:8,gross_gross:1619708,gross_potential:2524325,gg_pct_gp:64.2,paid_tickets:21890,total_tickets:22238,total_capacity:34920,pct_capacity_paid:62.7,pct_capacity_total:63.7,on_subscription:1,avg_paid_admission:72.84},
-  {report_date:"2025-10-19",tier:"Primary",show:"Les Misérables 2022",theatre:"Pantages Theatre",city:"Los Angeles",ticket_range:"$41.00-$221.00",top_paid_price:616.25,num_performances:8,gross_gross:2248097,gross_potential:2062210,gg_pct_gp:109,paid_tickets:21564,total_tickets:21564,total_capacity:21624,pct_capacity_paid:99.7,pct_capacity_total:99.7,on_subscription:0,avg_paid_admission:104.25},
-  {report_date:"2025-10-19",tier:"Primary",show:"Life of Pi",theatre:"Fox Theatre",city:"St. Louis",ticket_range:"$30.00-$101.00",top_paid_price:121,num_performances:8,gross_gross:949012,gross_potential:2238517,gg_pct_gp:42.4,paid_tickets:13482,total_tickets:13551,total_capacity:33008,pct_capacity_paid:40.8,pct_capacity_total:41.1,on_subscription:1,avg_paid_admission:70.03},
-  {report_date:"2025-10-19",tier:"Primary",show:"MJ",theatre:"Ed Mirvish Theatre",city:"Toronto",ticket_range:"$39.00-$119.00",top_paid_price:239,num_performances:8,gross_gross:1234163,gross_potential:992251,gg_pct_gp:124.4,paid_tickets:15893,total_tickets:15919,total_capacity:15968,pct_capacity_paid:99.5,pct_capacity_total:99.7,on_subscription:1,avg_paid_admission:77.53},
-  {report_date:"2025-10-19",tier:"Primary",show:"Purple Rain pre",theatre:"State Theatre",city:"Minneapolis",ticket_range:"$64.00-$164.00",top_paid_price:264,num_performances:4,gross_gross:971826,gross_potential:1035408,gg_pct_gp:93.9,paid_tickets:7958,total_tickets:8346,total_capacity:8412,pct_capacity_paid:94.6,pct_capacity_total:99.2,on_subscription:0,avg_paid_admission:116.44},
-  {report_date:"2025-10-19",tier:"Primary",show:"Shucked",theatre:"Buell Theatre",city:"Denver",ticket_range:"$40.00-$125.00",top_paid_price:125,num_performances:8,gross_gross:1065799,gross_potential:1852800,gg_pct_gp:57.5,paid_tickets:13912,total_tickets:14053,total_capacity:22176,pct_capacity_paid:62.7,pct_capacity_total:63.4,on_subscription:1,avg_paid_admission:75.84},
-  {report_date:"2025-10-19",tier:"Primary",show:"SIX: The Musical (Boleyn)",theatre:"The Hanover Theatre",city:"Worcester",ticket_range:"$36.00-$91.00",top_paid_price:116,num_performances:8,gross_gross:912733,gross_potential:1339172,gg_pct_gp:68.2,paid_tickets:13746,total_tickets:13810,total_capacity:18184,pct_capacity_paid:75.6,pct_capacity_total:76,on_subscription:0,avg_paid_admission:66.09},
-  {report_date:"2025-10-19",tier:"Primary",show:"Some Like it Hot",theatre:"Segerstrom Center for the Arts",city:"Costa Mesa",ticket_range:"$25.00-$120.00",top_paid_price:125.86,num_performances:8,gross_gross:929826,gross_potential:1736940,gg_pct_gp:53.5,paid_tickets:11006,total_tickets:11023,total_capacity:24144,pct_capacity_paid:45.6,pct_capacity_total:45.7,on_subscription:1,avg_paid_admission:84.35},
-  {report_date:"2025-10-19",tier:"Primary",show:"Stereophonic",theatre:"First Interstate Center",city:"Spokane",ticket_range:"$45.00-$100.00",top_paid_price:100,num_performances:2,gross_gross:80054,gross_potential:411690,gg_pct_gp:19.4,paid_tickets:1270,total_tickets:1673,total_capacity:5222,pct_capacity_paid:24.3,pct_capacity_total:32,on_subscription:0,avg_paid_admission:47.85},
-  {report_date:"2025-10-19",tier:"Primary",show:"Stereophonic",theatre:"Hult Center",city:"Eugene",ticket_range:"$45.00-$120.00",top_paid_price:120,num_performances:4,gross_gross:173959,gross_potential:882060,gg_pct_gp:19.7,paid_tickets:2073,total_tickets:2620,total_capacity:9788,pct_capacity_paid:21.2,pct_capacity_total:26.8,on_subscription:0,avg_paid_admission:66.4},
-  {report_date:"2025-10-19",tier:"Primary",show:"Suffs",theatre:"ASU Gammage",city:"Tempe",ticket_range:"$24.00-$110.00",top_paid_price:155,num_performances:8,gross_gross:1344954,gross_potential:1699264,gg_pct_gp:79.1,paid_tickets:19093,total_tickets:19272,total_capacity:22856,pct_capacity_paid:83.5,pct_capacity_total:84.3,on_subscription:1,avg_paid_admission:69.79},
-  {report_date:"2025-10-19",tier:"Primary",show:"The Lion King Rafiki",theatre:"Cadillac Palace Theatre",city:"Chicago",ticket_range:null,top_paid_price:null,num_performances:null,gross_gross:2162808,gross_potential:null,gg_pct_gp:null,paid_tickets:null,total_tickets:null,total_capacity:null,pct_capacity_paid:null,pct_capacity_total:null,on_subscription:0,avg_paid_admission:null},
-  {report_date:"2025-10-19",tier:"Primary",show:"The Notebook",theatre:"",city:"Cincinnati",ticket_range:null,top_paid_price:null,num_performances:null,gross_gross:1250493,gross_potential:null,gg_pct_gp:null,paid_tickets:null,total_tickets:null,total_capacity:null,pct_capacity_paid:null,pct_capacity_total:null,on_subscription:0,avg_paid_admission:null},
-  {report_date:"2025-10-19",tier:"Primary",show:"The Outsiders",theatre:"",city:"Nashville",ticket_range:null,top_paid_price:null,num_performances:null,gross_gross:1623442,gross_potential:null,gg_pct_gp:null,paid_tickets:null,total_tickets:null,total_capacity:null,pct_capacity_paid:null,pct_capacity_total:null,on_subscription:0,avg_paid_admission:null},
-  {report_date:"2025-10-19",tier:"Primary",show:"The Sound of Music 2025",theatre:"",city:"Dayton",ticket_range:null,top_paid_price:null,num_performances:null,gross_gross:1223562,gross_potential:null,gg_pct_gp:null,paid_tickets:null,total_tickets:null,total_capacity:null,pct_capacity_paid:null,pct_capacity_total:null,on_subscription:0,avg_paid_admission:null},
-  {report_date:"2025-10-19",tier:"Primary",show:"The Wiz 2025",theatre:"",city:"Tampa",ticket_range:null,top_paid_price:null,num_performances:null,gross_gross:1340009,gross_potential:null,gg_pct_gp:null,paid_tickets:null,total_tickets:null,total_capacity:null,pct_capacity_paid:null,pct_capacity_total:null,on_subscription:0,avg_paid_admission:null},
-  {report_date:"2025-10-19",tier:"Primary",show:"Wicked 2",theatre:"",city:"Charlotte",ticket_range:null,top_paid_price:null,num_performances:null,gross_gross:1302783,gross_potential:null,gg_pct_gp:null,paid_tickets:null,total_tickets:null,total_capacity:null,pct_capacity_paid:null,pct_capacity_total:null,on_subscription:0,avg_paid_admission:null},
-  {report_date:"2025-10-19",tier:"Secondary",show:"Water for Elephants n/e",theatre:"Kentucky Center For The Perf. Arts",city:"Louisville",ticket_range:"$36.00-$115.00",top_paid_price:115,num_performances:8,gross_gross:1414443,gross_potential:1658096,gg_pct_gp:85.3,paid_tickets:17915,total_tickets:18150,total_capacity:19576,pct_capacity_paid:91.5,pct_capacity_total:92.7,on_subscription:1,avg_paid_admission:77.93},
-  {report_date:"2025-10-26",tier:"Primary",show:"& Juliet",theatre:"Pioneer Center",city:"Reno",ticket_range:"$62.00-$122.00",top_paid_price:138,num_performances:8,gross_gross:940883,gross_potential:1145568,gg_pct_gp:82.1,paid_tickets:9474,total_tickets:9509,total_capacity:11904,pct_capacity_paid:79.6,pct_capacity_total:79.9,on_subscription:1,avg_paid_admission:98.95},
-  {report_date:"2025-10-26",tier:"Primary",show:"A Beautiful Noise, The Neil Diamond Musical",theatre:"Des Moines Civic Center",city:"Des Moines",ticket_range:"$37.50-$145.50",top_paid_price:190.5,num_performances:8,gross_gross:1591920,gross_potential:1866488,gg_pct_gp:85.3,paid_tickets:17517,total_tickets:17743,total_capacity:21712,pct_capacity_paid:80.7,pct_capacity_total:81.7,on_subscription:1,avg_paid_admission:89.72},
-  {report_date:"2025-10-26",tier:"Primary",show:"Beauty and the Beast - 30th Anniversary",theatre:"Fox Cities Performing Arts Center",city:"Appleton",ticket_range:"$35.50-$135.50",top_paid_price:175.5,num_performances:8,gross_gross:1473230,gross_potential:1514868,gg_pct_gp:97.3,paid_tickets:15443,total_tickets:15590,total_capacity:15816,pct_capacity_paid:97.6,pct_capacity_total:98.6,on_subscription:1,avg_paid_admission:94.5},
-  {report_date:"2025-10-26",tier:"Primary",show:"Hamilton (Angelica)",theatre:"Opera House",city:"Boston",ticket_range:"$8.00-$194.00",top_paid_price:294,num_performances:8,gross_gross:2507893,gross_potential:2395920,gg_pct_gp:104.7,paid_tickets:20700,total_tickets:20712,total_capacity:20720,pct_capacity_paid:99.9,pct_capacity_total:100,on_subscription:0,avg_paid_admission:121.08},
-  {report_date:"2025-10-26",tier:"Primary",show:"Harry Potter and the Cursed Child 2024",theatre:"Ohio Theatre",city:"Columbus",ticket_range:"$45.00-$155.00",top_paid_price:225,num_performances:8,gross_gross:1465503,gross_potential:2314960,gg_pct_gp:63.3,paid_tickets:14986,total_tickets:15249,total_capacity:22056,pct_capacity_paid:67.9,pct_capacity_total:69.1,on_subscription:0,avg_paid_admission:96.1},
-  {report_date:"2025-10-26",tier:"Primary",show:"Hell's Kitchen",theatre:"KeyBank State Theatre",city:"Cleveland",ticket_range:"$21.00-$101.00",top_paid_price:101,num_performances:8,gross_gross:1185300,gross_potential:1766560,gg_pct_gp:67.1,paid_tickets:16431,total_tickets:16527,total_capacity:23264,pct_capacity_paid:70.6,pct_capacity_total:71,on_subscription:1,avg_paid_admission:71.72},
-  {report_date:"2025-10-26",tier:"Primary",show:"Kimberly Akimbo",theatre:"Academy of Music: Kimmel Center",city:"Philadelphia",ticket_range:"$34.00-$124.00",top_paid_price:124,num_performances:8,gross_gross:400997,gross_potential:1103985,gg_pct_gp:36.3,paid_tickets:5203,total_tickets:6340,total_capacity:12168,pct_capacity_paid:42.8,pct_capacity_total:52.1,on_subscription:1,avg_paid_admission:63.25},
-  {report_date:"2025-10-26",tier:"Primary",show:"Life of Pi",theatre:"Broward Center For The Perf. Arts",city:"Fort Lauderdale",ticket_range:"$35.00-$110.00",top_paid_price:140,num_performances:8,gross_gross:888685,gross_potential:1830320,gg_pct_gp:48.6,paid_tickets:10049,total_tickets:10722,total_capacity:20696,pct_capacity_paid:48.6,pct_capacity_total:51.8,on_subscription:1,avg_paid_admission:82.88},
-  {report_date:"2025-10-26",tier:"Primary",show:"MJ",theatre:"Ed Mirvish Theatre",city:"Toronto",ticket_range:"$39.00-$119.00",top_paid_price:239,num_performances:8,gross_gross:1330287,gross_potential:997375,gg_pct_gp:133.4,paid_tickets:15958,total_tickets:15981,total_capacity:15968,pct_capacity_paid:99.9,pct_capacity_total:100.1,on_subscription:0,avg_paid_admission:83.24},
-  {report_date:"2025-10-26",tier:"Primary",show:"Moulin Rouge! The Musical",theatre:"Popejoy Hall",city:"Albuquerque",ticket_range:"$47.00-$117.00",top_paid_price:149,num_performances:7,gross_gross:1109401,gross_potential:1205106,gg_pct_gp:92.1,paid_tickets:11015,total_tickets:11094,total_capacity:13125,pct_capacity_paid:83.9,pct_capacity_total:84.5,on_subscription:1,avg_paid_admission:100},
-  {report_date:"2025-10-26",tier:"Primary",show:"Purple Rain pre",theatre:"State Theatre",city:"Minneapolis",ticket_range:"$64.00-$174.00",top_paid_price:264,num_performances:6,gross_gross:1302399,gross_potential:1300000,gg_pct_gp:100.2,paid_tickets:11784,total_tickets:12340,total_capacity:12618,pct_capacity_paid:93.4,pct_capacity_total:97.8,on_subscription:1,avg_paid_admission:105.54},
-  {report_date:"2025-10-26",tier:"Primary",show:"Shucked",theatre:"Morrison Center for the Perf. Arts",city:"Boise",ticket_range:"$34.00-$110.00",top_paid_price:129,num_performances:8,gross_gross:1016015,gross_potential:1204600,gg_pct_gp:84.3,paid_tickets:12967,total_tickets:13078,total_capacity:15536,pct_capacity_paid:83.5,pct_capacity_total:84.2,on_subscription:1,avg_paid_admission:77.69},
-  {report_date:"2025-10-26",tier:"Primary",show:"SIX: The Musical (Boleyn)",theatre:"Providence Performing Arts Center",city:"Providence",ticket_range:"$41.00-$81.00",top_paid_price:91,num_performances:7,gross_gross:1031262,gross_potential:1417563,gg_pct_gp:72.7,paid_tickets:15177,total_tickets:15637,total_capacity:21623,pct_capacity_paid:70.2,pct_capacity_total:72.3,on_subscription:0,avg_paid_admission:65.95},
-  {report_date:"2025-10-26",tier:"Primary",show:"Some Like it Hot",theatre:"San Jose Center For The Perf. Arts",city:"San Jose",ticket_range:"$40.00-$115.00",top_paid_price:115,num_performances:8,gross_gross:729641,gross_potential:1711080,gg_pct_gp:42.6,paid_tickets:10084,total_tickets:10659,total_capacity:19704,pct_capacity_paid:51.2,pct_capacity_total:54.1,on_subscription:1,avg_paid_admission:68.45},
-  {report_date:"2025-10-26",tier:"Primary",show:"Stereophonic",theatre:"The Smith Center",city:"Las Vegas",ticket_range:"$25.00-$135.00",top_paid_price:145,num_performances:8,gross_gross:1031027,gross_potential:1397120,gg_pct_gp:73.8,paid_tickets:11296,total_tickets:11436,total_capacity:16160,pct_capacity_paid:69.9,pct_capacity_total:70.8,on_subscription:1,avg_paid_admission:90.16},
-  {report_date:"2025-10-26",tier:"Primary",show:"Suffs",theatre:"Orpheum Theatre",city:"San Francisco",ticket_range:"$48.00-$155.00",top_paid_price:155,num_performances:8,gross_gross:891042,gross_potential:1629506,gg_pct_gp:54.7,paid_tickets:10680,total_tickets:11025,total_capacity:17576,pct_capacity_paid:60.8,pct_capacity_total:62.7,on_subscription:1,avg_paid_admission:80.82},
-  {report_date:"2025-10-26",tier:"Primary",show:"The Lion King Rafiki",theatre:"Buell Theatre",city:"Denver",ticket_range:"$40.00-$195.00",top_paid_price:195,num_performances:6,gross_gross:1406554,gross_potential:1553415,gg_pct_gp:90.5,paid_tickets:15391,total_tickets:15802,total_capacity:16542,pct_capacity_paid:93,pct_capacity_total:95.5,on_subscription:0,avg_paid_admission:89.01},
-  {report_date:"2025-10-26",tier:"Primary",show:"The Notebook",theatre:"",city:"Cincinnati",ticket_range:null,top_paid_price:null,num_performances:null,gross_gross:1283801,gross_potential:null,gg_pct_gp:null,paid_tickets:null,total_tickets:null,total_capacity:null,pct_capacity_paid:null,pct_capacity_total:null,on_subscription:0,avg_paid_admission:null},
-  {report_date:"2025-10-26",tier:"Primary",show:"The Outsiders",theatre:"",city:"Austin",ticket_range:null,top_paid_price:null,num_performances:null,gross_gross:1780012,gross_potential:null,gg_pct_gp:null,paid_tickets:null,total_tickets:null,total_capacity:null,pct_capacity_paid:null,pct_capacity_total:null,on_subscription:0,avg_paid_admission:null},
-  {report_date:"2025-10-26",tier:"Primary",show:"The Sound of Music 2025",theatre:"",city:"Chicago",ticket_range:null,top_paid_price:null,num_performances:null,gross_gross:1225513,gross_potential:null,gg_pct_gp:null,paid_tickets:null,total_tickets:null,total_capacity:null,pct_capacity_paid:null,pct_capacity_total:null,on_subscription:0,avg_paid_admission:null},
-  {report_date:"2025-10-26",tier:"Primary",show:"The Wiz 2025",theatre:"",city:"West Palm Beach",ticket_range:null,top_paid_price:null,num_performances:null,gross_gross:1154875,gross_potential:null,gg_pct_gp:null,paid_tickets:null,total_tickets:null,total_capacity:null,pct_capacity_paid:null,pct_capacity_total:null,on_subscription:0,avg_paid_admission:null},
-  {report_date:"2025-10-26",tier:"Primary",show:"Wicked 2",theatre:"",city:"Charlotte",ticket_range:null,top_paid_price:null,num_performances:null,gross_gross:1331914,gross_potential:null,gg_pct_gp:null,paid_tickets:null,total_tickets:null,total_capacity:null,pct_capacity_paid:null,pct_capacity_total:null,on_subscription:0,avg_paid_admission:null},
-  {report_date:"2025-10-26",tier:"Secondary",show:"Clue n/e",theatre:"Auditorium Theatre",city:"Rochester",ticket_range:"$35.00-$95.00",top_paid_price:95,num_performances:8,gross_gross:945979,gross_potential:1345120,gg_pct_gp:70.3,paid_tickets:13079,total_tickets:13387,total_capacity:19712,pct_capacity_paid:66.4,pct_capacity_total:67.9,on_subscription:1,avg_paid_admission:70.66},
-  {report_date:"2025-10-26",tier:"Secondary",show:"Mrs. Doubtfire n/e",theatre:"Hammons Hall",city:"Springfield",ticket_range:"$39.00-$84.00",top_paid_price:84,num_performances:3,gross_gross:247359,gross_potential:454749,gg_pct_gp:54.4,paid_tickets:3889,total_tickets:3975,total_capacity:6630,pct_capacity_paid:58.7,pct_capacity_total:60,on_subscription:1,avg_paid_admission:62.23},
-  {report_date:"2025-10-26",tier:"Secondary",show:"Mrs. Doubtfire n/e",theatre:"Robinson Performance Hall",city:"Little Rock",ticket_range:"$25.00-$110.00",top_paid_price:110,num_performances:4,gross_gross:294454,gross_potential:596840,gg_pct_gp:49.3,paid_tickets:4816,total_tickets:5148,total_capacity:8888,pct_capacity_paid:54.2,pct_capacity_total:57.9,on_subscription:1,avg_paid_admission:57.2},
-  {report_date:"2025-10-26",tier:"Secondary",show:"The Addams Family n/e 2025",theatre:"Bass Performance Hall",city:"Fort Worth",ticket_range:"$40.00-$100.00",top_paid_price:100,num_performances:5,gross_gross:515924,gross_potential:832710,gg_pct_gp:62,paid_tickets:6772,total_tickets:6872,total_capacity:9810,pct_capacity_paid:69,pct_capacity_total:70.1,on_subscription:0,avg_paid_admission:75.08},
-  {report_date:"2025-10-26",tier:"Secondary",show:"The Book of Mormon n/e 2022",theatre:"Overture Center",city:"Madison",ticket_range:"$30.50-$150.50",top_paid_price:185.5,num_performances:5,gross_gross:1106002,gross_potential:1094986,gg_pct_gp:101,paid_tickets:10833,total_tickets:10836,total_capacity:11035,pct_capacity_paid:98.2,pct_capacity_total:98.2,on_subscription:0,avg_paid_admission:102.07},
-  {report_date:"2025-10-26",tier:"Secondary",show:"Water for Elephants n/e",theatre:"Peace Center For The Perf. Arts",city:"Greenville",ticket_range:"$60.50-$105.50",top_paid_price:105.5,num_performances:8,gross_gross:1120587,gross_potential:1564260,gg_pct_gp:71.6,paid_tickets:11181,total_tickets:11248,total_capacity:16440,pct_capacity_paid:68,pct_capacity_total:68.4,on_subscription:1,avg_paid_admission:99.63},
-];
-
-// ── STORAGE ────────────────────────────────────────────────────────────────────
-const STORAGE_KEY = 'btd_exec_v3';
-
-async function saveData(records) {
-  try {
-    if (window.storage) await window.storage.set(STORAGE_KEY, JSON.stringify(records));
-    else localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
-  } catch(e){ console.warn('Storage unavailable:', e); }
-}
-
 async function initData() {
-  if (DATA_JSON_URL) {
-    try {
-      const res = await fetch(DATA_JSON_URL);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      ALL_DATA = Array.isArray(json) ? json : (json.value || []);
-      boot();
-      return;
-    } catch(e) {
-      console.warn('data.json fetch failed, falling back to seed data:', e);
-    }
+  try {
+    const res = await fetch(DATA_JSON_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    ALL_DATA = Array.isArray(json) ? json : (json.value || []);
+  } catch(e) {
+    console.warn('data.json fetch failed:', e);
+    ALL_DATA = [];
   }
-  ALL_DATA = [...SEED];
   boot();
 }
 
@@ -817,6 +730,7 @@ let SORT_COL = 'gross_gross';
 let SORT_DIR = -1;
 let ACTIVE_TIER = '';
 let ACTIVE_SUB = '';
+let ACTIVE_PEER = '';
 let ACTIVE_PEER = '';
 let CHARTS = {};
 
@@ -894,6 +808,12 @@ function setPeer(btn, val) {
   applyFilters();
 }
 
+function setPeer(btn, val) {
+  ACTIVE_PEER = val;
+  document.querySelectorAll('[data-peer]').forEach(b=>b.classList.toggle('active', b.dataset.peer===val));
+  applyFilters();
+}
+
 function applyFilters() {
   const dateF = document.getElementById('fDate').value;
   const grossMin = parseFloat(document.getElementById('fGrossMin').value)||0;
@@ -908,6 +828,7 @@ function applyFilters() {
     if (dateF && d.report_date !== dateF) return false;
     if (ACTIVE_TIER && d.tier !== ACTIVE_TIER) return false;
     if (ACTIVE_SUB !== '' && String(d.on_subscription) !== ACTIVE_SUB) return false;
+    if (ACTIVE_PEER === '1' && !d.similar_bushnell_cap) return false;
     if (ACTIVE_PEER === '1' && !d.similar_bushnell_cap) return false;
     if (d.gross_gross !== null) {
       if (d.gross_gross < grossMin || d.gross_gross > grossMax) return false;
@@ -1017,7 +938,7 @@ function renderTable() {
 
 // ── CHARTS ────────────────────────────────────────────────────────────────────
 const CC = {
-  amber:'#B8620A', amberA:'rgba(184,98,10,0.5)',
+  amber:'#003865', amberA:'rgba(0,56,101,0.5)',
   teal:'#0A6B5E', rose:'#B0303A',
   grid:'rgba(0,0,0,0.06)', text:'#6b6b6b',
   cobalt:'#1A4E8A'
@@ -1055,7 +976,7 @@ function renderCharts() {
   const wkGross=weeks.map(w=>FILTERED.filter(d=>d.report_date===w&&d.gross_gross).reduce((a,d)=>a+d.gross_gross,0));
   CHARTS.wk=new Chart(document.getElementById('cWeekly'),{type:'line',
     data:{labels:weeks.map(w=>fmtWeek(w)),
-          datasets:[{data:wkGross,borderColor:CC.amber,backgroundColor:'rgba(184,98,10,0.07)',fill:true,tension:0.35,pointBackgroundColor:CC.amber,pointRadius:4,pointBorderColor:'#fff',pointBorderWidth:2}]},
+          datasets:[{data:wkGross,borderColor:CC.amber,backgroundColor:'rgba(0,56,101,0.07)',fill:true,tension:0.35,pointBackgroundColor:CC.amber,pointRadius:4,pointBorderColor:'#fff',pointBorderWidth:2}]},
     options:{responsive:true,plugins:{legend:{display:false}},
       scales:{x:{grid:{color:CC.grid}},y:{grid:{color:CC.grid},ticks:{callback:v=>fmt$(v)}}}}});
 
