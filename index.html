@@ -113,7 +113,7 @@ body{
 
 /* ── KPI BAR ── */
 .kpi-strip{
-  display:grid;grid-template-columns:repeat(7,1fr);
+  display:grid;grid-template-columns:repeat(6,1fr);
   border-bottom:1px solid var(--rule);
   background:#fff;
 }
@@ -487,14 +487,9 @@ tbody td:last-child{border-right:none;}
     <div class="kpi-sub">per ticket sold</div>
   </div>
   <div class="kpi-cell">
-    <div class="kpi-label">Peer Avg % Cap</div>
-    <div class="kpi-value" id="kPeerCap">—</div>
-    <div class="kpi-sub">similar Bushnell-size venues</div>
-  </div>
-  <div class="kpi-cell">
-    <div class="kpi-label">Peer Avg Gross</div>
-    <div class="kpi-value" id="kPeerGross">—</div>
-    <div class="kpi-sub">similar Bushnell-size venues</div>
+    <div class="kpi-label">Sub / Non-Sub Gross</div>
+    <div class="kpi-value" id="kSub">—</div>
+    <div class="kpi-sub">avg gross comparison</div>
   </div>
 </div>
 
@@ -524,14 +519,6 @@ tbody td:last-child{border-right:none;}
         <button class="pill active" data-sub="" onclick="setSub(this,'')">All</button>
         <button class="pill" data-sub="1" onclick="setSub(this,'1')">Sub</button>
         <button class="pill" data-sub="0" onclick="setSub(this,'0')">Non-Sub</button>
-      </div>
-    </div>
-
-    <div class="sidebar-section">
-      <span class="sidebar-label">Peer Venues</span>
-      <div class="pill-row">
-        <button class="pill active" data-peer="" onclick="setPeer(this,'')">All</button>
-        <button class="pill" data-peer="1" onclick="setPeer(this,'1')">Peer Only</button>
       </div>
     </div>
 
@@ -731,7 +718,6 @@ let SORT_DIR = -1;
 let ACTIVE_TIER = '';
 let ACTIVE_SUB = '';
 let ACTIVE_PEER = '';
-let ACTIVE_PEER = '';
 let CHARTS = {};
 
 // ── BOOT ──────────────────────────────────────────────────────────────────────
@@ -808,12 +794,6 @@ function setPeer(btn, val) {
   applyFilters();
 }
 
-function setPeer(btn, val) {
-  ACTIVE_PEER = val;
-  document.querySelectorAll('[data-peer]').forEach(b=>b.classList.toggle('active', b.dataset.peer===val));
-  applyFilters();
-}
-
 function applyFilters() {
   const dateF = document.getElementById('fDate').value;
   const grossMin = parseFloat(document.getElementById('fGrossMin').value)||0;
@@ -828,7 +808,6 @@ function applyFilters() {
     if (dateF && d.report_date !== dateF) return false;
     if (ACTIVE_TIER && d.tier !== ACTIVE_TIER) return false;
     if (ACTIVE_SUB !== '' && String(d.on_subscription) !== ACTIVE_SUB) return false;
-    if (ACTIVE_PEER === '1' && !d.similar_bushnell_cap) return false;
     if (ACTIVE_PEER === '1' && !d.similar_bushnell_cap) return false;
     if (d.gross_gross !== null) {
       if (d.gross_gross < grossMin || d.gross_gross > grossMax) return false;
@@ -887,11 +866,9 @@ function renderKPIs() {
   document.getElementById('kGgPct').textContent = ag?fmtN(ag)+'%':'—';
   const aa = avg(FILTERED.map(d=>d.avg_paid_admission));
   document.getElementById('kAdm').textContent = aa?'$'+fmtN(aa,2):'—';
-  const peerRows = FILTERED.filter(d=>d.similar_bushnell_cap);
-  const peerCap = avg(peerRows.map(d=>d.pct_capacity_paid));
-  const peerGross = avg(peerRows.filter(d=>d.gross_gross).map(d=>d.gross_gross));
-  document.getElementById('kPeerCap').textContent = peerCap ? fmtN(peerCap)+'%' : '—';
-  document.getElementById('kPeerGross').textContent = peerGross ? fmt$(peerGross) : '—';
+  const subG = avg(FILTERED.filter(d=>d.on_subscription===1&&d.gross_gross).map(d=>d.gross_gross));
+  const nonG = avg(FILTERED.filter(d=>d.on_subscription===0&&d.gross_gross).map(d=>d.gross_gross));
+  document.getElementById('kSub').textContent = subG&&nonG?fmt$(subG)+' / '+fmt$(nonG):'—';
 }
 
 // ── TABLE ─────────────────────────────────────────────────────────────────────
