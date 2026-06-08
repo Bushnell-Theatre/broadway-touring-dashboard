@@ -113,7 +113,7 @@ body{
 
 /* ── KPI BAR ── */
 .kpi-strip{
-  display:grid;grid-template-columns:repeat(6,1fr);
+  display:grid;grid-template-columns:repeat(7,1fr);
   border-bottom:1px solid var(--rule);
   background:#fff;
 }
@@ -487,9 +487,14 @@ tbody td:last-child{border-right:none;}
     <div class="kpi-sub">per ticket sold</div>
   </div>
   <div class="kpi-cell">
-    <div class="kpi-label">Sub / Non-Sub Gross</div>
-    <div class="kpi-value" id="kSub">—</div>
-    <div class="kpi-sub">avg gross comparison</div>
+    <div class="kpi-label">Peer Avg % Cap</div>
+    <div class="kpi-value" id="kPeerCap">—</div>
+    <div class="kpi-sub">similar Bushnell-size venues</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-label">Peer Avg Gross</div>
+    <div class="kpi-value" id="kPeerGross">—</div>
+    <div class="kpi-sub">similar Bushnell-size venues</div>
   </div>
 </div>
 
@@ -866,9 +871,11 @@ function renderKPIs() {
   document.getElementById('kGgPct').textContent = ag?fmtN(ag)+'%':'—';
   const aa = avg(FILTERED.map(d=>d.avg_paid_admission));
   document.getElementById('kAdm').textContent = aa?'$'+fmtN(aa,2):'—';
-  const subG = avg(FILTERED.filter(d=>d.on_subscription===1&&d.gross_gross).map(d=>d.gross_gross));
-  const nonG = avg(FILTERED.filter(d=>d.on_subscription===0&&d.gross_gross).map(d=>d.gross_gross));
-  document.getElementById('kSub').textContent = subG&&nonG?fmt$(subG)+' / '+fmt$(nonG):'—';
+  const peerRows = FILTERED.filter(d=>d.similar_bushnell_cap);
+  const peerCap = avg(peerRows.map(d=>d.pct_capacity_paid));
+  const peerGross = avg(peerRows.filter(d=>d.gross_gross).map(d=>d.gross_gross));
+  document.getElementById('kPeerCap').textContent = peerCap ? fmtN(peerCap)+'%' : '—';
+  document.getElementById('kPeerGross').textContent = peerGross ? fmt$(peerGross) : '—';
 }
 
 // ── TABLE ─────────────────────────────────────────────────────────────────────
@@ -953,7 +960,7 @@ function renderCharts() {
   const wkGross=weeks.map(w=>FILTERED.filter(d=>d.report_date===w&&d.gross_gross).reduce((a,d)=>a+d.gross_gross,0));
   CHARTS.wk=new Chart(document.getElementById('cWeekly'),{type:'line',
     data:{labels:weeks.map(w=>fmtWeek(w)),
-          datasets:[{data:wkGross,borderColor:CC.amber,backgroundColor:'rgba(0,56,101,0.07)',fill:true,tension:0.35,pointBackgroundColor:CC.amber,pointRadius:4,pointBorderColor:'#fff',pointBorderWidth:2}]},
+          datasets:[{data:wkGross,borderColor:CC.amber,backgroundColor:'rgba(184,98,10,0.07)',fill:true,tension:0.35,pointBackgroundColor:CC.amber,pointRadius:4,pointBorderColor:'#fff',pointBorderWidth:2}]},
     options:{responsive:true,plugins:{legend:{display:false}},
       scales:{x:{grid:{color:CC.grid}},y:{grid:{color:CC.grid},ticks:{callback:v=>fmt$(v)}}}}});
 
