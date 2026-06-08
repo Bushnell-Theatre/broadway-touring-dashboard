@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Broadway Touring Intelligence</title>
-<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Libre+Franklin:ital,wght@0,300;0,400;0,600;0,700;0,900;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -14,12 +14,12 @@
   --ink3:      #6b6b6b;
   --rule:      #d8d4ce;
   --rule2:     #ece9e4;
-  --bg:        #faf9f7;
+  --bg:        #fdf8f4;
   --bg2:       #f3f1ee;
   --bg3:       #edeae6;
-  --amber:     #B8620A;
-  --amber-lt:  #fdf0e3;
-  --amber-md:  #f4c07a;
+  --amber:     #003865;
+  --amber-lt:  #e4ecf8;
+  --amber-md:  #6798b9;
   --teal:      #0A6B5E;
   --teal-lt:   #e2f2f0;
   --rose:      #B0303A;
@@ -27,7 +27,7 @@
   --cobalt:    #1A4E8A;
   --cobalt-lt: #e4ecf8;
   --serif:    'Libre Baskerville', Georgia, serif;
-  --sans:     'IBM Plex Sans', system-ui, sans-serif;
+  --sans:     'Libre Franklin', system-ui, sans-serif;
   --mono:     'IBM Plex Mono', monospace;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -43,7 +43,7 @@ body{
   background:var(--ink);color:#fff;
   padding:0 32px;
   display:flex;align-items:stretch;
-  border-bottom:3px solid var(--amber);
+  border-bottom:3px solid #ff9e1b;
   position:sticky;top:0;z-index:50;
   box-shadow:0 2px 12px rgba(0,0,0,0.18);
 }
@@ -56,7 +56,7 @@ body{
 }
 .brand-icon{
   width:36px;height:36px;
-  background:var(--amber);
+  background:#003865;
   border-radius:2px;
   display:flex;align-items:center;justify-content:center;
   font-family:var(--serif);font-size:1.1rem;font-weight:700;color:#fff;
@@ -113,7 +113,7 @@ body{
 
 /* ── KPI BAR ── */
 .kpi-strip{
-  display:grid;grid-template-columns:repeat(6,1fr);
+  display:grid;grid-template-columns:repeat(7,1fr);
   border-bottom:1px solid var(--rule);
   background:#fff;
 }
@@ -487,9 +487,14 @@ tbody td:last-child{border-right:none;}
     <div class="kpi-sub">per ticket sold</div>
   </div>
   <div class="kpi-cell">
-    <div class="kpi-label">Sub / Non-Sub Gross</div>
-    <div class="kpi-value" id="kSub">—</div>
-    <div class="kpi-sub">avg gross comparison</div>
+    <div class="kpi-label">Peer Avg % Cap</div>
+    <div class="kpi-value" id="kPeerCap">—</div>
+    <div class="kpi-sub">similar Bushnell-size venues</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-label">Peer Avg Gross</div>
+    <div class="kpi-value" id="kPeerGross">—</div>
+    <div class="kpi-sub">similar Bushnell-size venues</div>
   </div>
 </div>
 
@@ -519,6 +524,14 @@ tbody td:last-child{border-right:none;}
         <button class="pill active" data-sub="" onclick="setSub(this,'')">All</button>
         <button class="pill" data-sub="1" onclick="setSub(this,'1')">Sub</button>
         <button class="pill" data-sub="0" onclick="setSub(this,'0')">Non-Sub</button>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <span class="sidebar-label">Peer Venues</span>
+      <div class="pill-row">
+        <button class="pill active" data-peer="" onclick="setPeer(this,'')">All</button>
+        <button class="pill" data-peer="1" onclick="setPeer(this,'1')">Peer Only</button>
       </div>
     </div>
 
@@ -571,13 +584,13 @@ tbody td:last-child{border-right:none;}
   <div class="main-pane">
 
     <nav class="nav-tabs">
-      <div class="nav-tab active" onclick="showTab('table')">Data Table</div>
-      <div class="nav-tab" onclick="showTab('charts')">Charts</div>
+      <div class="nav-tab active" onclick="showTab('charts')">Charts</div>
       <div class="nav-tab" onclick="showTab('rankings')">Rankings</div>
+      <div class="nav-tab" onclick="showTab('table')">Data Table</div>
     </nav>
 
     <!-- TABLE PANEL -->
-    <div class="panel active" id="tab-table">
+    <div class="panel" id="tab-table">
       <div class="section-divider">
         <h2>Engagement Data</h2>
         <div class="section-divider-line"></div>
@@ -607,7 +620,7 @@ tbody td:last-child{border-right:none;}
     </div>
 
     <!-- CHARTS PANEL -->
-    <div class="panel" id="tab-charts">
+    <div class="panel active" id="tab-charts">
       <div class="section-divider">
         <h2>Performance Charts</h2>
         <div class="section-divider-line"></div>
@@ -655,9 +668,9 @@ tbody td:last-child{border-right:none;}
           <div class="rank-sub">Cumulative gross across all filtered weeks</div>
           <div id="rShowGross"></div>
         </div>
-        <div class="rank-card">
+        <div class="rank-card full">
           <div class="rank-hd">Week-over-Week Change</div>
-          <div class="rank-sub">Shows with highest and lowest gross movement</div>
+          <div class="rank-sub">All shows — sorted by WoW % change · <span id="wowWeekLabel" style="color:var(--amber)"></span></div>
           <div id="rShowWow"></div>
         </div>
         <div class="rank-card">
@@ -804,6 +817,7 @@ let SORT_COL = 'gross_gross';
 let SORT_DIR = -1;
 let ACTIVE_TIER = '';
 let ACTIVE_SUB = '';
+let ACTIVE_PEER = '';
 let CHARTS = {};
 
 // ── BOOT ──────────────────────────────────────────────────────────────────────
@@ -859,7 +873,7 @@ function soloSearchedShows() {
 function updateDataStatus() {
   const weeks = [...new Set(ALL_DATA.map(d=>d.report_date))];
   document.getElementById('dataStatus').innerHTML =
-    `<strong>${ALL_DATA.length}</strong> records · <strong>${weeks.length}</strong> weeks · v3`;
+    `<strong>${ALL_DATA.length.toLocaleString()}</strong> records · <strong>${weeks.length.toLocaleString()}</strong> weeks · v3`;
 }
 
 // ── FILTERS ───────────────────────────────────────────────────────────────────
@@ -871,6 +885,12 @@ function setTier(btn, val) {
 function setSub(btn, val) {
   ACTIVE_SUB = val;
   document.querySelectorAll('[data-sub]').forEach(b=>b.classList.toggle('active', b.dataset.sub===val));
+  applyFilters();
+}
+
+function setPeer(btn, val) {
+  ACTIVE_PEER = val;
+  document.querySelectorAll('[data-peer]').forEach(b=>b.classList.toggle('active', b.dataset.peer===val));
   applyFilters();
 }
 
@@ -888,6 +908,7 @@ function applyFilters() {
     if (dateF && d.report_date !== dateF) return false;
     if (ACTIVE_TIER && d.tier !== ACTIVE_TIER) return false;
     if (ACTIVE_SUB !== '' && String(d.on_subscription) !== ACTIVE_SUB) return false;
+    if (ACTIVE_PEER === '1' && !d.similar_bushnell_cap) return false;
     if (d.gross_gross !== null) {
       if (d.gross_gross < grossMin || d.gross_gross > grossMax) return false;
     } else if (grossMin > 0) return false;
@@ -920,11 +941,11 @@ function resetFilters() {
   document.getElementById('fPerfMin').value = '';
   document.getElementById('fPerfMax').value = '';
   document.getElementById('showSearch').value = '';
-  filterShowList(); setTier(null,''); setSub(null,''); selectAllShows();
+  filterShowList(); setTier(null,''); setSub(null,''); setPeer(null,''); selectAllShows();
 }
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
-const fmt$ = v => v==null?'—': v>=1e6?'$'+(v/1e6).toFixed(2)+'M': v>=1e3?'$'+(v/1e3).toFixed(0)+'K':'$'+v.toFixed(0);
+const fmt$ = v => v==null?'—': v>=1e9?'$'+(v/1e9).toFixed(2)+'B': v>=1e6?'$'+(v/1e6).toFixed(2)+'M': v>=1e3?'$'+(v/1e3).toFixed(0)+'K':'$'+v.toFixed(0);
 const fmtN = (v,d=1) => v==null?'—':v.toFixed(d);
 const avg = arr => { const v=arr.filter(x=>x!=null); return v.length?v.reduce((a,b)=>a+b,0)/v.length:null; };
 const fmtWeek = d => {
@@ -937,7 +958,7 @@ const fmtWeek = d => {
 // ── KPIs ──────────────────────────────────────────────────────────────────────
 function renderKPIs() {
   const wg = FILTERED.filter(d=>d.gross_gross!=null);
-  document.getElementById('kCount').textContent = wg.length;
+  document.getElementById('kCount').textContent = wg.length.toLocaleString();
   document.getElementById('kGross').textContent = fmt$(wg.reduce((a,d)=>a+d.gross_gross,0));
   const ac = avg(FILTERED.map(d=>d.pct_capacity_paid));
   document.getElementById('kCap').textContent = ac?fmtN(ac)+'%':'—';
@@ -945,9 +966,11 @@ function renderKPIs() {
   document.getElementById('kGgPct').textContent = ag?fmtN(ag)+'%':'—';
   const aa = avg(FILTERED.map(d=>d.avg_paid_admission));
   document.getElementById('kAdm').textContent = aa?'$'+fmtN(aa,2):'—';
-  const subG = avg(FILTERED.filter(d=>d.on_subscription===1&&d.gross_gross).map(d=>d.gross_gross));
-  const nonG = avg(FILTERED.filter(d=>d.on_subscription===0&&d.gross_gross).map(d=>d.gross_gross));
-  document.getElementById('kSub').textContent = subG&&nonG?fmt$(subG)+' / '+fmt$(nonG):'—';
+  const peerRows = FILTERED.filter(d=>d.similar_bushnell_cap);
+  const peerCap = avg(peerRows.map(d=>d.pct_capacity_paid));
+  const peerGross = avg(peerRows.filter(d=>d.gross_gross).map(d=>d.gross_gross));
+  document.getElementById('kPeerCap').textContent = peerCap ? fmtN(peerCap)+'%' : '—';
+  document.getElementById('kPeerGross').textContent = peerGross ? fmt$(peerGross) : '—';
 }
 
 // ── TABLE ─────────────────────────────────────────────────────────────────────
@@ -966,7 +989,7 @@ function renderTable() {
     return SORT_DIR*(av>bv?1:av<bv?-1:0);
   });
   const tb = document.getElementById('tableBody');
-  document.getElementById('tableCount').textContent = `${sorted.length} engagements`;
+  document.getElementById('tableCount').textContent = `${sorted.length.toLocaleString()} engagements`;
   if(!sorted.length){tb.innerHTML='<tr><td colspan="14" class="no-data">No data matches current filters</td></tr>';return;}
   tb.innerHTML = sorted.map(d=>{
     const pct=d.pct_capacity_paid;
@@ -1089,30 +1112,43 @@ function renderRankings() {
   const weeks=[...new Set(FILTERED.map(d=>d.report_date))].sort();
   if(weeks.length>=2){
     const w1=weeks[weeks.length-2],w2=weeks[weeks.length-1];
+    const wowLabel=document.getElementById('wowWeekLabel');
+    if(wowLabel) wowLabel.textContent=fmtWeek(w1)+' → '+fmtWeek(w2);
     const ww=[];
     const showsW2=[...new Set(FILTERED.filter(d=>d.report_date===w2&&d.gross_gross).map(d=>d.show))];
     showsW2.forEach(s=>{
       const r1=FILTERED.find(d=>d.report_date===w1&&d.show===s&&d.gross_gross);
       const r2=FILTERED.find(d=>d.report_date===w2&&d.show===s&&d.gross_gross);
-      if(r1&&r2){const chg=((r2.gross_gross-r1.gross_gross)/r1.gross_gross)*100;ww.push({_label:s,_val:chg,_g2:r2.gross_gross});}
+      if(r1&&r2){
+        const chg=((r2.gross_gross-r1.gross_gross)/r1.gross_gross)*100;
+        ww.push({_label:s,_val:chg,_g2:r2.gross_gross,_cap:r2.pct_capacity_paid,_peer:r2.similar_bushnell_cap});
+      }
     });
     ww.sort((a,b)=>b._val-a._val);
-    const gainers=ww.filter(d=>d._val>0).slice(0,5);
-    const losers=ww.filter(d=>d._val<0).sort((a,b)=>a._val-b._val).slice(0,3);
-    const combined=[...gainers,...losers];
-    document.getElementById('rShowWow').innerHTML = combined.length?combined.map((d,i)=>{
-      const isPos=d._val>=0;
-      const col=isPos?CC.teal:CC.rose;
-      return `<div class="rank-item">
-        <div class="rank-n ${i<3&&isPos?'top':''}">${i+1}</div>
-        <div class="rank-body">
-          <div class="rank-name">${d._label}</div>
-          <div class="rank-detail">${fmtWeek(w1)} → ${fmtWeek(w2)} · ${fmt$(d._g2)}</div>
-          <div class="rank-bar-track"><div class="rank-bar-fill" style="width:${Math.min(Math.abs(d._val),100)}%;background:${col}"></div></div>
-        </div>
-        <div class="rank-val" style="color:${col}">${isPos?'+':''}${fmtN(d._val)}%</div>
-      </div>`;
-    }).join(''):'<div class="no-data">Need 2+ weeks of data for same show</div>';
+    if(ww.length){
+      document.getElementById('rShowWow').innerHTML=`
+        <table style="width:100%;border-collapse:collapse;font-size:0.68rem;">
+          <thead><tr style="background:var(--bg2);border-bottom:2px solid var(--rule);">
+            <th style="text-align:left;padding:8px 10px;font-size:0.55rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink3);">Show</th>
+            <th style="text-align:right;padding:8px 10px;font-size:0.55rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink3);">Gross</th>
+            <th style="text-align:right;padding:8px 10px;font-size:0.55rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink3);">% Cap</th>
+            <th style="text-align:right;padding:8px 10px;font-size:0.55rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink3);">WoW Δ</th>
+          </tr></thead>
+          <tbody>${ww.map(d=>{
+            const isPos=d._val>=0;
+            const col=isPos?'var(--teal)':'var(--rose)';
+            const bg=d._peer?'background:var(--amber-lt);':'';
+            return `<tr style="border-bottom:1px solid var(--rule2);${bg}">
+              <td style="padding:8px 10px;color:var(--ink);font-weight:500;">${d._peer?'<span title="Similar Bushnell capacity" style="color:var(--amber);margin-right:4px;">★</span>':''}${d._label}</td>
+              <td style="padding:8px 10px;text-align:right;font-family:var(--mono);">${fmt$(d._g2)}</td>
+              <td style="padding:8px 10px;text-align:right;font-family:var(--mono);">${d._cap!=null?fmtN(d._cap)+'%':'—'}</td>
+              <td style="padding:8px 10px;text-align:right;font-family:var(--mono);font-weight:700;color:${col};">${isPos?'+':''}${fmtN(d._val)}%</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table>`;
+    } else {
+      document.getElementById('rShowWow').innerHTML='<div class="no-data">Need 2+ weeks of data for same show</div>';
+    }
   } else {
     document.getElementById('rShowWow').innerHTML='<div class="no-data">Need 2+ weeks for comparison</div>';
   }
@@ -1154,7 +1190,7 @@ function renderRankings() {
 
 // ── TABS ──────────────────────────────────────────────────────────────────────
 function showTab(name) {
-  const names=['table','charts','rankings'];
+  const names=['charts','rankings','table'];
   document.querySelectorAll('.nav-tab').forEach((t,i)=>{t.classList.toggle('active',names[i]===name);});
   document.querySelectorAll('.panel').forEach(p=>{p.classList.toggle('active',p.id==='tab-'+name);});
   if(name==='charts') renderCharts();
