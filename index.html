@@ -1062,11 +1062,20 @@ function renderCharts() {
 
   dc('wk');
   const weeks=[...new Set(ALL_DATA.map(d=>d.report_date))].sort();
-  const wkGross=weeks.map(w=>{const rows=FILTERED.filter(d=>d.report_date===w&&d.gross_gross);return rows.length?rows.reduce((a,d)=>a+d.gross_gross,0):null;});
+  const wkGross=weeks.map(w=>{const rows=FILTERED.filter(d=>d.report_date===w&&d.gross_gross);return rows.length?rows.reduce((a,d)=>a+d.gross_gross,0):0;});
+  const MA=8;
+  const wkTrend=wkGross.map((v,i,arr)=>{
+    const slice=arr.slice(Math.max(0,i-MA+1),i+1).filter(x=>x>0);
+    return slice.length?slice.reduce((a,b)=>a+b,0)/slice.length:null;
+  });
   CHARTS.wk=new Chart(document.getElementById('cWeekly'),{type:'line',
     data:{labels:weeks.map(w=>fmtWeek(w)),
-          datasets:[{data:wkGross,borderColor:CC.amber,backgroundColor:'rgba(0,56,101,0.07)',fill:true,tension:0.35,pointBackgroundColor:CC.amber,pointRadius:3,pointBorderColor:'#fff',pointBorderWidth:2,spanGaps:false}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+          datasets:[
+            {label:'Weekly Gross',data:wkGross,borderColor:CC.amber,backgroundColor:'rgba(0,56,101,0.07)',fill:true,tension:0.1,pointBackgroundColor:CC.amber,pointRadius:2,pointBorderColor:'#fff',pointBorderWidth:1,order:2},
+            {label:'8-Week Trend',data:wkTrend,borderColor:'#ff9e1b',backgroundColor:'transparent',fill:false,tension:0.4,pointRadius:0,borderWidth:2.5,spanGaps:true,order:1}
+          ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,labels:{color:CC.text,font:{size:10},boxWidth:20}}},
       scales:{x:{grid:{color:CC.grid}},y:{grid:{color:CC.grid},ticks:{callback:v=>fmt$(v)}}}}});
 
   dc('sc');
