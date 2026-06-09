@@ -612,11 +612,11 @@ tbody td:last-child{border-right:none;}
     <div class="sidebar-section">
       <span class="sidebar-label">Date Range</span>
       <div class="pill-row" style="flex-wrap:wrap;gap:4px;margin-bottom:8px;">
-        <button class="pill" onclick="setDatePreset('ytd')">YTD</button>
-        <button class="pill" onclick="setDatePreset('tm')">This Mo</button>
-        <button class="pill" onclick="setDatePreset('lm')">Last Mo</button>
-        <button class="pill" onclick="setDatePreset('tq')">This Qtr</button>
-        <button class="pill" onclick="setDatePreset('lq')">Last Qtr</button>
+        <button class="pill" data-preset="ytd" onclick="setDatePreset('ytd')">YTD</button>
+        <button class="pill" data-preset="tm" onclick="setDatePreset('tm')">This Mo</button>
+        <button class="pill" data-preset="lm" onclick="setDatePreset('lm')">Last Mo</button>
+        <button class="pill" data-preset="tq" onclick="setDatePreset('tq')">This Qtr</button>
+        <button class="pill" data-preset="lq" onclick="setDatePreset('lq')">Last Qtr</button>
       </div>
       <span class="sidebar-label">Report Week</span>
       <select id="fDate"><option value="">All Weeks</option></select>
@@ -909,7 +909,7 @@ function setSub(btn, val) {
 function setDatePreset(preset) {
   const now = new Date();
   const y = now.getFullYear();
-  const m = now.getMonth(); // 0-indexed
+  const m = now.getMonth();
   let startDate, endDate;
 
   if (preset === 'ytd') {
@@ -933,25 +933,22 @@ function setDatePreset(preset) {
     endDate = new Date(qYear, qMo+3, 0).toISOString().slice(0,10);
   }
 
-  // Set the week dropdown to the closest matching week
-  const sel = document.getElementById('fDate');
-  const weeks = [...sel.options].map(o=>o.value).filter(v=>v);
-  // Find weeks within range
-  const inRange = weeks.filter(w => w >= startDate && w <= endDate);
-  if (inRange.length === 1) {
-    sel.value = inRange[0];
-  } else {
-    sel.value = '';
-  }
+  // Set date range — do NOT touch week dropdown
+  window._DATE_RANGE = {start: startDate, end: endDate};
 
-  // Filter ALL_DATA by date range directly
-  const dateF = document.getElementById('fDate').value;
-  if (!dateF && inRange.length !== 1) {
-    // Override FILTERED by date range instead of single week
-    window._DATE_RANGE = {start: startDate, end: endDate};
-  } else {
-    window._DATE_RANGE = null;
-  }
+  // Repopulate week dropdown to only show weeks within range
+  const sel = document.getElementById('fDate');
+  const allWeeks = [...new Set(ALL_DATA.map(d=>d.report_date))].sort();
+  const inRange = allWeeks.filter(w => w >= startDate && w <= endDate);
+  const current = sel.value;
+  sel.innerHTML = '<option value="">All Weeks in Range</option>' +
+    inRange.map(w=>`<option value="${w}"${w===current?' selected':''}>${fmtWeek(w)}</option>`).join('');
+
+  // Highlight active preset
+  document.querySelectorAll('[data-preset]').forEach(b=>b.classList.remove('active'));
+  const btn = document.querySelector(`[data-preset="${preset}"]`);
+  if (btn) btn.classList.add('active');
+
   applyFilters();
 }
 
@@ -974,7 +971,8 @@ function applyFilters() {
   FILTERED = ALL_DATA.filter(d => {
     if (window._DATE_RANGE) {
       if (d.report_date < window._DATE_RANGE.start || d.report_date > window._DATE_RANGE.end) return false;
-    } else if (dateF && d.report_date !== dateF) return false;
+    }
+    if (dateF && d.report_date !== dateF) return false;
     if (ACTIVE_TIER && d.tier !== ACTIVE_TIER) return false;
     if (ACTIVE_SUB !== '' && String(d.on_subscription) !== ACTIVE_SUB) return false;
     if (ACTIVE_PEER === '1' && !d.similar_bushnell_cap) return false;
@@ -1010,7 +1008,12 @@ function resetFilters() {
   document.getElementById('fPerfMin').value = '';
   document.getElementById('fPerfMax').value = '';
   document.getElementById('showSearch').value = '';
-  window._DATE_RANGE = null; filterShowList(); setTier(null,''); setSub(null,''); setPeer(null,''); selectAllShows();
+  window._DATE_RANGE = null;
+  document.querySelectorAll('[data-preset]').forEach(b=>b.classList.remove('active'));
+  const sel = document.getElementById('fDate');
+  const allWeeks = [...new Set(ALL_DATA.map(d=>d.report_date))].sort();
+  sel.innerHTML = '<option value="">All Weeks</option>' + allWeeks.map(w=>`<option value="${w}">${fmtWeek(w)}</option>`).join('');
+  filterShowList(); setTier(null,''); setSub(null,''); setPeer(null,''); selectAllShows();
 }
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
