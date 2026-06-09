@@ -309,9 +309,9 @@ tbody td:last-child{border-right:none;}
 }
 .chart-sub{font-size:0.6rem;color:var(--ink3);margin-bottom:14px;}
 .chart-card canvas{display:block;width:100%!important;}
-.chart-card:not(.full) canvas{height:260px!important;}
-.chart-card.full canvas{height:200px!important;}
-#cTheatreSize{height:160px!important;}
+.chart-card:not(.full) canvas{height:380px!important;}
+.chart-card.full canvas{height:220px!important;}
+#cTheatreSize{height:200px!important;}
 
 /* ── RANKINGS ── */
 .rank-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
@@ -610,6 +610,14 @@ tbody td:last-child{border-right:none;}
   <aside class="sidebar">
 
     <div class="sidebar-section">
+      <span class="sidebar-label">Date Range</span>
+      <div class="pill-row" style="flex-wrap:wrap;gap:4px;margin-bottom:8px;">
+        <button class="pill" onclick="setDatePreset('ytd')">YTD</button>
+        <button class="pill" onclick="setDatePreset('tm')">This Mo</button>
+        <button class="pill" onclick="setDatePreset('lm')">Last Mo</button>
+        <button class="pill" onclick="setDatePreset('tq')">This Qtr</button>
+        <button class="pill" onclick="setDatePreset('lq')">Last Qtr</button>
+      </div>
       <span class="sidebar-label">Report Week</span>
       <select id="fDate"><option value="">All Weeks</option></select>
     </div>
@@ -898,6 +906,55 @@ function setSub(btn, val) {
   applyFilters();
 }
 
+function setDatePreset(preset) {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth(); // 0-indexed
+  let startDate, endDate;
+
+  if (preset === 'ytd') {
+    startDate = `${y}-01-01`;
+    endDate = now.toISOString().slice(0,10);
+  } else if (preset === 'tm') {
+    startDate = new Date(y, m, 1).toISOString().slice(0,10);
+    endDate = new Date(y, m+1, 0).toISOString().slice(0,10);
+  } else if (preset === 'lm') {
+    startDate = new Date(y, m-1, 1).toISOString().slice(0,10);
+    endDate = new Date(y, m, 0).toISOString().slice(0,10);
+  } else if (preset === 'tq') {
+    const qStart = Math.floor(m/3)*3;
+    startDate = new Date(y, qStart, 1).toISOString().slice(0,10);
+    endDate = new Date(y, qStart+3, 0).toISOString().slice(0,10);
+  } else if (preset === 'lq') {
+    const qStart = Math.floor(m/3)*3 - 3;
+    const qYear = qStart < 0 ? y-1 : y;
+    const qMo = qStart < 0 ? qStart+12 : qStart;
+    startDate = new Date(qYear, qMo, 1).toISOString().slice(0,10);
+    endDate = new Date(qYear, qMo+3, 0).toISOString().slice(0,10);
+  }
+
+  // Set the week dropdown to the closest matching week
+  const sel = document.getElementById('fDate');
+  const weeks = [...sel.options].map(o=>o.value).filter(v=>v);
+  // Find weeks within range
+  const inRange = weeks.filter(w => w >= startDate && w <= endDate);
+  if (inRange.length === 1) {
+    sel.value = inRange[0];
+  } else {
+    sel.value = '';
+  }
+
+  // Filter ALL_DATA by date range directly
+  const dateF = document.getElementById('fDate').value;
+  if (!dateF && inRange.length !== 1) {
+    // Override FILTERED by date range instead of single week
+    window._DATE_RANGE = {start: startDate, end: endDate};
+  } else {
+    window._DATE_RANGE = null;
+  }
+  applyFilters();
+}
+
 function setPeer(btn, val) {
   ACTIVE_PEER = val;
   document.querySelectorAll('[data-peer]').forEach(b=>b.classList.toggle('active', b.dataset.peer===val));
@@ -915,7 +972,9 @@ function applyFilters() {
   const checked = [...document.querySelectorAll('.sCb:checked')].map(c=>c.value);
 
   FILTERED = ALL_DATA.filter(d => {
-    if (dateF && d.report_date !== dateF) return false;
+    if (window._DATE_RANGE) {
+      if (d.report_date < window._DATE_RANGE.start || d.report_date > window._DATE_RANGE.end) return false;
+    } else if (dateF && d.report_date !== dateF) return false;
     if (ACTIVE_TIER && d.tier !== ACTIVE_TIER) return false;
     if (ACTIVE_SUB !== '' && String(d.on_subscription) !== ACTIVE_SUB) return false;
     if (ACTIVE_PEER === '1' && !d.similar_bushnell_cap) return false;
@@ -951,7 +1010,7 @@ function resetFilters() {
   document.getElementById('fPerfMin').value = '';
   document.getElementById('fPerfMax').value = '';
   document.getElementById('showSearch').value = '';
-  filterShowList(); setTier(null,''); setSub(null,''); setPeer(null,''); selectAllShows();
+  window._DATE_RANGE = null; filterShowList(); setTier(null,''); setSub(null,''); setPeer(null,''); selectAllShows();
 }
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
@@ -1048,7 +1107,8 @@ function renderCharts() {
     data:{labels:se.map(([s])=>s.length>22?s.slice(0,22)+'…':s),
           datasets:[{data:se.map(([,v])=>v),backgroundColor:CC.amber,borderRadius:2}]},
     options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},
-      scales:{x:{grid:{color:CC.grid},ticks:{callback:v=>fmt$(v)}},y:{grid:{display:false}}}}});
+      scales:{x:{grid:{color:CC.grid},ticks:{callback:v=>fmt$(v)}},y:{grid:{display:false}}},
+      datasets:{bar:{maxBarThickness:22,minBarLength:2}}}});
 
   dc('gp');
   const ggS={},ggC={};
@@ -1058,7 +1118,8 @@ function renderCharts() {
     data:{labels:ge.map(([s])=>s.length>22?s.slice(0,22)+'…':s),
           datasets:[{data:ge.map(([,v])=>v),backgroundColor:ge.map(([,v])=>v>100?CC.teal:CC.amber),borderRadius:2}]},
     options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},
-      scales:{x:{grid:{color:CC.grid},ticks:{callback:v=>v+'%'}},y:{grid:{display:false}}}}});
+      scales:{x:{grid:{color:CC.grid},ticks:{callback:v=>v+'%'}},y:{grid:{display:false}}},
+      datasets:{bar:{maxBarThickness:22,minBarLength:2}}}});
 
   dc('wk');
   // Build full weekly spine from first to last date, filling gaps with 0
