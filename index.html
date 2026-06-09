@@ -308,6 +308,10 @@ tbody td:last-child{border-right:none;}
   margin-bottom:4px;
 }
 .chart-sub{font-size:0.6rem;color:var(--ink3);margin-bottom:14px;}
+.chart-card canvas{display:block;width:100%!important;}
+.chart-card:not(.full) canvas{height:260px!important;}
+.chart-card.full canvas{height:200px!important;}
+#cTheatreSize{height:160px!important;}
 
 /* ── RANKINGS ── */
 .rank-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
@@ -416,6 +420,105 @@ tbody td:last-child{border-right:none;}
   font-size:0.68rem;
 }
 .alert-info{background:var(--cobalt-lt);border:1px solid #b5c9e8;color:var(--cobalt);}
+
+/* ── RESPONSIVE ── */
+
+/* Large screens - constrain max width */
+.masthead, .kpi-strip, .workspace {
+  max-width: 3840px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Sidebar toggle button - hidden on desktop */
+.sidebar-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.7);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0 12px;
+  align-items: center;
+}
+
+/* 4K+ scaling */
+@media (min-width: 2560px) {
+  body { font-size: 16px; }
+  .kpi-value { font-size: 2rem; }
+  .chart-card:not(.full) canvas { height: 340px!important; }
+  .chart-card.full canvas { height: 260px!important; }
+}
+
+/* Tablet landscape */
+@media (max-width: 1200px) {
+  .sidebar { width: 190px; }
+}
+
+/* Tablet portrait */
+@media (max-width: 900px) {
+  .sidebar-toggle { display: flex; }
+
+  .sidebar {
+    position: fixed;
+    left: -240px;
+    top: 0;
+    height: 100vh;
+    width: 240px;
+    z-index: 100;
+    transition: left 0.25s ease;
+    box-shadow: 4px 0 20px rgba(0,0,0,0.15);
+  }
+  .sidebar.open { left: 0; }
+
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: 99;
+  }
+  .sidebar-backdrop.open { display: block; }
+
+  .workspace { min-height: calc(100vh - 108px); }
+
+  .kpi-strip {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .kpi-cell { padding: 14px 16px; }
+  .kpi-value { font-size: 1.25rem; }
+
+  .chart-grid { grid-template-columns: 1fr; }
+  .chart-card.full { grid-column: 1; }
+  .chart-card:not(.full) canvas { height: 220px!important; }
+  .chart-card.full canvas { height: 180px!important; }
+
+  .rank-grid { grid-template-columns: 1fr; }
+  .rank-card.full { grid-column: 1; }
+
+  .panel { padding: 16px; }
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .masthead { padding: 0 16px; }
+  .masthead-brand { padding-right: 12px; margin-right: 12px; }
+  .brand-text h1 { font-size: 0.9rem; }
+  .masthead-status { display: none; }
+
+  .kpi-strip { grid-template-columns: repeat(2, 1fr); }
+  .kpi-value { font-size: 1.1rem; }
+
+  .nav-tabs { padding: 0 12px; }
+  .nav-tab { padding: 12px 10px; font-size: 0.58rem; }
+
+  .panel { padding: 12px; }
+  .chart-card { padding: 14px; }
+  .chart-card:not(.full) canvas { height: 180px!important; }
+  .chart-card.full canvas { height: 160px!important; }
+
+  .tbl-wrap { font-size: 0.6rem; }
+}
 </style>
 </head>
 <body>
@@ -440,6 +543,7 @@ tbody td:last-child{border-right:none;}
 
 <!-- MASTHEAD -->
 <header class="masthead">
+  <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle filters">☰</button>
   <div class="masthead-brand">
     <div class="brand-icon">B</div>
     <div class="brand-text">
@@ -499,6 +603,7 @@ tbody td:last-child{border-right:none;}
 </div>
 
 <!-- WORKSPACE -->
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
 <div class="workspace">
 
   <!-- SIDEBAR -->
@@ -630,27 +735,27 @@ tbody td:last-child{border-right:none;}
         <div class="chart-card">
           <div class="chart-hd">Top 12 Shows</div>
           <div class="chart-sub">Total gross — all filtered weeks</div>
-          <canvas id="cShowGross" height="280"></canvas>
+          <canvas id="cShowGross" ></canvas>
         </div>
         <div class="chart-card">
           <div class="chart-hd">Avg GG% of Potential</div>
           <div class="chart-sub">By show — color indicates over/under potential</div>
-          <canvas id="cGgPct" height="280"></canvas>
+          <canvas id="cGgPct" ></canvas>
         </div>
         <div class="chart-card full">
           <div class="chart-hd">Weekly Gross Trend</div>
           <div class="chart-sub">Total gross by report week</div>
-          <canvas id="cWeekly" height="160"></canvas>
+          <canvas id="cWeekly" ></canvas>
         </div>
         <div class="chart-card">
           <div class="chart-hd">% Capacity Paid by Market</div>
           <div class="chart-sub">Top 20 markets — green ≥ 90%, amber 60–89%, red &lt; 60%</div>
-          <canvas id="cMarketCap" height="200"></canvas>
+          <canvas id="cMarketCap" ></canvas>
         </div>
         <div class="chart-card">
           <div class="chart-hd">Subscription vs Non-Subscription</div>
           <div class="chart-sub">Average gross and capacity comparison</div>
-          <canvas id="cSubComp" height="200"></canvas>
+          <canvas id="cSubComp" ></canvas>
         </div>
       </div>
     </div>
@@ -687,7 +792,7 @@ tbody td:last-child{border-right:none;}
           <div class="rank-hd">Capacity Utilization by Theatre Size</div>
           <div class="rank-sub">Seat capacity brackets — average % paid and gross</div>
           <div class="size-grid" id="rTheatreSize"></div>
-          <canvas id="cTheatreSize" height="140"></canvas>
+          <canvas id="cTheatreSize" ></canvas>
         </div>
       </div>
     </div>
@@ -961,7 +1066,7 @@ function renderCharts() {
   CHARTS.wk=new Chart(document.getElementById('cWeekly'),{type:'line',
     data:{labels:weeks.map(w=>fmtWeek(w)),
           datasets:[{data:wkGross,borderColor:CC.amber,backgroundColor:'rgba(0,56,101,0.07)',fill:true,tension:0.35,pointBackgroundColor:CC.amber,pointRadius:3,pointBorderColor:'#fff',pointBorderWidth:2,spanGaps:false}]},
-    options:{responsive:true,plugins:{legend:{display:false}},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
       scales:{x:{grid:{color:CC.grid}},y:{grid:{color:CC.grid},ticks:{callback:v=>fmt$(v)}}}}});
 
   dc('sc');
@@ -975,7 +1080,7 @@ function renderCharts() {
             {label:'Avg Gross',data:[subG||0,nonG||0],backgroundColor:CC.amber,borderRadius:2,yAxisID:'y'},
             {label:'Avg % Cap Paid',data:[subCap||0,nonCap||0],backgroundColor:'rgba(26,78,138,0.65)',borderRadius:2,yAxisID:'y2'}
           ]},
-    options:{responsive:true,plugins:{legend:{labels:{color:CC.text,font:{size:10}}}},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:CC.text,font:{size:10}}}},
       scales:{
         x:{grid:{display:false}},
         y:{grid:{color:CC.grid},position:'left',ticks:{callback:v=>fmt$(v)}},
@@ -989,7 +1094,7 @@ function renderCharts() {
   CHARTS.mc=new Chart(document.getElementById('cMarketCap'),{type:'bar',
     data:{labels:mce.map(([c])=>c),
           datasets:[{data:mce.map(([,v])=>v),backgroundColor:mce.map(([,v])=>v>90?CC.teal:v<60?CC.rose:CC.amber),borderRadius:2}]},
-    options:{responsive:true,plugins:{legend:{display:false}},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
       scales:{x:{grid:{display:false}},y:{grid:{color:CC.grid},min:0,max:110,ticks:{callback:v=>v+'%'}}}}});
 }
 
@@ -1091,12 +1196,19 @@ function renderRankings() {
     data:{labels:sizeData.map(b=>b.label),
           datasets:[{label:'Avg % Cap Paid',data:sizeData.map(b=>b.avgCap||0),backgroundColor:CC.amber,borderRadius:2,yAxisID:'y'},
                     {label:'Avg Gross',data:sizeData.map(b=>b.avgGross||0),backgroundColor:'rgba(26,78,138,0.5)',borderRadius:2,yAxisID:'y2'}]},
-    options:{responsive:true,plugins:{legend:{labels:{color:CC.text,font:{size:10}}}},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:CC.text,font:{size:10}}}},
       scales:{y:{grid:{color:CC.grid},position:'left',ticks:{callback:v=>v+'%'},max:110},
               y2:{grid:{display:false},position:'right',ticks:{callback:v=>fmt$(v)}}}}});
 }
 
 // ── TABS ──────────────────────────────────────────────────────────────────────
+function toggleSidebar() {
+  const sb = document.querySelector('.sidebar');
+  const bd = document.getElementById('sidebarBackdrop');
+  sb.classList.toggle('open');
+  bd.classList.toggle('open');
+}
+
 function showTab(name) {
   const names=['charts','rankings','table'];
   document.querySelectorAll('.nav-tab').forEach((t,i)=>{t.classList.toggle('active',names[i]===name);});
