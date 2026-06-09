@@ -1062,7 +1062,15 @@ function renderCharts() {
       scales:{x:{grid:{color:CC.grid},ticks:{callback:v=>v+'%'}},y:{grid:{display:false}}}}});
 
   dc('wk');
-  const weeks=[...new Set(ALL_DATA.map(d=>d.report_date))].sort();
+  // Build full weekly spine from first to last date, filling gaps with 0
+  const allWeeks=[...new Set(ALL_DATA.map(d=>d.report_date))].sort();
+  const firstDate=new Date(allWeeks[0]);
+  const lastDate=new Date(allWeeks[allWeeks.length-1]);
+  const weekSpine=[];
+  for(let d=new Date(firstDate);d<=lastDate;d.setDate(d.getDate()+7)){
+    weekSpine.push(d.toISOString().slice(0,10));
+  }
+  const weeks=weekSpine;
   const wkGross=weeks.map(w=>{const rows=FILTERED.filter(d=>d.report_date===w&&d.gross_gross);return rows.length?rows.reduce((a,d)=>a+d.gross_gross,0):0;});
   const MA=8;
   const wkTrend=wkGross.map((v,i,arr)=>{
