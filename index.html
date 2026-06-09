@@ -1144,7 +1144,7 @@ function renderCharts() {
             {label:'8-Week Trend',data:wkTrend,borderColor:'#ff9e1b',backgroundColor:'transparent',fill:false,tension:0.4,pointRadius:0,borderWidth:2.5,spanGaps:true,order:1}
           ]},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:true,labels:{color:CC.text,font:{size:10},boxWidth:20}}},
+      plugins:{legend:{display:true,labels:{color:CC.text,font:{size:10,family:"'Libre Franklin', sans-serif"},boxWidth:20}}},
       scales:{x:{grid:{color:CC.grid}},y:{grid:{color:CC.grid},ticks:{callback:v=>fmt$(v)}}}}});
 
   dc('sc');
@@ -1158,7 +1158,7 @@ function renderCharts() {
             {label:'Avg Gross',data:[subG||0,nonG||0],backgroundColor:CC.amber,borderRadius:2,yAxisID:'y'},
             {label:'Avg % Cap Paid',data:[subCap||0,nonCap||0],backgroundColor:'rgba(26,78,138,0.65)',borderRadius:2,yAxisID:'y2'}
           ]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:CC.text,font:{size:10}}}},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:CC.text,font:{size:10,family:"'Libre Franklin', sans-serif"}}}},
       scales:{
         x:{grid:{display:false}},
         y:{grid:{color:CC.grid},position:'left',ticks:{callback:v=>fmt$(v)}},
@@ -1274,7 +1274,7 @@ function renderRankings() {
     data:{labels:sizeData.map(b=>b.label),
           datasets:[{label:'Avg % Cap Paid',data:sizeData.map(b=>b.avgCap||0),backgroundColor:CC.amber,borderRadius:2,yAxisID:'y'},
                     {label:'Avg Gross',data:sizeData.map(b=>b.avgGross||0),backgroundColor:'rgba(26,78,138,0.5)',borderRadius:2,yAxisID:'y2'}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:CC.text,font:{size:10}}}},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:CC.text,font:{size:10,family:"'Libre Franklin', sans-serif"}}}},
       scales:{y:{grid:{color:CC.grid},position:'left',ticks:{callback:v=>v+'%'},max:110},
               y2:{grid:{display:false},position:'right',ticks:{callback:v=>fmt$(v)}}}}});
 }
