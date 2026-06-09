@@ -820,7 +820,7 @@ async function initData() {
     const res = await fetch(DATA_JSON_URL);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
-    ALL_DATA = Array.isArray(json) ? json : (json.value || []);
+    ALL_DATA = (Array.isArray(json) ? json : (json.value || [])).map(d => ({...d, report_date: d.report_date ? d.report_date.substring(0,10) : d.report_date}));
   } catch(e) {
     console.warn('data.json fetch failed:', e);
     ALL_DATA = [];
