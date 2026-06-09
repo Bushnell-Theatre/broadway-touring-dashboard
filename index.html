@@ -1037,8 +1037,9 @@ function dc(id){ if(CHARTS[id]){ CHARTS[id].destroy(); delete CHARTS[id]; } }
 
 function renderCharts() {
   Chart.defaults.color = CC.text;
-  Chart.defaults.font.family = "'IBM Plex Sans', sans-serif";
-  Chart.defaults.font.size = 10;
+  Chart.defaults.font.family = "'Libre Franklin', sans-serif";
+  const chartFontSize = Math.max(10, Math.min(16, Math.round(window.innerWidth / 160)));
+  Chart.defaults.font.size = chartFontSize;
 
   dc('sg');
   const byShow={};
