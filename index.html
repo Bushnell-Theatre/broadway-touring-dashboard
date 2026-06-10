@@ -530,6 +530,19 @@ tbody td:last-child{border-right:none;}
   .tbl-wrap { font-size: 0.6rem; }
 }
 
+
+/* ── FOOTER ── */
+.footer{
+  background:var(--ink);color:rgba(255,255,255,0.45);
+  padding:10px 32px;
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:0.58rem;letter-spacing:0.06em;
+  border-top:1px solid rgba(255,255,255,0.1);
+  flex-shrink:0;
+}
+.footer-left{line-height:1.6;}
+.footer-right{text-align:right;line-height:1.6;}
+.footer strong{color:rgba(255,255,255,0.7);}
 </style>
 </head>
 <body>
@@ -626,7 +639,7 @@ tbody td:last-child{border-right:none;}
   <aside class="sidebar">
 
     <div class="sidebar-section">
-      <span class="sidebar-label">Date Range</span>
+      <span class="sidebar-label">Date Range <span style="font-size:0.5rem;color:var(--ink3);text-transform:none;letter-spacing:0;font-weight:400;">(default: last 3 yrs)</span></span>
       <div class="pill-row" style="flex-wrap:wrap;gap:4px;margin-bottom:8px;">
         <button class="pill" data-preset="3yr" onclick="setDatePreset('3yr')" aria-label="Last 3 years">3 Yrs</button>
         <button class="pill" data-preset="ytd" onclick="setDatePreset('ytd')" aria-label="Year to date">YTD</button>
@@ -1031,7 +1044,14 @@ function soloSearchedShows() {
 function updateDataStatus() {
   const weeks = [...new Set(ALL_DATA.map(d=>d.report_date))];
   document.getElementById('dataStatus').innerHTML =
-    `<strong>${ALL_DATA.length.toLocaleString()}</strong> records · <strong>${weeks.length.toLocaleString()}</strong> weeks · Last report: <strong>${LAST_REPORT_DATE ? fmtWeek(LAST_REPORT_DATE) : '—'}</strong> · v4`;
+    (() => {
+    const wkCount = weeks.length;
+    let span;
+    if (wkCount < 4) span = `${wkCount} week${wkCount!==1?'s':''}`;
+    else if (wkCount < 52) span = `${Math.round(wkCount/4.33)} months`;
+    else { const yrs=Math.floor(wkCount/52); const mos=Math.round((wkCount%52)/4.33); span = mos>0?`${yrs} yr${yrs!==1?'s':''} ${mos} mo`:`${yrs} yr${yrs!==1?'s':''}`; }
+    return `<strong>${ALL_DATA.length.toLocaleString()}</strong> records · <strong>${span}</strong> of data<br><span style="font-size:0.58rem;">Last report: <strong>${LAST_REPORT_DATE ? fmtWeek(LAST_REPORT_DATE) : '—'}</strong></span>`;
+  })();
 }
 
 // ── FILTERS ───────────────────────────────────────────────────────────────────
@@ -1810,5 +1830,16 @@ async function clearAllData() {
 // ── INIT ──────────────────────────────────────────────────────────────────────
 initData();
 </script>
+
+<footer class="footer">
+  <div class="footer-left">
+    <strong>CONFIDENTIAL</strong> — For internal use only. This document contains proprietary data belonging to The Bushnell Center for the Performing Arts.<br>
+    Unauthorized distribution or reproduction is strictly prohibited.
+  </div>
+  <div class="footer-right">
+    Broadway Touring Sales Intelligence · <strong>v4</strong><br>
+    Build date: June 10, 2026
+  </div>
+</footer>
 </body>
 </html>
