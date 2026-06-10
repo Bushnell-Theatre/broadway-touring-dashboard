@@ -623,7 +623,11 @@ tbody td:last-child{border-right:none;}
         <button class="pill" data-preset="tq" onclick="setDatePreset('tq')">This Qtr</button>
         <button class="pill" data-preset="lq" onclick="setDatePreset('lq')">Last Qtr</button>
       </div>
-      <span class="sidebar-label">Report Week</span>
+      <span class="sidebar-label" style="margin-top:8px;display:block;">From</span>
+      <input type="date" id="fDateFrom" style="width:100%;background:var(--bg);border:1px solid var(--rule);color:var(--ink);font-family:var(--mono);font-size:0.65rem;padding:5px 7px;border-radius:2px;outline:none;margin-bottom:6px;" oninput="onDateRangeChange()">
+      <span class="sidebar-label" style="display:block;">To</span>
+      <input type="date" id="fDateTo" style="width:100%;background:var(--bg);border:1px solid var(--rule);color:var(--ink);font-family:var(--mono);font-size:0.65rem;padding:5px 7px;border-radius:2px;outline:none;margin-bottom:8px;" oninput="onDateRangeChange()">
+      <span class="sidebar-label" style="display:block;">Report Week</span>
       <select id="fDate"><option value="">All Weeks</option></select>
     </div>
 
@@ -758,7 +762,7 @@ tbody td:last-child{border-right:none;}
         </div>
         <div class="chart-card full">
           <div class="chart-hd">Weekly Gross Trend</div>
-          <div class="chart-sub">Total gross by report week</div>
+          <div class="chart-sub">Total gross by report week · <span id="weeklyChartNote" style="color:var(--amber)">Default view: last 2 years — use Date Range filter for full history</span></div>
           <canvas id="cWeekly" ></canvas>
         </div>
         <div class="chart-card">
@@ -1230,6 +1234,8 @@ function renderCharts() {
   dc('wk');
   // Build full weekly spine from first to last date, filling gaps with 0
   const hasDateFilter = !!window._DATE_RANGE || !!document.getElementById('fDate').value;
+  const weeklyNote = document.getElementById('weeklyChartNote');
+  if (weeklyNote) weeklyNote.style.display = hasDateFilter ? 'none' : 'inline';
   let weeks;
   if (hasDateFilter) {
     // Full history with spine to show COVID gap
