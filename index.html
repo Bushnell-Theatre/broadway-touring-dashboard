@@ -995,6 +995,8 @@ function setDatePreset(preset) {
 
   // Set date range — do NOT touch week dropdown
   window._DATE_RANGE = {start: startDate, end: endDate};
+  document.getElementById('fDateFrom').value = startDate;
+  document.getElementById('fDateTo').value = endDate;
 
   // Repopulate week dropdown to only show weeks within range
   const sel = document.getElementById('fDate');
@@ -1009,6 +1011,22 @@ function setDatePreset(preset) {
   const btn = document.querySelector(`[data-preset="${preset}"]`);
   if (btn) btn.classList.add('active');
 
+  applyFilters();
+}
+
+function onDateRangeChange() {
+  const from = document.getElementById('fDateFrom').value;
+  const to = document.getElementById('fDateTo').value;
+  if (from || to) {
+    window._DATE_RANGE = {
+      start: from || '2000-01-01',
+      end: to || '2099-12-31'
+    };
+    document.getElementById('fDate').value = '';
+    document.querySelectorAll('[data-preset]').forEach(b=>b.classList.remove('active'));
+  } else {
+    window._DATE_RANGE = null;
+  }
   applyFilters();
 }
 
@@ -1070,6 +1088,8 @@ function resetFilters() {
   document.getElementById('showSearch').value = '';
   window._DATE_RANGE = null;
   document.querySelectorAll('[data-preset]').forEach(b=>b.classList.remove('active'));
+  document.getElementById('fDateFrom').value = '';
+  document.getElementById('fDateTo').value = '';
   const sel = document.getElementById('fDate');
   const allWeeks = [...new Set(ALL_DATA.map(d=>d.report_date))].sort();
   sel.innerHTML = '<option value="">All Weeks</option>' + allWeeks.map(w=>`<option value="${w}">${fmtWeek(w)}</option>`).join('');
