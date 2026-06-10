@@ -1325,7 +1325,15 @@ function renderCharts() {
 
   dc('wk');
   // Build full weekly spine from first to last date, filling gaps with 0
-  const hasDateFilter = !!window._DATE_RANGE || !!document.getElementById('fDate').value;
+  // Use spine if any Sunday in the filtered range is missing from the data
+  const _filteredDates = new Set(FILTERED.map(d=>d.report_date));
+  const _rangeStart = new Date(weeks[0] + 'T12:00:00');
+  const _rangeEnd = new Date(weeks[weeks.length-1] + 'T12:00:00');
+  let hasDateFilter = false;
+  for (let d=new Date(_rangeStart); d<=_rangeEnd; d.setDate(d.getDate()+7)) {
+    const iso = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    if (!_filteredDates.has(iso)) { hasDateFilter = true; break; }
+  }
   const weeklyNote = document.getElementById('weeklyChartNote');
   if (weeklyNote) weeklyNote.style.display = hasDateFilter ? 'none' : 'inline';
   let weeks;
