@@ -811,11 +811,8 @@ tbody td:last-child{border-right:none;}
       </div>
     </div>
 
-  </div>
-</div>
-
-<!-- ANALYTICS PANEL (placeholder) -->
-<div class="panel" id="tab-analytics" style="display:none;padding:24px 28px;">
+    <!-- ANALYTICS PANEL -->
+<div class="panel" id="tab-analytics">
   <div class="section-divider">
     <h2>Analytics &amp; Insights</h2>
     <div class="section-divider-line"></div>
@@ -855,7 +852,7 @@ tbody td:last-child{border-right:none;}
 
     <div class="chart-card">
       <div class="chart-hd">No Engagement Rate</div>
-      <div class="chart-sub">% of report weeks with no engagement by market</div>
+      <div class="chart-sub">% of report weeks with no engagement — by show, min 3 weeks</div>
       <canvas id="cNoEng"></canvas>
     </div>
 
@@ -864,6 +861,9 @@ tbody td:last-child{border-right:none;}
       <div class="chart-sub">Weekly avg % capacity — Bushnell-size venues vs all others</div>
       <canvas id="cPeerGap"></canvas>
     </div>
+
+  </div>
+</div>
 
   </div>
 </div>
@@ -1433,20 +1433,24 @@ function renderAnalytics() {
       tooltip:{callbacks:{label:ctx=>`CV: ${ctx.raw}% · Avg: ${fmt$(conArr[ctx.dataIndex].mean)} · ${conArr[ctx.dataIndex].n} wks`}}},
       scales:{x:{grid:{color:CC.grid},ticks:{callback:v=>v+'%'}},y:{grid:{display:false}}}}});
 
-  // ── No Engagement Rate ────────────────────────────────────────────────────
+  // ── No Engagement Rate by Show ────────────────────────────────────────────
   dc('ne');
-  const mktTotal={},mktNone={};
+  const showTotal={},showNone={};
   FILTERED.forEach(d=>{
-    if(!d.city) return;
-    mktTotal[d.city]=(mktTotal[d.city]||0)+1;
-    if(d.noengagement) mktNone[d.city]=(mktNone[d.city]||0)+1;
+    if(!d.show) return;
+    showTotal[d.show]=(showTotal[d.show]||0)+1;
+    if(d.noengagement) showNone[d.show]=(showNone[d.show]||0)+1;
   });
-  const neArr = Object.entries(mktTotal).filter(([,v])=>v>=3)
-    .map(([c,t])=>({c,pct:((mktNone[c]||0)/t)*100})).sort((a,b)=>b.pct-a.pct).slice(0,15);
+  const neArr = Object.entries(showTotal).filter(([,v])=>v>=3&&showNone[v]>0)
+    .map(([s,t])=>({s,pct:((showNone[s]||0)/t)*100,none:showNone[s]||0,total:t}))
+    .filter(d=>d.pct>0)
+    .sort((a,b)=>b.pct-a.pct).slice(0,15);
   CHARTS.ne = new Chart(document.getElementById('cNoEng'), {type:'bar',
-    data:{labels:neArr.map(d=>d.c),
+    data:{labels:neArr.map(d=>d.s.length>24?d.s.slice(0,24)+'…':d.s),
           datasets:[{data:neArr.map(d=>Math.round(d.pct*10)/10),backgroundColor:CC.rose,borderRadius:2}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:ctx=>`${ctx.raw}% · ${neArr[ctx.dataIndex].none} of ${neArr[ctx.dataIndex].total} weeks`}}},
       scales:{x:{grid:{color:CC.grid},ticks:{callback:v=>v+'%'}},y:{grid:{display:false}}}}});
 
   // ── Bushnell vs Peer Gap ──────────────────────────────────────────────────
@@ -1457,8 +1461,8 @@ function renderAnalytics() {
   CHARTS.pg = new Chart(document.getElementById('cPeerGap'), {type:'line',
     data:{labels:pgWeeks.map(w=>fmtWeek(w)),
           datasets:[
-            {label:'Peer Venues',data:pgPeer,borderColor:CC.amber,backgroundColor:'rgba(0,56,101,0.07)',fill:true,tension:0.3,pointRadius:2,borderWidth:2,spanGaps:true},
-            {label:'All Others',data:pgAll,borderColor:CC.cobalt,backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:2,borderWidth:1.5,spanGaps:true}
+            {label:'Peer Venues',data:pgPeer,borderColor:CC.amber,backgroundColor:'rgba(0,56,101,0.07)',fill:true,tension:0.3,pointRadius:2,borderWidth:2.5,spanGaps:true},
+            {label:'All Others',data:pgAll,borderColor:CC.rose,backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:2,borderWidth:1.5,spanGaps:true}
           ]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{labels:{color:CC.text,font:{size:10},boxWidth:16}}},
