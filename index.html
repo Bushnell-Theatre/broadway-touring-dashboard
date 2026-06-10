@@ -929,7 +929,7 @@ function boot() {
 }
 
 function populateWeekDropdown() {
-  const weeks = [...new Set(ALL_DATA.map(d=>d.report_date))].sort();
+  const weeks = [...new Set(ALL_DATA.map(d=>d.report_date))].sort().reverse();
   const sel = document.getElementById('fDate');
   sel.innerHTML = '<option value="">All Weeks</option>' +
     weeks.map(w=>`<option value="${w}">${fmtWeek(w)}</option>`).join('');
@@ -1023,7 +1023,7 @@ function setDatePreset(preset) {
   // Repopulate week dropdown to only show weeks within range
   const sel = document.getElementById('fDate');
   const allWeeks = [...new Set(ALL_DATA.map(d=>d.report_date))].sort();
-  const inRange = allWeeks.filter(w => w >= startDate && w <= endDate);
+  const inRange = allWeeks.filter(w => w >= startDate && w <= endDate).reverse();
   const current = sel.value;
   sel.innerHTML = '<option value="">All Weeks in Range</option>' +
     inRange.map(w=>`<option value="${w}"${w===current?' selected':''}>${fmtWeek(w)}</option>`).join('');
