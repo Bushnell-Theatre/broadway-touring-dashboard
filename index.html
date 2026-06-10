@@ -866,7 +866,7 @@ tbody td:last-child{border-right:none;}
 
     <div class="chart-card">
       <div class="chart-hd">No Engagement Rate</div>
-      <div class="chart-sub">% of report weeks with no engagement — by show, min 3 weeks</div>
+      <div class="chart-sub">Shows with both active and dark weeks — dark week % of total appearances, min 3 active weeks</div>
       <canvas id="cNoEng" role="img" aria-label="No engagement rate by show"></canvas>
     </div>
 
@@ -1641,24 +1641,34 @@ function renderAnalytics() {
       tooltip:{callbacks:{label:ctx=>`CV: ${ctx.raw}% · Avg: ${fmt$(conArr[ctx.dataIndex].mean)} · ${conArr[ctx.dataIndex].n} wks`}}},
       scales:{x:{grid:{color:CC.grid},ticks:{callback:v=>v+'%'}},y:{grid:{display:false}}}}});
 
-  // ── No Engagement Rate by Show ────────────────────────────────────────────
+  // ── Dark Week Rate by Show (shows with BOTH active and dark weeks) ──────────
   dc('ne');
-  const showTotal={},showNone={};
+  const showActive={},showDark={};
   FILTERED.forEach(d=>{
     if(!d.show) return;
-    showTotal[d.show]=(showTotal[d.show]||0)+1;
-    if(d.noengagement) showNone[d.show]=(showNone[d.show]||0)+1;
+    if(d.noengagement) showDark[d.show]=(showDark[d.show]||0)+1;
+    else showActive[d.show]=(showActive[d.show]||0)+1;
   });
-  const neArr = Object.entries(showTotal).filter(([s,v])=>v>=3&&(showNone[s]||0)>0)
-    .map(([s,t])=>({s,pct:((showNone[s]||0)/t)*100,none:showNone[s]||0,total:t}))
-    .filter(d=>d.pct>0)
+  // Only shows with BOTH active and dark weeks, min 3 active weeks
+  const neArr = Object.keys(showActive)
+    .filter(s=>showActive[s]>=3 && (showDark[s]||0)>0)
+    .map(s=>({
+      s,
+      pct:((showDark[s])/(showActive[s]+showDark[s]))*100,
+      dark:showDark[s],
+      active:showActive[s],
+      total:showActive[s]+showDark[s]
+    }))
     .sort((a,b)=>b.pct-a.pct).slice(0,15);
   CHARTS.ne = new Chart(document.getElementById('cNoEng'), {type:'bar',
     data:{labels:neArr.map(d=>d.s.length>24?d.s.slice(0,24)+'…':d.s),
           datasets:[{data:neArr.map(d=>Math.round(d.pct*10)/10),backgroundColor:CC.rose,borderRadius:2}]},
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},
-        tooltip:{callbacks:{title:ctx=>[neArr[ctx[0].dataIndex].s],label:ctx=>`No engagement: ${ctx.raw}% · ${neArr[ctx[0].dataIndex].none} of ${neArr[ctx[0].dataIndex].total} weeks`}}},
+        tooltip:{callbacks:{
+          title:ctx=>[neArr[ctx[0].dataIndex].s],
+          label:ctx=>`Dark weeks: ${ctx.raw}% · ${neArr[ctx[0].dataIndex].dark} dark, ${neArr[ctx[0].dataIndex].active} active of ${neArr[ctx[0].dataIndex].total} total`
+        }}},
       scales:{x:{grid:{color:CC.grid},ticks:{callback:v=>v+'%'}},y:{grid:{display:false}}}}});
 
   // ── Bushnell vs Peer Gap ──────────────────────────────────────────────────
