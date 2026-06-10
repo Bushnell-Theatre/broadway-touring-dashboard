@@ -14,7 +14,7 @@
 :root {
   --ink:       #141414;
   --ink2:      #3a3a3a;
-  --ink3:      #6b6b6b;
+  --ink3:      #595959;
   --rule:      #d8d4ce;
   --rule2:     #ece9e4;
   --bg:        #fdf8f4;
@@ -190,6 +190,11 @@ select:focus{border-color:var(--amber);outline:none;}
   color:var(--amber);background:var(--amber-lt);
 }
 .pill:hover:not(.active){border-color:var(--ink3);color:var(--ink2);}
+.pill:focus{outline:2px solid var(--amber);outline-offset:2px;}
+.btn:focus{outline:2px solid var(--amber);outline-offset:2px;}
+.nav-tab:focus{outline:2px solid var(--amber);outline-offset:-2px;}
+select:focus{outline:2px solid var(--amber);outline-offset:0;}
+input[type=date]:focus,input[type=number]:focus,input[type=text]:focus{outline:2px solid var(--amber);outline-offset:0;}
 
 .range-row{display:flex;gap:6px;align-items:center;}
 .range-row input[type=number]{
@@ -548,7 +553,7 @@ tbody td:last-child{border-right:none;}
 
 <!-- MASTHEAD -->
 <header class="masthead">
-  <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle filters">☰</button>
+  <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle filters panel" aria-expanded="false" id="sidebarToggle">☰</button>
   <div class="masthead-brand">
     <div class="brand-icon">B</div>
     <div class="brand-text">
@@ -561,7 +566,7 @@ tbody td:last-child{border-right:none;}
     <span id="dataStatus"><strong>–</strong> records · <strong>–</strong> weeks · v3</span>
   </div>
   <div class="masthead-actions">
-    <button class="btn btn-outline" onclick="clearAllData()">↺ Reset</button>
+    <button class="btn btn-outline" onclick="clearAllData()" aria-label="Reload data from source">↺ Reset</button>
     <!-- Import button — commented out pending Power Automate / SharePoint List wiring
     <button class="btn btn-primary" onclick="openImport()">+ Import Week</button>
     -->
@@ -617,43 +622,43 @@ tbody td:last-child{border-right:none;}
     <div class="sidebar-section">
       <span class="sidebar-label">Date Range</span>
       <div class="pill-row" style="flex-wrap:wrap;gap:4px;margin-bottom:8px;">
-        <button class="pill" data-preset="ytd" onclick="setDatePreset('ytd')">YTD</button>
-        <button class="pill" data-preset="tm" onclick="setDatePreset('tm')">This Mo</button>
-        <button class="pill" data-preset="lm" onclick="setDatePreset('lm')">Last Mo</button>
-        <button class="pill" data-preset="tq" onclick="setDatePreset('tq')">This Qtr</button>
-        <button class="pill" data-preset="lq" onclick="setDatePreset('lq')">Last Qtr</button>
+        <button class="pill" data-preset="ytd" onclick="setDatePreset('ytd')" aria-label="Year to date">YTD</button>
+        <button class="pill" data-preset="tm" onclick="setDatePreset('tm')" aria-label="This month">This Mo</button>
+        <button class="pill" data-preset="lm" onclick="setDatePreset('lm')" aria-label="Last month">Last Mo</button>
+        <button class="pill" data-preset="tq" onclick="setDatePreset('tq')" aria-label="This quarter">This Qtr</button>
+        <button class="pill" data-preset="lq" onclick="setDatePreset('lq')" aria-label="Last quarter">Last Qtr</button>
       </div>
-      <span class="sidebar-label" style="margin-top:8px;display:block;">From</span>
+      <label for="fDateFrom" class="sidebar-label" style="margin-top:8px;display:block;">From</label>
       <input type="date" id="fDateFrom" style="width:100%;background:var(--bg);border:1px solid var(--rule);color:var(--ink);font-family:var(--mono);font-size:0.65rem;padding:5px 7px;border-radius:2px;outline:none;margin-bottom:6px;" oninput="onDateRangeChange()">
-      <span class="sidebar-label" style="display:block;">To</span>
+      <label for="fDateTo" class="sidebar-label" style="display:block;">To</label>
       <input type="date" id="fDateTo" style="width:100%;background:var(--bg);border:1px solid var(--rule);color:var(--ink);font-family:var(--mono);font-size:0.65rem;padding:5px 7px;border-radius:2px;outline:none;margin-bottom:8px;" oninput="onDateRangeChange()">
-      <span class="sidebar-label" style="display:block;">Report Week</span>
+      <label for="fDate" class="sidebar-label" style="display:block;">Report Week</label>
       <select id="fDate"><option value="">All Weeks</option></select>
     </div>
 
     <div class="sidebar-section">
       <span class="sidebar-label">Tier</span>
       <div class="pill-row">
-        <button class="pill active" data-tier="" onclick="setTier(this,'')">All</button>
-        <button class="pill" data-tier="Primary" onclick="setTier(this,'Primary')">Primary</button>
-        <button class="pill" data-tier="Secondary" onclick="setTier(this,'Secondary')">Secondary</button>
+        <button class="pill active" data-tier="" onclick="setTier(this,'')" aria-label="All tiers">All</button>
+        <button class="pill" data-tier="Primary" onclick="setTier(this,'Primary')" aria-label="Primary tier">Primary</button>
+        <button class="pill" data-tier="Secondary" onclick="setTier(this,'Secondary')" aria-label="Secondary tier">Secondary</button>
       </div>
     </div>
 
     <div class="sidebar-section">
       <span class="sidebar-label">Subscription</span>
       <div class="pill-row">
-        <button class="pill active" data-sub="" onclick="setSub(this,'')">All</button>
-        <button class="pill" data-sub="1" onclick="setSub(this,'1')">Sub</button>
-        <button class="pill" data-sub="0" onclick="setSub(this,'0')">Non-Sub</button>
+        <button class="pill active" data-sub="" onclick="setSub(this,'')" aria-label="All subscriptions">All</button>
+        <button class="pill" data-sub="1" onclick="setSub(this,'1')" aria-label="Subscribed only">Sub</button>
+        <button class="pill" data-sub="0" onclick="setSub(this,'0')" aria-label="Non-subscribed only">Non-Sub</button>
       </div>
     </div>
 
     <div class="sidebar-section">
       <span class="sidebar-label">Peer Venues</span>
       <div class="pill-row">
-        <button class="pill active" data-peer="" onclick="setPeer(this,'')">All</button>
-        <button class="pill" data-peer="1" onclick="setPeer(this,'1')">Peer Only</button>
+        <button class="pill active" data-peer="" onclick="setPeer(this,'')" aria-label="All venues">All</button>
+        <button class="pill" data-peer="1" onclick="setPeer(this,'1')" aria-label="Peer venues only">Peer Only</button>
       </div>
     </div>
 
@@ -697,7 +702,7 @@ tbody td:last-child{border-right:none;}
     </div>
 
     <div class="sidebar-section">
-      <button class="btn btn-ghost" style="width:100%;font-family:var(--sans);" onclick="resetFilters()">↺ Reset All Filters</button>
+      <button class="btn btn-ghost" style="width:100%;font-family:var(--sans);" onclick="resetFilters()" aria-label="Reset all filters to default">↺ Reset All Filters</button>
     </div>
 
   </aside>
@@ -705,7 +710,7 @@ tbody td:last-child{border-right:none;}
   <!-- MAIN PANE -->
   <div class="main-pane">
 
-    <nav class="nav-tabs">
+    <nav class="nav-tabs" aria-label="Dashboard sections">
       <div class="nav-tab active" onclick="showTab('charts')">Charts</div>
       <div class="nav-tab" onclick="showTab('rankings')">Rankings</div>
       <div class="nav-tab" onclick="showTab('table')">Data Table</div>
@@ -827,43 +832,43 @@ tbody td:last-child{border-right:none;}
     <div class="chart-card" style="grid-column:1/-1;">
       <div class="chart-hd">Seasonality</div>
       <div class="chart-sub">Avg gross by week-of-year across all years — shows seasonal patterns</div>
-      <canvas id="cSeasonality"></canvas>
+      <canvas id="cSeasonality" role="img" aria-label="Seasonality chart average gross by week of year"></canvas>
     </div>
 
     <div class="chart-card" style="grid-column:1/-1;">
       <div class="chart-hd">Year over Year Comparison</div>
       <div class="chart-sub">Total weekly gross by year — overlaid for comparison</div>
-      <canvas id="cYoY"></canvas>
+      <canvas id="cYoY" role="img" aria-label="Year over year gross comparison"></canvas>
     </div>
 
     <div class="chart-card">
       <div class="chart-hd">Show Longevity</div>
       <div class="chart-sub">Number of weeks each show ran — top 20</div>
-      <canvas id="cLongevity"></canvas>
+      <canvas id="cLongevity" role="img" aria-label="Show longevity number of weeks per show"></canvas>
     </div>
 
     <div class="chart-card">
       <div class="chart-hd">Top Shows by % Capacity</div>
       <div class="chart-sub">Avg % capacity paid — ranked, min 3 weeks</div>
-      <canvas id="cCapRank"></canvas>
+      <canvas id="cCapRank" role="img" aria-label="Top shows by percent capacity"></canvas>
     </div>
 
     <div class="chart-card">
       <div class="chart-hd">Most Consistent Shows</div>
       <div class="chart-sub">Lowest std deviation in weekly gross — min 5 weeks</div>
-      <canvas id="cConsistency"></canvas>
+      <canvas id="cConsistency" role="img" aria-label="Most consistent shows by gross variance"></canvas>
     </div>
 
     <div class="chart-card">
       <div class="chart-hd">No Engagement Rate</div>
       <div class="chart-sub">% of report weeks with no engagement — by show, min 3 weeks</div>
-      <canvas id="cNoEng"></canvas>
+      <canvas id="cNoEng" role="img" aria-label="No engagement rate by show"></canvas>
     </div>
 
     <div class="chart-card" style="grid-column:1/-1;">
       <div class="chart-hd">Bushnell vs Peer Gap</div>
       <div class="chart-sub">Weekly avg % capacity — Bushnell-size venues vs all others</div>
-      <canvas id="cPeerGap"></canvas>
+      <canvas id="cPeerGap" role="img" aria-label="Bushnell versus peer venue capacity gap"></canvas>
     </div>
 
   </div>
