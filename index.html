@@ -1261,7 +1261,7 @@ function renderCharts() {
   const wkGross=weeks.map(w=>{const rows=FILTERED.filter(d=>d.report_date===w&&d.gross_gross);return rows.length?rows.reduce((a,d)=>a+d.gross_gross,0):0;});
   const MA=8;
   const wkTrend=wkGross.map((v,i,arr)=>{
-    const slice=arr.slice(Math.max(0,i-MA+1),i+1).filter(x=>x>0);
+    const slice=arr.slice(Math.max(0,i-MA+1),i+1);
     return slice.length?slice.reduce((a,b)=>a+b,0)/slice.length:null;
   });
   CHARTS.wk=new Chart(document.getElementById('cWeekly'),{type:'line',
@@ -1335,9 +1335,15 @@ function renderRankings() {
   mkRankList('rShowGross',sgArr,d=>d._val,()=>'cumulative gross',fmt$,sgArr[0]?._val);
 
   const weeks=[...new Set(FILTERED.map(d=>d.report_date))].sort();
-  if(weeks.length>=2){
+  const wowLabel=document.getElementById('wowWeekLabel');
+  if(weeks.length===0){
+    if(wowLabel) wowLabel.textContent='';
+    document.getElementById('rShowWow').innerHTML='<div class="no-data">No data matches current filters</div>';
+  } else if(weeks.length===1){
+    if(wowLabel) wowLabel.textContent='';
+    document.getElementById('rShowWow').innerHTML='<div class="no-data">Only one week in current filter — select a wider date range to see week-over-week changes</div>';
+  } else {
     const w1=weeks[weeks.length-2],w2=weeks[weeks.length-1];
-    const wowLabel=document.getElementById('wowWeekLabel');
     if(wowLabel) wowLabel.textContent=fmtWeek(w1)+' → '+fmtWeek(w2);
     const ww=[];
     const showsW2=[...new Set(FILTERED.filter(d=>d.report_date===w2&&d.gross_gross).map(d=>d.show))];
@@ -1372,10 +1378,8 @@ function renderRankings() {
           }).join('')}</tbody>
         </table>`;
     } else {
-      document.getElementById('rShowWow').innerHTML='<div class="no-data">Need 2+ weeks of data for same show</div>';
+      document.getElementById('rShowWow').innerHTML='<div class="no-data">No shows appear in both ' + fmtWeek(w1) + ' and ' + fmtWeek(w2) + ' — try a wider date range</div>';
     }
-  } else {
-    document.getElementById('rShowWow').innerHTML='<div class="no-data">Need 2+ weeks for comparison</div>';
   }
 
   const mg={};
@@ -1422,63 +1426,125 @@ function toggleSidebar() {
 }
 
 
+// ISO week number (1-53, Monday-based, consistent across years)
+function isoWeek(date) {
+  const d = new Date(date);
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate() + 4 - (d.getDay()||7));
+  const yearStart = new Date(d.getFullYear(),0,1);
+  return Math.ceil((((d - yearStart) / 86400000) + 1)/7);
+}
+
+let SEASON_MODE = 'week';
+let YOY_MODE = 'week';
+
+function setSeasonMode(mode) {
+  SEASON_MODE = mode;
+  document.getElementById('btnSeasonWeek').classList.toggle('active', mode==='week');
+  document.getElementById('btnSeasonMonth').classList.toggle('active', mode==='month');
+  renderAnalytics();
+}
+
+function setYoYMode(mode) {
+  YOY_MODE = mode;
+  document.getElementById('btnYoYWeek').classList.toggle('active', mode==='week');
+  document.getElementById('btnYoYMonth').classList.toggle('active', mode==='month');
+  renderAnalytics();
+}
+
 function renderAnalytics() {
   // ── Seasonality ───────────────────────────────────────────────────────────
   dc('sa');
-  const byWeekNum = {};
-  FILTERED.forEach(d => {
-    if (!d.report_date || !d.gross_gross) return;
-    const dt = new Date(d.report_date);
-    const wn = Math.ceil(((dt - new Date(dt.getFullYear(),0,1))/86400000 + 1)/7);
-    byWeekNum[wn] = byWeekNum[wn] || [];
-    byWeekNum[wn].push(d.gross_gross);
-  });
-  const wnKeys = Object.keys(byWeekNum).map(Number).sort((a,b)=>a-b);
-  const wnAvg = wnKeys.map(wn => byWeekNum[wn].reduce((a,b)=>a+b,0)/byWeekNum[wn].length);
-  const monthStarts = {1:'Jan',14:'Apr',27:'Jul',40:'Oct'};
-  CHARTS.sa = new Chart(document.getElementById('cSeasonality'), {type:'bar',
-    data:{labels:wnKeys.map(w=>`Wk ${w}`),
-          datasets:[{data:wnAvg,backgroundColor:CC.amber,borderRadius:2}]},
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{
-        legend:{display:false},
-        tooltip:{callbacks:{
-          title:ctx=>`Week ${wnKeys[ctx[0].dataIndex]}`,
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const quarterStarts = {1:'Jan',14:'Apr',27:'Jul',40:'Oct'};
+  if (SEASON_MODE === 'week') {
+    const byWN = {};
+    FILTERED.forEach(d => {
+      if (!d.report_date || !d.gross_gross) return;
+      const wn = isoWeek(d.report_date);
+      byWN[wn] = byWN[wn] || [];
+      byWN[wn].push(d.gross_gross);
+    });
+    const wnKeys = Object.keys(byWN).map(Number).sort((a,b)=>a-b);
+    const wnAvg = wnKeys.map(wn => byWN[wn].reduce((a,b)=>a+b,0)/byWN[wn].length);
+    CHARTS.sa = new Chart(document.getElementById('cSeasonality'), {type:'bar',
+      data:{labels:wnKeys.map(w=>`Wk ${w}`),
+            datasets:[{data:wnAvg,backgroundColor:CC.amber,borderRadius:2}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{
+          title:ctx=>`ISO Week ${wnKeys[ctx[0].dataIndex]}`,
           label:ctx=>`Avg Gross: ${fmt$(ctx.raw)}`
-        }}
-      },
-      scales:{
-        x:{grid:{display:false},ticks:{callback:(v,i)=>{
-          const wn=wnKeys[i];
-          return monthStarts[wn]||'';
-        },maxRotation:0,autoSkip:false}},
-        y:{grid:{color:CC.grid},ticks:{callback:v=>fmt$(v)}}
-      }}});
+        }}},
+        scales:{
+          x:{grid:{display:false},ticks:{callback:(v,i)=>quarterStarts[wnKeys[i]]||'',maxRotation:0,autoSkip:false}},
+          y:{grid:{color:CC.grid},ticks:{callback:v=>fmt$(v)}}
+        }}});
+  } else {
+    const byMo = {};
+    FILTERED.forEach(d => {
+      if (!d.report_date || !d.gross_gross) return;
+      const mo = parseInt(d.report_date.slice(5,7));
+      byMo[mo] = byMo[mo] || [];
+      byMo[mo].push(d.gross_gross);
+    });
+    const moKeys = Object.keys(byMo).map(Number).sort((a,b)=>a-b);
+    const moAvg = moKeys.map(mo => byMo[mo].reduce((a,b)=>a+b,0)/byMo[mo].length);
+    CHARTS.sa = new Chart(document.getElementById('cSeasonality'), {type:'bar',
+      data:{labels:moKeys.map(m=>MONTHS[m-1]),
+            datasets:[{data:moAvg,backgroundColor:CC.amber,borderRadius:2}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`Avg Gross: ${fmt$(ctx.raw)}`}}},
+        scales:{
+          x:{grid:{display:false}},
+          y:{grid:{color:CC.grid},ticks:{callback:v=>fmt$(v)}}
+        }}});
+  }
 
   // ── Year over Year ────────────────────────────────────────────────────────
   dc('yy');
   const years = [...new Set(FILTERED.map(d=>d.report_date?.slice(0,4)))].filter(Boolean).sort();
-  const weekNums = [...Array(53).keys()].map(i=>i+1);
   const palette = ['#003865','#1A4E8A','#6798b9','#0A6B5E','#ff9e1b','#B0303A','#6b6b6b'];
-  const yyDatasets = years.map((y,i) => {
-    const byWn = {};
-    FILTERED.filter(d=>d.report_date?.startsWith(y)&&d.gross_gross).forEach(d=>{
-      const dt=new Date(d.report_date);
-      const wn=Math.ceil(((dt-new Date(dt.getFullYear(),0,1))/86400000+1)/7);
-      byWn[wn]=(byWn[wn]||0)+d.gross_gross;
+  if (YOY_MODE === 'week') {
+    const isoWeekNums = [...Array(53).keys()].map(i=>i+1);
+    const yyDS = years.map((y,i) => {
+      const byWn = {};
+      FILTERED.filter(d=>d.report_date?.startsWith(y)&&d.gross_gross).forEach(d=>{
+        const wn=isoWeek(d.report_date);
+        byWn[wn]=(byWn[wn]||0)+d.gross_gross;
+      });
+      return {label:y,data:isoWeekNums.map(wn=>byWn[wn]||null),
+        borderColor:palette[i%palette.length],backgroundColor:'transparent',
+        fill:false,tension:0.3,pointRadius:2,borderWidth:1.5,spanGaps:true};
     });
-    return {label:y,data:weekNums.map(wn=>byWn[wn]||null),
-      borderColor:palette[i%palette.length],backgroundColor:'transparent',
-      fill:false,tension:0.3,pointRadius:2,borderWidth:1.5,spanGaps:true};
-  });
-  CHARTS.yy = new Chart(document.getElementById('cYoY'), {type:'line',
-    data:{labels:weekNums.map(w=>`Wk ${w}`),datasets:yyDatasets},
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{
-        legend:{labels:{color:CC.text,font:{size:9},boxWidth:12}},
-        tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${fmt$(ctx.raw)}`}}
-      },
-      scales:{x:{grid:{color:CC.grid}},y:{grid:{color:CC.grid},ticks:{callback:v=>fmt$(v)}}}}});
+    CHARTS.yy = new Chart(document.getElementById('cYoY'), {type:'line',
+      data:{labels:isoWeekNums.map(w=>`Wk ${w}`),datasets:yyDS},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{
+          legend:{labels:{color:CC.text,font:{size:9},boxWidth:12}},
+          tooltip:{callbacks:{title:ctx=>`ISO Week ${ctx[0].label}`,label:ctx=>`${ctx.dataset.label}: ${fmt$(ctx.raw)}`}}
+        },
+        scales:{x:{grid:{color:CC.grid}},y:{grid:{color:CC.grid},ticks:{callback:v=>fmt$(v)}}}}});
+  } else {
+    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const yyDS = years.map((y,i) => {
+      const byMo = {};
+      FILTERED.filter(d=>d.report_date?.startsWith(y)&&d.gross_gross).forEach(d=>{
+        const mo=d.report_date.slice(5,7);
+        byMo[mo]=(byMo[mo]||0)+d.gross_gross;
+      });
+      return {label:y,data:MONTHS.map((_,mi)=>byMo[String(mi+1).padStart(2,'0')]||null),
+        borderColor:palette[i%palette.length],backgroundColor:'transparent',
+        fill:false,tension:0.3,pointRadius:3,borderWidth:1.5,spanGaps:true};
+    });
+    CHARTS.yy = new Chart(document.getElementById('cYoY'), {type:'line',
+      data:{labels:MONTHS,datasets:yyDS},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{
+          legend:{labels:{color:CC.text,font:{size:9},boxWidth:12}},
+          tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${fmt$(ctx.raw)}`}}
+        },
+        scales:{x:{grid:{color:CC.grid}},y:{grid:{color:CC.grid},ticks:{callback:v=>fmt$(v)}}}}});
+  }
 
   // ── Show Longevity ────────────────────────────────────────────────────────
   dc('lo');
