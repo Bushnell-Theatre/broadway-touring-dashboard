@@ -880,7 +880,29 @@ async function initData() {
     const res = await fetch(DATA_JSON_URL);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
-    ALL_DATA = (Array.isArray(json) ? json : (json.value || [])).map(d => ({...d, report_date: d.report_date ? d.report_date.substring(0,10) : d.report_date}));
+    ALL_DATA = (Array.isArray(json) ? json : (json.value || [])).map(d => {
+      // Snap report_date to nearest Sunday
+      let rd = null;
+      if (d.report_date) {
+        const base = d.report_date.slice(0,10);
+        const dt = new Date(base + 'T12:00:00');
+        const day = dt.getDay();
+        const diff = day === 0 ? 0 : day <= 3 ? -day : 7 - day;
+        dt.setDate(dt.getDate() + diff);
+        rd = dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+      }
+      return {
+        ...d,
+        report_date: rd,
+        on_subscription: d.on_subscription === true ? 1 : d.on_subscription === false ? 0 : d.on_subscription,
+        similar_bushnell_cap: !!d.similar_bushnell_cap,
+        noengagement: !!d.noengagement,
+        total_capacity: d.total_capacity != null ? Math.round(d.total_capacity) : null,
+        paid_tickets: d.paid_tickets != null ? Math.round(d.paid_tickets) : null,
+        total_tickets: d.total_tickets != null ? Math.round(d.total_tickets) : null,
+        num_performances: d.num_performances != null ? Math.round(d.num_performances) : null,
+      };
+    });
   } catch(e) {
     console.warn('data.json fetch failed:', e);
     ALL_DATA = [];
