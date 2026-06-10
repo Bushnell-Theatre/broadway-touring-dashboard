@@ -1221,7 +1221,8 @@ function renderCharts() {
   CHARTS.sg=new Chart(document.getElementById('cShowGross'),{type:'bar',
     data:{labels:se.map(([s])=>s.length>22?s.slice(0,22)+'…':s),
           datasets:[{data:se.map(([,v])=>v),backgroundColor:CC.amber,borderRadius:2}]},
-    options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},
+    options:{indexAxis:'y',responsive:true,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`Total Gross: ${fmt$(ctx.raw)}`}}},
       scales:{x:{grid:{color:CC.grid},ticks:{callback:v=>fmt$(v)}},y:{grid:{display:false}}},
       datasets:{bar:{maxBarThickness:22,minBarLength:2}}}});
 
@@ -1232,7 +1233,8 @@ function renderCharts() {
   CHARTS.gp=new Chart(document.getElementById('cGgPct'),{type:'bar',
     data:{labels:ge.map(([s])=>s.length>22?s.slice(0,22)+'…':s),
           datasets:[{data:ge.map(([,v])=>v),backgroundColor:ge.map(([,v])=>v>100?CC.teal:CC.amber),borderRadius:2}]},
-    options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},
+    options:{indexAxis:'y',responsive:true,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`Avg GG% Potential: ${fmtN(ctx.raw)}%`}}},
       scales:{x:{grid:{color:CC.grid},ticks:{callback:v=>v+'%'}},y:{grid:{display:false}}},
       datasets:{bar:{maxBarThickness:22,minBarLength:2}}}});
 
@@ -1269,7 +1271,10 @@ function renderCharts() {
             {label:'8-Week Trend',data:wkTrend,borderColor:'#ff9e1b',backgroundColor:'transparent',fill:false,tension:0.4,pointRadius:0,borderWidth:2.5,spanGaps:true,order:1}
           ]},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:true,labels:{color:CC.text,font:{size:10,family:"'Libre Franklin', sans-serif"},boxWidth:20}}},
+      plugins:{
+        legend:{display:true,labels:{color:CC.text,font:{size:10,family:"'Libre Franklin', sans-serif"},boxWidth:20}},
+        tooltip:{callbacks:{label:ctx=>ctx.dataset.label==='Weekly Gross'?`Gross: ${fmt$(ctx.raw)}`:`8-Wk Trend: ${fmt$(ctx.raw)}`}}
+      },
       scales:{x:{grid:{color:CC.grid}},y:{grid:{color:CC.grid},ticks:{callback:v=>fmt$(v)}}}}});
 
   dc('sc');
@@ -1283,7 +1288,11 @@ function renderCharts() {
             {label:'Avg Gross',data:[subG||0,nonG||0],backgroundColor:CC.amber,borderRadius:2,yAxisID:'y'},
             {label:'Avg % Cap Paid',data:[subCap||0,nonCap||0],backgroundColor:'rgba(26,78,138,0.65)',borderRadius:2,yAxisID:'y2'}
           ]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:CC.text,font:{size:10,family:"'Libre Franklin', sans-serif"}}}},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{labels:{color:CC.text,font:{size:10,family:"'Libre Franklin', sans-serif"}}},
+        tooltip:{callbacks:{label:ctx=>ctx.dataset.yAxisID==='y'?`${ctx.dataset.label}: ${fmt$(ctx.raw)}`:`${ctx.dataset.label}: ${fmtN(ctx.raw)}%`}}
+      },
       scales:{
         x:{grid:{display:false}},
         y:{grid:{color:CC.grid},position:'left',ticks:{callback:v=>fmt$(v)}},
@@ -1426,11 +1435,25 @@ function renderAnalytics() {
   });
   const wnKeys = Object.keys(byWeekNum).map(Number).sort((a,b)=>a-b);
   const wnAvg = wnKeys.map(wn => byWeekNum[wn].reduce((a,b)=>a+b,0)/byWeekNum[wn].length);
+  const monthStarts = {1:'Jan',14:'Apr',27:'Jul',40:'Oct'};
   CHARTS.sa = new Chart(document.getElementById('cSeasonality'), {type:'bar',
     data:{labels:wnKeys.map(w=>`Wk ${w}`),
           datasets:[{data:wnAvg,backgroundColor:CC.amber,borderRadius:2}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{grid:{display:false}},y:{grid:{color:CC.grid},ticks:{callback:v=>fmt$(v)}}}}});
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{
+          title:ctx=>`Week ${wnKeys[ctx[0].dataIndex]}`,
+          label:ctx=>`Avg Gross: ${fmt$(ctx.raw)}`
+        }}
+      },
+      scales:{
+        x:{grid:{display:false},ticks:{callback:(v,i)=>{
+          const wn=wnKeys[i];
+          return monthStarts[wn]||'';
+        },maxRotation:0,autoSkip:false}},
+        y:{grid:{color:CC.grid},ticks:{callback:v=>fmt$(v)}}
+      }}});
 
   // ── Year over Year ────────────────────────────────────────────────────────
   dc('yy');
@@ -1451,7 +1474,10 @@ function renderAnalytics() {
   CHARTS.yy = new Chart(document.getElementById('cYoY'), {type:'line',
     data:{labels:weekNums.map(w=>`Wk ${w}`),datasets:yyDatasets},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{labels:{color:CC.text,font:{size:9},boxWidth:12}}},
+      plugins:{
+        legend:{labels:{color:CC.text,font:{size:9},boxWidth:12}},
+        tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${fmt$(ctx.raw)}`}}
+      },
       scales:{x:{grid:{color:CC.grid}},y:{grid:{color:CC.grid},ticks:{callback:v=>fmt$(v)}}}}});
 
   // ── Show Longevity ────────────────────────────────────────────────────────
@@ -1462,7 +1488,8 @@ function renderAnalytics() {
   CHARTS.lo = new Chart(document.getElementById('cLongevity'), {type:'bar',
     data:{labels:lonArr.map(d=>d.s.length>24?d.s.slice(0,24)+'…':d.s),
           datasets:[{data:lonArr.map(d=>d.n),backgroundColor:CC.amber,borderRadius:2}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.raw} weeks`}}},
       scales:{x:{grid:{color:CC.grid},ticks:{callback:v=>v+' wks'}},y:{grid:{display:false}}}}});
 
   // ── Top Shows by % Capacity ───────────────────────────────────────────────
@@ -1474,7 +1501,8 @@ function renderAnalytics() {
   CHARTS.cr = new Chart(document.getElementById('cCapRank'), {type:'bar',
     data:{labels:capArr.map(d=>d.s.length>24?d.s.slice(0,24)+'…':d.s),
           datasets:[{data:capArr.map(d=>d.avg),backgroundColor:capArr.map(d=>d.avg>=90?CC.teal:CC.amber),borderRadius:2}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`Avg % Cap: ${fmtN(ctx.raw)}%`}}},
       scales:{x:{grid:{color:CC.grid},ticks:{callback:v=>v+'%'}},y:{grid:{display:false}}}}});
 
   // ── Most Consistent Shows ─────────────────────────────────────────────────
@@ -1511,7 +1539,7 @@ function renderAnalytics() {
           datasets:[{data:neArr.map(d=>Math.round(d.pct*10)/10),backgroundColor:CC.rose,borderRadius:2}]},
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},
-        tooltip:{callbacks:{label:ctx=>`${ctx.raw}% · ${neArr[ctx.dataIndex].none} of ${neArr[ctx.dataIndex].total} weeks`}}},
+        tooltip:{callbacks:{title:ctx=>[neArr[ctx[0].dataIndex].s],label:ctx=>`No engagement: ${ctx.raw}% · ${neArr[ctx[0].dataIndex].none} of ${neArr[ctx[0].dataIndex].total} weeks`}}},
       scales:{x:{grid:{color:CC.grid},ticks:{callback:v=>v+'%'}},y:{grid:{display:false}}}}});
 
   // ── Bushnell vs Peer Gap ──────────────────────────────────────────────────
@@ -1526,7 +1554,10 @@ function renderAnalytics() {
             {label:'All Others',data:pgAll,borderColor:CC.rose,backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:2,borderWidth:1.5,spanGaps:true}
           ]},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{labels:{color:CC.text,font:{size:10},boxWidth:16}}},
+      plugins:{
+        legend:{labels:{color:CC.text,font:{size:10},boxWidth:16}},
+        tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${fmtN(ctx.raw)}% avg capacity`}}
+      },
       scales:{x:{grid:{color:CC.grid}},y:{grid:{color:CC.grid},ticks:{callback:v=>v+'%'}}}}});
 }
 
