@@ -1042,16 +1042,20 @@ function soloSearchedShows() {
 }
 
 function updateDataStatus() {
-  const weeks = [...new Set(ALL_DATA.map(d=>d.report_date))];
+  const allWeeks = [...new Set(ALL_DATA.map(d=>d.report_date))];
   document.getElementById('dataStatus').innerHTML =
-    (() => {
-    const wkCount = weeks.length;
-    let span;
-    if (wkCount < 4) span = `${wkCount} week${wkCount!==1?'s':''}`;
-    else if (wkCount < 52) span = `${Math.round(wkCount/4.33)} months`;
-    else { const yrs=Math.floor(wkCount/52); const mos=Math.round((wkCount%52)/4.33); span = mos>0?`${yrs} yr${yrs!==1?'s':''} ${mos} mo`:`${yrs} yr${yrs!==1?'s':''}`; }
-    return `<strong>${ALL_DATA.length.toLocaleString()}</strong> records · <strong>${span}</strong> of data<br><span style="font-size:0.58rem;">Last report: <strong>${LAST_REPORT_DATE ? fmtWeek(LAST_REPORT_DATE) : '—'}</strong></span>`;
-  })();
+    `<strong>${ALL_DATA.length.toLocaleString()}</strong> records · <strong>${allWeeks.length.toLocaleString()}</strong> weeks total`;
+}
+
+function updateFilteredStatus() {
+  const filtWeeks = [...new Set(FILTERED.map(d=>d.report_date))];
+  const wkCount = filtWeeks.length;
+  let span;
+  if (wkCount < 4) span = `${wkCount} week${wkCount!==1?'s':''}`;
+  else if (wkCount < 52) span = `${Math.round(wkCount/4.33)} months`;
+  else { const yrs=Math.floor(wkCount/52); const mos=Math.round((wkCount%52)/4.33); span = mos>0?`${yrs} yr${yrs!==1?'s':''} ${mos} mo`:`${yrs} yr${yrs!==1?'s':''}`; }
+  const el = document.getElementById('filteredStatus');
+  if (el) el.innerHTML = `Filtered: <strong>${FILTERED.length.toLocaleString()}</strong> records · <strong>${span}</strong> · Last report: <strong>${LAST_REPORT_DATE ? fmtWeek(LAST_REPORT_DATE) : '—'}</strong>`;
 }
 
 // ── FILTERS ───────────────────────────────────────────────────────────────────
@@ -1178,6 +1182,7 @@ function applyFilters() {
 
   renderKPIs();
   renderTable();
+  updateFilteredStatus();
   const activeTab = document.querySelector('.nav-tab.active');
   if (activeTab) {
     const t = activeTab.textContent.toLowerCase().trim();
