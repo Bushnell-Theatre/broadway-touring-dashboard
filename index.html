@@ -529,6 +529,7 @@ tbody td:last-child{border-right:none;}
 
   .tbl-wrap { font-size: 0.6rem; }
 }
+
 </style>
 </head>
 <body>
@@ -622,16 +623,20 @@ tbody td:last-child{border-right:none;}
     <div class="sidebar-section">
       <span class="sidebar-label">Date Range</span>
       <div class="pill-row" style="flex-wrap:wrap;gap:4px;margin-bottom:8px;">
+        <button class="pill" data-preset="3yr" onclick="setDatePreset('3yr')" aria-label="Last 3 years">3 Yrs</button>
         <button class="pill" data-preset="ytd" onclick="setDatePreset('ytd')" aria-label="Year to date">YTD</button>
         <button class="pill" data-preset="tm" onclick="setDatePreset('tm')" aria-label="This month">This Mo</button>
         <button class="pill" data-preset="lm" onclick="setDatePreset('lm')" aria-label="Last month">Last Mo</button>
         <button class="pill" data-preset="tq" onclick="setDatePreset('tq')" aria-label="This quarter">This Qtr</button>
         <button class="pill" data-preset="lq" onclick="setDatePreset('lq')" aria-label="Last quarter">Last Qtr</button>
+        <button class="pill" data-preset="all" onclick="setDatePreset('all')" aria-label="All data">All Data</button>
       </div>
       <label for="fDateFrom" class="sidebar-label" style="margin-top:8px;display:block;">From</label>
       <input type="date" id="fDateFrom" style="width:100%;background:var(--bg);border:1px solid var(--rule);color:var(--ink);font-family:var(--mono);font-size:0.65rem;padding:5px 7px;border-radius:2px;outline:none;margin-bottom:6px;" oninput="onDateRangeChange()">
       <label for="fDateTo" class="sidebar-label" style="display:block;">To</label>
       <input type="date" id="fDateTo" style="width:100%;background:var(--bg);border:1px solid var(--rule);color:var(--ink);font-family:var(--mono);font-size:0.65rem;padding:5px 7px;border-radius:2px;outline:none;margin-bottom:8px;" oninput="onDateRangeChange()">
+      <label class="sidebar-label" style="display:block;">Filter by Year</label>
+      <div class="pill-row" id="yearPills" style="flex-wrap:wrap;gap:4px;margin-bottom:8px;"></div>
       <label for="fDate" class="sidebar-label" style="display:block;">Report Week</label>
       <select id="fDate"><option value="">All Weeks</option></select>
     </div>
@@ -915,6 +920,20 @@ async function initData() {
   } catch(e) {
     console.warn('data.json fetch failed:', e);
     ALL_DATA = [];
+
+  }
+  // Set last report date and default 3-year range
+  const allDates = ALL_DATA.map(d=>d.report_date).filter(Boolean).sort();
+  LAST_REPORT_DATE = allDates[allDates.length-1] || null;
+  if (LAST_REPORT_DATE) {
+    const last = new Date(LAST_REPORT_DATE);
+    const start = new Date(last);
+    start.setFullYear(start.getFullYear()-3);
+    DEFAULT_RANGE = {
+      start: start.getFullYear()+'-'+String(start.getMonth()+1).padStart(2,'0')+'-'+String(start.getDate()).padStart(2,'0'),
+      end: LAST_REPORT_DATE
+    };
+    window._DATE_RANGE = {...DEFAULT_RANGE};
   }
   boot();
 }
@@ -928,13 +947,38 @@ let ACTIVE_TIER = '';
 let ACTIVE_SUB = '';
 let ACTIVE_PEER = '';
 let CHARTS = {};
+let LAST_REPORT_DATE = null;
+let DEFAULT_RANGE = null;
 
 // ── BOOT ──────────────────────────────────────────────────────────────────────
 function boot() {
+  populateYearPills();
   populateWeekDropdown();
   populateShowList();
   updateDataStatus();
   applyFilters();
+
+}
+
+function populateYearPills() {
+  const years = [...new Set(ALL_DATA.map(d=>d.report_date?.slice(0,4)))].filter(Boolean).sort().reverse();
+  const container = document.getElementById('yearPills');
+  if (!container) return;
+  container.innerHTML = '<button class="pill active" data-year="" onclick="setYearFilter(this,&quot;&quot;)" aria-label="All years">All</button>' +
+    years.map(y=>`<button class="pill" data-year="${y}" onclick="setYearFilter(this,'${y}')" aria-label="Filter to ${y}">${y}</button>`).join('');
+}
+
+let ACTIVE_YEAR = '';
+function setYearFilter(btn, year) {
+  ACTIVE_YEAR = year;
+  document.querySelectorAll('[data-year]').forEach(b=>b.classList.toggle('active', b.dataset.year===year));
+  // Repopulate week dropdown filtered to selected year
+  const allWeeks = [...new Set(ALL_DATA.map(d=>d.report_date))].filter(Boolean).sort().reverse();
+  const filtered = year ? allWeeks.filter(w=>w.startsWith(year)) : allWeeks;
+  const sel = document.getElementById('fDate');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">All Weeks</option>' +
+    filtered.map(w=>`<option value="${w}"${w===current?' selected':''}>${fmtWeek(w)}</option>`).join('');
 }
 
 function populateWeekDropdown() {
@@ -1003,7 +1047,16 @@ function setDatePreset(preset) {
   const m = now.getMonth();
   let startDate, endDate;
 
-  if (preset === 'ytd') {
+  if (preset === '3yr') {
+    const last = new Date(LAST_REPORT_DATE || new Date());
+    const s = new Date(last); s.setFullYear(s.getFullYear()-3);
+    startDate = s.getFullYear()+'-'+String(s.getMonth()+1).padStart(2,'0')+'-'+String(s.getDate()).padStart(2,'0');
+    endDate = LAST_REPORT_DATE || new Date().toISOString().slice(0,10);
+  } else if (preset === 'all') {
+    const allDates = ALL_DATA.map(d=>d.report_date).filter(Boolean).sort();
+    startDate = allDates[0];
+    endDate = allDates[allDates.length-1];
+  } else if (preset === 'ytd') {
     startDate = `${y}-01-01`;
     endDate = now.toISOString().slice(0,10);
   } else if (preset === 'tm') {
