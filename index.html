@@ -1441,7 +1441,7 @@ function renderAnalytics() {
     showTotal[d.show]=(showTotal[d.show]||0)+1;
     if(d.noengagement) showNone[d.show]=(showNone[d.show]||0)+1;
   });
-  const neArr = Object.entries(showTotal).filter(([,v])=>v>=3&&showNone[v]>0)
+  const neArr = Object.entries(showTotal).filter(([s,v])=>v>=3&&(showNone[s]||0)>0)
     .map(([s,t])=>({s,pct:((showNone[s]||0)/t)*100,none:showNone[s]||0,total:t}))
     .filter(d=>d.pct>0)
     .sort((a,b)=>b.pct-a.pct).slice(0,15);
