@@ -116,7 +116,7 @@ body{
 
 /* ── KPI BAR ── */
 .kpi-strip{
-  display:grid;grid-template-columns:repeat(7,1fr);
+  display:grid;grid-template-columns:repeat(8,1fr);
   border-bottom:1px solid var(--rule);
   background:#fff;
 }
@@ -564,7 +564,7 @@ tbody td:last-child{border-right:none;}
   </div>
   <div class="masthead-status">
     <div class="dot"></div>
-    <span id="dataStatus"><strong>–</strong> records · <strong>–</strong> weeks · v3</span>
+    <span id="dataStatus"><strong>–</strong> records · <strong>–</strong> weeks · v4</span>
   </div>
   <div class="masthead-actions">
     <button class="btn btn-outline" onclick="clearAllData()" aria-label="Reload data from source">↺ Reset</button>
@@ -600,6 +600,11 @@ tbody td:last-child{border-right:none;}
     <div class="kpi-label">Avg Paid Admission</div>
     <div class="kpi-value" id="kAdm">—</div>
     <div class="kpi-sub">per ticket sold</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-label">Sub Avg Gross</div>
+    <div class="kpi-value" id="kSubAvg">—</div>
+    <div class="kpi-sub">avg gross subscribed</div>
   </div>
   <div class="kpi-cell">
     <div class="kpi-label">Peer Avg % Cap</div>
@@ -1026,7 +1031,7 @@ function soloSearchedShows() {
 function updateDataStatus() {
   const weeks = [...new Set(ALL_DATA.map(d=>d.report_date))];
   document.getElementById('dataStatus').innerHTML =
-    `<strong>${ALL_DATA.length.toLocaleString()}</strong> records · <strong>${weeks.length.toLocaleString()}</strong> weeks · v3`;
+    `<strong>${ALL_DATA.length.toLocaleString()}</strong> records · <strong>${weeks.length.toLocaleString()}</strong> weeks · Last report: <strong>${LAST_REPORT_DATE ? fmtWeek(LAST_REPORT_DATE) : '—'}</strong> · v4`;
 }
 
 // ── FILTERS ───────────────────────────────────────────────────────────────────
@@ -1202,6 +1207,8 @@ function renderKPIs() {
   document.getElementById('kGgPct').textContent = ag?fmtN(ag)+'%':'—';
   const aa = avg(FILTERED.map(d=>d.avg_paid_admission));
   document.getElementById('kAdm').textContent = aa?'$'+fmtN(aa,2):'—';
+  const subAvgG = avg(FILTERED.filter(d=>d.on_subscription===1&&d.gross_gross).map(d=>d.gross_gross));
+  document.getElementById('kSubAvg').textContent = subAvgG ? fmt$(subAvgG) : '—';
   const peerRows = FILTERED.filter(d=>d.similar_bushnell_cap);
   const peerCap = avg(peerRows.map(d=>d.pct_capacity_paid));
   const peerGross = avg(peerRows.filter(d=>d.gross_gross).map(d=>d.gross_gross));
