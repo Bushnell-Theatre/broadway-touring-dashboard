@@ -1012,7 +1012,7 @@ tbody td:last-child{border-right:none;}
           <button class="pill" id="btnSeasonMonth" onclick="setSeasonMode('month')" aria-label="Show seasonality by month">Monthly</button>
         </span>
       </div>
-      <div class="chart-sub">Avg gross by period across all years · <span style="color:var(--amber)">Weekly = ISO week (Wk 1 = week containing first Thursday of January)</span></div>
+      <div class="chart-sub">Avg gross by fiscal period (Jul–Jun) · <span style="color:var(--amber)">Weekly = fiscal week (Wk 1 = first Sunday on or after July 1)</span></div>
       <canvas id="cSeasonality" role="img" aria-label="Seasonality chart average gross by week of year"></canvas>
     </div>
 
@@ -1023,7 +1023,7 @@ tbody td:last-child{border-right:none;}
           <button class="pill" id="btnYoYMonth" onclick="setYoYMode('month')" aria-label="Show year over year by month">Monthly</button>
         </span>
       </div>
-      <div class="chart-sub">Gross by period overlaid across years · <span style="color:var(--amber)">Weekly = ISO week standard</span></div>
+      <div class="chart-sub">Gross by fiscal year (Jul–Jun) overlaid for comparison · <span style="color:var(--amber)">Fiscal week starts July 1 · Labels show 2024-25 format</span></div>
       <canvas id="cYoY" role="img" aria-label="Year over year gross comparison"></canvas>
     </div>
 
@@ -1182,21 +1182,38 @@ const SEASONS = [
   },
 ];
 
-let ACTIVE_SEASON = null;
+let ACTIVE_SEASONS = new Set(); // supports multiple seasons
 
 function setSeasonFilter(seasonId) {
-  ACTIVE_SEASON = seasonId || null;
-  const season = SEASONS.find(s => s.id === seasonId);
-  document.querySelectorAll('[data-season]').forEach(b=>b.classList.toggle('active', b.dataset.season===seasonId));
-  if (season) {
-    window._DATE_RANGE = {start: snapToSunday(season.start,'back'), end: snapToSunday(season.end,'forward')};
-    document.getElementById('fDateFrom').value = season.start;
-    document.getElementById('fDateTo').value = season.end;
-    document.querySelectorAll('[data-preset]').forEach(b=>b.classList.remove('active'));
-  } else {
+  if (!seasonId) {
+    ACTIVE_SEASONS.clear();
+    document.querySelectorAll('[data-season]').forEach(b=>b.classList.toggle('active', b.dataset.season===''));
     window._DATE_RANGE = DEFAULT_RANGE ? {...DEFAULT_RANGE} : null;
     document.getElementById('fDateFrom').value = DEFAULT_RANGE?.start || '';
     document.getElementById('fDateTo').value = DEFAULT_RANGE?.end || '';
+  } else {
+    if (ACTIVE_SEASONS.has(seasonId)) {
+      ACTIVE_SEASONS.delete(seasonId);
+    } else {
+      ACTIVE_SEASONS.add(seasonId);
+    }
+    document.querySelector('[data-season=""]')?.classList.toggle('active', ACTIVE_SEASONS.size === 0);
+    document.querySelectorAll('[data-season]:not([data-season=""])').forEach(b=>{
+      b.classList.toggle('active', ACTIVE_SEASONS.has(b.dataset.season));
+    });
+    if (ACTIVE_SEASONS.size === 0) {
+      window._DATE_RANGE = DEFAULT_RANGE ? {...DEFAULT_RANGE} : null;
+      document.getElementById('fDateFrom').value = DEFAULT_RANGE?.start || '';
+      document.getElementById('fDateTo').value = DEFAULT_RANGE?.end || '';
+    } else {
+      const selected = SEASONS.filter(s => ACTIVE_SEASONS.has(s.id));
+      const minStart = selected.map(s=>s.start).sort()[0];
+      const maxEnd = selected.map(s=>s.end).sort().reverse()[0];
+      window._DATE_RANGE = {start: snapToSunday(minStart,'back'), end: snapToSunday(maxEnd,'forward')};
+      document.getElementById('fDateFrom').value = window._DATE_RANGE.start;
+      document.getElementById('fDateTo').value = window._DATE_RANGE.end;
+      document.querySelectorAll('[data-preset]').forEach(b=>b.classList.remove('active'));
+    }
   }
   populateWeekDropdown();
   applyFilters();
@@ -1394,7 +1411,7 @@ function soloSearchedShows() {
 
 function updateFilterCount() {
   let count = 0;
-  if (ACTIVE_SEASON) count++;
+  if (ACTIVE_SEASONS.size > 0) count++;
   if (ACTIVE_TIER) count++;
   if (ACTIVE_SUB !== '') count++;
   if (ACTIVE_PEER === '1') count++;
@@ -1990,7 +2007,7 @@ function printDashboard() {
 
   // Build active filter summary
   const filters = [];
-  if (ACTIVE_SEASON) filters.push('Season: ' + ACTIVE_SEASON);
+  if (ACTIVE_SEASONS.size > 0) filters.push('Season(s): ' + [...ACTIVE_SEASONS].join(', '));
   if (ACTIVE_TIER) filters.push('Tier: ' + ACTIVE_TIER);
   if (ACTIVE_SUB !== '') filters.push('Subscription: ' + (ACTIVE_SUB==='1'?'Sub Only':'Non-Sub Only'));
   if (ACTIVE_PEER === '1') filters.push('Peer Venues Only');
@@ -2040,91 +2057,123 @@ function setYoYMode(mode) {
 }
 
 function renderAnalytics() {
-  // ── Seasonality ───────────────────────────────────────────────────────────
+  // ── Seasonality (Fiscal Year: Jul–Jun) ────────────────────────────────────
   dc('sa');
-  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const quarterStarts = {1:'Jan',14:'Apr',27:'Jul',40:'Oct'};
+  // Fiscal month: Jul=1, Aug=2 ... Jun=12
+  const fiscalMonth = mo => ((mo - 7 + 12) % 12) + 1;
+  const fiscalYear = d => {
+    const y = parseInt(d.slice(0,4)), m = parseInt(d.slice(5,7));
+    return m >= 7 ? y : y - 1;
+  };
+  const FM_LABELS = ['Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun'];
+  // Quarter start fiscal months: Jul(1), Oct(4), Jan(7), Apr(10)
+  const fiscalQStarts = {1:'Jul',4:'Oct',7:'Jan',10:'Apr'};
+
   if (SEASON_MODE === 'week') {
-    const byWN = {};
+    // Fiscal week: ISO week offset so fiscal week 1 = week containing Jul 1
+    const fiscalWeek = dateStr => {
+      const y = fiscalYear(dateStr);
+      const julFirst = new Date(y, 6, 1);
+      // Find first Sunday on or after Jul 1
+      const julSun = new Date(julFirst);
+      julSun.setDate(julFirst.getDate() + ((7 - julFirst.getDay()) % 7));
+      const dt = new Date(dateStr + 'T12:00:00');
+      const diff = Math.round((dt - julSun) / (7 * 86400000));
+      return diff >= 0 ? diff + 1 : 53 + diff + 1;
+    };
+    const byFW = {};
     FILTERED.forEach(d => {
       if (!d.report_date || !d.gross_gross) return;
-      const wn = isoWeek(d.report_date);
-      byWN[wn] = byWN[wn] || [];
-      byWN[wn].push(d.gross_gross);
+      const fw = fiscalWeek(d.report_date);
+      byFW[fw] = byFW[fw] || [];
+      byFW[fw].push(d.gross_gross);
     });
-    const wnKeys = Object.keys(byWN).map(Number).sort((a,b)=>a-b);
-    const wnAvg = wnKeys.map(wn => byWN[wn].reduce((a,b)=>a+b,0)/byWN[wn].length);
+    const fwKeys = Object.keys(byFW).map(Number).sort((a,b)=>a-b);
+    const fwAvg = fwKeys.map(fw => byFW[fw].reduce((a,b)=>a+b,0)/byFW[fw].length);
+    // Quarter labels at weeks ~1(Jul), ~14(Oct), ~27(Jan), ~40(Apr)
+    const fwQStarts = {1:'Jul',14:'Oct',27:'Jan',40:'Apr'};
     CHARTS.sa = new Chart(document.getElementById('cSeasonality'), {type:'bar',
-      data:{labels:wnKeys.map(w=>`Wk ${w}`),
-            datasets:[{data:wnAvg,backgroundColor:CC.amber,borderRadius:2}]},
+      data:{labels:fwKeys.map(w=>`Wk ${w}`),
+            datasets:[{data:fwAvg,backgroundColor:CC.amber,borderRadius:2}]},
       options:{responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:false},tooltip:{callbacks:{
-          title:ctx=>`ISO Week ${wnKeys[ctx[0].dataIndex]}`,
+          title:ctx=>`Fiscal Week ${fwKeys[ctx[0].dataIndex]}`,
           label:ctx=>`Avg Gross: ${fmt$(ctx.raw)}`
         }}},
         scales:{
-          x:{grid:{display:false},ticks:{callback:(v,i)=>quarterStarts[wnKeys[i]]||'',maxRotation:0,autoSkip:false}},
+          x:{grid:{display:false},ticks:{callback:(v,i)=>fwQStarts[fwKeys[i]]||'',maxRotation:0,autoSkip:false}},
           y:{grid:{color:CC.grid},ticks:{callback:v=>fmt$(v)}}
         }}});
   } else {
-    const byMo = {};
+    const byFM = {};
     FILTERED.forEach(d => {
       if (!d.report_date || !d.gross_gross) return;
-      const mo = parseInt(d.report_date.slice(5,7));
-      byMo[mo] = byMo[mo] || [];
-      byMo[mo].push(d.gross_gross);
+      const fm = fiscalMonth(parseInt(d.report_date.slice(5,7)));
+      byFM[fm] = byFM[fm] || [];
+      byFM[fm].push(d.gross_gross);
     });
-    const moKeys = Object.keys(byMo).map(Number).sort((a,b)=>a-b);
-    const moAvg = moKeys.map(mo => byMo[mo].reduce((a,b)=>a+b,0)/byMo[mo].length);
+    const fmKeys = [...Array(12).keys()].map(i=>i+1).filter(fm=>byFM[fm]);
+    const fmAvg = fmKeys.map(fm => byFM[fm].reduce((a,b)=>a+b,0)/byFM[fm].length);
     CHARTS.sa = new Chart(document.getElementById('cSeasonality'), {type:'bar',
-      data:{labels:moKeys.map(m=>MONTHS[m-1]),
-            datasets:[{data:moAvg,backgroundColor:CC.amber,borderRadius:2}]},
+      data:{labels:fmKeys.map(fm=>FM_LABELS[fm-1]),
+            datasets:[{data:fmAvg,backgroundColor:CC.amber,borderRadius:2}]},
       options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`Avg Gross: ${fmt$(ctx.raw)}`}}},
+        plugins:{legend:{display:false},tooltip:{callbacks:{
+          title:ctx=>`${FM_LABELS[fmKeys[ctx[0].dataIndex]-1]}`,
+          label:ctx=>`Avg Gross: ${fmt$(ctx.raw)}`
+        }}},
         scales:{
           x:{grid:{display:false}},
           y:{grid:{color:CC.grid},ticks:{callback:v=>fmt$(v)}}
         }}});
   }
 
-  // ── Year over Year ────────────────────────────────────────────────────────
+  // ── Year over Year — Fiscal Year (Jul–Jun) ───────────────────────────────
   dc('yy');
-  const years = [...new Set(FILTERED.map(d=>d.report_date?.slice(0,4)))].filter(Boolean).sort();
+  // Get fiscal years represented in filtered data
+  const fiscalYears = [...new Set(FILTERED.filter(d=>d.report_date&&d.gross_gross).map(d=>fiscalYear(d.report_date)))].sort();
   const palette = ['#003865','#1A4E8A','#6798b9','#0A6B5E','#ff9e1b','#B0303A','#6b6b6b'];
+
   if (YOY_MODE === 'week') {
-    const isoWeekNums = [...Array(53).keys()].map(i=>i+1);
-    const yyDS = years.map((y,i) => {
-      const byWn = {};
-      FILTERED.filter(d=>d.report_date?.startsWith(y)&&d.gross_gross).forEach(d=>{
-        const wn=isoWeek(d.report_date);
-        byWn[wn]=(byWn[wn]||0)+d.gross_gross;
+    const fwNums = [...Array(53).keys()].map(i=>i+1);
+    const yyDS = fiscalYears.map((fy,i) => {
+      const byFW = {};
+      FILTERED.filter(d=>d.report_date&&d.gross_gross&&fiscalYear(d.report_date)===fy).forEach(d=>{
+        const fw=fiscalWeek(d.report_date);
+        byFW[fw]=(byFW[fw]||0)+d.gross_gross;
       });
-      return {label:y,data:isoWeekNums.map(wn=>byWn[wn]||null),
+      const label = fy+'-'+(fy+1).toString().slice(2);
+      return {label,data:fwNums.map(fw=>byFW[fw]||null),
         borderColor:palette[i%palette.length],backgroundColor:'transparent',
         fill:false,tension:0.3,pointRadius:2,borderWidth:1.5,spanGaps:true};
     });
+    // Quarter labels at fiscal weeks 1(Jul),14(Oct),27(Jan),40(Apr)
+    const fwQStarts2 = {1:'Jul',14:'Oct',27:'Jan',40:'Apr'};
     CHARTS.yy = new Chart(document.getElementById('cYoY'), {type:'line',
-      data:{labels:isoWeekNums.map(w=>`Wk ${w}`),datasets:yyDS},
+      data:{labels:fwNums.map(w=>`Wk ${w}`),datasets:yyDS},
       options:{responsive:true,maintainAspectRatio:false,
         plugins:{
           legend:{labels:{color:CC.text,font:{size:9},boxWidth:12}},
-          tooltip:{callbacks:{title:ctx=>`ISO Week ${ctx[0].label}`,label:ctx=>`${ctx.dataset.label}: ${fmt$(ctx.raw)}`}}
+          tooltip:{callbacks:{title:ctx=>`Fiscal Week ${ctx[0].label}`,label:ctx=>`${ctx.dataset.label}: ${fmt$(ctx.raw)}`}}
         },
-        scales:{x:{grid:{color:CC.grid}},y:{grid:{color:CC.grid},ticks:{callback:v=>fmt$(v)}}}}});
+        scales:{
+          x:{grid:{color:CC.grid},ticks:{callback:(v,i)=>fwQStarts2[i+1]||'',maxRotation:0,autoSkip:false}},
+          y:{grid:{color:CC.grid},ticks:{callback:v=>fmt$(v)}}
+        }}});
   } else {
-    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    const yyDS = years.map((y,i) => {
-      const byMo = {};
-      FILTERED.filter(d=>d.report_date?.startsWith(y)&&d.gross_gross).forEach(d=>{
-        const mo=d.report_date.slice(5,7);
-        byMo[mo]=(byMo[mo]||0)+d.gross_gross;
+    const yyDS = fiscalYears.map((fy,i) => {
+      const byFM = {};
+      FILTERED.filter(d=>d.report_date&&d.gross_gross&&fiscalYear(d.report_date)===fy).forEach(d=>{
+        const fm=fiscalMonth(parseInt(d.report_date.slice(5,7)));
+        byFM[fm]=(byFM[fm]||0)+d.gross_gross;
       });
-      return {label:y,data:MONTHS.map((_,mi)=>byMo[String(mi+1).padStart(2,'0')]||null),
+      const label = fy+'-'+(fy+1).toString().slice(2);
+      return {label,data:[...Array(12).keys()].map(i=>byFM[i+1]||null),
         borderColor:palette[i%palette.length],backgroundColor:'transparent',
         fill:false,tension:0.3,pointRadius:3,borderWidth:1.5,spanGaps:true};
     });
     CHARTS.yy = new Chart(document.getElementById('cYoY'), {type:'line',
-      data:{labels:MONTHS,datasets:yyDS},
+      data:{labels:FM_LABELS,datasets:yyDS},
       options:{responsive:true,maintainAspectRatio:false,
         plugins:{
           legend:{labels:{color:CC.text,font:{size:9},boxWidth:12}},
@@ -2243,7 +2292,7 @@ function renderSeasons() {
   if (!container) return;
 
   container.innerHTML = SEASONS.map(season => {
-    const isActive = ACTIVE_SEASON === season.id;
+    const isActive = ACTIVE_SEASONS.has(season.id);
     const seasonData = ALL_DATA.filter(d => d.report_date >= season.start && d.report_date <= season.end);
     const hasData = seasonData.length > 0;
 
@@ -2357,9 +2406,9 @@ function renderSeasons() {
         <div style="display:flex;align-items:center;gap:14px;margin-bottom:8px;flex-wrap:wrap;">
           <h3 style="font-family:var(--serif);font-size:1rem;color:var(--ink);">${season.name}</h3>
           <button class="pill ${isActive?'active':''}" data-season="${season.id}"
-            onclick="setSeasonFilter('${isActive?'':season.id}')"
+            onclick="setSeasonFilter('${season.id}')"
             aria-label="${isActive?'Clear':'Apply'} ${season.name} filter">
-            ${isActive ? '✓ Active — Click to Clear' : 'Filter Dashboard to this Season'}
+            ${isActive ? '✓ Active' : 'Add to Filter'}
           </button>
           ${season.note ? `<span style="font-size:0.62rem;color:var(--amber);font-style:italic;">${season.note}</span>` : ''}
           ${hasData
