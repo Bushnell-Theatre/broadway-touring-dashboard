@@ -750,10 +750,10 @@ tbody td:last-child{border-right:none;}
     <nav class="nav-tabs" aria-label="Dashboard sections">
       <div class="nav-tab active" onclick="showTab('charts')">Charts</div>
       <div class="nav-tab" onclick="showTab('rankings')">Rankings</div>
-      <div class="nav-tab" onclick="showTab('table')">Data Table</div>
       <div class="nav-tab" onclick="showTab('analytics')">Analytics</div>
       <div class="nav-tab" onclick="showTab('seasons')">Seasons</div>
       <div class="nav-tab" onclick="showTab('peers')">Peer Venues</div>
+      <div class="nav-tab" onclick="showTab('table')">Data Table</div>
     </nav>
 
     <!-- TABLE PANEL -->
@@ -1359,11 +1359,14 @@ function applyFilters() {
   renderKPIs();
   renderTable();
   updateFilteredStatus();
-  const activeTab = document.querySelector('.nav-tab.active');
-  if (activeTab) {
-    const t = activeTab.textContent.toLowerCase().trim();
-    if (t.includes('chart')) renderCharts();
-    if (t.includes('rank')) renderRankings();
+  const activePanel = document.querySelector('.panel.active');
+  if (activePanel) {
+    const id = activePanel.id;
+    if (id === 'tab-charts') renderCharts();
+    else if (id === 'tab-rankings') renderRankings();
+    else if (id === 'tab-analytics') renderAnalytics();
+    else if (id === 'tab-seasons') renderSeasons();
+    else if (id === 'tab-peers') renderPeers();
   }
 }
 
@@ -2326,7 +2329,7 @@ function renderPeers() {
 }
 
 function showTab(name) {
-  const names=['charts','rankings','table','analytics','seasons','peers'];
+  const names=['charts','rankings','analytics','seasons','peers','table'];
   document.querySelectorAll('.nav-tab').forEach((t,i)=>{t.classList.toggle('active',names[i]===name);});
   document.querySelectorAll('.panel').forEach(p=>{
     p.classList.toggle('active',p.id==='tab-'+name);
