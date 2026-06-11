@@ -1615,30 +1615,72 @@ function renderCharts() {
 }
 
 // ── RANKINGS ─────────────────────────────────────────────────────────────────
-function mkRankList(id,items,valFn,labelFn,fmtFn,maxVal) {
+function mkRankList(id,items,valFn,labelFn,fmtFn,maxVal,breakdownFn) {
   const el=document.getElementById(id);
   if(!items.length){el.innerHTML='<div class="no-data">No data available</div>';return;}
   el.innerHTML=items.map((d,i)=>{
     const v=valFn(d); const pct=maxVal?Math.min((v/maxVal)*100,100):100;
-    return `<div class="rank-item">
+    const rowId=id+'-bd-'+i;
+    const hasBreakdown=!!breakdownFn;
+    const breakdown = hasBreakdown ? breakdownFn(d) : [];
+    const bdRows = breakdown.map(b=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:4px 12px 4px 32px;font-size:0.62rem;border-top:1px solid var(--rule2);">
+        <div style="flex:1;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${b.theatre}, ${b.city}">${b.theatre}<span style="color:var(--ink3);margin-left:6px;">${b.city}</span></div>
+        <div style="font-family:var(--mono);color:var(--ink);min-width:80px;text-align:right;">${b.gross?fmt$(b.gross):'—'}</div>
+        <div style="font-family:var(--mono);min-width:50px;text-align:right;color:${b.cap>=90?'var(--teal)':b.cap>=60?'var(--amber)':'var(--rose)'};">${b.cap?fmtN(b.cap)+'%':'—'}</div>
+        <div style="color:var(--ink3);min-width:36px;text-align:right;">${b.wks} wk${b.wks!==1?'s':''}</div>
+      </div>`).join('');
+    const bdHdr = breakdown.length ? `
+      <div style="display:flex;gap:8px;padding:4px 12px 4px 32px;font-size:0.55rem;color:var(--ink3);text-transform:uppercase;letter-spacing:0.08em;border-top:2px solid var(--rule);background:var(--bg2);">
+        <div style="flex:1;">Venue</div>
+        <div style="min-width:80px;text-align:right;">Gross</div>
+        <div style="min-width:50px;text-align:right;">% Cap</div>
+        <div style="min-width:36px;text-align:right;">Wks</div>
+      </div>` : `<div style="padding:8px 12px 8px 32px;font-size:0.62rem;color:var(--ink3);font-style:italic;border-top:1px solid var(--rule2);">No venue detail available</div>`;
+    return `<div class="rank-item" style="${hasBreakdown?'cursor:pointer;':''}" onclick="${hasBreakdown?`toggleRankBreakdown('${rowId}')`:''}" title="${hasBreakdown?'Click to see venue breakdown':''}">
       <div class="rank-n ${i<3?'top':''}">${i+1}</div>
       <div class="rank-body">
-        <div class="rank-name">${d._label||d.show}</div>
+        <div class="rank-name">${d._label||d.show}${hasBreakdown?` <span style="font-size:0.6rem;color:var(--ink3);">▶</span>`:''}</div>
         <div class="rank-detail">${labelFn(d)}</div>
         <div class="rank-bar-track"><div class="rank-bar-fill" style="width:${pct}%"></div></div>
       </div>
       <div class="rank-val">${fmtFn(v)}</div>
-    </div>`;
+    </div>
+    <div id="${rowId}" style="display:none;background:var(--bg2);margin-bottom:2px;">${bdHdr}${bdRows}</div>`;
   }).join('');
+}
+
+function toggleRankBreakdown(rowId) {
+  const row = document.getElementById(rowId);
+  if (!row) return;
+  const btn = row.previousElementSibling?.querySelector('.rank-name span');
+  if (row.style.display === 'none') {
+    row.style.display = 'block';
+    if (btn) btn.textContent = '▼';
+  } else {
+    row.style.display = 'none';
+    if (btn) btn.textContent = '▶';
+  }
 }
 
 function renderRankings() {
   const sg={};
   FILTERED.forEach(d=>{if(d.gross_gross)sg[d.show]=(sg[d.show]||0)+d.gross_gross;});
   const sgArr=Object.entries(sg).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([s,v])=>({_label:s,_val:v}));
-  mkRankList('rShowGross',sgArr,d=>d._val,()=>'cumulative gross',fmt$,sgArr[0]?._val);
+  // Breakdown: venues contributing to each show's gross
+  const showBreakdown=(d)=>{
+    const byVenue={};
+    FILTERED.filter(r=>r.show===d._label&&r.gross_gross).forEach(r=>{
+      if(!byVenue[r.theatre+'|'+r.city]) byVenue[r.theatre+'|'+r.city]={theatre:r.theatre,city:r.city,gross:0,caps:[],wks:0};
+      byVenue[r.theatre+'|'+r.city].gross+=r.gross_gross;
+      if(r.pct_capacity_paid) byVenue[r.theatre+'|'+r.city].caps.push(r.pct_capacity_paid);
+      byVenue[r.theatre+'|'+r.city].wks++;
+    });
+    return Object.values(byVenue).map(v=>({...v,cap:v.caps.length?v.caps.reduce((a,b)=>a+b,0)/v.caps.length:null})).sort((a,b)=>b.gross-a.gross);
+  };
+  mkRankList('rShowGross',sgArr,d=>d._val,()=>'cumulative gross',fmt$,sgArr[0]?._val,showBreakdown);
   const sgBottomArr=Object.entries(sg).sort((a,b)=>a[1]-b[1]).slice(0,10).map(([s,v])=>({_label:s,_val:v}));
-  mkRankList('rShowGrossBottom',sgBottomArr,d=>d._val,()=>'cumulative gross',fmt$,sgArr[0]?._val);
+  mkRankList('rShowGrossBottom',sgBottomArr,d=>d._val,()=>'cumulative gross',fmt$,sgArr[0]?._val,showBreakdown);
 
   const weeks=[...new Set(FILTERED.map(d=>d.report_date))].sort();
   const wowLabel=document.getElementById('wowWeekLabel');
