@@ -639,6 +639,14 @@ tbody td:last-child{border-right:none;}
   <aside class="sidebar">
 
     <div class="sidebar-section">
+      <span class="sidebar-label">Season</span>
+      <div class="pill-row" style="flex-wrap:wrap;gap:4px;">
+        <button class="pill active" data-season="" onclick="setSeasonFilter('')" aria-label="All seasons">All</button>
+        <button class="pill" data-season="2026-2027" onclick="setSeasonFilter('2026-2027')" aria-label="2026-2027 Season">2026-27</button>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
       <span class="sidebar-label">Date Range <span style="font-size:0.5rem;color:var(--ink3);text-transform:none;letter-spacing:0;font-weight:400;">(default: last 3 yrs)</span></span>
       <div class="pill-row" style="flex-wrap:wrap;gap:4px;margin-bottom:8px;">
         <button class="pill" data-preset="3yr" onclick="setDatePreset('3yr')" aria-label="Last 3 years">3 Yrs</button>
@@ -738,6 +746,7 @@ tbody td:last-child{border-right:none;}
       <div class="nav-tab" onclick="showTab('rankings')">Rankings</div>
       <div class="nav-tab" onclick="showTab('table')">Data Table</div>
       <div class="nav-tab" onclick="showTab('analytics')">Analytics</div>
+      <div class="nav-tab" onclick="showTab('seasons')">Seasons</div>
     </nav>
 
     <!-- TABLE PANEL -->
@@ -843,6 +852,17 @@ tbody td:last-child{border-right:none;}
       </div>
     </div>
 
+
+    <!-- SEASONS PANEL -->
+    <div class="panel" id="tab-seasons">
+      <div class="section-divider">
+        <h2>Our Seasons</h2>
+        <div class="section-divider-line"></div>
+        <div class="section-divider-meta">Click a season to filter the dashboard</div>
+      </div>
+      <div id="seasonsContent"></div>
+    </div>
+
     <!-- ANALYTICS PANEL -->
 <div class="panel" id="tab-analytics">
   <div class="section-divider">
@@ -911,6 +931,51 @@ tbody td:last-child{border-right:none;}
 </div>
 
 <script>
+
+// ── SEASONS CONFIG ────────────────────────────────────────────────────────────
+const SEASONS = [
+  {
+    id: '2026-2027',
+    name: '2026-2027 Season',
+    start: '2026-09-19',
+    end: '2027-06-06',
+    shows: [
+      {title:'Oh, Mary!',          open:'2026-09-19', close:'2026-09-23', subscription:false},
+      {title:'The Great Gatsby',   open:'2026-09-29', close:'2026-10-04', subscription:true},
+      {title:'Mamma Mia!',         open:'2026-10-20', close:'2026-10-25', subscription:true},
+      {title:'Boop',               open:'2026-11-10', close:'2026-11-15', subscription:true},
+      {title:"Hell's Kitchen",    open:'2026-12-08', close:'2026-12-13', subscription:true},
+      {title:'Maybe Happy Ending', open:'2027-02-16', close:'2027-02-21', subscription:true},
+      {title:'Jersey Boys',        open:'2027-03-09', close:'2027-03-14', subscription:false},
+      {title:'Waitress',           open:'2027-03-30', close:'2027-04-04', subscription:true},
+      {title:'Operation Mincemeat',open:'2027-05-04', close:'2027-05-09', subscription:true},
+      {title:'The Outsiders',      open:'2027-06-01', close:'2027-06-06', subscription:true},
+    ]
+  }
+];
+
+let ACTIVE_SEASON = null;
+
+function setSeasonFilter(seasonId) {
+  const season = SEASONS.find(s => s.id === seasonId);
+  ACTIVE_SEASON = seasonId || null;
+  document.querySelectorAll('[data-season]').forEach(b=>b.classList.toggle('active', b.dataset.season===seasonId));
+  if (season) {
+    window._DATE_RANGE = {start: season.start, end: season.end};
+    document.getElementById('fDateFrom').value = season.start;
+    document.getElementById('fDateTo').value = season.end;
+    document.querySelectorAll('[data-preset]').forEach(b=>b.classList.remove('active'));
+  } else {
+    ACTIVE_SEASON = null;
+  document.querySelectorAll('[data-season]').forEach(b=>b.classList.toggle('active',b.dataset.season===''));
+  window._DATE_RANGE = DEFAULT_RANGE ? {...DEFAULT_RANGE} : null;
+    document.getElementById('fDateFrom').value = DEFAULT_RANGE?.start || '';
+    document.getElementById('fDateTo').value = DEFAULT_RANGE?.end || '';
+  }
+  populateWeekDropdown();
+  applyFilters();
+}
+
 // ── CONFIG ────────────────────────────────────────────────────────────────────
 // When the Power Automate HTTP endpoint is ready, IT sets this URL and removes
 // the null. The dashboard will fetch live data automatically. No other changes
@@ -1746,8 +1811,70 @@ function renderAnalytics() {
       scales:{x:{grid:{color:CC.grid}},y:{grid:{color:CC.grid},ticks:{callback:v=>v+'%'}}}}});
 }
 
+
+function renderSeasons() {
+  const container = document.getElementById('seasonsContent');
+  if (!container) return;
+
+  container.innerHTML = SEASONS.map(season => {
+    const isActive = ACTIVE_SEASON === season.id;
+    // Get actual data for this season
+    const seasonData = ALL_DATA.filter(d => d.report_date >= season.start && d.report_date <= season.end);
+    const hasData = seasonData.length > 0;
+
+    const showRows = season.shows.map(show => {
+      // Match show data — fuzzy match on show name
+      const showData = seasonData.filter(d => d.show && d.show.toLowerCase().includes(show.title.toLowerCase().split(' ')[0].toLowerCase()));
+      const totalGross = showData.filter(d=>d.gross_gross).reduce((a,d)=>a+d.gross_gross,0);
+      const avgCap = avg(showData.map(d=>d.pct_capacity_paid));
+      const weeks = [...new Set(showData.map(d=>d.report_date))].length;
+
+      const openFmt = fmtWeek(show.open);
+      const closeFmt = fmtWeek(show.close);
+
+      return `<tr style="border-bottom:1px solid var(--rule2);">
+        <td style="padding:10px 13px;font-weight:500;color:var(--ink);">${show.title}</td>
+        <td style="padding:10px 13px;color:var(--ink3);font-size:0.65rem;">${openFmt} – ${closeFmt}</td>
+        <td style="padding:10px 13px;text-align:center;">
+          ${show.subscription
+            ? '<span class="badge" style="background:var(--amber-lt);color:var(--amber);border:1px solid var(--amber-md);">Sub</span>'
+            : '<span class="badge badge-secondary">Non-Sub</span>'}
+        </td>
+        <td style="padding:10px 13px;font-family:var(--mono);text-align:right;">${totalGross ? fmt$(totalGross) : '<span style="color:var(--rule)">No data yet</span>'}</td>
+        <td style="padding:10px 13px;font-family:var(--mono);text-align:right;">${avgCap ? fmtN(avgCap)+'%' : '<span style="color:var(--rule)">—</span>'}</td>
+        <td style="padding:10px 13px;font-family:var(--mono);text-align:right;">${weeks || '<span style="color:var(--rule)">—</span>'}</td>
+      </tr>`;
+    }).join('');
+
+    return `
+      <div style="margin-bottom:28px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+          <h3 style="font-family:var(--serif);font-size:1rem;color:var(--ink);">${season.name}</h3>
+          <button class="pill ${isActive?'active':''}" data-season="${season.id}"
+            onclick="setSeasonFilter('${isActive?'':season.id}')"
+            aria-label="${isActive?'Clear':'Apply'} ${season.name} filter">
+            ${isActive ? '✓ Active Filter — Click to Clear' : 'Filter Dashboard to this Season'}
+          </button>
+          ${!hasData ? '<span style="font-size:0.62rem;color:var(--ink3);font-style:italic;">No data yet — season starts '+fmtWeek(season.start)+'</span>' : ''}
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr>
+              <th>Show</th>
+              <th>Run</th>
+              <th style="text-align:center;">Type</th>
+              <th style="text-align:right;">Total Gross</th>
+              <th style="text-align:right;">Avg % Cap</th>
+              <th style="text-align:right;">Report Weeks</th>
+            </tr></thead>
+            <tbody>${showRows}</tbody>
+          </table>
+        </div>
+      </div>`;
+  }).join('');
+}
 function showTab(name) {
-  const names=['charts','rankings','table','analytics'];
+  const names=['charts','rankings','table','analytics','seasons'];
   document.querySelectorAll('.nav-tab').forEach((t,i)=>{t.classList.toggle('active',names[i]===name);});
   document.querySelectorAll('.panel').forEach(p=>{
     p.classList.toggle('active',p.id==='tab-'+name);
@@ -1756,6 +1883,7 @@ function showTab(name) {
   if(name==='charts') renderCharts();
   if(name==='rankings') renderRankings();
   if(name==='analytics') renderAnalytics();
+  if(name==='seasons') renderSeasons();
 }
 
 // ── IMPORT — commented out pending Power Automate / SharePoint List wiring ────
