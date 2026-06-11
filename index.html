@@ -577,7 +577,7 @@ tbody td:last-child{border-right:none;}
   </div>
   <div class="masthead-status">
     <div class="dot"></div>
-    <span id="dataStatus"><strong>–</strong> records · <strong>–</strong> weeks · v4</span>
+    <span id="dataStatus"><strong>–</strong> records · <strong>–</strong> weeks total</span><br><span id="filteredStatus" style="font-size:0.58rem;color:rgba(255,255,255,0.45);">Filtered: — records</span>
   </div>
   <div class="masthead-actions">
     <button class="btn btn-outline" onclick="clearAllData()" aria-label="Reload data from source">↺ Reset</button>
@@ -853,14 +853,24 @@ tbody td:last-child{border-right:none;}
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
 
     <div class="chart-card" style="grid-column:1/-1;">
-      <div class="chart-hd">Seasonality</div>
-      <div class="chart-sub">Avg gross by week-of-year across all years — shows seasonal patterns</div>
+      <div class="chart-hd">Seasonality
+        <span style="float:right;display:flex;gap:4px;">
+          <button class="pill active" id="btnSeasonWeek" onclick="setSeasonMode('week')" aria-label="Show seasonality by ISO week">Weekly</button>
+          <button class="pill" id="btnSeasonMonth" onclick="setSeasonMode('month')" aria-label="Show seasonality by month">Monthly</button>
+        </span>
+      </div>
+      <div class="chart-sub">Avg gross by period across all years · <span style="color:var(--amber)">Weekly = ISO week (Wk 1 = week containing first Thursday of January)</span></div>
       <canvas id="cSeasonality" role="img" aria-label="Seasonality chart average gross by week of year"></canvas>
     </div>
 
     <div class="chart-card" style="grid-column:1/-1;">
-      <div class="chart-hd">Year over Year Comparison</div>
-      <div class="chart-sub">Total weekly gross by year — overlaid for comparison</div>
+      <div class="chart-hd">Year over Year Comparison
+        <span style="float:right;display:flex;gap:4px;">
+          <button class="pill active" id="btnYoYWeek" onclick="setYoYMode('week')" aria-label="Show year over year by ISO week">Weekly</button>
+          <button class="pill" id="btnYoYMonth" onclick="setYoYMode('month')" aria-label="Show year over year by month">Monthly</button>
+        </span>
+      </div>
+      <div class="chart-sub">Gross by period overlaid across years · <span style="color:var(--amber)">Weekly = ISO week standard</span></div>
       <canvas id="cYoY" role="img" aria-label="Year over year gross comparison"></canvas>
     </div>
 
@@ -926,6 +936,7 @@ async function initData() {
       return {
         ...d,
         report_date: rd,
+        on_subscription: d.on_subscription===true?1:d.on_subscription===false?0:d.on_subscription,
         on_subscription: d.on_subscription === true ? 1 : d.on_subscription === false ? 0 : d.on_subscription,
         similar_bushnell_cap: !!d.similar_bushnell_cap,
         noengagement: !!d.noengagement,
@@ -1325,15 +1336,17 @@ function renderCharts() {
 
   try {
   dc('wk');
-  // Build full weekly spine from first to last date, filling gaps with 0
-  // Use spine if any Sunday in the filtered range is missing from the data
+  // Build base weeks from filtered data first, then check for gaps
   const _filteredDates = new Set(FILTERED.map(d=>d.report_date));
-  const _rangeStart = new Date(weeks[0] + 'T12:00:00');
-  const _rangeEnd = new Date(weeks[weeks.length-1] + 'T12:00:00');
+  const _baseWeeks = [..._filteredDates].filter(Boolean).sort();
   let hasDateFilter = false;
-  for (let d=new Date(_rangeStart); d<=_rangeEnd; d.setDate(d.getDate()+7)) {
-    const iso = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-    if (!_filteredDates.has(iso)) { hasDateFilter = true; break; }
+  if (_baseWeeks.length >= 2) {
+    const _rs = new Date(_baseWeeks[0] + 'T12:00:00');
+    const _re = new Date(_baseWeeks[_baseWeeks.length-1] + 'T12:00:00');
+    for (let d=new Date(_rs); d<=_re; d.setDate(d.getDate()+7)) {
+      const iso = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      if (!_filteredDates.has(iso)) { hasDateFilter = true; break; }
+    }
   }
   const weeklyNote = document.getElementById('weeklyChartNote');
   if (weeklyNote) weeklyNote.style.display = hasDateFilter ? 'none' : 'inline';
