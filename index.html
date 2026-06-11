@@ -1323,6 +1323,7 @@ function renderCharts() {
       scales:{x:{grid:{color:CC.grid},ticks:{callback:v=>v+'%'}},y:{grid:{display:false}}},
       datasets:{bar:{maxBarThickness:22,minBarLength:2}}}});
 
+  try {
   dc('wk');
   // Build full weekly spine from first to last date, filling gaps with 0
   // Use spine if any Sunday in the filtered range is missing from the data
@@ -1370,7 +1371,9 @@ function renderCharts() {
       },
       scales:{x:{grid:{color:CC.grid}},y:{grid:{color:CC.grid},ticks:{callback:v=>fmt$(v)}}}}});
 
-  dc('sc');
+  } catch(e) { console.warn('Weekly chart error:', e); }
+
+    dc('sc');
   const subG=avg(FILTERED.filter(d=>d.on_subscription===1&&d.gross_gross).map(d=>d.gross_gross));
   const nonG=avg(FILTERED.filter(d=>d.on_subscription===0&&d.gross_gross).map(d=>d.gross_gross));
   const subCap=avg(FILTERED.filter(d=>d.on_subscription===1&&d.pct_capacity_paid).map(d=>d.pct_capacity_paid));
