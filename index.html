@@ -753,6 +753,7 @@ tbody td:last-child{border-right:none;}
       <div class="nav-tab" onclick="showTab('table')">Data Table</div>
       <div class="nav-tab" onclick="showTab('analytics')">Analytics</div>
       <div class="nav-tab" onclick="showTab('seasons')">Seasons</div>
+      <div class="nav-tab" onclick="showTab('peers')">Peer Venues</div>
     </nav>
 
     <!-- TABLE PANEL -->
@@ -856,6 +857,17 @@ tbody td:last-child{border-right:none;}
           <canvas id="cTheatreSize" ></canvas>
         </div>
       </div>
+    </div>
+
+
+    <!-- PEERS PANEL -->
+    <div class="panel" id="tab-peers">
+      <div class="section-divider">
+        <h2>Peer Venues</h2>
+        <div class="section-divider-line"></div>
+        <div class="section-divider-meta">Venues flagged as similar capacity to Bushnell · <span id="peersNote" style="color:var(--amber)">Sorted by reporting weeks</span></div>
+      </div>
+      <div id="peersContent"></div>
     </div>
 
     <!-- ANALYTICS PANEL -->
@@ -2005,8 +2017,316 @@ function renderSeasons() {
   }).join('');
 }
 
+
+// ── PEER VENUE SYNOPSES ───────────────────────────────────────────────────────
+const PEER_SYNOPSES = {
+  'Pantages Theatre': {
+    website: 'hollywoodpantages.com',
+    synopsis: 'The Hollywood Pantages Theatre is a 2,691-seat Art Deco landmark on Hollywood Boulevard, opened in 1930. Operated by the Nederlander Organization, it is one of Los Angeles\'s highest-grossing Broadway touring venues and a National Historic Landmark. Its per-show sellable capacity closely mirrors the Bushnell\'s, making it a strong national benchmark.',
+    capacity: 2691, city: 'Los Angeles, CA'
+  },
+  'Buell Theatre': {
+    website: 'denvercenter.org',
+    synopsis: 'The Temple Hoyne Buell Theatre (2,839 seats) opened in 1991 as part of the Denver Performing Arts Complex — North America\'s largest nonprofit theater organization. Designed specifically for Broadway tours, it consistently ranks among the highest-grossing theaters under 5,000 seats nationally. Managed by Denver Center for the Performing Arts.',
+    capacity: 2839, city: 'Denver, CO'
+  },
+  'Connor Palace': {
+    website: 'playhousesquare.org',
+    synopsis: 'The Connor Palace (2,800 seats) is one of five restored historic theaters at Playhouse Square in Cleveland — the nation\'s largest performing arts center outside New York City. Originally a vaudeville palace built in 1922, it hosts Broadway tours, concerts, and comedy. Its restored gilded interior and subscription base parallel the Bushnell\'s programming model.',
+    capacity: 2800, city: 'Cleveland, OH'
+  },
+  'Opera House': {
+    website: 'bostonoperahouse.com',
+    synopsis: 'The Boston Opera House (2,600 seats) is a restored 1928 venue in the heart of Boston\'s Theater District, operated by Live Nation. After a $38 million renovation reopening in 2004, it has become New England\'s premier Broadway touring destination, regularly hosting long runs of major national tours. Located just 90 minutes from Hartford, it is the Bushnell\'s closest major peer market.',
+    capacity: 2600, city: 'Boston, MA'
+  },
+  'Aronoff Center: Procter & Gamble Hall': {
+    website: 'cincinnatiarts.org',
+    synopsis: 'Procter & Gamble Hall (2,719 seats) is the flagship theater of the Aronoff Center for the Arts in downtown Cincinnati, designed by architect César Pelli and opened in 1995. Owned by Cincinnati Arts Association, it anchors the city\'s Broadway series and is home to multiple resident arts organizations. Its nonprofit model and subscription-driven Broadway programming closely mirror the Bushnell\'s.',
+    capacity: 2719, city: 'Cincinnati, OH'
+  },
+  'Orpheum Theatre': {
+    website: 'hennepinarts.org',
+    synopsis: 'The Orpheum Theatre (2,579 seats) is a Beaux Arts landmark on Hennepin Avenue in Minneapolis, originally opened in 1921 and restored in 1993. Owned by Hennepin Arts (formerly Hennepin Theatre Trust), it is a nonprofit organization and the primary home of Broadway in Minneapolis. The Orpheum premiered Disney\'s The Lion King national tour and remains a key regional Broadway destination.',
+    capacity: 2579, city: 'Minneapolis, MN'
+  },
+  'Paramount Theatre': {
+    website: 'stgpresents.org',
+    synopsis: 'The Paramount Theatre (2,807 seats) is a 1928 Art Deco landmark in downtown Seattle, operated by STG Presents. One of the Pacific Northwest\'s premier performing arts venues, it hosts Broadway tours, concerts, and special events. Its consistently high capacity utilization (86% avg) makes it a strong performance benchmark.',
+    capacity: 2807, city: 'Seattle, WA'
+  },
+  'Hobby Center For The Perf. Arts': {
+    website: 'thehobbycenter.org',
+    synopsis: 'The Hobby Center for the Performing Arts houses the Sarofim Hall (2,650 seats), a modern venue that opened in 2002 in downtown Houston. Operated as a nonprofit, it is the primary Broadway touring destination for Houston and the Gulf Coast region, presenting shows through Broadway Across America.',
+    capacity: 2650, city: 'Houston, TX'
+  },
+  'Eccles Theater': {
+    website: 'artsaltlake.org',
+    synopsis: 'The George S. and Dolores Doré Eccles Theater (2,452 seats) opened in 2016 as Salt Lake City\'s premier performing arts venue. Operated by Utah Presenters in partnership with the city, it achieves among the highest avg capacity utilization (91.7%) in the peer group — reflecting strong subscription demand in a mid-sized market comparable to Hartford.',
+    capacity: 2452, city: 'Salt Lake City, UT'
+  },
+  'Dr. Phillips Center for the Performing Arts: Walt Disney  Theater': {
+    website: 'drphillipscenter.org',
+    synopsis: 'The Dr. Phillips Center for the Performing Arts in Orlando opened in 2014, with the Walt Disney Theater seating 2,700. A nonprofit venue, it serves as Orlando\'s primary home for Broadway touring productions and resident performing arts organizations. Its strong capacity performance (89.8% avg) reflects a robust subscription market.',
+    capacity: 2700, city: 'Orlando, FL'
+  },
+  'Benedum Center': {
+    website: 'pittsburghculturaltrust.org',
+    synopsis: 'The Benedum Center for the Performing Arts (2,800 seats) is a restored 1928 movie palace in downtown Pittsburgh, operated by the Pittsburgh Cultural Trust. It is the home of Broadway in Pittsburgh and also serves as the performance venue for Pittsburgh Ballet Theatre, Pittsburgh Opera, and Pittsburgh CLO — a multipurpose nonprofit model very similar to the Bushnell.',
+    capacity: 2800, city: 'Pittsburgh, PA'
+  },
+  'Broward Center For The Perf. Arts': {
+    website: 'browardcenter.org',
+    synopsis: 'The Broward Center for the Performing Arts (2,700-seat Au-Rene Theater) opened in 1991 in Fort Lauderdale. A nonprofit presenting organization, it serves the South Florida market and is among the most active Broadway touring venues in the Southeast. Its below-average capacity utilization (69.5%) relative to peers provides useful benchmarking context for the Bushnell.',
+    capacity: 2700, city: 'Fort Lauderdale, FL'
+  },
+  'Durham Performing Arts Center': {
+    website: 'dpacnc.com',
+    synopsis: 'DPAC (2,712 seats) opened in 2008 in Durham, NC, operated by Nederlander and the City of Durham. Despite its relatively recent opening, it has become one of the top-grossing mid-size performing arts venues in the country. Its high subscription penetration and strong avg capacity (89%) make it a notable benchmark for the Bushnell.',
+    capacity: 2712, city: 'Durham, NC'
+  },
+  'ASU Gammage': {
+    website: 'asugammage.com',
+    synopsis: 'ASU Gammage (3,000 seats) is a Frank Lloyd Wright-designed venue at Arizona State University in Tempe, opened in 1964. It consistently achieves the highest avg capacity utilization in the peer group (94.1%), reflecting strong subscription demand in the Phoenix metro market. Operated by ASU, it combines academic resources with a major Broadway presenting program.',
+    capacity: 3000, city: 'Tempe, AZ'
+  },
+  'Academy of Music: Kimmel Center': {
+    website: 'kimmelculturalinstitute.org',
+    synopsis: 'The Academy of Music (2,987 seats) in Philadelphia is one of the oldest operating opera houses in the United States, built in 1857 and home to the Broadway series presented by the Kimmel Cultural Institute. Its long history, subscription base, and mid-Atlantic market position make it a relevant peer despite its larger capacity.',
+    capacity: 2987, city: 'Philadelphia, PA'
+  },
+  'Saenger Theatre': {
+    website: 'saengernola.com',
+    synopsis: 'The Saenger Theatre (2,708 seats) is a restored 1927 atmospheric theater in New Orleans, reopened in 2013 after Hurricane Katrina damage. Operated by ASM Global, it serves as the primary Broadway touring destination for the Gulf South region. Its recovery and consistent performance post-reopening provides an interesting resilience benchmark.',
+    capacity: 2708, city: 'New Orleans, LA'
+  },
+  'Straz Center for the Performing Arts': {
+    website: 'strazcenter.org',
+    synopsis: 'The Straz Center for the Performing Arts (David A. Straz Jr. Hall, 2,610 seats) is a nonprofit performing arts complex in Tampa that opened in 1987. One of the largest performing arts centers in the Southeast, it presents Broadway tours and supports multiple resident arts organizations, paralleling the Bushnell\'s community anchor role.',
+    capacity: 2610, city: 'Tampa, FL'
+  },
+  'Des Moines Civic Center': {
+    website: 'desmoinesperformingarts.org',
+    synopsis: 'The Des Moines Civic Center (2,735 seats) opened in 1979 as part of the city\'s Performing Arts Complex, operated by Des Moines Performing Arts. A nonprofit venue serving the Iowa market, it is one of the Bushnell\'s closest capacity and revenue comparables, with a similar subscription-driven Broadway model in a mid-sized regional market.',
+    capacity: 2735, city: 'Des Moines, IA'
+  },
+  'Keller Auditorium': {
+    website: 'portland5.com',
+    synopsis: 'Keller Auditorium (2,992 seats) is Portland\'s primary Broadway touring venue, managed by Portland\'5 Centers for the Arts, a nonprofit organization. Its high avg capacity utilization (91.8%) reflects strong subscriber demand in the Pacific Northwest market.',
+    capacity: 2992, city: 'Portland, OR'
+  },
+  'Proctors': {
+    website: 'proctors.org',
+    synopsis: 'Proctors Theatre (2,690 seats) in Schenectady, NY is a nonprofit performing arts organization that also manages multiple regional venues across the Capital Region. As the closest geographic peer to the Bushnell (under 2 hours), Proctors serves an overlapping New England/Upstate NY audience and its Broadway touring data provides the most directly comparable market benchmark.',
+    capacity: 2690, city: 'Schenectady, NY'
+  },
+  'San Diego Civic Theatre': {
+    website: 'broadwaysd.com',
+    synopsis: 'The San Diego Civic Theatre (2,972 seats) is a modern venue opened in 1965, presenting Broadway tours through Broadway San Diego. A key market in the Southern California touring circuit, its strong avg capacity (82.9%) and consistent programming make it a useful West Coast benchmark.',
+    capacity: 2972, city: 'San Diego, CA'
+  },
+  'Orpheum Theater': {
+    website: 'omahaperformingarts.org',
+    synopsis: 'The Orpheum Theater (2,611 seats) in Omaha is a restored 1927 vaudeville palace, operated by Omaha Performing Arts, a nonprofit organization. Serving the Nebraska/Iowa market, its subscription-driven Broadway series and mid-market positioning closely parallel the Bushnell\'s.',
+    capacity: 2611, city: 'Omaha, NE'
+  },
+  'Ohio Theatre': {
+    website: 'capa.com',
+    synopsis: 'The Ohio Theatre (2,779 seats) is a restored 1928 Spanish Baroque movie palace in Columbus, operated by CAPA (Columbus Association for the Performing Arts). It is the primary Broadway touring venue for Central Ohio and achieves strong avg capacity (93.4%), reflecting high subscription penetration.',
+    capacity: 2779, city: 'Columbus, OH'
+  },
+  'Steven Tanger Center for the Performing Arts': {
+    website: 'greensborotangercenter.com',
+    synopsis: 'The Steven Tanger Center for the Performing Arts (3,000 seats) is a new venue opened in 2021 in Greensboro, NC. Despite its recent opening, it has quickly established strong Broadway touring performance (83.3% avg capacity), serving as a benchmark for newer performing arts centers in mid-sized markets.',
+    capacity: 3000, city: 'Greensboro, NC'
+  },
+  'Segerstrom Center for the Arts': {
+    website: 'scfta.org',
+    synopsis: 'The Segerstrom Center for the Arts (Renée and Henry Segerstrom Concert Hall, 3,000 seats) in Costa Mesa is a premier Southern California arts complex opened in 1986. A nonprofit organization presenting Broadway tours alongside resident symphony and opera companies, its strong capacity metrics (84%) reflect the competitive Orange County market.',
+    capacity: 3000, city: 'Costa Mesa, CA'
+  },
+  'Bass Concert Hall @ U of TX at Austin': {
+    website: 'texasperformingarts.org',
+    synopsis: 'Bass Concert Hall (2,933 seats) at the University of Texas at Austin is operated by Texas Performing Arts, the university\'s presenting organization. One of the most active Broadway touring venues in Texas, it achieves strong capacity utilization (89.7%) in the fast-growing Austin market.',
+    capacity: 2933, city: 'Austin, TX'
+  },
+  'Auditorium Theatre': {
+    website: 'auditoriumtheatre.org',
+    synopsis: 'The Auditorium Theatre (2,347 seats) in Rochester, NY is a restored 1922 venue operated by Rochester Broadway Theatre League, a nonprofit organization. As a close geographic peer in the New York State market, it provides relevant regional benchmarking data for the Bushnell.',
+    capacity: 2347, city: 'Rochester, NY'
+  },
+  'KeyBank State Theatre': {
+    website: 'playhousesquare.org',
+    synopsis: 'The KeyBank State Theatre (3,400 seats) is part of Cleveland\'s Playhouse Square complex and serves as the venue for larger-scale Broadway productions in the market. While larger than the Bushnell, its per-show sellable capacity places it within the peer range.',
+    capacity: 3400, city: 'Cleveland, OH'
+  },
+  'Queen Elizabeth Theatre': {
+    website: 'vancouvercivictheatres.com',
+    synopsis: 'The Queen Elizabeth Theatre (2,929 seats) in Vancouver, BC is operated by Vancouver Civic Theatres and serves as the city\'s primary Broadway touring destination. Its strong avg capacity (92.6%) reflects the robust Vancouver performing arts market.',
+    capacity: 2929, city: 'Vancouver, BC'
+  },
+  'San Jose Center For The Perf. Arts': {
+    website: 'broadwaysanjose.com',
+    synopsis: 'The San Jose Center for the Performing Arts (2,677 seats) serves the Silicon Valley market, presenting Broadway tours through Broadway San Jose. A key venue in the Bay Area touring circuit, it provides useful West Coast mid-market benchmarking.',
+    capacity: 2677, city: 'San Jose, CA'
+  },
+  'First Interstate Center for the Arts': {
+    website: 'spokanecivictheatre.com',
+    synopsis: 'The First Interstate Center for the Arts (2,700 seats) in Spokane presents Broadway tours serving Eastern Washington and Northern Idaho. Its below-peer capacity utilization (69.6%) reflects a smaller market, providing useful context for Bushnell\'s positioning.',
+    capacity: 2700, city: 'Spokane, WA'
+  },
+  'Detroit Opera House': {
+    website: 'michiganopera.org',
+    synopsis: 'The Detroit Opera House (2,700 seats) is a restored 1922 venue operated by Michigan Opera Theatre, presenting both opera and Broadway touring productions. Its dual programming model and mid-market performance provide relevant benchmarking for the Bushnell.',
+    capacity: 2700, city: 'Detroit, MI'
+  },
+  'Landmark Theatre': {
+    website: 'landmarktheatre.org',
+    synopsis: 'The Landmark Theatre (2,922 seats) in Syracuse, NY is a restored 1928 atmospheric theater operated by a nonprofit organization. As a regional New York State peer serving a market similar in size to Hartford, it is among the most directly comparable venues for the Bushnell\'s market positioning.',
+    capacity: 2922, city: 'Syracuse, NY'
+  },
+  'Birmingham-Jefferson Concert Hall': {
+    website: 'bjcc.org',
+    synopsis: 'The Birmingham-Jefferson Concert Hall (2,956 seats) is part of the BJCC complex in Birmingham, AL, presenting Broadway tours in the Deep South market. Its capacity and avg gross provide a useful comparison for mid-sized Southern markets.',
+    capacity: 2956, city: 'Birmingham, AL'
+  },
+  'Murat Centre': {
+    website: 'oldnationalcentre.com',
+    synopsis: 'The Murat Centre (Clowes Memorial Hall, 2,171 seats) in Indianapolis is a historic venue presenting Broadway touring productions. Its strong avg capacity (86.2%) in a mid-sized Midwest market makes it a relevant peer for the Bushnell.',
+    capacity: 2171, city: 'Indianapolis, IN'
+  },
+  'Jacksonville Center for the Performing Arts: Moran Theatre': {
+    website: 'jaxevents.com',
+    synopsis: 'The Moran Theatre (2,930 seats) at the Jacksonville Center for the Performing Arts presents Broadway tours in Northeast Florida. Its below-peer capacity utilization (56.9%) provides useful context for understanding market-size effects on Broadway performance.',
+    capacity: 2930, city: 'Jacksonville, FL'
+  },
+  'Place Des Arts': {
+    website: 'placedesarts.com',
+    synopsis: 'Place des Arts in Montreal is a major Canadian performing arts complex presenting Broadway touring productions in French and English markets. As the only Canadian venue in the meaningful peer group with significant reporting weeks, it provides international benchmarking context.',
+    capacity: 2800, city: 'Montreal, QC'
+  },
+};
+
+function renderPeers() {
+  const container = document.getElementById('peersContent');
+  if (!container) return;
+
+  // Calculate Bushnell benchmarks from data
+  const bushnellData = ALL_DATA.filter(d => (d.city||'').toLowerCase() === 'hartford');
+  const bushnellAvgGross = avg(bushnellData.filter(d=>d.gross_gross).map(d=>d.gross_gross));
+  const bushnellAvgCap = avg(bushnellData.map(d=>d.pct_capacity_paid));
+
+  // Build peer stats from ALL_DATA
+  const peerStats = {};
+  ALL_DATA.filter(d=>d.similar_bushnell_cap && (d.city||'').toLowerCase() !== 'hartford').forEach(d=>{
+    const key = d.theatre;
+    if (!key) return;
+    if (!peerStats[key]) peerStats[key] = {city:d.city, gross:[], cap:[], shows:new Set()};
+    if (d.gross_gross) peerStats[key].gross.push(d.gross_gross);
+    if (d.pct_capacity_paid) peerStats[key].cap.push(d.pct_capacity_paid);
+    if (d.show) peerStats[key].shows.add(d.show);
+  });
+
+  const meaningful = Object.entries(peerStats)
+    .map(([name, s]) => {
+      const ag = avg(s.gross);
+      const ac = avg(s.cap);
+      return {name, city:s.city, weeks:s.gross.length+s.cap.length > 0 ? Math.max(s.gross.length, s.cap.length) : 0,
+              avg_gross: ag, avg_cap: ac, shows: s.shows.size,
+              meaningful: s.gross.length >= 10 && ag && ag/bushnellAvgGross >= 0.5 && ag/bushnellAvgGross <= 2.0};
+    })
+    .sort((a,b) => b.weeks - a.weeks);
+
+  const synopsis_venues = meaningful.filter(v=>v.meaningful && PEER_SYNOPSES[v.name]);
+  const listed_venues = meaningful.filter(v=>!v.meaningful || !PEER_SYNOPSES[v.name]);
+
+  const grossDiff = (ag) => {
+    if (!ag || !bushnellAvgGross) return '';
+    const diff = ((ag - bushnellAvgGross)/bushnellAvgGross)*100;
+    return diff > 5 ? `<span style="color:var(--teal);font-size:0.6rem;">▲${fmtN(diff)}%</span>` :
+           diff < -5 ? `<span style="color:var(--rose);font-size:0.6rem;">▼${fmtN(Math.abs(diff))}%</span>` :
+           `<span style="color:var(--ink3);font-size:0.6rem;">≈</span>`;
+  };
+
+  const capColor = (ac) => !ac ? 'var(--ink3)' : ac >= 90 ? 'var(--teal)' : ac >= 60 ? 'var(--amber)' : 'var(--rose)';
+
+  // Bushnell benchmark row
+  const bushnellRow = `
+    <div style="background:var(--amber-lt);border:2px solid var(--amber);border-radius:3px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;">
+      <div style="font-family:var(--serif);font-size:0.9rem;color:var(--amber);font-weight:700;">The Bushnell · Hartford, CT</div>
+      <div style="font-size:0.65rem;color:var(--ink3);">Your venue — benchmark reference</div>
+      <div style="margin-left:auto;display:flex;gap:24px;flex-wrap:wrap;">
+        <div style="text-align:center;"><div style="font-size:0.55rem;color:var(--ink3);text-transform:uppercase;letter-spacing:0.1em;">Avg Gross</div><div style="font-family:var(--mono);font-weight:700;color:var(--amber);">${fmt$(bushnellAvgGross)}</div></div>
+        <div style="text-align:center;"><div style="font-size:0.55rem;color:var(--ink3);text-transform:uppercase;letter-spacing:0.1em;">Avg % Cap</div><div style="font-family:var(--mono);font-weight:700;color:var(--amber);">${bushnellAvgCap?fmtN(bushnellAvgCap)+'%':'—'}</div></div>
+        <div style="text-align:center;"><div style="font-size:0.55rem;color:var(--ink3);text-transform:uppercase;letter-spacing:0.1em;">Report Wks</div><div style="font-family:var(--mono);font-weight:700;color:var(--amber);">${bushnellData.length}</div></div>
+      </div>
+    </div>`;
+
+  // Meaningful peers with synopses
+  const meaningfulHTML = synopsis_venues.map(v => {
+    const syn = PEER_SYNOPSES[v.name] || {};
+    return `
+      <div style="background:#fff;border:1px solid var(--rule);border-radius:3px;padding:20px;margin-bottom:16px;">
+        <div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:260px;">
+            <div style="font-family:var(--serif);font-size:0.95rem;color:var(--ink);margin-bottom:2px;">${v.name}</div>
+            <div style="font-size:0.62rem;color:var(--ink3);margin-bottom:8px;">${v.city}${syn.capacity?' · '+syn.capacity.toLocaleString()+' seats':''}</div>
+            <div style="font-size:0.68rem;color:var(--ink2);line-height:1.6;">${syn.synopsis||''}</div>
+            ${syn.website?`<div style="margin-top:8px;"><a href="https://${syn.website}" target="_blank" style="font-size:0.6rem;color:var(--amber);">${syn.website} ↗</a></div>`:''}
+          </div>
+          <div style="display:flex;gap:20px;flex-wrap:wrap;flex-shrink:0;">
+            <div style="text-align:center;min-width:70px;">
+              <div style="font-size:0.55rem;color:var(--ink3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Avg Gross</div>
+              <div style="font-family:var(--mono);font-size:0.85rem;font-weight:700;color:var(--ink);">${fmt$(v.avg_gross)}</div>
+              <div style="margin-top:2px;">${grossDiff(v.avg_gross)}</div>
+            </div>
+            <div style="text-align:center;min-width:70px;">
+              <div style="font-size:0.55rem;color:var(--ink3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Avg % Cap</div>
+              <div style="font-family:var(--mono);font-size:0.85rem;font-weight:700;color:${capColor(v.avg_cap)};">${v.avg_cap?fmtN(v.avg_cap)+'%':'—'}</div>
+            </div>
+            <div style="text-align:center;min-width:60px;">
+              <div style="font-size:0.55rem;color:var(--ink3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Report Wks</div>
+              <div style="font-family:var(--mono);font-size:0.85rem;color:var(--ink3);">${v.weeks}</div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Listed-only peers table
+  const listedHTML = listed_venues.length ? `
+    <div style="margin-top:28px;">
+      <div class="section-divider" style="margin-bottom:12px;">
+        <h3 style="font-family:var(--serif);font-size:0.85rem;color:var(--ink);">All Other Peer-Flagged Venues</h3>
+        <div class="section-divider-line"></div>
+        <div class="section-divider-meta">Fewer than 10 reporting weeks or outside gross range</div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Venue</th><th>City</th>
+            <th style="text-align:right;">Avg Gross</th>
+            <th style="text-align:right;">Avg % Cap</th>
+            <th style="text-align:right;">Report Wks</th>
+          </tr></thead>
+          <tbody>${listed_venues.map(v=>`
+            <tr style="border-bottom:1px solid var(--rule2);">
+              <td style="padding:8px 13px;color:var(--ink);">${v.name}</td>
+              <td style="padding:8px 13px;color:var(--ink3);">${v.city}</td>
+              <td style="padding:8px 13px;font-family:var(--mono);text-align:right;">${fmt$(v.avg_gross)}</td>
+              <td style="padding:8px 13px;font-family:var(--mono);text-align:right;color:${capColor(v.avg_cap)};">${v.avg_cap?fmtN(v.avg_cap)+'%':'—'}</td>
+              <td style="padding:8px 13px;font-family:var(--mono);text-align:right;color:var(--ink3);">${v.weeks}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>` : '';
+
+  container.innerHTML = bushnellRow + meaningfulHTML + listedHTML;
+}
+
 function showTab(name) {
-  const names=['charts','rankings','table','analytics','seasons'];
+  const names=['charts','rankings','table','analytics','seasons','peers'];
   document.querySelectorAll('.nav-tab').forEach((t,i)=>{t.classList.toggle('active',names[i]===name);});
   document.querySelectorAll('.panel').forEach(p=>{
     p.classList.toggle('active',p.id==='tab-'+name);
@@ -2016,6 +2336,7 @@ function showTab(name) {
   if(name==='rankings') renderRankings();
   if(name==='analytics') renderAnalytics();
   if(name==='seasons') renderSeasons();
+  if(name==='peers') renderPeers();
 }
 
 // ── IMPORT — commented out pending Power Automate / SharePoint List wiring ────
