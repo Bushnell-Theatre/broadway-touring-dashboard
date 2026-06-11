@@ -1854,12 +1854,41 @@ function renderSeasons() {
     const showRows = season.shows.map(show => {
       const ml = show.match.toLowerCase();
       const showData = seasonData.filter(d => d.show && d.show.toLowerCase().includes(ml.split(' ')[0]) && (ml.split(' ').length < 2 || d.show.toLowerCase().includes(ml.split(' ')[1]||'')));
-      const gross = showData.filter(d=>d.gross_gross).reduce((a,d)=>a+d.gross_gross,0);
-      const cap = avg(showData.map(d=>d.pct_capacity_paid));
-      const wks = [...new Set(showData.map(d=>d.report_date))].length;
-      const capColor = cap ? (cap>=90?'var(--teal)':cap>=60?'var(--amber)':'var(--rose)') : 'var(--rule)';
 
-      return `<tr style="border-bottom:1px solid var(--rule2);">
+      // Bushnell records — city Hartford
+      const bushnellData = showData.filter(d => (d.city||'').toLowerCase() === 'hartford');
+      const bushnellGross = bushnellData.filter(d=>d.gross_gross).reduce((a,d)=>a+d.gross_gross,0) || null;
+      const bushnellCap = avg(bushnellData.map(d=>d.pct_capacity_paid));
+
+      // Peer records — similar_bushnell_cap, exclude Hartford
+      const peerData = showData.filter(d => d.similar_bushnell_cap && (d.city||'').toLowerCase() !== 'hartford');
+      const peerGross = peerData.length ? avg(peerData.filter(d=>d.gross_gross).map(d=>d.gross_gross)) : null;
+      const peerCap = avg(peerData.map(d=>d.pct_capacity_paid));
+
+      // All venues (non-Hartford) for broader comparison
+      const allData = showData.filter(d => (d.city||'').toLowerCase() !== 'hartford');
+      const allGross = allData.length ? avg(allData.filter(d=>d.gross_gross).map(d=>d.gross_gross)) : null;
+      const allCap = avg(allData.map(d=>d.pct_capacity_paid));
+
+      const wks = [...new Set(bushnellData.map(d=>d.report_date))].length;
+      const hasData = bushnellData.length > 0;
+
+      const capCell = (bushnell, peer) => {
+        if (!bushnell && !peer) return '<span style="color:var(--rule)">—</span>';
+        const diff = bushnell && peer ? bushnell - peer : null;
+        const color = bushnell >= 90 ? 'var(--teal)' : bushnell >= 60 ? 'var(--amber)' : bushnell ? 'var(--rose)' : 'var(--rule)';
+        const arrow = diff !== null ? (diff > 2 ? ' <span style="color:var(--teal)">▲</span>' : diff < -2 ? ' <span style="color:var(--rose)">▼</span>' : ' <span style="color:var(--ink3)">—</span>') : '';
+        return `<span style="color:${color};font-weight:600;">${bushnell?fmtN(bushnell)+'%':'—'}</span>${arrow}`;
+      };
+
+      const grossCell = (bushnell, peer) => {
+        if (!bushnell && !peer) return '<span style="color:var(--rule)">No data yet</span>';
+        const diff = bushnell && peer ? ((bushnell-peer)/peer)*100 : null;
+        const arrow = diff !== null ? (diff > 5 ? ' <span style="color:var(--teal)">▲</span>' : diff < -5 ? ' <span style="color:var(--rose)">▼</span>' : ' <span style="color:var(--ink3)">—</span>') : '';
+        return `<span style="font-weight:600;">${bushnell?fmt$(bushnell):'—'}</span>${arrow}`;
+      };
+
+      return `<tr style="border-bottom:1px solid var(--rule2);${hasData?'':'opacity:0.6;'}">
         <td style="padding:10px 13px;font-weight:500;color:var(--ink);">${show.title}</td>
         <td style="padding:10px 13px;color:var(--ink3);font-size:0.65rem;font-family:var(--mono);">${fmtWeek(show.open).replace(/, \d{4}/,'')} – ${fmtWeek(show.close)}</td>
         <td style="padding:10px 13px;text-align:center;">
@@ -1867,8 +1896,10 @@ function renderSeasons() {
             ? '<span class="badge" style="background:var(--amber-lt);color:var(--amber);border:1px solid var(--amber-md);">Sub</span>'
             : '<span class="badge badge-secondary">Non-Sub</span>'}
         </td>
-        <td style="padding:10px 13px;font-family:var(--mono);text-align:right;color:var(--ink);">${gross ? fmt$(gross) : '<span style="color:var(--rule)">No data yet</span>'}</td>
-        <td style="padding:10px 13px;font-family:var(--mono);text-align:right;color:${capColor};">${cap ? fmtN(cap)+'%' : '<span style="color:var(--rule)">—</span>'}</td>
+        <td style="padding:10px 13px;font-family:var(--mono);text-align:right;">${grossCell(bushnellGross, peerGross)}</td>
+        <td style="padding:10px 13px;font-family:var(--mono);text-align:right;color:var(--ink3);font-size:0.65rem;">${peerGross?fmt$(peerGross):'—'}</td>
+        <td style="padding:10px 13px;font-family:var(--mono);text-align:right;">${capCell(bushnellCap, peerCap)}</td>
+        <td style="padding:10px 13px;font-family:var(--mono);text-align:right;color:var(--ink3);font-size:0.65rem;">${peerCap?fmtN(peerCap)+'%':'—'}</td>
         <td style="padding:10px 13px;font-family:var(--mono);text-align:right;color:var(--ink3);">${wks||'—'}</td>
       </tr>`;
     }).join('');
@@ -1894,10 +1925,13 @@ function renderSeasons() {
         <div class="tbl-wrap">
           <table>
             <thead><tr>
-              <th>Show</th><th>Run Dates</th>
+              <th>Show</th>
+              <th>Run Dates</th>
               <th style="text-align:center;">Type</th>
-              <th style="text-align:right;">Total Gross</th>
-              <th style="text-align:right;">Avg % Cap</th>
+              <th style="text-align:right;">Bushnell Gross</th>
+              <th style="text-align:right;color:var(--ink3);">Peer Avg Gross</th>
+              <th style="text-align:right;">Bushnell % Cap</th>
+              <th style="text-align:right;color:var(--ink3);">Peer Avg % Cap</th>
               <th style="text-align:right;">Report Wks</th>
             </tr></thead>
             <tbody>${showRows}</tbody>
