@@ -638,12 +638,21 @@ tbody td:last-child{border-right:none;}
   <!-- SIDEBAR -->
   <aside class="sidebar">
 
+    <!-- Active filter badge + reset -->
+    <div class="sidebar-section" style="padding:8px 12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span class="sidebar-label" style="margin:0;">Filters <span id="activeFilterCount" style="display:none;background:var(--amber);color:#fff;font-size:0.55rem;padding:1px 5px;border-radius:8px;margin-left:4px;font-weight:700;"></span></span>
+        <button class="btn btn-ghost" style="font-size:0.6rem;padding:2px 8px;" onclick="resetFilters()" aria-label="Reset all filters to default">&#8635; Reset</button>
+      </div>
+    </div>
+
+    <!-- SEASON -->
     <div class="sidebar-section">
       <span class="sidebar-label">Season</span>
       <div class="pill-row" style="flex-wrap:wrap;gap:4px;">
-        <button class="pill active" data-season="" onclick="setSeasonFilter('')" aria-label="All seasons">All</button>
+        <button class="pill" data-season="" onclick="setSeasonFilter('')" aria-label="All seasons">All</button>
         <button class="pill" data-season="2026-2027" onclick="setSeasonFilter('2026-2027')" aria-label="2026-2027 Season">2026-27</button>
-        <button class="pill" data-season="2025-2026" onclick="setSeasonFilter('2025-2026')" aria-label="2025-2026 Season">2025-26</button>
+        <button class="pill active" data-season="2025-2026" onclick="setSeasonFilter('2025-2026')" aria-label="2025-2026 Season">2025-26</button>
         <button class="pill" data-season="2024-2025" onclick="setSeasonFilter('2024-2025')" aria-label="2024-2025 Season">2024-25</button>
         <button class="pill" data-season="2023-2024" onclick="setSeasonFilter('2023-2024')" aria-label="2023-2024 Season">2023-24</button>
         <button class="pill" data-season="2022-2023" onclick="setSeasonFilter('2022-2023')" aria-label="2022-2023 Season">2022-23</button>
@@ -652,27 +661,7 @@ tbody td:last-child{border-right:none;}
       </div>
     </div>
 
-    <div class="sidebar-section">
-      <span class="sidebar-label">Date Range <span style="font-size:0.5rem;color:var(--ink3);text-transform:none;letter-spacing:0;font-weight:400;">(default: last 3 yrs · snapped to nearest Sunday)</span></span>
-      <div class="pill-row" style="flex-wrap:wrap;gap:4px;margin-bottom:8px;">
-        <button class="pill" data-preset="3yr" onclick="setDatePreset('3yr')" aria-label="Last 3 years">3 Yrs</button>
-        <button class="pill" data-preset="ytd" onclick="setDatePreset('ytd')" aria-label="Year to date">YTD</button>
-        <button class="pill" data-preset="tm" onclick="setDatePreset('tm')" aria-label="This month">This Mo</button>
-        <button class="pill" data-preset="lm" onclick="setDatePreset('lm')" aria-label="Last month">Last Mo</button>
-        <button class="pill" data-preset="tq" onclick="setDatePreset('tq')" aria-label="This quarter">This Qtr</button>
-        <button class="pill" data-preset="lq" onclick="setDatePreset('lq')" aria-label="Last quarter">Last Qtr</button>
-        <button class="pill" data-preset="all" onclick="setDatePreset('all')" aria-label="All data">All Data</button>
-      </div>
-      <label for="fDateFrom" class="sidebar-label" style="margin-top:8px;display:block;">From</label>
-      <input type="date" id="fDateFrom" style="width:100%;background:var(--bg);border:1px solid var(--rule);color:var(--ink);font-family:var(--mono);font-size:0.65rem;padding:5px 7px;border-radius:2px;outline:none;margin-bottom:6px;" oninput="onDateRangeChange()">
-      <label for="fDateTo" class="sidebar-label" style="display:block;">To</label>
-      <input type="date" id="fDateTo" style="width:100%;background:var(--bg);border:1px solid var(--rule);color:var(--ink);font-family:var(--mono);font-size:0.65rem;padding:5px 7px;border-radius:2px;outline:none;margin-bottom:8px;" oninput="onDateRangeChange()">
-      <label class="sidebar-label" style="display:block;">Filter by Year</label>
-      <div class="pill-row" id="yearPills" style="flex-wrap:wrap;gap:4px;margin-bottom:8px;"></div>
-      <label for="fDate" class="sidebar-label" style="display:block;">Report Week</label>
-      <select id="fDate"><option value="">All Weeks</option></select>
-    </div>
-
+    <!-- TIER -->
     <div class="sidebar-section">
       <span class="sidebar-label">Tier</span>
       <div class="pill-row">
@@ -682,6 +671,7 @@ tbody td:last-child{border-right:none;}
       </div>
     </div>
 
+    <!-- SUBSCRIPTION -->
     <div class="sidebar-section">
       <span class="sidebar-label">Subscription</span>
       <div class="pill-row">
@@ -691,6 +681,7 @@ tbody td:last-child{border-right:none;}
       </div>
     </div>
 
+    <!-- PEER VENUES -->
     <div class="sidebar-section">
       <span class="sidebar-label">Peer Venues</span>
       <div class="pill-row">
@@ -699,36 +690,26 @@ tbody td:last-child{border-right:none;}
       </div>
     </div>
 
+    <!-- VENUE -->
     <div class="sidebar-section">
-      <span class="sidebar-label">Gross Gross ($)</span>
-      <div class="range-row">
-        <input type="number" id="fGrossMin" placeholder="Min" step="100000" oninput="applyFilters()">
-        <span class="range-sep">–</span>
-        <input type="number" id="fGrossMax" placeholder="Max" step="100000" oninput="applyFilters()">
-      </div>
+      <label for="fVenue" class="sidebar-label" style="display:block;">Venue</label>
+      <select id="fVenue" style="width:100%;background:var(--bg);border:1px solid var(--rule);color:var(--ink);font-family:var(--mono);font-size:0.65rem;padding:5px 7px;border-radius:2px;outline:none;" onchange="applyFilters()">
+        <option value="">All Venues</option>
+      </select>
     </div>
 
+    <!-- CITY -->
     <div class="sidebar-section">
-      <span class="sidebar-label">% Capacity Paid</span>
-      <div class="range-row">
-        <input type="number" id="fCapMin" placeholder="Min %" min="0" max="100" oninput="applyFilters()">
-        <span class="range-sep">–</span>
-        <input type="number" id="fCapMax" placeholder="Max %" min="0" max="100" oninput="applyFilters()">
-      </div>
+      <label for="fCity" class="sidebar-label" style="display:block;">City</label>
+      <select id="fCity" style="width:100%;background:var(--bg);border:1px solid var(--rule);color:var(--ink);font-family:var(--mono);font-size:0.65rem;padding:5px 7px;border-radius:2px;outline:none;" onchange="applyFilters()">
+        <option value="">All Cities</option>
+      </select>
     </div>
 
-    <div class="sidebar-section">
-      <span class="sidebar-label"># Performances</span>
-      <div class="range-row">
-        <input type="number" id="fPerfMin" placeholder="Min" min="1" oninput="applyFilters()">
-        <span class="range-sep">–</span>
-        <input type="number" id="fPerfMax" placeholder="Max" min="1" oninput="applyFilters()">
-      </div>
-    </div>
-
+    <!-- SHOWS -->
     <div class="sidebar-section">
       <span class="sidebar-label">Shows</span>
-      <input class="show-search-input" id="showSearch" type="text" placeholder="Search shows…" oninput="filterShowList()">
+      <input class="show-search-input" id="showSearch" type="text" placeholder="Search shows..." oninput="filterShowList()">
       <div class="show-quick">
         <button onclick="selectAllShows()">All</button>
         <button onclick="clearAllShows()">None</button>
@@ -738,8 +719,55 @@ tbody td:last-child{border-right:none;}
       <div class="show-count" id="showCount"></div>
     </div>
 
+    <!-- DATE RANGE -->
     <div class="sidebar-section">
-      <button class="btn btn-ghost" style="width:100%;font-family:var(--sans);" onclick="resetFilters()" aria-label="Reset all filters to default">↺ Reset All Filters</button>
+      <span class="sidebar-label">Date Range <span style="font-size:0.5rem;color:var(--ink3);text-transform:none;letter-spacing:0;font-weight:400;">(snapped to nearest Sunday)</span></span>
+      <div class="pill-row" style="flex-wrap:wrap;gap:4px;margin-bottom:8px;">
+        <button class="pill" data-preset="3yr" onclick="setDatePreset('3yr')" aria-label="Last 3 years">3 Yrs</button>
+        <button class="pill" data-preset="ytd" onclick="setDatePreset('ytd')" aria-label="Year to date">YTD</button>
+        <button class="pill" data-preset="tm" onclick="setDatePreset('tm')" aria-label="This month">This Mo</button>
+        <button class="pill" data-preset="lm" onclick="setDatePreset('lm')" aria-label="Last month">Last Mo</button>
+        <button class="pill" data-preset="tq" onclick="setDatePreset('tq')" aria-label="This quarter">This Qtr</button>
+        <button class="pill" data-preset="lq" onclick="setDatePreset('lq')" aria-label="Last quarter">Last Qtr</button>
+        <button class="pill" data-preset="all" onclick="setDatePreset('all')" aria-label="All data">All Data</button>
+      </div>
+      <label for="fDateFrom" class="sidebar-label" style="display:block;">From</label>
+      <input type="date" id="fDateFrom" style="width:100%;background:var(--bg);border:1px solid var(--rule);color:var(--ink);font-family:var(--mono);font-size:0.65rem;padding:5px 7px;border-radius:2px;outline:none;margin-bottom:6px;" oninput="onDateRangeChange()">
+      <label for="fDateTo" class="sidebar-label" style="display:block;">To</label>
+      <input type="date" id="fDateTo" style="width:100%;background:var(--bg);border:1px solid var(--rule);color:var(--ink);font-family:var(--mono);font-size:0.65rem;padding:5px 7px;border-radius:2px;outline:none;margin-bottom:8px;" oninput="onDateRangeChange()">
+      <label class="sidebar-label" style="display:block;">Filter by Year</label>
+      <div class="pill-row" id="yearPills" style="flex-wrap:wrap;gap:4px;margin-bottom:8px;"></div>
+      <label for="fDate" class="sidebar-label" style="display:block;">Report Week</label>
+      <select id="fDate"><option value="">All Weeks</option></select>
+    </div>
+
+    <!-- ADVANCED (collapsed) -->
+    <div class="sidebar-section">
+      <button onclick="toggleAdvanced()" style="background:none;border:none;width:100%;text-align:left;cursor:pointer;padding:0;" id="advancedToggle">
+        <span class="sidebar-label" style="display:flex;align-items:center;justify-content:space-between;">
+          Advanced Filters <span id="advancedArrow" style="font-size:0.6rem;">&#9658;</span>
+        </span>
+      </button>
+      <div id="advancedFilters" style="display:none;margin-top:8px;">
+        <span class="sidebar-label">Gross Gross ($)</span>
+        <div class="range-row">
+          <input type="number" id="fGrossMin" placeholder="Min" step="100000" oninput="applyFilters()">
+          <span class="range-sep">&#8211;</span>
+          <input type="number" id="fGrossMax" placeholder="Max" step="100000" oninput="applyFilters()">
+        </div>
+        <span class="sidebar-label" style="margin-top:8px;display:block;">% Capacity Paid</span>
+        <div class="range-row">
+          <input type="number" id="fCapMin" placeholder="Min %" min="0" max="100" oninput="applyFilters()">
+          <span class="range-sep">&#8211;</span>
+          <input type="number" id="fCapMax" placeholder="Max %" min="0" max="100" oninput="applyFilters()">
+        </div>
+        <span class="sidebar-label" style="margin-top:8px;display:block;"># Performances</span>
+        <div class="range-row">
+          <input type="number" id="fPerfMin" placeholder="Min" min="1" oninput="applyFilters()">
+          <span class="range-sep">&#8211;</span>
+          <input type="number" id="fPerfMax" placeholder="Max" min="1" oninput="applyFilters()">
+        </div>
+      </div>
     </div>
 
   </aside>
@@ -1163,6 +1191,15 @@ async function initData() {
     };
     window._DATE_RANGE = {...DEFAULT_RANGE};
   }
+  // Default to current season
+  const currentSeason = SEASONS.find(s => s.id === '2025-2026');
+  if (currentSeason) {
+    ACTIVE_SEASON = '2025-2026';
+    window._DATE_RANGE = {
+      start: snapToSunday(currentSeason.start, 'back'),
+      end: snapToSunday(currentSeason.end, 'forward')
+    };
+  }
   boot();
 }
 
@@ -1183,10 +1220,20 @@ let DEFAULT_RANGE = null;
 function boot() {
   populateYearPills();
   populateWeekDropdown();
+  populateVenueCity();
   populateShowList();
   updateDataStatus();
   applyFilters();
 
+}
+
+function populateVenueCity() {
+  const venues = [...new Set(ALL_DATA.map(d=>d.theatre).filter(Boolean))].sort();
+  const cities = [...new Set(ALL_DATA.map(d=>d.city).filter(Boolean))].sort();
+  const vSel = document.getElementById('fVenue');
+  const cSel = document.getElementById('fCity');
+  if (vSel) vSel.innerHTML = '<option value="">All Venues</option>' + venues.map(v=>`<option value="${v}">${v}</option>`).join('');
+  if (cSel) cSel.innerHTML = '<option value="">All Cities</option>' + cities.map(c=>`<option value="${c}">${c}</option>`).join('');
 }
 
 function populateYearPills() {
@@ -1250,6 +1297,27 @@ function soloSearchedShows() {
   if (!q) return;
   document.querySelectorAll('.sCb').forEach(cb => { cb.checked = cb.value.toLowerCase().includes(q); });
   updateShowCount(); applyFilters();
+}
+
+function updateFilterCount() {
+  let count = 0;
+  if (ACTIVE_SEASON) count++;
+  if (ACTIVE_TIER) count++;
+  if (ACTIVE_SUB !== '') count++;
+  if (ACTIVE_PEER === '1') count++;
+  if (document.getElementById('fVenue')?.value) count++;
+  if (document.getElementById('fCity')?.value) count++;
+  if (window._DATE_RANGE && DEFAULT_RANGE &&
+      (window._DATE_RANGE.start !== DEFAULT_RANGE.start || window._DATE_RANGE.end !== DEFAULT_RANGE.end)) count++;
+  if (document.getElementById('fDate')?.value) count++;
+  if (document.getElementById('fGrossMin')?.value || document.getElementById('fGrossMax')?.value) count++;
+  if (document.getElementById('fCapMin')?.value || document.getElementById('fCapMax')?.value) count++;
+  if (document.getElementById('fPerfMin')?.value || document.getElementById('fPerfMax')?.value) count++;
+  const badge = document.getElementById('activeFilterCount');
+  if (badge) {
+    badge.textContent = count;
+    badge.style.display = count > 0 ? 'inline' : 'none';
+  }
 }
 
 function updateDataStatus() {
@@ -1362,6 +1430,8 @@ function setPeer(btn, val) {
 
 function applyFilters() {
   const dateF = document.getElementById('fDate').value;
+  const venueF = document.getElementById('fVenue')?.value || '';
+  const cityF = document.getElementById('fCity')?.value || '';
   const grossMin = parseFloat(document.getElementById('fGrossMin').value)||0;
   const grossMax = parseFloat(document.getElementById('fGrossMax').value)||Infinity;
   const capMin = parseFloat(document.getElementById('fCapMin').value)||0;
@@ -1378,6 +1448,8 @@ function applyFilters() {
     if (ACTIVE_TIER && d.tier !== ACTIVE_TIER) return false;
     if (ACTIVE_SUB !== '' && String(d.on_subscription) !== ACTIVE_SUB) return false;
     if (ACTIVE_PEER === '1' && !d.similar_bushnell_cap) return false;
+    if (venueF && d.theatre !== venueF) return false;
+    if (cityF && d.city !== cityF) return false;
     if (d.gross_gross !== null) {
       if (d.gross_gross < grossMin || d.gross_gross > grossMax) return false;
     } else if (grossMin > 0) return false;
@@ -1394,6 +1466,7 @@ function applyFilters() {
   renderKPIs();
   renderTable();
   updateFilteredStatus();
+  updateFilterCount();
   const activePanel = document.querySelector('.panel.active');
   if (activePanel) {
     const id = activePanel.id;
@@ -1766,6 +1839,16 @@ function renderRankings() {
 }
 
 // ── TABS ──────────────────────────────────────────────────────────────────────
+function toggleAdvanced() {
+  const panel = document.getElementById('advancedFilters');
+  const arrow = document.getElementById('advancedArrow');
+  const btn = document.getElementById('advancedToggle');
+  const open = panel.style.display === 'none';
+  panel.style.display = open ? 'block' : 'none';
+  arrow.innerHTML = open ? '&#9660;' : '&#9658;';
+  btn.setAttribute('aria-expanded', open);
+}
+
 function toggleSidebar() {
   const sb = document.querySelector('.sidebar');
   const bd = document.getElementById('sidebarBackdrop');
