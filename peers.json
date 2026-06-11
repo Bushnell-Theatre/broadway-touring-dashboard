@@ -1,0 +1,582 @@
+{
+  "last_updated": "2026-06-11",
+  "note": "Theatre names match data.json theatre field after normalization (trim whitespace, fix case). Use theatre+city as composite key.",
+  "venues": [
+    {
+      "theatre": "Pantages Theatre",
+      "city": "Los Angeles",
+      "state": "CA",
+      "capacity": 2691,
+      "website": "hollywoodpantages.com",
+      "synopsis": "A 2,691-seat Art Deco landmark on Hollywood Boulevard opened in 1930, operated by the Nederlander Organization. One of the highest-grossing Broadway touring venues in the country and a National Historic Landmark. Per-show sellable capacity closely mirrors the Bushnell."
+    },
+    {
+      "theatre": "Buell Theatre",
+      "city": "Denver",
+      "state": "CO",
+      "capacity": 2839,
+      "website": "denvercenter.org",
+      "synopsis": "The Temple Hoyne Buell Theatre (2,839 seats) opened in 1991 as part of the Denver Performing Arts Complex, designed specifically for Broadway tours. Operated by Denver Center for the Performing Arts, it consistently ranks among the highest-grossing theaters under 5,000 seats nationally."
+    },
+    {
+      "theatre": "Connor Palace",
+      "city": "Cleveland",
+      "state": "OH",
+      "capacity": 2800,
+      "website": "playhousesquare.org",
+      "synopsis": "A restored 1922 vaudeville palace (2,800 seats) at Playhouse Square in Cleveland, the nation's largest performing arts center outside New York City. Owned by the Playhouse Square Foundation, it hosts Broadway tours alongside resident arts organizations in a subscription-driven model similar to the Bushnell."
+    },
+    {
+      "theatre": "Opera House",
+      "city": "Boston",
+      "state": "MA",
+      "capacity": 2600,
+      "website": "bostonoperahouse.com",
+      "synopsis": "The Boston Opera House (2,600 seats) is a restored 1928 venue in Boston's Theater District, operated by Live Nation. After a $38M renovation reopening in 2004, it became New England's premier Broadway touring destination. Located 90 minutes from Hartford, it is the Bushnell's closest major peer market."
+    },
+    {
+      "theatre": "Aronoff Center: Procter & Gamble Hall",
+      "city": "Cincinnati",
+      "state": "OH",
+      "capacity": 2719,
+      "website": "cincinnatiarts.org",
+      "synopsis": "Procter & Gamble Hall (2,719 seats) is the flagship theater of the Aronoff Center for the Arts, designed by Cesar Pelli and opened in 1995. Owned by Cincinnati Arts Association, it anchors the city's Broadway series and is home to multiple resident arts organizations in a nonprofit model closely mirroring the Bushnell."
+    },
+    {
+      "theatre": "Orpheum Theatre",
+      "city": "Minneapolis",
+      "state": "MN",
+      "capacity": 2579,
+      "website": "hennepinarts.org",
+      "synopsis": "A Beaux Arts landmark on Hennepin Avenue (2,579 seats) opened in 1921 and restored in 1993. Owned by Hennepin Arts, a nonprofit dedicated to arts-inspired community development. Premiered Disney's The Lion King national tour and remains the primary Broadway venue for the Twin Cities market."
+    },
+    {
+      "theatre": "Paramount Theatre",
+      "city": "Seattle",
+      "state": "WA",
+      "capacity": 2807,
+      "website": "stgpresents.org",
+      "synopsis": "A 1928 Art Deco landmark (2,807 seats) in downtown Seattle operated by STG Presents. One of the Pacific Northwest's premier performing arts venues, consistently achieving strong capacity utilization (86% avg) across Broadway touring productions."
+    },
+    {
+      "theatre": "Hobby Center For The Perf. Arts",
+      "city": "Houston",
+      "state": "TX",
+      "capacity": 2650,
+      "website": "thehobbycenter.org",
+      "synopsis": "The Hobby Center's Sarofim Hall (2,650 seats) opened in 2002 as a modern nonprofit venue in downtown Houston. The primary Broadway touring destination for Houston and the Gulf Coast region, presenting shows through Broadway Across America."
+    },
+    {
+      "theatre": "Eccles Theater",
+      "city": "Salt Lake City",
+      "state": "UT",
+      "capacity": 2452,
+      "website": "artsaltlake.org",
+      "synopsis": "The George S. and Dolores Dore Eccles Theater (2,452 seats) opened in 2016 as Salt Lake City's premier performing arts venue. Achieves among the highest avg capacity utilization in the peer group (91.7%), reflecting strong subscription demand in a mid-sized market comparable to Hartford."
+    },
+    {
+      "theatre": "Dr. Phillips Center for the Performing Arts: Walt Disney Theater",
+      "city": "Orlando",
+      "state": "FL",
+      "capacity": 2700,
+      "website": "drphillipscenter.org",
+      "synopsis": "The Dr. Phillips Center in Orlando opened in 2014 with the Walt Disney Theater seating 2,700. A nonprofit venue serving as Orlando's primary home for Broadway touring productions, with strong capacity performance (89.8% avg) reflecting a robust subscription market."
+    },
+    {
+      "theatre": "Benedum Center",
+      "city": "Pittsburgh",
+      "state": "PA",
+      "capacity": 2800,
+      "website": "pittsburghculturaltrust.org",
+      "synopsis": "A restored 1928 movie palace (2,800 seats) in downtown Pittsburgh operated by the Pittsburgh Cultural Trust. Home to Broadway in Pittsburgh and performance venue for Pittsburgh Ballet Theatre, Pittsburgh Opera, and Pittsburgh CLO. A multipurpose nonprofit model very similar to the Bushnell."
+    },
+    {
+      "theatre": "Broward Center For The Perf. Arts",
+      "city": "Fort Lauderdale",
+      "state": "FL",
+      "capacity": 2700,
+      "website": "browardcenter.org",
+      "synopsis": "The Broward Center's Au-Rene Theater (2,700 seats) opened in 1991 in Fort Lauderdale. A nonprofit presenting organization serving the South Florida market and among the most active Broadway touring venues in the Southeast."
+    },
+    {
+      "theatre": "Durham Performing Arts Center",
+      "city": "Durham",
+      "state": "NC",
+      "capacity": 2712,
+      "website": "dpacnc.com",
+      "synopsis": "DPAC (2,712 seats) opened in 2008 in Durham, NC, operated by Nederlander and the City of Durham. One of the top-grossing mid-size performing arts venues in the country, with high subscription penetration and strong avg capacity (89%)."
+    },
+    {
+      "theatre": "ASU Gammage",
+      "city": "Tempe",
+      "state": "AZ",
+      "capacity": 3000,
+      "website": "asugammage.com",
+      "synopsis": "A Frank Lloyd Wright-designed venue (3,000 seats) at Arizona State University in Tempe, opened in 1964. Consistently achieves the highest avg capacity utilization in the peer group (94.1%), reflecting strong subscription demand in the Phoenix metro market."
+    },
+    {
+      "theatre": "Academy of Music: Kimmel Center",
+      "city": "Philadelphia",
+      "state": "PA",
+      "capacity": 2987,
+      "website": "kimmelculturalinstitute.org",
+      "synopsis": "One of the oldest operating opera houses in the United States (2,987 seats), built in 1857 and home to the Broadway series presented by the Kimmel Cultural Institute. Its long history, subscription base, and mid-Atlantic market position make it a relevant peer."
+    },
+    {
+      "theatre": "Saenger Theatre",
+      "city": "New Orleans",
+      "state": "LA",
+      "capacity": 2708,
+      "website": "saengernola.com",
+      "synopsis": "A restored 1927 atmospheric theater (2,708 seats) in New Orleans, reopened in 2013 after Hurricane Katrina damage. Operated by ASM Global, it serves as the primary Broadway touring destination for the Gulf South region."
+    },
+    {
+      "theatre": "Straz Center for the Performing Arts",
+      "city": "Tampa",
+      "state": "FL",
+      "capacity": 2610,
+      "website": "strazcenter.org",
+      "synopsis": "The Straz Center's David A. Straz Jr. Hall (2,610 seats) opened in 1987 in Tampa. One of the largest performing arts centers in the Southeast, presenting Broadway tours and supporting multiple resident arts organizations."
+    },
+    {
+      "theatre": "Des Moines Civic Center",
+      "city": "Des Moines",
+      "state": "IA",
+      "capacity": 2735,
+      "website": "desmoinesperformingarts.org",
+      "synopsis": "The Des Moines Civic Center (2,735 seats) opened in 1979, operated by Des Moines Performing Arts. A nonprofit venue with a subscription-driven Broadway model in a mid-sized regional market closely comparable to Hartford."
+    },
+    {
+      "theatre": "Keller Auditorium",
+      "city": "Portland",
+      "state": "OR",
+      "capacity": 2992,
+      "website": "portland5.com",
+      "synopsis": "Keller Auditorium (2,992 seats) is Portland's primary Broadway touring venue, managed by Portland'5 Centers for the Arts, a nonprofit organization. Achieves strong avg capacity utilization (91.8%) reflecting subscriber demand in the Pacific Northwest market."
+    },
+    {
+      "theatre": "Proctors",
+      "city": "Schenectady",
+      "state": "NY",
+      "capacity": 2690,
+      "website": "proctors.org",
+      "synopsis": "Proctors Theatre (2,690 seats) in Schenectady is a nonprofit performing arts organization managing multiple regional venues across the Capital Region. The closest geographic peer to the Bushnell (under 2 hours), serving an overlapping New England/Upstate NY audience."
+    },
+    {
+      "theatre": "San Diego Civic Theatre",
+      "city": "San Diego",
+      "state": "CA",
+      "capacity": 2972,
+      "website": "broadwaysd.com",
+      "synopsis": "The San Diego Civic Theatre (2,972 seats) opened in 1965, presenting Broadway tours through Broadway San Diego. A key market in the Southern California touring circuit with strong avg capacity (82.9%) and consistent programming."
+    },
+    {
+      "theatre": "Orpheum Theater",
+      "city": "Omaha",
+      "state": "NE",
+      "capacity": 2611,
+      "website": "omahaperformingarts.org",
+      "synopsis": "A restored 1927 vaudeville palace (2,611 seats) in Omaha operated by Omaha Performing Arts, a nonprofit. Its subscription-driven Broadway series and mid-market positioning in Nebraska/Iowa closely parallel the Bushnell."
+    },
+    {
+      "theatre": "Ohio Theatre",
+      "city": "Columbus",
+      "state": "OH",
+      "capacity": 2779,
+      "website": "capa.com",
+      "synopsis": "A restored 1928 Spanish Baroque movie palace (2,779 seats) in Columbus, operated by CAPA. The primary Broadway touring venue for Central Ohio, achieving strong avg capacity (93.4%) reflecting high subscription penetration."
+    },
+    {
+      "theatre": "Steven Tanger Center for the Performing Arts",
+      "city": "Greensboro",
+      "state": "NC",
+      "capacity": 3000,
+      "website": "greensborotangercenter.com",
+      "synopsis": "The Steven Tanger Center (3,000 seats) opened in 2021 in Greensboro, NC. A newer venue that has quickly established strong Broadway touring performance (83.3% avg capacity), providing a benchmark for newer performing arts centers in mid-sized markets."
+    },
+    {
+      "theatre": "Segerstrom Center for the Arts",
+      "city": "Costa Mesa",
+      "state": "CA",
+      "capacity": 3000,
+      "website": "scfta.org",
+      "synopsis": "The Segerstrom Center in Costa Mesa (3,000 seats) is a premier Southern California arts complex opened in 1986. A nonprofit presenting Broadway tours alongside resident symphony and opera companies, with strong capacity metrics (84%) in the competitive Orange County market."
+    },
+    {
+      "theatre": "Bass Concert Hall @ U of TX at Austin",
+      "city": "Austin",
+      "state": "TX",
+      "capacity": 2933,
+      "website": "texasperformingarts.org",
+      "synopsis": "Bass Concert Hall (2,933 seats) at the University of Texas at Austin, operated by Texas Performing Arts. One of the most active Broadway touring venues in Texas, achieving strong capacity utilization (89.7%) in the fast-growing Austin market."
+    },
+    {
+      "theatre": "Auditorium Theatre",
+      "city": "Rochester",
+      "state": "NY",
+      "capacity": 2347,
+      "website": "auditoriumtheatre.org",
+      "synopsis": "A restored 1922 venue (2,347 seats) in Rochester, NY operated by Rochester Broadway Theatre League. A close geographic peer in the New York State market providing relevant regional benchmarking for the Bushnell."
+    },
+    {
+      "theatre": "KeyBank State Theatre",
+      "city": "Cleveland",
+      "state": "OH",
+      "capacity": 3400,
+      "website": "playhousesquare.org",
+      "synopsis": "The KeyBank State Theatre (3,400 seats) is part of Cleveland's Playhouse Square complex, serving as the venue for larger-scale Broadway productions. Per-show sellable capacity places it within the peer range despite its larger total capacity."
+    },
+    {
+      "theatre": "Queen Elizabeth Theatre",
+      "city": "Vancouver",
+      "state": "BC",
+      "capacity": 2929,
+      "website": "vancouvercivictheatres.com",
+      "synopsis": "The Queen Elizabeth Theatre (2,929 seats) in Vancouver is operated by Vancouver Civic Theatres as the city's primary Broadway touring destination. Strong avg capacity (92.6%) reflects the robust Vancouver performing arts market."
+    },
+    {
+      "theatre": "San Jose Center For The Perf. Arts",
+      "city": "San Jose",
+      "state": "CA",
+      "capacity": 2677,
+      "website": "broadwaysanjose.com",
+      "synopsis": "The San Jose Center for the Performing Arts (2,677 seats) serves the Silicon Valley market through Broadway San Jose. A key venue in the Bay Area touring circuit providing West Coast mid-market benchmarking."
+    },
+    {
+      "theatre": "First Interstate Center for the Arts",
+      "city": "Spokane",
+      "state": "WA",
+      "capacity": 2700,
+      "website": "spokanecivictheatre.com",
+      "synopsis": "The First Interstate Center for the Arts (2,700 seats) in Spokane presents Broadway tours serving Eastern Washington and Northern Idaho. Below-peer capacity utilization (69.6%) reflects a smaller market."
+    },
+    {
+      "theatre": "Detroit Opera House",
+      "city": "Detroit",
+      "state": "MI",
+      "capacity": 2700,
+      "website": "michiganopera.org",
+      "synopsis": "A restored 1922 venue (2,700 seats) operated by Michigan Opera Theatre, presenting both opera and Broadway touring productions. Its dual programming model and mid-market performance provide relevant benchmarking for the Bushnell."
+    },
+    {
+      "theatre": "Landmark Theatre",
+      "city": "Syracuse",
+      "state": "NY",
+      "capacity": 2922,
+      "website": "landmarktheatre.org",
+      "synopsis": "A restored 1928 atmospheric theater (2,922 seats) in Syracuse, NY. A regional New York State peer serving a market similar in size to Hartford, among the most directly comparable venues for the Bushnell's market positioning."
+    },
+    {
+      "theatre": "Birmingham-Jefferson Concert Hall",
+      "city": "Birmingham",
+      "state": "AL",
+      "capacity": 2956,
+      "website": "bjcc.org",
+      "synopsis": "The Birmingham-Jefferson Concert Hall (2,956 seats) is part of the BJCC complex, presenting Broadway tours in the Deep South market. Provides useful comparison for mid-sized Southern markets."
+    },
+    {
+      "theatre": "Murat Centre",
+      "city": "Indianapolis",
+      "state": "IN",
+      "capacity": 2171,
+      "website": "oldnationalcentre.com",
+      "synopsis": "The Murat Centre (2,171 seats) in Indianapolis is a historic venue presenting Broadway touring productions. Strong avg capacity (86.2%) in a mid-sized Midwest market makes it a relevant peer for the Bushnell."
+    },
+    {
+      "theatre": "Jacksonville Center for the Performing Arts: Moran Theatre",
+      "city": "Jacksonville",
+      "state": "FL",
+      "capacity": 2930,
+      "website": "jaxevents.com",
+      "synopsis": "The Moran Theatre (2,930 seats) at the Jacksonville Center for the Performing Arts presents Broadway tours in Northeast Florida. Below-peer capacity utilization (56.9%) provides useful context for understanding market-size effects on Broadway performance."
+    },
+    {
+      "theatre": "Place Des Arts",
+      "city": "Montreal",
+      "state": "QC",
+      "capacity": 2800,
+      "website": "placedesarts.com",
+      "synopsis": "Place des Arts in Montreal is a major Canadian performing arts complex presenting Broadway touring productions. The only Canadian venue in the meaningful peer group with significant reporting weeks, providing international benchmarking context."
+    },
+    {
+      "theatre": "Civic Center Music Hall",
+      "city": "Oklahoma City",
+      "state": "OK",
+      "capacity": 2500,
+      "website": "okcciviccenter.com",
+      "synopsis": null
+    },
+    {
+      "theatre": "Moran Theatre at Times Union Center",
+      "city": "Jacksonville",
+      "state": "FL",
+      "capacity": 2930,
+      "website": "jaxevents.com",
+      "synopsis": null
+    },
+    {
+      "theatre": "Centennial Hall",
+      "city": "Tucson",
+      "state": "AZ",
+      "capacity": 2400,
+      "website": "tucsonpresents.org",
+      "synopsis": null
+    },
+    {
+      "theatre": "Tennessee Performing Arts Center",
+      "city": "Nashville",
+      "state": "TN",
+      "capacity": 2472,
+      "website": "tpac.org",
+      "synopsis": null
+    },
+    {
+      "theatre": "Andrew Jackson Hall, Tennessee PAC",
+      "city": "Nashville",
+      "state": "TN",
+      "capacity": 2472,
+      "website": "tpac.org",
+      "synopsis": null
+    },
+    {
+      "theatre": "Chrysler Hall",
+      "city": "Norfolk",
+      "state": "VA",
+      "capacity": 2500,
+      "website": "sevenvenues.com",
+      "synopsis": null
+    },
+    {
+      "theatre": "Majestic Theatre",
+      "city": "San Antonio",
+      "state": "TX",
+      "capacity": 2311,
+      "website": "majesticempire.com",
+      "synopsis": null
+    },
+    {
+      "theatre": "Memorial Auditorium",
+      "city": "Sacramento",
+      "state": "CA",
+      "capacity": 3844,
+      "website": "sacramentomemorialauditorium.com",
+      "synopsis": null
+    },
+    {
+      "theatre": "Dolby Theatre",
+      "city": "Los Angeles",
+      "state": "CA",
+      "capacity": 3332,
+      "website": "dolbytheatre.com",
+      "synopsis": null
+    },
+    {
+      "theatre": "Palace Theatre",
+      "city": "Columbus",
+      "state": "OH",
+      "capacity": 2630,
+      "website": "capa.com",
+      "synopsis": null
+    },
+    {
+      "theatre": "Shea's Performing Arts Center",
+      "city": "Buffalo",
+      "state": "NY",
+      "capacity": 3200,
+      "website": "sheas.org",
+      "synopsis": null
+    },
+    {
+      "theatre": "Providence Performing Arts Center",
+      "city": "Providence",
+      "state": "RI",
+      "capacity": 3100,
+      "website": "ppacri.org",
+      "synopsis": null
+    },
+    {
+      "theatre": "Palace Theater",
+      "city": "Waterbury",
+      "state": "CT",
+      "capacity": 2627,
+      "website": "palacetheaterct.org",
+      "synopsis": null
+    },
+    {
+      "theatre": "Morris Performing Arts Center",
+      "city": "South Bend",
+      "state": "IN",
+      "capacity": 2565,
+      "website": "morriscenter.org",
+      "synopsis": null
+    },
+    {
+      "theatre": "Stanley Performing Arts Center",
+      "city": "Utica",
+      "state": "NY",
+      "capacity": 2963,
+      "website": "stanleycenter.org",
+      "synopsis": null
+    },
+    {
+      "theatre": "Koger Center For The Arts",
+      "city": "Columbia",
+      "state": "SC",
+      "capacity": 2175,
+      "website": "koger.sc.edu",
+      "synopsis": null
+    },
+    {
+      "theatre": "E.J. Thomas Performing Arts Hall",
+      "city": "Akron",
+      "state": "OH",
+      "capacity": 3000,
+      "website": "ejthomas.net",
+      "synopsis": null
+    },
+    {
+      "theatre": "Overture Center",
+      "city": "Madison",
+      "state": "WI",
+      "capacity": 2251,
+      "website": "overture.org",
+      "synopsis": null
+    },
+    {
+      "theatre": "The Buddy Holly Hall of Performing Arts and Sciences",
+      "city": "Lubbock",
+      "state": "TX",
+      "capacity": 2218,
+      "website": "buddyhollyhall.com",
+      "synopsis": null
+    },
+    {
+      "theatre": "Grand Theatre",
+      "city": "Reno",
+      "state": "NV",
+      "capacity": 1500,
+      "website": "artown.org",
+      "synopsis": null
+    },
+    {
+      "theatre": "Northern Alberta Jubilee Auditorium",
+      "city": "Edmonton",
+      "state": "AB",
+      "capacity": 2678,
+      "website": "jubileeauditorium.com",
+      "synopsis": null
+    },
+    {
+      "theatre": "Southern Alberta Jubilee Auditorium",
+      "city": "Calgary",
+      "state": "AB",
+      "capacity": 2690,
+      "website": "jubileeauditorium.com",
+      "synopsis": null
+    },
+    {
+      "theatre": "Showcenter Complex",
+      "city": "Monterrey",
+      "state": "MX",
+      "capacity": 2800,
+      "website": null,
+      "synopsis": null
+    },
+    {
+      "theatre": "Stranahan Theater And Great Hall",
+      "city": "Toledo",
+      "state": "OH",
+      "capacity": 2406,
+      "website": "stranahantheater.com",
+      "synopsis": null
+    },
+    {
+      "theatre": "Rudder Auditorium",
+      "city": "College Station",
+      "state": "TX",
+      "capacity": 2500,
+      "website": "rudderauditorium.com",
+      "synopsis": null
+    },
+    {
+      "theatre": "Mechanics Bank Theater",
+      "city": "Bakersfield",
+      "state": "CA",
+      "capacity": 2186,
+      "website": "mechanicsbankarena.com",
+      "synopsis": null
+    },
+    {
+      "theatre": "Eisenhower Auditorium",
+      "city": "University Park",
+      "state": "PA",
+      "capacity": 2500,
+      "website": "cpa.psu.edu",
+      "synopsis": null
+    },
+    {
+      "theatre": "Music Hall At Fair Park",
+      "city": "Dallas",
+      "state": "TX",
+      "capacity": 3420,
+      "website": "dallasculture.org",
+      "synopsis": null
+    },
+    {
+      "theatre": "James W. Miller Auditorium",
+      "city": "Kalamazoo",
+      "state": "MI",
+      "capacity": 3516,
+      "website": "millerauditorium.com",
+      "synopsis": null
+    },
+    {
+      "theatre": "American Bank Center Selena Aud.",
+      "city": "Corpus Christi",
+      "state": "TX",
+      "capacity": 2600,
+      "website": "americanbankcenter.com",
+      "synopsis": null
+    },
+    {
+      "theatre": "Miller High Life Theatre",
+      "city": "Milwaukee",
+      "state": "WI",
+      "capacity": 4086,
+      "website": "millerhightlifetheatre.com",
+      "synopsis": null
+    },
+    {
+      "theatre": "Johnny Mercer Theatre",
+      "city": "Savannah",
+      "state": "GA",
+      "capacity": 2423,
+      "website": "savannahcivic.com",
+      "synopsis": null
+    },
+    {
+      "theatre": "Old National Events Plaza",
+      "city": "Evansville",
+      "state": "IN",
+      "capacity": 2500,
+      "website": "oldnationaleventsplaza.com",
+      "synopsis": null
+    },
+    {
+      "theatre": "Macon Coliseum",
+      "city": "Macon",
+      "state": "GA",
+      "capacity": 9000,
+      "website": "maconcoliseum.com",
+      "synopsis": null
+    },
+    {
+      "theatre": "R. Don Cowan Center",
+      "city": "Tyler",
+      "state": "TX",
+      "capacity": 1600,
+      "website": "cowancenter.org",
+      "synopsis": null
+    }
+  ]
+}

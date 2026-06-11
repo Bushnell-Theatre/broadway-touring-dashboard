@@ -1092,13 +1092,25 @@ function snapToSunday(dateStr, direction) {
 // When the Power Automate HTTP endpoint is ready, IT sets this URL and removes
 // the null. The dashboard will fetch live data automatically. No other changes
 // needed. Leave as null to use embedded seed data.
+const PEERS_JSON_URL = 'peers.json';
 const DATA_JSON_URL = 'https://white-pebble-01710020f.7.azurestaticapps.net/data.json';
 
 async function initData() {
   try {
-    const res = await fetch(DATA_JSON_URL);
+    // Fetch data.json and peers.json in parallel
+    const [res, peersRes] = await Promise.all([
+      fetch(DATA_JSON_URL),
+      fetch(PEERS_JSON_URL).catch(() => null)
+    ]);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
+    if (peersRes && peersRes.ok) {
+      const peersJson = await peersRes.json();
+      (peersJson.venues || []).forEach(v => {
+        const key = v.theatre + '|' + v.city;
+        PEER_META[key] = v;
+      });
+    }
     ALL_DATA = (Array.isArray(json) ? json : (json.value || [])).map(d => {
       // Snap report_date to nearest Sunday
       let rd = null;
@@ -1110,8 +1122,12 @@ async function initData() {
         dt.setDate(dt.getDate() + diff);
         rd = dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
       }
+      // Normalize theatre name: trim extra spaces, fix known case issues
+      let theatre = (d.theatre||'').replace(/\s+/g,' ').trim();
+      if (theatre === 'Academy Of Music: Kimmel Center') theatre = 'Academy of Music: Kimmel Center';
       return {
         ...d,
+        theatre,
         report_date: rd,
         on_subscription: d.on_subscription===true?1:d.on_subscription===false?0:d.on_subscription,
         on_subscription: d.on_subscription === true ? 1 : d.on_subscription === false ? 0 : d.on_subscription,
@@ -1154,6 +1170,7 @@ let ACTIVE_TIER = '';
 let ACTIVE_SUB = '';
 let ACTIVE_PEER = '';
 let CHARTS = {};
+let PEER_META = {}; // loaded from peers.json
 let LAST_REPORT_DATE = null;
 let DEFAULT_RANGE = null;
 
@@ -2305,7 +2322,7 @@ function renderPeers() {
     })
     .sort((a,b) => b.weeks - a.weeks);
 
-  const synopsis_venues = meaningful.filter(v=>v.meaningful && PEER_SYNOPSES[v.name]);
+  const synopsis_venues = meaningful.filter(v=>v.meaningful && (PEER_SYNOPSES[v.name] || PEER_META[v.name+'|'+v.city]?.synopsis));
   const listed_venues = meaningful.filter(v=>!v.meaningful || !PEER_SYNOPSES[v.name]);
 
   const grossDiff = (ag) => {
@@ -2332,7 +2349,7 @@ function renderPeers() {
 
   // Meaningful peers with synopses
   const meaningfulHTML = synopsis_venues.map(v => {
-    const syn = PEER_SYNOPSES[v.name] || {};
+    const syn = PEER_SYNOPSES[v.name] || PEER_META[v.name+'|'+v.city] || {};
     return `
       <div style="background:#fff;border:1px solid var(--rule);border-radius:3px;padding:20px;margin-bottom:16px;">
         <div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap;">
