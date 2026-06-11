@@ -1723,6 +1723,19 @@ function mkRankList(id,items,valFn,labelFn,fmtFn,maxVal,breakdownFn) {
   }).join('');
 }
 
+function toggleWowDetail(rowId) {
+  const row = document.getElementById(rowId);
+  const arr = document.getElementById(rowId+'-arr');
+  if (!row) return;
+  if (row.style.display === 'none') {
+    row.style.display = '';
+    if (arr) arr.innerHTML = '&#9660;';
+  } else {
+    row.style.display = 'none';
+    if (arr) arr.innerHTML = '&#9654;';
+  }
+}
+
 function toggleRankBreakdown(rowId) {
   const row = document.getElementById(rowId);
   if (!row) return;
@@ -2216,7 +2229,12 @@ function renderSeasons() {
           }
         </div>
         <div class="tbl-wrap">
-          <table>
+          <table style="width:100%;table-layout:fixed;">
+            <colgroup>
+              <col style="width:22%"><col style="width:18%"><col style="width:8%">
+              <col style="width:13%"><col style="width:13%"><col style="width:10%">
+              <col style="width:10%"><col style="width:6%">
+            </colgroup>
             <thead><tr>
               <th>Show</th>
               <th>Run Dates</th>
@@ -2225,7 +2243,7 @@ function renderSeasons() {
               <th style="text-align:right;color:var(--ink3);">Peer Avg Gross</th>
               <th style="text-align:right;">Bushnell % Cap</th>
               <th style="text-align:right;color:var(--ink3);">Peer Avg % Cap</th>
-              <th style="text-align:right;">Report Wks</th>
+              <th style="text-align:right;">Wks</th>
             </tr></thead>
             <tbody>${showRows}</tbody>
           </table>
