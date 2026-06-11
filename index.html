@@ -645,6 +645,10 @@ tbody td:last-child{border-right:none;}
         <button class="pill" data-season="2026-2027" onclick="setSeasonFilter('2026-2027')" aria-label="2026-2027 Season">2026-27</button>
         <button class="pill" data-season="2025-2026" onclick="setSeasonFilter('2025-2026')" aria-label="2025-2026 Season">2025-26</button>
         <button class="pill" data-season="2024-2025" onclick="setSeasonFilter('2024-2025')" aria-label="2024-2025 Season">2024-25</button>
+        <button class="pill" data-season="2023-2024" onclick="setSeasonFilter('2023-2024')" aria-label="2023-2024 Season">2023-24</button>
+        <button class="pill" data-season="2022-2023" onclick="setSeasonFilter('2022-2023')" aria-label="2022-2023 Season">2022-23</button>
+        <button class="pill" data-season="2021-2022" onclick="setSeasonFilter('2021-2022')" aria-label="2021-2022 Season">2021-22</button>
+        <button class="pill" data-season="2019-2020" onclick="setSeasonFilter('2019-2020')" aria-label="2019-2020 Season">2019-20</button>
       </div>
     </div>
 
@@ -954,31 +958,90 @@ const SEASONS = [
   },
   {
     id: '2025-2026', name: '2025-2026 Season',
-    start: '2025-09-30', end: '2026-06-07',
+    start: '2025-10-05', end: '2026-06-07',
     shows: [
-      {title:'The Notebook',        match:'The Notebook',                   open:'2025-09-30', close:'2025-10-05', sub:true},
-      {title:'Spamalot',            match:'Spamalot',                       open:'2025-12-09', close:'2025-12-14', sub:true},
-      {title:'Suffs',               match:'Suffs',                          open:'2026-01-27', close:'2026-02-01', sub:true},
-      {title:'Shucked',             match:'Shucked',                        open:'2026-02-24', close:'2026-03-03', sub:true},
-      {title:'Kinky Boots',         match:'Kinky Boots',                    open:'2026-03-17', close:'2026-03-22', sub:true},
-      {title:'Beauty & the Beast',  match:'Beauty and the Beast',           open:'2026-04-07', close:'2026-04-12', sub:true},
-      {title:'& Juliet',            match:'& Juliet',                       open:'2026-05-05', close:'2026-05-10', sub:true},
-      {title:'Water for Elephants', match:'Water for Elephants',            open:'2026-06-02', close:'2026-06-07', sub:true},
+      {title:"The Notebook",                          match:"The Notebook",                          open:"2025-10-05", close:"2025-10-11", sub:true},
+      {title:"Hamilton (Angelica)",                   match:"Hamilton (Angelica)",                   open:"2025-11-09", close:"2025-11-15", sub:false},
+      {title:"Spamalot 2025",                         match:"Spamalot 2025",                         open:"2025-12-14", close:"2025-12-20", sub:true},
+      {title:"Suffs",                                 match:"Suffs",                                 open:"2026-02-01", close:"2026-02-07", sub:true},
+      {title:"Shucked",                               match:"Shucked",                               open:"2026-03-01", close:"2026-03-07", sub:true},
+      {title:"Kinky Boots 2025",                      match:"Kinky Boots 2025",                      open:"2026-03-22", close:"2026-03-28", sub:true},
+      {title:"Beauty and the Beast - 30th Anniversary",match:"Beauty and the Beast - 30th Anniversary",open:"2026-04-12", close:"2026-04-18", sub:true},
+      {title:"& Juliet",                              match:"& Juliet",                              open:"2026-05-10", close:"2026-05-16", sub:true},
     ]
   },
   {
     id: '2024-2025', name: '2024-2025 Season',
-    start: '2024-10-01', end: '2025-06-08',
+    start: '2024-10-06', end: '2025-06-08',
     shows: [
-      {title:'A Beautiful Noise',   match:'A Beautiful Noise',              open:'2024-10-01', close:'2024-10-06', sub:true},
-      {title:'The Lion King',       match:'The Lion King Rafiki',           open:'2024-11-12', close:'2024-12-01', sub:true},
-      {title:'MJ The Musical',      match:'MJ',                             open:'2024-12-10', close:'2024-12-15', sub:true},
-      {title:'Peter Pan',           match:'Peter Pan',                      open:'2025-02-04', close:'2025-02-09', sub:true},
-      {title:'The Wiz',             match:'The Wiz 2025',                   open:'2025-03-11', close:'2025-03-16', sub:true},
-      {title:'Some Like It Hot',    match:'Some Like it Hot',               open:'2025-04-29', close:'2025-05-04', sub:true},
-      {title:'Back to the Future',  match:'Back to the Future',             open:'2025-06-04', close:'2025-06-08', sub:true},
+      {title:"A Beautiful Noise, The Neil Diamond Musical",match:"A Beautiful Noise, The Neil Diamond Musical",open:"2024-10-06", close:"2024-10-12", sub:true},
+      {title:"Les Misérables 2022",                   match:"Les Misérables 2022",                   open:"2024-11-03", close:"2024-11-09", sub:false},
+      {title:"The Lion King Rafiki",                  match:"The Lion King Rafiki",                  open:"2024-11-17", close:"2024-11-23", sub:false},
+      {title:"MJ The Musical",                        match:"MJ The Musical",                        open:"2024-12-15", close:"2024-12-21", sub:true},
+      {title:"Six (Boleyn)",                          match:"Six (Boleyn)",                          open:"2025-01-05", close:"2025-01-11", sub:false},
+      {title:"The Wiz 2025",                          match:"The Wiz 2025",                          open:"2025-03-16", close:"2025-03-22", sub:true},
+      {title:"Some Like it Hot",                      match:"Some Like it Hot",                      open:"2025-05-04", close:"2025-05-10", sub:true},
+      {title:"Back to the Future: The Musical",       match:"Back to the Future: The Musical",       open:"2025-06-08", close:"2025-06-14", sub:true},
     ]
-  }
+  },
+  {
+    id: '2023-2024', name: '2023-2024 Season',
+    start: '2023-10-08', end: '2024-06-30',
+    shows: [
+      {title:"Mrs. Doubtfire",                        match:"Mrs. Doubtfire",                        open:"2023-10-08", close:"2023-10-14", sub:true},
+      {title:"Moulin Rouge! The Musical",             match:"Moulin Rouge! The Musical",             open:"2023-11-26", close:"2023-12-02", sub:true},
+      {title:"Frozen",                                match:"Frozen",                                open:"2024-02-11", close:"2024-02-17", sub:true},
+      {title:"The Cher Show",                         match:"The Cher Show",                         open:"2024-03-10", close:"2024-03-16", sub:true},
+      {title:"Wicked 2",                              match:"Wicked 2",                              open:"2024-04-28", close:"2024-05-04", sub:false},
+      {title:"Beetlejuice",                           match:"Beetlejuice",                           open:"2024-06-02", close:"2024-06-08", sub:true},
+      {title:"Funny Girl 2023",                       match:"Funny Girl 2023",                       open:"2024-06-23", close:"2024-06-29", sub:false},
+    ]
+  },
+  {
+    id: '2022-2023', name: '2022-2023 Season',
+    start: '2022-10-02', end: '2023-07-31',
+    shows: [
+      {title:"Mean Girls",                            match:"Mean Girls",                            open:"2022-10-02", close:"2022-10-08", sub:true},
+      {title:"Aladdin 2022",                          match:"Aladdin 2022",                          open:"2022-11-13", close:"2022-11-19", sub:true},
+      {title:"Come From Away",                        match:"Come From Away",                        open:"2022-12-25", close:"2022-12-31", sub:false},
+      {title:"Six (Aragon)",                          match:"Six (Aragon)",                          open:"2023-01-22", close:"2023-01-28", sub:true},
+      {title:"Tootsie",                               match:"Tootsie",                               open:"2023-02-26", close:"2023-03-04", sub:true},
+      {title:"Hadestown",                             match:"Hadestown",                             open:"2023-03-12", close:"2023-03-18", sub:true},
+      {title:"The Simon and Garfunkel Story",         match:"The Simon and Garfunkel Story",         open:"2023-03-12", close:"2023-03-18", sub:false},
+      {title:"Tina - The Tina Turner Musical",        match:"Tina - The Tina Turner Musical",        open:"2023-04-16", close:"2023-04-22", sub:true},
+      {title:"Jagged Little Pill",                    match:"Jagged Little Pill",                    open:"2023-05-14", close:"2023-05-20", sub:true},
+      {title:"Ain't Too Proud",                       match:"Ain't Too Proud",                       open:"2023-06-04", close:"2023-06-10", sub:true},
+      {title:"To Kill a Mockingbird",                 match:"To Kill a Mockingbird",                 open:"2023-07-02", close:"2023-07-08", sub:true},
+    ]
+  },
+  {
+    id: '2021-2022', name: '2021-2022 Season',
+    start: '2021-11-07', end: '2022-07-31',
+    note: 'Partial season — Broadway reopened Oct 2021',
+    shows: [
+      {title:"Rent 25th Anniversary",                 match:"Rent 25th Anniversary",                 open:"2021-11-07", close:"2021-11-13", sub:false},
+      {title:"The Bands Visit",                       match:"The Bands Visit",                       open:"2021-11-21", close:"2021-11-27", sub:true},
+      {title:"What the Constitution Means to Me",     match:"What the Constitution Means to Me",     open:"2022-01-30", close:"2022-02-05", sub:false},
+      {title:"My Fair Lady 2019",                     match:"My Fair Lady 2019",                     open:"2022-03-13", close:"2022-03-19", sub:true},
+      {title:"Blue Man Group",                        match:"Blue Man Group",                        open:"2022-03-20", close:"2022-03-26", sub:false},
+      {title:"Dear Evan Hansen",                      match:"Dear Evan Hansen",                      open:"2022-04-03", close:"2022-04-09", sub:true},
+      {title:"Pretty Woman: The Musical",             match:"Pretty Woman: The Musical",             open:"2022-05-01", close:"2022-05-07", sub:true},
+      {title:"Stomp",                                 match:"Stomp",                                 open:"2022-05-29", close:"2022-06-04", sub:false},
+      {title:"Hamilton (Philip)",                     match:"Hamilton (Philip)",                     open:"2022-06-26", close:"2022-07-02", sub:true},
+    ]
+  },
+  {
+    id: '2019-2020', name: '2019-2020 Season',
+    start: '2019-10-20', end: '2020-03-08',
+    note: 'Partial season — COVID shutdown March 2020',
+    shows: [
+      {title:"The Book of Mormon (Jumamosi)",         match:"The Book of Mormon",                    open:"2019-10-20", close:"2019-10-26", sub:false},
+      {title:"Hello, Dolly! 2018",                    match:"Hello, Dolly",                          open:"2019-11-17", close:"2019-11-23", sub:true},
+      {title:"Dr. Seuss Grinch 2019",                 match:"Grinch",                                open:"2019-12-15", close:"2019-12-21", sub:false},
+      {title:"Anastasia",                             match:"Anastasia",                             open:"2020-01-19", close:"2020-01-25", sub:true},
+      {title:"Jesus Christ Superstar 2019",           match:"Jesus Christ Superstar",                open:"2020-03-01", close:"2020-03-07", sub:true},
+    ]
+  },
 ];
 
 let ACTIVE_SEASON = null;
@@ -1913,6 +1976,7 @@ function renderSeasons() {
             aria-label="${isActive?'Clear':'Apply'} ${season.name} filter">
             ${isActive ? '✓ Active — Click to Clear' : 'Filter Dashboard to this Season'}
           </button>
+          ${season.note ? `<span style="font-size:0.62rem;color:var(--amber);font-style:italic;">${season.note}</span>` : ''}
           ${hasData
             ? `<span style="font-size:0.62rem;color:var(--ink3);">
                 Total Gross: <strong style="color:var(--ink);">${fmt$(totalGross)}</strong> &nbsp;·&nbsp;
