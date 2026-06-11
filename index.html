@@ -1920,6 +1920,19 @@ function renderAnalytics() {
 }
 
 
+function togglePeerDetail(rowId) {
+  const row = document.getElementById(rowId);
+  if (!row) return;
+  const btn = row.previousElementSibling?.querySelector('button');
+  if (row.style.display === 'none') {
+    row.style.display = '';
+    if (btn) btn.textContent = '▼';
+  } else {
+    row.style.display = 'none';
+    if (btn) btn.textContent = '▶';
+  }
+}
+
 function renderSeasons() {
   const container = document.getElementById('seasonsContent');
   if (!container) return;
@@ -1971,19 +1984,66 @@ function renderSeasons() {
         return `<span style="font-weight:600;">${bushnell?fmt$(bushnell):'—'}</span>${arrow}`;
       };
 
+      // Peer detail rows — all peer reports for this show within the season
+      const showKey = show.match.toLowerCase();
+      const peerRows = seasonData
+        .filter(d => d.similar_bushnell_cap && (d.city||'').toLowerCase() !== 'hartford'
+          && d.show && d.show.toLowerCase().includes(showKey.split(' ')[0])
+          && (showKey.split(' ').length < 2 || d.show.toLowerCase().includes(showKey.split(' ')[1]||'')))
+        .sort((a,b) => a.report_date > b.report_date ? 1 : -1);
+
+      const rowId = 'peer-detail-' + season.id + '-' + show.open.replace(/-/g,'');
+      const peerDetailHTML = peerRows.length ? peerRows.map(p => {
+        const isBefore = bushnellData.length && p.report_date < bushnellData[0]?.report_date;
+        const isAfter  = bushnellData.length && p.report_date > bushnellData[bushnellData.length-1]?.report_date;
+        const timing = isBefore ? '<span style="color:var(--teal);font-size:0.6rem;">▶ Before us</span>'
+                     : isAfter  ? '<span style="color:var(--rose);font-size:0.6rem;">◀ After us</span>'
+                     : '<span style="color:var(--amber);font-size:0.6rem;">↔ Same time</span>';
+        const pc = p.pct_capacity_paid;
+        const pcColor = pc>=90?'var(--teal)':pc>=60?'var(--amber)':'var(--rose)';
+        return `<tr style="background:var(--bg2);border-bottom:1px solid var(--rule2);">
+          <td style="padding:6px 10px 6px 24px;color:var(--ink2);font-size:0.65rem;">${p.theatre}</td>
+          <td style="padding:6px 10px;color:var(--ink3);font-size:0.62rem;font-family:var(--mono);">${fmtWeek(p.report_date)}</td>
+          <td style="padding:6px 10px;text-align:center;">${timing}</td>
+          <td style="padding:6px 10px;font-family:var(--mono);text-align:right;font-size:0.72rem;">${p.gross_gross?fmt$(p.gross_gross):'—'}</td>
+          <td style="padding:6px 10px;font-family:var(--mono);text-align:right;color:var(--ink3);font-size:0.65rem;">—</td>
+          <td style="padding:6px 10px;font-family:var(--mono);text-align:right;font-size:0.72rem;color:${pcColor};">${pc?fmtN(pc)+'%':'—'}</td>
+          <td colspan="2" style="padding:6px 10px;"></td>
+        </tr>`;
+      }).join('') : `<tr style="background:var(--bg2);"><td colspan="8" style="padding:8px 24px;color:var(--ink3);font-size:0.65rem;font-style:italic;">No peer venue data for this show in this season</td></tr>`;
+
       return `<tr style="border-bottom:1px solid var(--rule2);${hasData?'':'opacity:0.6;'}">
-        <td style="padding:10px 13px;font-weight:500;color:var(--ink);">${show.title}</td>
-        <td style="padding:10px 13px;color:var(--ink3);font-size:0.65rem;font-family:var(--mono);">${fmtWeek(show.open).replace(/, \d{4}/,'')} – ${fmtWeek(show.close)}</td>
-        <td style="padding:10px 13px;text-align:center;">
+        <td style="padding:9px 10px;font-weight:500;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${show.title}">
+          <button onclick="togglePeerDetail('${rowId}')" style="background:none;border:none;cursor:pointer;padding:0 6px 0 0;color:var(--ink3);font-size:0.65rem;" aria-label="Toggle peer details">▶</button>${show.title}
+        </td>
+        <td style="padding:9px 10px;color:var(--ink3);font-size:0.63rem;font-family:var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${fmtWeek(show.open).replace(/, \d{4}/,'')} – ${fmtWeek(show.close)}</td>
+        <td style="padding:9px 10px;text-align:center;">
           ${show.sub
             ? '<span class="badge" style="background:var(--amber-lt);color:var(--amber);border:1px solid var(--amber-md);">Sub</span>'
             : '<span class="badge badge-secondary">Non-Sub</span>'}
         </td>
-        <td style="padding:10px 13px;font-family:var(--mono);text-align:right;">${grossCell(bushnellGross, peerGross)}</td>
-        <td style="padding:10px 13px;font-family:var(--mono);text-align:right;color:var(--ink3);font-size:0.65rem;">${peerGross?fmt$(peerGross):'—'}</td>
-        <td style="padding:10px 13px;font-family:var(--mono);text-align:right;">${capCell(bushnellCap, peerCap)}</td>
-        <td style="padding:10px 13px;font-family:var(--mono);text-align:right;color:var(--ink3);font-size:0.65rem;">${peerCap?fmtN(peerCap)+'%':'—'}</td>
-        <td style="padding:10px 13px;font-family:var(--mono);text-align:right;color:var(--ink3);">${wks||'—'}</td>
+        <td style="padding:9px 10px;font-family:var(--mono);text-align:right;">${grossCell(bushnellGross, peerGross)}</td>
+        <td style="padding:9px 10px;font-family:var(--mono);text-align:right;color:var(--ink3);font-size:0.65rem;">${peerGross?fmt$(peerGross):'—'}</td>
+        <td style="padding:9px 10px;font-family:var(--mono);text-align:right;">${capCell(bushnellCap, peerCap)}</td>
+        <td style="padding:9px 10px;font-family:var(--mono);text-align:right;color:var(--ink3);font-size:0.65rem;">${peerCap?fmtN(peerCap)+'%':'—'}</td>
+        <td style="padding:9px 10px;font-family:var(--mono);text-align:right;color:var(--ink3);">${wks||'—'}</td>
+      </tr>
+      <tr id="${rowId}" style="display:none;">
+        <td colspan="8" style="padding:0;">
+          <table style="width:100%;table-layout:fixed;border-top:2px solid var(--rule);">
+            <colgroup><col style="width:22%"><col style="width:18%"><col style="width:8%"><col style="width:13%"><col style="width:13%"><col style="width:10%"><col style="width:10%"><col style="width:6%"></colgroup>
+            <thead><tr style="background:var(--bg2);">
+              <th style="padding:5px 10px 5px 24px;font-size:0.52rem;color:var(--ink3);">Peer Venue</th>
+              <th style="padding:5px 10px;font-size:0.52rem;color:var(--ink3);">Report Week</th>
+              <th style="padding:5px 10px;font-size:0.52rem;color:var(--ink3);text-align:center;">Timing</th>
+              <th style="padding:5px 10px;font-size:0.52rem;color:var(--ink3);text-align:right;">Gross</th>
+              <th style="padding:5px 10px;font-size:0.52rem;color:var(--ink3);text-align:right;"></th>
+              <th style="padding:5px 10px;font-size:0.52rem;color:var(--ink3);text-align:right;">% Cap</th>
+              <th colspan="2"></th>
+            </tr></thead>
+            <tbody>${peerDetailHTML}</tbody>
+          </table>
+        </td>
       </tr>`;
     }).join('');
 
