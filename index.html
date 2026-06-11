@@ -653,7 +653,7 @@ tbody td:last-child{border-right:none;}
     </div>
 
     <div class="sidebar-section">
-      <span class="sidebar-label">Date Range <span style="font-size:0.5rem;color:var(--ink3);text-transform:none;letter-spacing:0;font-weight:400;">(default: last 3 yrs)</span></span>
+      <span class="sidebar-label">Date Range <span style="font-size:0.5rem;color:var(--ink3);text-transform:none;letter-spacing:0;font-weight:400;">(default: last 3 yrs · snapped to nearest Sunday)</span></span>
       <div class="pill-row" style="flex-wrap:wrap;gap:4px;margin-bottom:8px;">
         <button class="pill" data-preset="3yr" onclick="setDatePreset('3yr')" aria-label="Last 3 years">3 Yrs</button>
         <button class="pill" data-preset="ytd" onclick="setDatePreset('ytd')" aria-label="Year to date">YTD</button>
@@ -1063,7 +1063,7 @@ function setSeasonFilter(seasonId) {
   const season = SEASONS.find(s => s.id === seasonId);
   document.querySelectorAll('[data-season]').forEach(b=>b.classList.toggle('active', b.dataset.season===seasonId));
   if (season) {
-    window._DATE_RANGE = {start: season.start, end: season.end};
+    window._DATE_RANGE = {start: snapToSunday(season.start,'back'), end: snapToSunday(season.end,'forward')};
     document.getElementById('fDateFrom').value = season.start;
     document.getElementById('fDateTo').value = season.end;
     document.querySelectorAll('[data-preset]').forEach(b=>b.classList.remove('active'));
@@ -1074,6 +1074,18 @@ function setSeasonFilter(seasonId) {
   }
   populateWeekDropdown();
   applyFilters();
+}
+
+// ── SUNDAY SNAP ───────────────────────────────────────────────────────────────
+function snapToSunday(dateStr, direction) {
+  // direction: 'back' snaps to previous Sunday, 'forward' snaps to next Sunday
+  const d = new Date(dateStr + 'T12:00:00');
+  const day = d.getDay(); // 0=Sun
+  if (day !== 0) {
+    const diff = direction === 'back' ? -day : 7 - day;
+    d.setDate(d.getDate() + diff);
+  }
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 
 // ── CONFIG ────────────────────────────────────────────────────────────────────
@@ -1118,13 +1130,14 @@ async function initData() {
   }
   // Set last report date and default 3-year range
   const allDates = ALL_DATA.map(d=>d.report_date).filter(Boolean).sort();
-  LAST_REPORT_DATE = allDates[allDates.length-1] || null;
+  LAST_REPORT_DATE = allDates[allDates.length-1] ? allDates[allDates.length-1].slice(0,10) : null;
   if (LAST_REPORT_DATE) {
     const last = new Date(LAST_REPORT_DATE);
     const start = new Date(last);
     start.setFullYear(start.getFullYear()-3);
+    const defaultStart = start.getFullYear()+'-'+String(start.getMonth()+1).padStart(2,'0')+'-'+String(start.getDate()).padStart(2,'0');
     DEFAULT_RANGE = {
-      start: start.getFullYear()+'-'+String(start.getMonth()+1).padStart(2,'0')+'-'+String(start.getDate()).padStart(2,'0'),
+      start: snapToSunday(defaultStart, 'back'),
       end: LAST_REPORT_DATE
     };
     window._DATE_RANGE = {...DEFAULT_RANGE};
@@ -1283,7 +1296,7 @@ function setDatePreset(preset) {
   }
 
   // Set date range — do NOT touch week dropdown
-  window._DATE_RANGE = {start: startDate, end: endDate};
+  window._DATE_RANGE = {start: snapToSunday(startDate,'back'), end: snapToSunday(endDate,'forward')};
   document.getElementById('fDateFrom').value = startDate;
   document.getElementById('fDateTo').value = endDate;
 
@@ -1308,8 +1321,8 @@ function onDateRangeChange() {
   const to = document.getElementById('fDateTo').value;
   if (from || to) {
     window._DATE_RANGE = {
-      start: from || '2000-01-01',
-      end: to || '2099-12-31'
+      start: snapToSunday(from || '2000-01-01', 'back'),
+      end: snapToSunday(to || '2099-12-31', 'forward')
     };
     document.getElementById('fDate').value = '';
     document.querySelectorAll('[data-preset]').forEach(b=>b.classList.remove('active'));
@@ -1504,18 +1517,10 @@ function renderCharts() {
 
   try {
   dc('wk');
-  // Build base weeks from filtered data first, then check for gaps
+  // Use spine only if range includes the COVID period (before 2022-01-01)
   const _filteredDates = new Set(FILTERED.map(d=>d.report_date));
   const _baseWeeks = [..._filteredDates].filter(Boolean).sort();
-  let hasDateFilter = false;
-  if (_baseWeeks.length >= 2) {
-    const _rs = new Date(_baseWeeks[0] + 'T12:00:00');
-    const _re = new Date(_baseWeeks[_baseWeeks.length-1] + 'T12:00:00');
-    for (let d=new Date(_rs); d<=_re; d.setDate(d.getDate()+7)) {
-      const iso = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-      if (!_filteredDates.has(iso)) { hasDateFilter = true; break; }
-    }
-  }
+  const hasDateFilter = _baseWeeks.length > 0 && _baseWeeks[0] < '2022-01-01';
   const weeklyNote = document.getElementById('weeklyChartNote');
   if (weeklyNote) weeklyNote.style.display = hasDateFilter ? 'none' : 'inline';
   let weeks;
