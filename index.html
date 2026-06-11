@@ -814,24 +814,11 @@ tbody td:last-child{border-right:none;}
 
     <!-- DATE RANGE -->
     <div class="sidebar-section">
-      <span class="sidebar-label">Date Range <span style="font-size:0.5rem;color:var(--ink3);text-transform:none;letter-spacing:0;font-weight:400;">(snapped to nearest Sunday)</span></span>
-      <div class="pill-row" style="flex-wrap:wrap;gap:4px;margin-bottom:8px;">
-        <button class="pill" data-preset="3yr" onclick="setDatePreset('3yr')" aria-label="Last 3 years">3 Yrs</button>
-        <button class="pill" data-preset="ytd" onclick="setDatePreset('ytd')" aria-label="Year to date">YTD</button>
-        <button class="pill" data-preset="tm" onclick="setDatePreset('tm')" aria-label="This month">This Mo</button>
-        <button class="pill" data-preset="lm" onclick="setDatePreset('lm')" aria-label="Last month">Last Mo</button>
-        <button class="pill" data-preset="tq" onclick="setDatePreset('tq')" aria-label="This quarter">This Qtr</button>
-        <button class="pill" data-preset="lq" onclick="setDatePreset('lq')" aria-label="Last quarter">Last Qtr</button>
-        <button class="pill" data-preset="all" onclick="setDatePreset('all')" aria-label="All data">All Data</button>
-      </div>
-      <label for="fDateFrom" class="sidebar-label" style="display:block;">From</label>
+      <span class="sidebar-label">Date Range <span style="font-size:0.5rem;color:var(--ink3);text-transform:none;letter-spacing:0;font-weight:400;">(snapped to nearest Sunday · use with season filter)</span></span>
+      <label for="fDateFrom" class="sidebar-label" style="display:block;margin-top:6px;">From</label>
       <input type="date" id="fDateFrom" style="width:100%;background:var(--bg);border:1px solid var(--rule);color:var(--ink);font-family:var(--mono);font-size:0.65rem;padding:5px 7px;border-radius:2px;outline:none;margin-bottom:6px;" oninput="onDateRangeChange()">
       <label for="fDateTo" class="sidebar-label" style="display:block;">To</label>
-      <input type="date" id="fDateTo" style="width:100%;background:var(--bg);border:1px solid var(--rule);color:var(--ink);font-family:var(--mono);font-size:0.65rem;padding:5px 7px;border-radius:2px;outline:none;margin-bottom:8px;" oninput="onDateRangeChange()">
-      <label class="sidebar-label" style="display:block;">Filter by Year</label>
-      <div class="pill-row" id="yearPills" style="flex-wrap:wrap;gap:4px;margin-bottom:8px;"></div>
-      <label for="fDate" class="sidebar-label" style="display:block;">Report Week</label>
-      <select id="fDate"><option value="">All Weeks</option></select>
+      <input type="date" id="fDateTo" style="width:100%;background:var(--bg);border:1px solid var(--rule);color:var(--ink);font-family:var(--mono);font-size:0.65rem;padding:5px 7px;border-radius:2px;outline:none;" oninput="onDateRangeChange()">
     </div>
 
     <!-- ADVANCED (collapsed) -->
@@ -1319,8 +1306,6 @@ let DEFAULT_RANGE = null;
 
 // ── BOOT ──────────────────────────────────────────────────────────────────────
 function boot() {
-  populateYearPills();
-  populateWeekDropdown();
   populateVenueCity();
   populateShowList();
   updateDataStatus();
@@ -1337,33 +1322,12 @@ function populateVenueCity() {
   if (cSel) cSel.innerHTML = '<option value="">All Cities</option>' + cities.map(c=>`<option value="${c}">${c}</option>`).join('');
 }
 
-function populateYearPills() {
-  const years = [...new Set(ALL_DATA.map(d=>d.report_date?.slice(0,4)))].filter(Boolean).sort().reverse();
-  const container = document.getElementById('yearPills');
-  if (!container) return;
-  container.innerHTML = '<button class="pill active" data-year="" onclick="setYearFilter(this,&quot;&quot;)" aria-label="All years">All</button>' +
-    years.map(y=>`<button class="pill" data-year="${y}" onclick="setYearFilter(this,'${y}')" aria-label="Filter to ${y}">${y}</button>`).join('');
-}
+
 
 let ACTIVE_YEAR = '';
-function setYearFilter(btn, year) {
-  ACTIVE_YEAR = year;
-  document.querySelectorAll('[data-year]').forEach(b=>b.classList.toggle('active', b.dataset.year===year));
-  // Repopulate week dropdown filtered to selected year
-  const allWeeks = [...new Set(ALL_DATA.map(d=>d.report_date))].filter(Boolean).sort().reverse();
-  const filtered = year ? allWeeks.filter(w=>w.startsWith(year)) : allWeeks;
-  const sel = document.getElementById('fDate');
-  const current = sel.value;
-  sel.innerHTML = '<option value="">All Weeks</option>' +
-    filtered.map(w=>`<option value="${w}"${w===current?' selected':''}>${fmtWeek(w)}</option>`).join('');
-}
 
-function populateWeekDropdown() {
-  const weeks = [...new Set(ALL_DATA.map(d=>d.report_date))].sort().reverse();
-  const sel = document.getElementById('fDate');
-  sel.innerHTML = '<option value="">All Weeks</option>' +
-    weeks.map(w=>`<option value="${w}">${fmtWeek(w)}</option>`).join('');
-}
+
+
 
 function populateShowList() {
   const shows = [...new Set(ALL_DATA.map(d=>d.show))].sort();
@@ -1410,7 +1374,6 @@ function updateFilterCount() {
   if (document.getElementById('fCity')?.value) count++;
   if (window._DATE_RANGE && DEFAULT_RANGE &&
       (window._DATE_RANGE.start !== DEFAULT_RANGE.start || window._DATE_RANGE.end !== DEFAULT_RANGE.end)) count++;
-  if (document.getElementById('fDate')?.value) count++;
   if (document.getElementById('fGrossMin')?.value || document.getElementById('fGrossMax')?.value) count++;
   if (document.getElementById('fCapMin')?.value || document.getElementById('fCapMax')?.value) count++;
   if (document.getElementById('fPerfMin')?.value || document.getElementById('fPerfMax')?.value) count++;
@@ -1450,62 +1413,7 @@ function setSub(btn, val) {
   applyFilters();
 }
 
-function setDatePreset(preset) {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = now.getMonth();
-  let startDate, endDate;
 
-  if (preset === '3yr') {
-    const last = new Date(LAST_REPORT_DATE || new Date());
-    const s = new Date(last); s.setFullYear(s.getFullYear()-3);
-    startDate = s.getFullYear()+'-'+String(s.getMonth()+1).padStart(2,'0')+'-'+String(s.getDate()).padStart(2,'0');
-    endDate = LAST_REPORT_DATE || new Date().toISOString().slice(0,10);
-  } else if (preset === 'all') {
-    const allDates = ALL_DATA.map(d=>d.report_date).filter(Boolean).sort();
-    startDate = allDates[0];
-    endDate = allDates[allDates.length-1];
-  } else if (preset === 'ytd') {
-    startDate = `${y}-01-01`;
-    endDate = now.toISOString().slice(0,10);
-  } else if (preset === 'tm') {
-    startDate = new Date(y, m, 1).toISOString().slice(0,10);
-    endDate = new Date(y, m+1, 0).toISOString().slice(0,10);
-  } else if (preset === 'lm') {
-    startDate = new Date(y, m-1, 1).toISOString().slice(0,10);
-    endDate = new Date(y, m, 0).toISOString().slice(0,10);
-  } else if (preset === 'tq') {
-    const qStart = Math.floor(m/3)*3;
-    startDate = new Date(y, qStart, 1).toISOString().slice(0,10);
-    endDate = new Date(y, qStart+3, 0).toISOString().slice(0,10);
-  } else if (preset === 'lq') {
-    const qStart = Math.floor(m/3)*3 - 3;
-    const qYear = qStart < 0 ? y-1 : y;
-    const qMo = qStart < 0 ? qStart+12 : qStart;
-    startDate = new Date(qYear, qMo, 1).toISOString().slice(0,10);
-    endDate = new Date(qYear, qMo+3, 0).toISOString().slice(0,10);
-  }
-
-  // Set date range — do NOT touch week dropdown
-  window._DATE_RANGE = {start: snapToSunday(startDate,'back'), end: snapToSunday(endDate,'forward')};
-  document.getElementById('fDateFrom').value = startDate;
-  document.getElementById('fDateTo').value = endDate;
-
-  // Repopulate week dropdown to only show weeks within range
-  const sel = document.getElementById('fDate');
-  const allWeeks = [...new Set(ALL_DATA.map(d=>d.report_date))].sort();
-  const inRange = allWeeks.filter(w => w >= startDate && w <= endDate).reverse();
-  const current = sel.value;
-  sel.innerHTML = '<option value="">All Weeks in Range</option>' +
-    inRange.map(w=>`<option value="${w}"${w===current?' selected':''}>${fmtWeek(w)}</option>`).join('');
-
-  // Highlight active preset
-  document.querySelectorAll('[data-preset]').forEach(b=>b.classList.remove('active'));
-  const btn = document.querySelector(`[data-preset="${preset}"]`);
-  if (btn) btn.classList.add('active');
-
-  applyFilters();
-}
 
 function onDateRangeChange() {
   const from = document.getElementById('fDateFrom').value;
@@ -1530,7 +1438,6 @@ function setPeer(btn, val) {
 }
 
 function applyFilters() {
-  const dateF = document.getElementById('fDate').value;
   const venueF = document.getElementById('fVenue')?.value || '';
   const cityF = document.getElementById('fCity')?.value || '';
   const grossMin = parseFloat(document.getElementById('fGrossMin').value)||0;
@@ -1545,7 +1452,6 @@ function applyFilters() {
     if (window._DATE_RANGE) {
       if (d.report_date < window._DATE_RANGE.start || d.report_date > window._DATE_RANGE.end) return false;
     }
-    if (dateF && d.report_date !== dateF) return false;
     if (ACTIVE_TIER && d.tier !== ACTIVE_TIER) return false;
     if (ACTIVE_SUB !== '' && String(d.on_subscription) !== ACTIVE_SUB) return false;
     if (ACTIVE_SEASONS.size > 0) {
