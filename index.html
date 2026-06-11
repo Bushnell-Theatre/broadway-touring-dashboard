@@ -1782,12 +1782,16 @@ function renderRankings() {
     const ww=[];
     const showsW2=[...new Set(FILTERED.filter(d=>d.report_date===w2&&d.gross_gross).map(d=>d.show))];
     showsW2.forEach(s=>{
-      const r1=FILTERED.find(d=>d.report_date===w1&&d.show===s&&d.gross_gross);
-      const r2=FILTERED.find(d=>d.report_date===w2&&d.show===s&&d.gross_gross);
-      if(r1&&r2){
-        const chg=((r2.gross_gross-r1.gross_gross)/r1.gross_gross)*100;
-        ww.push({_label:s,_val:chg,_g2:r2.gross_gross,_cap:r2.pct_capacity_paid,_peer:r2.similar_bushnell_cap});
-      }
+      // Sum all venues for this show in each week
+      const w1rows=FILTERED.filter(d=>d.report_date===w1&&d.show===s&&d.gross_gross);
+      const w2rows=FILTERED.filter(d=>d.report_date===w2&&d.show===s&&d.gross_gross);
+      if(!w1rows.length||!w2rows.length) return;
+      const g1=w1rows.reduce((a,d)=>a+d.gross_gross,0);
+      const g2=w2rows.reduce((a,d)=>a+d.gross_gross,0);
+      const caps=w2rows.filter(d=>d.pct_capacity_paid).map(d=>d.pct_capacity_paid);
+      const avgCap=caps.length?caps.reduce((a,b)=>a+b,0)/caps.length:null;
+      const chg=((g2-g1)/g1)*100;
+      ww.push({_label:s,_val:chg,_g2:g2,_cap:avgCap,_venues:w2rows.length});
     });
     ww.sort((a,b)=>b._val-a._val);
     if(ww.length){
