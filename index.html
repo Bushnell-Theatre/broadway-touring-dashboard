@@ -543,9 +543,101 @@ tbody td:last-child{border-right:none;}
 .footer-left{line-height:1.6;}
 .footer-right{text-align:right;line-height:1.6;}
 .footer strong{color:rgba(255,255,255,0.7);}
+
+/* ── PRINT STYLES ─────────────────────────────────────────────────────────── */
+@media print {
+  @page { size: landscape; margin: 0.5in; }
+
+  /* Hide non-print elements */
+  .sidebar, .sidebar-toggle, .sidebar-backdrop,
+  #tab-table, .nav-tabs,
+  button, .show-quick, .show-search-input,
+  .rank-item[onclick], [onclick] { pointer-events: none; }
+
+  .sidebar, .sidebar-toggle, .sidebar-backdrop { display: none !important; }
+  .nav-tabs { display: none !important; }
+  #tab-table { display: none !important; }
+
+  /* Show all panels for print */
+  .panel { display: block !important; page-break-before: always; }
+  .panel:first-of-type { page-break-before: avoid; }
+
+  /* Layout */
+  .main-pane { margin-left: 0 !important; width: 100% !important; }
+  body { background: #fff !important; }
+
+  /* Masthead as header on every page */
+  .masthead {
+    position: running(header);
+    display: block !important;
+    border-bottom: 2px solid #003865;
+    margin-bottom: 12pt;
+  }
+  @page { @top-center { content: element(header); } }
+
+  /* Print header — repeat masthead info */
+  .print-header {
+    display: block !important;
+    font-size: 9pt;
+    color: #003865;
+    border-bottom: 1.5pt solid #003865;
+    padding-bottom: 6pt;
+    margin-bottom: 12pt;
+  }
+
+  /* Active filters block before footer */
+  .print-filters {
+    display: block !important;
+    font-size: 8pt;
+    color: #595959;
+    border-top: 1pt solid #ccc;
+    padding-top: 6pt;
+    margin-top: 12pt;
+    page-break-inside: avoid;
+  }
+
+  /* Footer */
+  .footer {
+    display: block !important;
+    font-size: 7.5pt;
+    page-break-inside: avoid;
+  }
+
+  /* Charts — ensure canvas prints */
+  canvas { max-width: 100% !important; }
+  .chart-card { page-break-inside: avoid; }
+  .rank-card { page-break-inside: avoid; }
+
+  /* Expand breakdowns hidden in print */
+  [id^="wow-bd-"], [id^="rShowGross-bd-"], [id^="rShowGrossBottom-bd-"],
+  [id^="peer-detail-"] { display: none !important; }
+
+  /* Section breaks */
+  #tab-rankings { page-break-before: always; }
+  #tab-analytics { page-break-before: always; }
+  #tab-seasons { page-break-before: always; }
+  #tab-peers { page-break-before: always; }
+
+  /* Print button hidden */
+  #printBtn { display: none !important; }
+}
+
+/* Print elements hidden on screen */
+.print-header, .print-filters { display: none; }
 </style>
 </head>
 <body>
+
+<!-- PRINT HEADER (visible only in print) -->
+<div class="print-header" id="printHeader">
+  <strong>The Bushnell Center for the Performing Arts</strong> — Broadway Touring Sales Intelligence &nbsp;·&nbsp;
+  <span id="printHeaderDate"></span>
+</div>
+
+<!-- PRINT FILTERS (visible only in print) -->
+<div class="print-filters" id="printFilters">
+  <strong>Active Filters:</strong> <span id="printFilterList">None</span>
+</div>
 
 <!-- IMPORT MODAL — commented out pending Power Automate / SharePoint List wiring
 <div class="modal-overlay" id="importModal">
@@ -581,6 +673,7 @@ tbody td:last-child{border-right:none;}
   </div>
   <div class="masthead-actions">
     <button class="btn btn-outline" onclick="clearAllData()" aria-label="Reload data from source">↺ Reset</button>
+    <button class="btn btn-outline" id="printBtn" onclick="printDashboard()" aria-label="Print dashboard">⎙ Print</button>
     <!-- Import button — commented out pending Power Automate / SharePoint List wiring
     <button class="btn btn-primary" onclick="openImport()">+ Import Week</button>
     -->
@@ -1888,6 +1981,28 @@ function toggleAdvanced() {
   panel.style.display = open ? 'block' : 'none';
   arrow.innerHTML = open ? '&#9660;' : '&#9658;';
   btn.setAttribute('aria-expanded', open);
+}
+
+function printDashboard() {
+  // Update print header date
+  const hdr = document.getElementById('printHeaderDate');
+  if (hdr) hdr.textContent = 'Printed ' + new Date().toLocaleDateString('en-US', {month:'long',day:'numeric',year:'numeric'});
+
+  // Build active filter summary
+  const filters = [];
+  if (ACTIVE_SEASON) filters.push('Season: ' + ACTIVE_SEASON);
+  if (ACTIVE_TIER) filters.push('Tier: ' + ACTIVE_TIER);
+  if (ACTIVE_SUB !== '') filters.push('Subscription: ' + (ACTIVE_SUB==='1'?'Sub Only':'Non-Sub Only'));
+  if (ACTIVE_PEER === '1') filters.push('Peer Venues Only');
+  const v = document.getElementById('fVenue')?.value;
+  const c = document.getElementById('fCity')?.value;
+  if (v) filters.push('Venue: ' + v);
+  if (c) filters.push('City: ' + c);
+  if (window._DATE_RANGE) filters.push('Date: ' + fmtWeek(window._DATE_RANGE.start) + ' — ' + fmtWeek(window._DATE_RANGE.end));
+  const fl = document.getElementById('printFilterList');
+  if (fl) fl.textContent = filters.length ? filters.join(' · ') : 'None (showing all data)';
+
+  window.print();
 }
 
 function toggleSidebar() {
