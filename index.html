@@ -835,6 +835,11 @@ tbody td:last-child{border-right:none;}
           <div class="rank-sub">Cumulative gross across all filtered weeks</div>
           <div id="rShowGross"></div>
         </div>
+        <div class="rank-card">
+          <div class="rank-hd">Bottom Grossing Shows</div>
+          <div class="rank-sub">Cumulative gross across all filtered weeks</div>
+          <div id="rShowGrossBottom"></div>
+        </div>
         <div class="rank-card full">
           <div class="rank-hd">Week-over-Week Change</div>
           <div class="rank-sub">All shows — sorted by WoW % change · <span id="wowWeekLabel" style="color:var(--amber)"></span></div>
@@ -1632,6 +1637,8 @@ function renderRankings() {
   FILTERED.forEach(d=>{if(d.gross_gross)sg[d.show]=(sg[d.show]||0)+d.gross_gross;});
   const sgArr=Object.entries(sg).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([s,v])=>({_label:s,_val:v}));
   mkRankList('rShowGross',sgArr,d=>d._val,()=>'cumulative gross',fmt$,sgArr[0]?._val);
+  const sgBottomArr=Object.entries(sg).sort((a,b)=>a[1]-b[1]).slice(0,10).map(([s,v])=>({_label:s,_val:v}));
+  mkRankList('rShowGrossBottom',sgBottomArr,d=>d._val,()=>'cumulative gross',fmt$,sgArr[0]?._val);
 
   const weeks=[...new Set(FILTERED.map(d=>d.report_date))].sort();
   const wowLabel=document.getElementById('wowWeekLabel');
