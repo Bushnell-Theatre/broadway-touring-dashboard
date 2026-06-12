@@ -254,13 +254,22 @@ input[type=date]:focus,input[type=number]:focus,input[type=text]:focus{outline:2
 .nav-tab{
   font-family:var(--sans);font-size:0.62rem;font-weight:600;
   letter-spacing:0.1em;text-transform:uppercase;
-  padding:13px 18px;cursor:pointer;
+  padding:10px 16px;cursor:pointer;
   color:var(--ink3);
-  border-bottom:2px solid transparent;margin-bottom:-1px;
-  transition:all .2s;
+  border-bottom:3px solid transparent;margin-bottom:-1px;
+  border-radius:3px 3px 0 0;
+  transition:all .15s;
+  user-select:none;
 }
-.nav-tab:hover{color:var(--ink2);}
-.nav-tab.active{color:var(--amber);border-bottom-color:var(--amber);}
+.nav-tab:hover{color:var(--ink);background:rgba(0,56,101,0.06);}
+.nav-tab:focus{outline:2px solid var(--amber);outline-offset:-2px;}
+.nav-tab.active{
+  color:var(--bg);
+  background:var(--ink);
+  border-bottom-color:var(--ink);
+}
+.nav-tab.tab-right{margin-left:auto;}
+.nav-tab.tab-right ~ .nav-tab.tab-right{margin-left:0;}
 
 /* ── PANELS ── */
 .panel{display:none;padding:24px 28px;overflow-y:auto;flex:1;}
@@ -624,6 +633,31 @@ tbody td:last-child{border-right:none;}
 
 /* Print elements hidden on screen */
 .print-header, .print-filters { display: none; }
+
+/* ── TOOLTIPS ── */
+.tip{position:relative;display:inline-flex;align-items:center;gap:4px;}
+.tip-icon{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:13px;height:13px;border-radius:50%;
+  background:var(--rule);color:var(--ink3);
+  font-size:0.55rem;font-weight:700;cursor:help;
+  border:1px solid var(--rule);flex-shrink:0;
+}
+.tip-icon:hover + .tip-text, .tip-icon:focus + .tip-text{opacity:1;visibility:visible;transform:translateY(0);}
+.tip-text{
+  position:absolute;left:0;top:calc(100% + 6px);
+  background:var(--ink);color:#fff;
+  font-size:0.6rem;line-height:1.5;letter-spacing:0;text-transform:none;font-weight:400;
+  padding:7px 10px;border-radius:3px;
+  width:220px;z-index:100;
+  opacity:0;visibility:hidden;
+  transform:translateY(-4px);
+  transition:all .15s;pointer-events:none;
+}
+.tip-text::before{
+  content:'';position:absolute;bottom:100%;left:8px;
+  border:5px solid transparent;border-bottom-color:var(--ink);
+}
 </style>
 </head>
 <body>
@@ -756,7 +790,7 @@ tbody td:last-child{border-right:none;}
 
     <!-- TIER -->
     <div class="sidebar-section">
-      <span class="sidebar-label">Tier</span>
+      <span class="sidebar-label tip">Tier <span class="tip-icon" tabindex="0">?</span><span class="tip-text">Primary markets are major touring cities. Secondary markets are smaller regional cities. Broadway League designates each market.</span></span>
       <div class="pill-row">
         <button class="pill active" data-tier="" onclick="setTier(this,'')" aria-label="All tiers">All</button>
         <button class="pill" data-tier="Primary" onclick="setTier(this,'Primary')" aria-label="Primary tier">Primary</button>
@@ -766,7 +800,7 @@ tbody td:last-child{border-right:none;}
 
     <!-- SUBSCRIPTION -->
     <div class="sidebar-section">
-      <span class="sidebar-label">Subscription</span>
+      <span class="sidebar-label tip">Subscription <span class="tip-icon" tabindex="0">?</span><span class="tip-text">Subscription shows are part of the venue's subscriber package. Non-subscription shows are add-ons or specials not included in the season subscription.</span></span>
       <div class="pill-row">
         <button class="pill active" data-sub="" onclick="setSub(this,'')" aria-label="All subscriptions">All</button>
         <button class="pill" data-sub="1" onclick="setSub(this,'1')" aria-label="Subscribed only">Sub</button>
@@ -776,7 +810,7 @@ tbody td:last-child{border-right:none;}
 
     <!-- PEER VENUES -->
     <div class="sidebar-section">
-      <span class="sidebar-label">Peer Venues</span>
+      <span class="sidebar-label tip">Peer Venues <span class="tip-icon" tabindex="0">?</span><span class="tip-text">Venues with a similar per-show sellable capacity to the Bushnell, as calculated from Broadway League data. Used for benchmarking.</span></span>
       <div class="pill-row">
         <button class="pill active" data-peer="" onclick="setPeer(this,'')" aria-label="All venues">All</button>
         <button class="pill" data-peer="1" onclick="setPeer(this,'1')" aria-label="Peer venues only">Peer Only</button>
@@ -861,7 +895,8 @@ tbody td:last-child{border-right:none;}
       <div class="nav-tab" onclick="showTab('analytics')">Analytics</div>
       <div class="nav-tab" onclick="showTab('seasons')">Seasons</div>
       <div class="nav-tab" onclick="showTab('peers')">Peer Venues</div>
-      <div class="nav-tab" onclick="showTab('table')">Data Table</div>
+      <div class="nav-tab tab-right" onclick="showTab('table')">Data Table</div>
+      <div class="nav-tab tab-right" onclick="showTab('faq')">Help &amp; FAQ</div>
     </nav>
 
     <!-- TABLE PANEL -->
@@ -981,6 +1016,17 @@ tbody td:last-child{border-right:none;}
         <div class="section-divider-meta">Venues flagged as similar capacity to Bushnell · <span id="peersNote" style="color:var(--amber)">Sorted by reporting weeks</span></div>
       </div>
       <div id="peersContent"></div>
+    </div>
+
+
+    <!-- FAQ PANEL -->
+    <div class="panel" id="tab-faq">
+      <div class="section-divider">
+        <h2>Help &amp; FAQ</h2>
+        <div class="section-divider-line"></div>
+        <div class="section-divider-meta">Definitions, acronyms, and guidance for using this dashboard</div>
+      </div>
+      <div id="faqContent"></div>
     </div>
 
     <!-- ANALYTICS PANEL -->
@@ -2650,8 +2696,78 @@ function renderPeers() {
   container.innerHTML = bushnellRow + meaningfulHTML + listedHTML;
 }
 
+
+function renderFaq() {
+  const el = document.getElementById('faqContent');
+  if (!el || el.innerHTML) return;
+
+  const section = (title, items) => `
+    <div style="margin-bottom:32px;">
+      <h3 style="font-family:var(--serif);font-size:0.95rem;color:var(--ink);margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--rule);">${title}</h3>
+      <dl style="display:grid;grid-template-columns:200px 1fr;gap:8px 20px;">
+        ${items.map(([t,d])=>`<dt style="font-weight:600;color:var(--ink);font-size:0.68rem;padding-top:2px;">${t}</dt><dd style="color:var(--ink2);font-size:0.68rem;line-height:1.6;margin:0;">${d}</dd>`).join('')}
+      </dl>
+    </div>`;
+
+  el.innerHTML = `
+    <div style="max-width:860px;">
+
+      ${section('Data Source', [
+        ['Broadway League','Weekly touring report published by The Broadway League covering gross revenue, capacity, and performance data for Broadway touring productions across North America.'],
+        ['Report Week','Each record represents one week of performances at one venue. Reports are published weekly, typically on Sundays.'],
+        ['Fiscal Year','The Bushnell fiscal year runs July 1 through June 30. All season and annual comparisons use this calendar.'],
+        ['Data Currency','Data reflects Broadway League reports uploaded to this system. The most recent report date is shown in the masthead.'],
+      ])}
+
+      ${section('Key Metrics & Acronyms', [
+        ['Gross Gross (GG)','Total gross revenue for the week at that venue — all tickets sold at all price points.'],
+        ['Gross Potential (GP)','The theoretical maximum revenue if every seat sold at full price for every performance.'],
+        ['GG% of GP','Gross Gross as a percentage of Gross Potential. Over 100% indicates premium pricing or above-capacity revenue. Under 100% indicates unsold seats or discounting.'],
+        ['% Capacity Paid','Paid tickets sold divided by total sellable capacity. The primary measure of how full the house was.'],
+        ['% Capacity Total','Total tickets (including comps) divided by total sellable capacity.'],
+        ['Avg Paid Admission','Average price paid per ticket: Gross Gross ÷ Paid Tickets.'],
+        ['WoW','Week-over-Week. The percentage change in gross revenue from the previous report week to the current week.'],
+        ['Top Paid Price','The highest price at which a ticket was sold that week.'],
+        ['# Performances','Number of performances in the report week (typically 8 for a standard Broadway week).'],
+      ])}
+
+      ${section('Filters', [
+        ['Season','Filters data to one or more Bushnell fiscal seasons (July–June). Multiple seasons can be selected simultaneously. Season selection works independently of the date range filter.'],
+        ['Date Range','Narrows results within the selected season(s) to a specific date window. Dates snap to the nearest Sunday to align with Broadway League reporting.'],
+        ['Tier','Primary markets are major touring cities designated by the Broadway League. Secondary markets are smaller regional cities.'],
+        ['Subscription','Subscription shows are included in the Bushnell subscriber package. Non-subscription shows are add-ons not part of the standard season package.'],
+        ['Peer Venues','Venues with a similar per-show sellable capacity to the Bushnell, as calculated from Broadway League data. Selecting "Peer Only" limits data to these comparable venues.'],
+        ['Venue / City','Filter data to a specific venue or city across all Broadway League markets.'],
+        ['Shows','Select specific show titles to focus analysis. Use the search box to find shows quickly.'],
+        ['Advanced Filters','Gross range, capacity range, and performance count filters for detailed data slicing.'],
+      ])}
+
+      ${section('Peer Venues', [
+        ['Definition','A peer venue is one whose per-show sellable capacity — calculated as total sellable seats divided by number of performances — is comparable to the Bushnell. This is not raw seat count.'],
+        ['Meaningful Peers','Venues with 10+ reporting weeks and average gross within 50% of the Bushnell average are considered meaningful comparators and receive full synopses on the Peer Venues tab.'],
+        ['Benchmarking','Peer comparisons show how Bushnell gross and capacity performance compares to similar venues presenting the same touring productions.'],
+      ])}
+
+      ${section('Seasons Tab', [
+        ['Show Data','Each show row displays Bushnell actual gross and % capacity alongside the peer venue average for the same show within the same season.'],
+        ['Peer Detail','Click the ▶ arrow on any show to expand a list of peer venues that reported that show during the season, sorted by report date — showing who ran it before and after Bushnell.'],
+        ['No Data Yet','Shows listed in future seasons will display "No data yet" until Broadway League reports are available.'],
+      ])}
+
+      ${section('Charts & Analytics', [
+        ['Weekly Gross Trend','Total gross across all filtered venues by report week. Default view shows the current season. Extend the date range to view historical data including the COVID gap (2020–2021).'],
+        ['8-Week Trend','Rolling 8-week moving average overlaid on the weekly gross chart. Includes zero weeks so the COVID shutdown appears as a ramp down and recovery.'],
+        ['Seasonality','Average gross by fiscal period (July–June) across all years in the filter. Shows seasonal patterns in Broadway touring revenue.'],
+        ['Year over Year','Fiscal year gross by period, overlaid for comparison. Years labeled in 2024-25 format reflecting the July–June fiscal calendar.'],
+        ['GG% of Potential','Teal bars indicate shows averaging at or above 100% of gross potential — strong demand or premium pricing. Navy bars indicate below potential.'],
+        ['% Capacity by Market','Average paid capacity utilization by city. Color coded: green ≥90%, amber 60–89%, red <60%.'],
+      ])}
+
+    </div>`;
+}
+
 function showTab(name) {
-  const names=['charts','rankings','analytics','seasons','peers','table'];
+  const names=['charts','rankings','analytics','seasons','peers','table','faq'];
   document.querySelectorAll('.nav-tab').forEach((t,i)=>{t.classList.toggle('active',names[i]===name);});
   document.querySelectorAll('.panel').forEach(p=>{
     p.classList.toggle('active',p.id==='tab-'+name);
@@ -2662,6 +2778,7 @@ function showTab(name) {
   if(name==='analytics') renderAnalytics();
   if(name==='seasons') renderSeasons();
   if(name==='peers') renderPeers();
+  if(name==='faq') renderFaq();
 }
 
 // ── IMPORT — commented out pending Power Automate / SharePoint List wiring ────
