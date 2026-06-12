@@ -1241,7 +1241,7 @@ function getFiscalYear(dateStr) {
   if (!dateStr) return null;
   const y = parseInt(dateStr.slice(0,4));
   const m = parseInt(dateStr.slice(5,7));
-  return m >= 7 ? y+'-'+(y+1).toString().slice(2) : (y-1)+'-'+y.toString().slice(2);
+  return m >= 7 ? y+'-'+(y+1) : (y-1)+'-'+y;
 }
 
 
@@ -1569,7 +1569,7 @@ function applyFilters() {
     if (ACTIVE_SUB !== '' && String(d.on_subscription) !== ACTIVE_SUB) return false;
     if (ACTIVE_SEASONS.size > 0) {
       const fy = getFiscalYear(d.report_date);
-      if (!fy || !ACTIVE_SEASONS.has(fy.split('-')[0]+'-'+('20'+fy.split('-')[1]))) return false;
+      if (!fy || !ACTIVE_SEASONS.has(fy)) return false;
     }
     if (ACTIVE_PEER === '1' && !d.similar_bushnell_cap) return false;
     if (venueF && d.theatre !== venueF) return false;
@@ -2158,7 +2158,7 @@ function renderAnalytics() {
         const fw=fiscalWeek(d.report_date);
         byFW[fw]=(byFW[fw]||0)+d.gross_gross;
       });
-      const label = fy+'-'+(fy+1).toString().slice(2);
+      const label = String(fy)+'-'+String(fy+1);
       return {label,data:fwNums.map(fw=>byFW[fw]||null),
         borderColor:palette[i%palette.length],backgroundColor:'transparent',
         fill:false,tension:0.3,pointRadius:2,borderWidth:1.5,spanGaps:true};
@@ -2183,7 +2183,7 @@ function renderAnalytics() {
         const fm=fiscalMonth(parseInt(d.report_date.slice(5,7)));
         byFM[fm]=(byFM[fm]||0)+d.gross_gross;
       });
-      const label = fy+'-'+(fy+1).toString().slice(2);
+      const label = String(fy)+'-'+String(fy+1);
       return {label,data:[...Array(12).keys()].map(i=>byFM[i+1]||null),
         borderColor:palette[i%palette.length],backgroundColor:'transparent',
         fill:false,tension:0.3,pointRadius:3,borderWidth:1.5,spanGaps:true};
