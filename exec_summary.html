@@ -219,66 +219,86 @@ canvas{height:var(--chart-h)!important;}
   .mini-table{min-width:1100px;}
 }
 
-/* 4K / large conference display. */
+/* 4K / large conference display. Prioritize readable executive-room typography. */
 @media (min-width: 3840px) and (max-width: 5999px){
   :root{
-    --page-max: 3400px;
-    --base-font: 18px;
-    --mast-pad-x: 52px;
-    --sidebar-w: 330px;
-    --panel-pad-y: 36px;
-    --panel-pad-x: 44px;
-    --grid-gap: 28px;
-    --card-pad: 30px;
-    --chart-h: 420px;
-    --small-chart-h: 300px;
-    --kpi-min: 260px;
-    --kpi-pad-y: 24px;
-    --kpi-pad-x: 28px;
-    --kpi-value: 1.9rem;
-    --section-title: 1.25rem;
-    --card-title-size: 1.22rem;
-    --body-copy: .76rem;
-    --table-copy: .72rem;
-    --nav-copy: .68rem;
-    --touch: 46px;
+    --page-max: 3720px;
+    --base-font: 22px;
+    --mast-pad-x: 64px;
+    --sidebar-w: 395px;
+    --panel-pad-y: 44px;
+    --panel-pad-x: 56px;
+    --grid-gap: 34px;
+    --card-pad: 38px;
+    --chart-h: 500px;
+    --small-chart-h: 360px;
+    --kpi-min: 320px;
+    --kpi-pad-y: 30px;
+    --kpi-pad-x: 34px;
+    --kpi-value: 2.15rem;
+    --section-title: 1.42rem;
+    --card-title-size: 1.34rem;
+    --body-copy: .86rem;
+    --table-copy: .82rem;
+    --nav-copy: .76rem;
+    --touch: 56px;
   }
-  .brand-icon{width:48px;height:48px;font-size:1.35rem;}
-  .brand-text h1{font-size:1.38rem;}
+  .masthead{min-height:84px;}
+  .brand-icon{width:58px;height:58px;font-size:1.55rem;}
+  .brand-text h1{font-size:1.68rem;}
+  .brand-text .sub{font-size:.72rem;}
+  .masthead-status{font-size:.72rem;}
+  .sidebar-label,.card-hd,.kpi-label{font-size:.66rem;}
+  .kpi-sub,.mini-label,.rank-detail{font-size:.66rem;}
+  .metric .val{font-size:1.25rem;}
+  .metric .lbl{font-size:.58rem;}
+  .show-name{font-size:1.12rem;}
+  .status{font-size:.58rem;padding:5px 10px;}
+  .btn{font-size:.68rem;padding:12px 18px;}
   .grid-4{grid-template-columns:repeat(4,minmax(0,1fr));}
   .grid-3{grid-template-columns:repeat(3,minmax(0,1fr));}
   .grid-2{grid-template-columns:repeat(2,minmax(0,1fr));}
   .kpi-strip{grid-template-columns:repeat(8,minmax(0,1fr));}
+  .mini-table{min-width:1180px;}
 }
 
-/* 2.5K / QHD and large monitors. */
+/* 2.5K / QHD and browser-scaled 4K monitors. */
 @media (min-width: 2560px) and (max-width: 3839px){
   :root{
-    --page-max: 2360px;
-    --base-font: 16px;
-    --mast-pad-x: 42px;
-    --sidebar-w: 290px;
-    --panel-pad-y: 30px;
-    --panel-pad-x: 36px;
-    --grid-gap: 22px;
-    --card-pad: 24px;
-    --chart-h: 340px;
-    --small-chart-h: 240px;
-    --kpi-min: 210px;
-    --kpi-pad-y: 20px;
-    --kpi-pad-x: 24px;
-    --kpi-value: 1.65rem;
-    --section-title: 1.08rem;
-    --card-title-size: 1.08rem;
-    --body-copy: .72rem;
-    --table-copy: .70rem;
-    --nav-copy: .66rem;
-    --touch: 42px;
+    --page-max: 2520px;
+    --base-font: 18px;
+    --mast-pad-x: 48px;
+    --sidebar-w: 330px;
+    --panel-pad-y: 36px;
+    --panel-pad-x: 42px;
+    --grid-gap: 26px;
+    --card-pad: 28px;
+    --chart-h: 400px;
+    --small-chart-h: 285px;
+    --kpi-min: 240px;
+    --kpi-pad-y: 24px;
+    --kpi-pad-x: 28px;
+    --kpi-value: 1.85rem;
+    --section-title: 1.2rem;
+    --card-title-size: 1.18rem;
+    --body-copy: .80rem;
+    --table-copy: .76rem;
+    --nav-copy: .70rem;
+    --touch: 48px;
   }
+  .masthead{min-height:74px;}
+  .brand-icon{width:48px;height:48px;font-size:1.32rem;}
+  .brand-text h1{font-size:1.36rem;}
+  .brand-text .sub{font-size:.66rem;}
+  .sidebar-label,.card-hd,.kpi-label{font-size:.62rem;}
+  .kpi-sub,.mini-label,.rank-detail{font-size:.62rem;}
+  .show-name{font-size:1rem;}
+  .status{font-size:.52rem;padding:4px 8px;}
   .grid-4{grid-template-columns:repeat(4,minmax(0,1fr));}
   .grid-3{grid-template-columns:repeat(3,minmax(0,1fr));}
   .grid-2{grid-template-columns:repeat(2,minmax(0,1fr));}
   .kpi-strip{grid-template-columns:repeat(8,minmax(0,1fr));}
+  .mini-table{min-width:980px;}
 }
 
 /* Standard desktop / laptop baseline. */
