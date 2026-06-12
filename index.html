@@ -2012,22 +2012,23 @@ function renderAnalytics() {
     return m >= 7 ? y : y - 1;
   };
   const FM_LABELS = ['Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun'];
+  const fiscalWeek = dateStr => {
+    const y = parseInt(dateStr.slice(0,4));
+    const mo = parseInt(dateStr.slice(5,7));
+    const fy = mo >= 7 ? y : y - 1;
+    const julFirst = new Date(fy, 6, 1);
+    const julSun = new Date(julFirst);
+    julSun.setDate(julFirst.getDate() + ((7 - julFirst.getDay()) % 7));
+    const dt = new Date(dateStr + 'T12:00:00');
+    const diff = Math.round((dt - julSun) / (7 * 86400000));
+    return diff >= 0 ? diff + 1 : 53 + diff + 1;
+  };
   // Quarter start fiscal months: Jul(1), Oct(4), Jan(7), Apr(10)
   const fiscalQStarts = {1:'Jul',4:'Oct',7:'Jan',10:'Apr'};
 
   if (SEASON_MODE === 'week') {
     // Fiscal week: ISO week offset so fiscal week 1 = week containing Jul 1
-    const fiscalWeek = dateStr => {
-      const y = fiscalYear(dateStr);
-      const julFirst = new Date(y, 6, 1);
-      // Find first Sunday on or after Jul 1
-      const julSun = new Date(julFirst);
-      julSun.setDate(julFirst.getDate() + ((7 - julFirst.getDay()) % 7));
-      const dt = new Date(dateStr + 'T12:00:00');
-      const diff = Math.round((dt - julSun) / (7 * 86400000));
-      return diff >= 0 ? diff + 1 : 53 + diff + 1;
-    };
-    const byFW = {};
+        const byFW = {};
     FILTERED.forEach(d => {
       if (!d.report_date || !d.gross_gross) return;
       const fw = fiscalWeek(d.report_date);
