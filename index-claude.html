@@ -1537,8 +1537,7 @@ function onDateRangeChange() {
       start: snapToSunday(from || '2000-01-01', 'back'),
       end: snapToSunday(to || '2099-12-31', 'forward')
     };
-    const fDate = document.getElementById('fDate');
-    if (fDate) fDate.value = '';
+    document.getElementById('fDate').value = '';
     document.querySelectorAll('[data-preset]').forEach(b=>b.classList.remove('active'));
   } else {
     window._DATE_RANGE = null;
@@ -1714,17 +1713,13 @@ function dc(id){ if(CHARTS[id]){ CHARTS[id].destroy(); delete CHARTS[id]; } }
 // ── ANALYTICS CACHE ───────────────────────────────────────────────────────────
 // Single pass over FILTERED — all render functions read from CACHE
 function buildCache() {
-  const byShow       = {}; // show -> aggregate metrics
-  const byCity       = {}; // city -> aggregate metrics
-  const byWeek       = {}; // date -> aggregate metrics
-  const byWeekShow   = {}; // date|show -> aggregate metrics
-  const byShowVenue  = {}; // show|theatre|city -> show-specific venue breakdown
-  const bySub        = {
-    sub:    {gross:0,grossCnt:0,capSum:0,capCnt:0},
-    nonsub: {gross:0,grossCnt:0,capSum:0,capCnt:0}
-  };
+  const byShow       = {}; // show -> {gross, ggSum, ggCnt, capSum, capCnt, weeks, subGross, subCap, subCnt, nonGross, nonCap, nonCnt, active, dark}
+  const byCity       = {}; // city -> {gross, capSum, capCnt}
+  const byWeek       = {}; // date -> {gross, peerCapSum, peerCapCnt, allCapSum, allCapCnt}
+  const byWeekShow   = {}; // date|show -> {gross, cap, venue, city, peer}
+  const bySub        = {sub:{gross:0,capSum:0,capCnt:0}, nonsub:{gross:0,capSum:0,capCnt:0}};
   const byFY         = {}; // fiscalYear -> {byFW:{fw->gross}, byFM:{fm->gross}}
-  const byVenue      = {}; // theatre|city -> venue aggregate metrics
+  const byVenue      = {}; // theatre -> {city, gross, capSum, capCnt, weeks}
 
   FILTERED.forEach(d => {
     const show = d.show;
@@ -1738,16 +1733,13 @@ function buildCache() {
     const g  = d.gross_gross;
     const cp = d.pct_capacity_paid;
     const gg = d.gg_pct_gp;
-    const hasGross = g != null;
-    const hasCap   = cp != null;
-    const hasGg    = gg != null;
 
     // byShow
     if (show) {
-      if (!byShow[show]) byShow[show] = {gross:0,grossCnt:0,ggSum:0,ggCnt:0,capSum:0,capCnt:0,weeks:new Set(),grossValues:[],active:0,dark:0};
-      if (hasGross) { byShow[show].gross += g; byShow[show].grossCnt++; byShow[show].grossValues.push(g); }
-      if (hasGg)    { byShow[show].ggSum += gg; byShow[show].ggCnt++; }
-      if (hasCap)   { byShow[show].capSum += cp; byShow[show].capCnt++; }
+      if (!byShow[show]) byShow[show] = {gross:0,ggSum:0,ggCnt:0,capSum:0,capCnt:0,weeks:new Set(),active:0,dark:0};
+      if (g)  { byShow[show].gross += g; }
+      if (gg) { byShow[show].ggSum += gg; byShow[show].ggCnt++; }
+      if (cp) { byShow[show].capSum += cp; byShow[show].capCnt++; }
       if (date) byShow[show].weeks.add(date);
       if (d.noengagement) byShow[show].dark++;
       else byShow[show].active++;
@@ -1755,47 +1747,39 @@ function buildCache() {
 
     // byCity
     if (city) {
-      if (!byCity[city]) byCity[city] = {gross:0,grossCnt:0,capSum:0,capCnt:0};
-      if (hasGross) { byCity[city].gross += g; byCity[city].grossCnt++; }
-      if (hasCap)   { byCity[city].capSum += cp; byCity[city].capCnt++; }
+      if (!byCity[city]) byCity[city] = {gross:0,capSum:0,capCnt:0};
+      if (g)  byCity[city].gross  += g;
+      if (cp) { byCity[city].capSum += cp; byCity[city].capCnt++; }
     }
 
     // byWeek
     if (date) {
-      if (!byWeek[date]) byWeek[date] = {gross:0,grossCnt:0,peerCapSum:0,peerCapCnt:0,otherCapSum:0,otherCapCnt:0,allCapSum:0,allCapCnt:0};
-      if (hasGross) { byWeek[date].gross += g; byWeek[date].grossCnt++; }
-      if (hasCap) {
-        byWeek[date].allCapSum += cp; byWeek[date].allCapCnt++;
-        if (isPeer) { byWeek[date].peerCapSum += cp; byWeek[date].peerCapCnt++; }
-        else { byWeek[date].otherCapSum += cp; byWeek[date].otherCapCnt++; }
-      }
+      if (!byWeek[date]) byWeek[date] = {gross:0,peerCapSum:0,peerCapCnt:0,allCapSum:0,allCapCnt:0};
+      if (g)  byWeek[date].gross += g;
+      if (cp) { byWeek[date].allCapSum += cp; byWeek[date].allCapCnt++; }
+      if (cp && isPeer) { byWeek[date].peerCapSum += cp; byWeek[date].peerCapCnt++; }
     }
 
     // byWeekShow (for WoW)
     if (date && show) {
       const k = date+'|'+show;
-      if (!byWeekShow[k]) byWeekShow[k] = {gross:0,grossCnt:0,capSum:0,capCnt:0,venues:[]};
-      if (hasGross) { byWeekShow[k].gross += g; byWeekShow[k].grossCnt++; }
-      if (hasCap)   { byWeekShow[k].capSum += cp; byWeekShow[k].capCnt++; }
+      if (!byWeekShow[k]) byWeekShow[k] = {gross:0,capSum:0,capCnt:0,venues:[]};
+      if (g)  byWeekShow[k].gross += g;
+      if (cp) { byWeekShow[k].capSum += cp; byWeekShow[k].capCnt++; }
       byWeekShow[k].venues.push({theatre:d.theatre,city,gross:g,cap:cp,peer:isPeer});
     }
 
-    // byShowVenue — show-specific venue detail, not all-show venue totals
-    if (show && d.theatre) {
-      const svk = show+'|'+d.theatre+'|'+city;
-      if (!byShowVenue[svk]) byShowVenue[svk] = {show,theatre:d.theatre,city,gross:0,grossCnt:0,capSum:0,capCnt:0,weeks:0};
-      if (hasGross) { byShowVenue[svk].gross += g; byShowVenue[svk].grossCnt++; }
-      if (hasCap)   { byShowVenue[svk].capSum += cp; byShowVenue[svk].capCnt++; }
-      if (hasGross) byShowVenue[svk].weeks++;
+    // bySub
+    if (isSub) {
+      if (g)  bySub.sub.gross   += g;
+      if (cp) { bySub.sub.capSum += cp; bySub.sub.capCnt++; }
+    } else {
+      if (g)  bySub.nonsub.gross   += g;
+      if (cp) { bySub.nonsub.capSum += cp; bySub.nonsub.capCnt++; }
     }
 
-    // bySub
-    const subBucket = isSub ? bySub.sub : bySub.nonsub;
-    if (hasGross) { subBucket.gross += g; subBucket.grossCnt++; }
-    if (hasCap)   { subBucket.capSum += cp; subBucket.capCnt++; }
-
     // byFY
-    if (fy && hasGross) {
+    if (fy && g) {
       if (!byFY[fy]) byFY[fy] = {byFW:{}, byFM:{}};
       if (fw) byFY[fy].byFW[fw] = (byFY[fy].byFW[fw]||0) + g;
       if (fm) byFY[fy].byFM[fm] = (byFY[fy].byFM[fm]||0) + g;
@@ -1804,15 +1788,16 @@ function buildCache() {
     // byVenue
     if (d.theatre) {
       const vk = d.theatre+'|'+city;
-      if (!byVenue[vk]) byVenue[vk] = {theatre:d.theatre,city,gross:0,grossCnt:0,capSum:0,capCnt:0,weeks:0};
-      if (hasGross) { byVenue[vk].gross += g; byVenue[vk].grossCnt++; }
-      if (hasCap)   { byVenue[vk].capSum += cp; byVenue[vk].capCnt++; }
+      if (!byVenue[vk]) byVenue[vk] = {theatre:d.theatre,city,gross:0,capSum:0,capCnt:0,weeks:0};
+      if (g)  byVenue[vk].gross   += g;
+      if (cp) { byVenue[vk].capSum += cp; byVenue[vk].capCnt++; }
       byVenue[vk].weeks++;
     }
   });
 
-  CACHE = { byShow, byCity, byWeek, byWeekShow, byShowVenue, bySub, byFY, byVenue };
+  CACHE = { byShow, byCity, byWeek, byWeekShow, bySub, byFY, byVenue };
 }
+
 // Global fiscalWeek (needed by cache builder outside renderAnalytics)
 function fiscalWeekGlobal(dateStr) {
   if (!dateStr) return null;
@@ -1833,10 +1818,9 @@ function renderCharts() {
   Chart.defaults.font.size = 10;
 
   dc('sg');
-  const se=Object.entries(CACHE.byShow)
-    .filter(([,v])=>v.grossCnt>0)
-    .map(([s,v])=>[s,v.gross])
-    .sort((a,b)=>b[1]-a[1]).slice(0,12);
+  const byShow={};
+  FILTERED.forEach(d=>{if(d.gross_gross)byShow[d.show]=(byShow[d.show]||0)+d.gross_gross;});
+  const se=Object.entries(byShow).sort((a,b)=>b[1]-a[1]).slice(0,12);
   CHARTS.sg=new Chart(document.getElementById('cShowGross'),{type:'bar',
     data:{labels:se.map(([s])=>s.length>22?s.slice(0,22)+'…':s),
           datasets:[{data:se.map(([,v])=>v),backgroundColor:CC.amber,borderRadius:2}]},
@@ -1846,10 +1830,9 @@ function renderCharts() {
       datasets:{bar:{maxBarThickness:22,minBarLength:2}}}});
 
   dc('gp');
-  const ge=Object.entries(CACHE.byShow)
-    .filter(([,v])=>v.ggCnt>0)
-    .map(([s,v])=>[s,v.ggSum/v.ggCnt])
-    .sort((a,b)=>b[1]-a[1]).slice(0,12);
+  const ggS=Object.fromEntries(Object.entries(CACHE.byShow).map(([s,v])=>[s,v.ggSum]));
+  const ggC=Object.fromEntries(Object.entries(CACHE.byShow).map(([s,v])=>[s,v.ggCnt]));
+  const ge=Object.entries(ggS).map(([s,v])=>[s,v/ggC[s]]).sort((a,b)=>b[1]-a[1]).slice(0,12);
   CHARTS.gp=new Chart(document.getElementById('cGgPct'),{type:'bar',
     data:{labels:ge.map(([s])=>s.length>22?s.slice(0,22)+'…':s),
           datasets:[{data:ge.map(([,v])=>v),backgroundColor:ge.map(([,v])=>v>100?CC.teal:CC.amber),borderRadius:2}]},
@@ -1881,7 +1864,7 @@ function renderCharts() {
     const cutoff=twoYearsAgo.toISOString().slice(0,10);
     weeks=[...new Set(FILTERED.filter(d=>d.report_date>=cutoff).map(d=>d.report_date))].sort();
   }
-  const wkGross=weeks.map(w=>CACHE.byWeek[w]?.gross || 0);
+  const wkGross=weeks.map(w=>{const rows=FILTERED.filter(d=>d.report_date===w&&d.gross_gross);return rows.length?rows.reduce((a,d)=>a+d.gross_gross,0):0;});
   const MA=8;
   const wkTrend=wkGross.map((v,i,arr)=>{
     const slice=arr.slice(Math.max(0,i-MA+1),i+1);
@@ -1903,8 +1886,8 @@ function renderCharts() {
   } catch(e) { console.warn('Weekly chart error:', e); }
 
     dc('sc');
-  const subG   = CACHE.bySub.sub.grossCnt    > 0 ? CACHE.bySub.sub.gross/CACHE.bySub.sub.grossCnt : null;
-  const nonG   = CACHE.bySub.nonsub.grossCnt > 0 ? CACHE.bySub.nonsub.gross/CACHE.bySub.nonsub.grossCnt : null;
+  const subG   = CACHE.bySub.sub.capCnt    > 0 ? CACHE.bySub.sub.gross/Object.values(CACHE.byShow).filter(v=>v.gross>0).length : null;
+  const nonG   = CACHE.bySub.nonsub.capCnt > 0 ? CACHE.bySub.nonsub.gross/Object.values(CACHE.byShow).filter(v=>v.gross>0).length : null;
   const subCap = CACHE.bySub.sub.capCnt    > 0 ? CACHE.bySub.sub.capSum/CACHE.bySub.sub.capCnt : null;
   const nonCap = CACHE.bySub.nonsub.capCnt > 0 ? CACHE.bySub.nonsub.capSum/CACHE.bySub.nonsub.capCnt : null;
   CHARTS.sc=new Chart(document.getElementById('cSubComp'),{type:'bar',
@@ -1996,21 +1979,27 @@ function toggleRankBreakdown(rowId) {
 }
 
 function renderRankings() {
-  const sg = Object.fromEntries(Object.entries(CACHE.byShow).filter(([,v])=>v.grossCnt>0).map(([s,v])=>[s,v.gross]));
+  const sg = Object.fromEntries(Object.entries(CACHE.byShow).map(([s,v])=>[s,v.gross]).filter(([,v])=>v>0));
   const sgArr=Object.entries(sg).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([s,v])=>({_label:s,_val:v}));
   // Breakdown: venues contributing to each show's gross
   const showBreakdown=(d)=>{
-    return Object.values(CACHE.byShowVenue)
-      .filter(v=>v.show===d._label && v.grossCnt>0)
-      .map(v=>({
-        theatre:v.theatre,
-        city:v.city,
-        gross:v.gross,
-        cap:v.capCnt ? v.capSum/v.capCnt : null,
-        wks:v.weeks
-      }))
+    const venues={};
+    Object.entries(CACHE.byVenue).filter(([k])=>k.split('|')[0]=== d._label || false).forEach(([,v])=>{
+      const vk=v.theatre+'|'+v.city;
+      venues[vk]=v;
+    });
+    // Fallback to FILTERED for show-specific venue detail
+    FILTERED.filter(r=>r.show===d._label&&r.gross_gross).forEach(r=>{
+      const vk=r.theatre+'|'+r.city;
+      if(!venues[vk]) venues[vk]={theatre:r.theatre,city:r.city,gross:0,caps:[],wks:0};
+      else if(!venues[vk].caps) venues[vk].caps=[];
+    });
+    return Object.values(CACHE.byVenue)
+      .filter(v=>FILTERED.some(r=>r.show===d._label&&r.theatre===v.theatre&&r.city===v.city))
+      .map(v=>({theatre:v.theatre,city:v.city,gross:v.gross,cap:v.capCnt?v.capSum/v.capCnt:null,wks:v.weeks}))
       .sort((a,b)=>b.gross-a.gross);
-  };  mkRankList('rShowGross',sgArr,d=>d._val,()=>'cumulative gross',fmt$,sgArr[0]?._val,showBreakdown);
+  };
+  mkRankList('rShowGross',sgArr,d=>d._val,()=>'cumulative gross',fmt$,sgArr[0]?._val,showBreakdown);
   const sgBottomArr=Object.entries(sg).sort((a,b)=>a[1]-b[1]).slice(0,10).map(([s,v])=>({_label:s,_val:v}));
   mkRankList('rShowGrossBottom',sgBottomArr,d=>d._val,()=>'cumulative gross',fmt$,sgArr[0]?._val,showBreakdown);
 
@@ -2094,10 +2083,9 @@ function renderRankings() {
   const mgArr=Object.entries(mg).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([c,v])=>({_label:c,_val:v}));
   mkRankList('rMarketGross',mgArr,d=>d._val,()=>'total gross',fmt$,mgArr[0]?._val);
 
-  const mcArr=Object.entries(CACHE.byCity)
-    .filter(([,v])=>v.capCnt>0)
-    .map(([c,v])=>({_label:c,_val:v.capSum/v.capCnt}))
-    .sort((a,b)=>b._val-a._val).slice(0,10);
+  const mc={},mcc={};
+  FILTERED.forEach(d=>{if(d.pct_capacity_paid){mc[d.city]=(mc[d.city]||0)+d.pct_capacity_paid;mcc[d.city]=(mcc[d.city]||0)+1;}});
+  const mcArr=Object.entries(mc).map(([c,v])=>({_label:c,_val:v/mcc[c]})).sort((a,b)=>b._val-a._val).slice(0,10);
   mkRankList('rMarketCap',mcArr,d=>d._val,d=>{
     const shows=FILTERED.filter(x=>x.city===d._label&&x.pct_capacity_paid).length;
     return `${shows} engagement${shows!==1?'s':''}`;
@@ -2218,12 +2206,12 @@ function renderAnalytics() {
 
   if (SEASON_MODE === 'week') {
     // Fiscal week: ISO week offset so fiscal week 1 = week containing Jul 1
-    const byFW = {};
-    Object.values(CACHE.byFY).forEach(fy => {
-      Object.entries(fy.byFW).forEach(([fw, g]) => {
-        byFW[fw] = byFW[fw] || [];
-        byFW[fw].push(g);
-      });
+        const byFW = {};
+    FILTERED.forEach(d => {
+      if (!d.report_date || !d.gross_gross) return;
+      const fw = fiscalWeek(d.report_date);
+      byFW[fw] = byFW[fw] || [];
+      byFW[fw].push(d.gross_gross);
     });
     const fwKeys = Object.keys(byFW).map(Number).sort((a,b)=>a-b);
     const fwAvg = fwKeys.map(fw => byFW[fw].reduce((a,b)=>a+b,0)/byFW[fw].length);
@@ -2313,10 +2301,9 @@ function renderAnalytics() {
 
   // ── Show Longevity ────────────────────────────────────────────────────────
   dc('lo');
-  const lonArr = Object.entries(CACHE.byShow)
-    .map(([s,v])=>({s,n:v.weeks.size}))
-    .filter(d=>d.n>0)
-    .sort((a,b)=>b.n-a.n).slice(0,20);
+  const showWeeks = {};
+  FILTERED.forEach(d=>{if(d.show&&d.report_date) showWeeks[d.show]=new Set([...(showWeeks[d.show]||new Set()),d.report_date]);});
+  const lonArr = Object.entries(showWeeks).map(([s,ws])=>({s,n:ws.size})).sort((a,b)=>b.n-a.n).slice(0,20);
   CHARTS.lo = new Chart(document.getElementById('cLongevity'), {type:'bar',
     data:{labels:lonArr.map(d=>d.s.length>24?d.s.slice(0,24)+'…':d.s),
           datasets:[{data:lonArr.map(d=>d.n),backgroundColor:CC.amber,borderRadius:2}]},
@@ -2326,10 +2313,10 @@ function renderAnalytics() {
 
   // ── Top Shows by % Capacity ───────────────────────────────────────────────
   dc('cr');
-  const capArr = Object.entries(CACHE.byShow)
-    .filter(([,v])=>v.capCnt>=3)
-    .map(([s,v])=>({s,avg:v.capSum/v.capCnt}))
-    .sort((a,b)=>b.avg-a.avg).slice(0,15);
+  const capSum={},capCnt={};
+  FILTERED.forEach(d=>{if(d.show&&d.pct_capacity_paid){capSum[d.show]=(capSum[d.show]||0)+d.pct_capacity_paid;capCnt[d.show]=(capCnt[d.show]||0)+1;}});
+  const capArr = Object.entries(capSum).filter(([s])=>capCnt[s]>=3)
+    .map(([s,v])=>({s,avg:v/capCnt[s]})).sort((a,b)=>b.avg-a.avg).slice(0,15);
   CHARTS.cr = new Chart(document.getElementById('cCapRank'), {type:'bar',
     data:{labels:capArr.map(d=>d.s.length>24?d.s.slice(0,24)+'…':d.s),
           datasets:[{data:capArr.map(d=>d.avg),backgroundColor:capArr.map(d=>d.avg>=90?CC.teal:CC.amber),borderRadius:2}]},
@@ -2339,9 +2326,9 @@ function renderAnalytics() {
 
   // ── Most Consistent Shows ─────────────────────────────────────────────────
   dc('co');
-  const conArr = Object.entries(CACHE.byShow)
-    .map(([s,v])=>[s,v.grossValues])
-    .filter(([,v])=>v.length>=5).map(([s,vals])=>{
+  const conData={};
+  FILTERED.forEach(d=>{if(d.show&&d.gross_gross) conData[d.show]=[...(conData[d.show]||[]),d.gross_gross];});
+  const conArr = Object.entries(conData).filter(([,v])=>v.length>=5).map(([s,vals])=>{
     const mean=vals.reduce((a,b)=>a+b,0)/vals.length;
     const sd=Math.sqrt(vals.map(v=>Math.pow(v-mean,2)).reduce((a,b)=>a+b,0)/vals.length);
     const cv=(sd/mean)*100;
@@ -2356,9 +2343,15 @@ function renderAnalytics() {
 
   // ── Dark Week Rate by Show (shows with BOTH active and dark weeks) ──────────
   dc('ne');
+  const showActive={},showDark={};
+  FILTERED.forEach(d=>{
+    if(!d.show) return;
+    if(d.noengagement) showDark[d.show]=(showDark[d.show]||0)+1;
+    else showActive[d.show]=(showActive[d.show]||0)+1;
+  });
   // Only shows with BOTH active and dark weeks, min 3 active weeks
-  const neArr = Object.entries(CACHE.byShow)
-    .filter(([,v])=>v.active>=3 && v.dark>0)
+  const neArr = Object.keys(showActive)
+    .filter(s=>showActive[s]>=3 && (showDark[s]||0)>0)
     .map(([s,v])=>({
       s,
       pct:(v.dark/(v.active+v.dark))*100,
@@ -2380,9 +2373,9 @@ function renderAnalytics() {
 
   // ── Bushnell vs Peer Gap ──────────────────────────────────────────────────
   dc('pg');
-  const pgWeeks=Object.keys(CACHE.byWeek).sort();
-  const pgPeer=pgWeeks.map(w=>CACHE.byWeek[w].peerCapCnt ? CACHE.byWeek[w].peerCapSum/CACHE.byWeek[w].peerCapCnt : null);
-  const pgAll=pgWeeks.map(w=>CACHE.byWeek[w].otherCapCnt ? CACHE.byWeek[w].otherCapSum/CACHE.byWeek[w].otherCapCnt : null);
+  const pgWeeks=[...new Set(FILTERED.map(d=>d.report_date))].sort();
+  const pgPeer=pgWeeks.map(w=>{const r=FILTERED.filter(d=>d.report_date===w&&d.similar_bushnell_cap&&d.pct_capacity_paid);return r.length?r.reduce((a,d)=>a+d.pct_capacity_paid,0)/r.length:null;});
+  const pgAll=pgWeeks.map(w=>{const r=FILTERED.filter(d=>d.report_date===w&&!d.similar_bushnell_cap&&d.pct_capacity_paid);return r.length?r.reduce((a,d)=>a+d.pct_capacity_paid,0)/r.length:null;});
   CHARTS.pg = new Chart(document.getElementById('cPeerGap'), {type:'line',
     data:{labels:pgWeeks.map(w=>fmtWeek(w)),
           datasets:[
