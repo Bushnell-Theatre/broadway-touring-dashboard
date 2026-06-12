@@ -1251,7 +1251,6 @@ async function initData() {
         theatre,
         report_date: rd,
         on_subscription: d.on_subscription===true?1:d.on_subscription===false?0:d.on_subscription,
-        on_subscription: d.on_subscription === true ? 1 : d.on_subscription === false ? 0 : d.on_subscription,
         similar_bushnell_cap: !!d.similar_bushnell_cap,
         noengagement: !!d.noengagement,
         total_capacity: d.total_capacity != null ? Math.round(d.total_capacity) : null,
@@ -1282,7 +1281,6 @@ async function initData() {
   // Default to current season
   const currentSeason = SEASONS.find(s => s.id === '2025-2026');
   if (currentSeason) {
-    ACTIVE_SEASON = '2025-2026';
     window._DATE_RANGE = {
       start: snapToSunday(currentSeason.start, 'back'),
       end: snapToSunday(currentSeason.end, 'forward')
@@ -1505,7 +1503,7 @@ function resetFilters() {
   const sel = document.getElementById('fDate');
   const allWeeks = [...new Set(ALL_DATA.map(d=>d.report_date))].sort();
   sel.innerHTML = '<option value="">All Weeks</option>' + allWeeks.map(w=>`<option value="${w}">${fmtWeek(w)}</option>`).join('');
-  filterShowList(); setTier(null,''); setSub(null,''); setPeer(null,''); selectAllShows();
+  filterShowList(); setTier(null,''); setSub(null,''); setPeer(null,''); setSeasonFilter(null); selectAllShows();
 }
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
@@ -2204,7 +2202,7 @@ function renderSeasons() {
 
     const showRows = season.shows.map(show => {
       const ml = show.matchStr.toLowerCase();
-      const showData = seasonData.filter(d => d.show && d.show.toLowerCase().includes(ml.split(' ')[0]) && (ml.split(' ').length < 2 || d.show.toLowerCase().includes(ml.split(' ')[1]||'')));
+      const showData = seasonData.filter(d => d.show && d.show.toLowerCase().includes(ml));
 
       // Bushnell records — city Hartford
       const bushnellData = showData.filter(d => (d.city||'').toLowerCase() === 'hartford');
@@ -2243,8 +2241,7 @@ function renderSeasons() {
       const showKey = show.matchStr.toLowerCase();
       const peerRows = seasonData
         .filter(d => d.similar_bushnell_cap && (d.city||'').toLowerCase() !== 'hartford'
-          && d.show && d.show.toLowerCase().includes(showKey.split(' ')[0])
-          && (showKey.split(' ').length < 2 || d.show.toLowerCase().includes(showKey.split(' ')[1]||'')))
+          && d.show && d.show.toLowerCase().includes(showKey))
         .sort((a,b) => a.report_date > b.report_date ? 1 : -1);
 
       const rowId = 'peer-detail-' + season.id + '-' + show.open.replace(/-/g,'');
@@ -2539,14 +2536,14 @@ function renderPeers() {
   const container = document.getElementById('peersContent');
   if (!container) return;
 
-  // Calculate Bushnell benchmarks from data
-  const bushnellData = ALL_DATA.filter(d => (d.city||'').toLowerCase() === 'hartford');
+  // Calculate Bushnell benchmarks from filtered data
+  const bushnellData = FILTERED.filter(d => (d.city||'').toLowerCase() === 'hartford');
   const bushnellAvgGross = avg(bushnellData.filter(d=>d.gross_gross).map(d=>d.gross_gross));
   const bushnellAvgCap = avg(bushnellData.map(d=>d.pct_capacity_paid));
 
-  // Build peer stats from ALL_DATA
+  // Build peer stats from FILTERED
   const peerStats = {};
-  ALL_DATA.filter(d=>d.similar_bushnell_cap && (d.city||'').toLowerCase() !== 'hartford').forEach(d=>{
+  FILTERED.filter(d=>d.similar_bushnell_cap && (d.city||'').toLowerCase() !== 'hartford').forEach(d=>{
     const key = d.theatre;
     if (!key) return;
     if (!peerStats[key]) peerStats[key] = {city:d.city, gross:[], cap:[], shows:new Set()};
