@@ -1564,7 +1564,7 @@ function applyFilters() {
   const checked = [...document.querySelectorAll('.sCb:checked')].map(c=>c.value);
 
   FILTERED = ALL_DATA.filter(d => {
-    if (window._DATE_RANGE) {
+    if (ACTIVE_SEASONS.size === 0 && window._DATE_RANGE) {
       if (d.report_date < window._DATE_RANGE.start || d.report_date > window._DATE_RANGE.end) return false;
     }
     if (ACTIVE_TIER && d.tier !== ACTIVE_TIER) return false;
