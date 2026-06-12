@@ -301,19 +301,48 @@ canvas{height:var(--chart-h)!important;}
   .mini-table{min-width:980px;}
 }
 
-/* Standard desktop / laptop baseline. */
+/* Standard desktop / conference monitor baseline.
+   1920x1200 falls here. Prior values were too small because this range was
+   still using laptop-like 13px typography. */
 @media (min-width: 1440px) and (max-width: 2559px){
   :root{
-    --page-max: 1680px;
-    --base-font: 13px;
-    --sidebar-w: 238px;
-    --panel-pad-y: 22px;
-    --panel-pad-x: 28px;
-    --grid-gap: 18px;
-    --card-pad: 18px;
-    --chart-h: 240px;
-    --small-chart-h: 180px;
+    --page-max: 1920px;
+    --base-font: 16px;
+    --mast-pad-x: 38px;
+    --sidebar-w: 300px;
+    --panel-pad-y: 32px;
+    --panel-pad-x: 38px;
+    --grid-gap: 24px;
+    --card-pad: 26px;
+    --chart-h: 330px;
+    --small-chart-h: 240px;
+    --kpi-min: 205px;
+    --kpi-pad-y: 22px;
+    --kpi-pad-x: 24px;
+    --kpi-value: 1.65rem;
+    --section-title: 1.12rem;
+    --card-title-size: 1.12rem;
+    --body-copy: .76rem;
+    --table-copy: .72rem;
+    --nav-copy: .66rem;
+    --touch: 44px;
   }
+  .masthead{min-height:72px;}
+  .brand-icon{width:44px;height:44px;font-size:1.22rem;}
+  .brand-text h1{font-size:1.28rem;}
+  .brand-text .sub{font-size:.64rem;}
+  .masthead-status{font-size:.64rem;}
+  .sidebar-label,.card-hd,.kpi-label{font-size:.62rem;}
+  .kpi-sub,.mini-label,.rank-detail{font-size:.62rem;}
+  .show-name{font-size:1rem;}
+  .metric .val{font-size:1.18rem;}
+  .metric .lbl{font-size:.54rem;}
+  .status{font-size:.52rem;padding:4px 8px;}
+  .grid-4{grid-template-columns:repeat(4,minmax(0,1fr));}
+  .grid-3{grid-template-columns:repeat(3,minmax(0,1fr));}
+  .grid-2{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .kpi-strip{grid-template-columns:repeat(8,minmax(0,1fr));}
+  .mini-table{min-width:900px;}
 }
 
 /* Laptop: reduce chrome, keep data legible. */
