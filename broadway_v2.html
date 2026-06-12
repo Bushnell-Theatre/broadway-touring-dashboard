@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bushnell Broadway Intelligence</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --ink:#1a1a1a; --ink2:#444; --ink3:#888; --bg:#f5f3ef; --bg2:#eceae5;
+  --rule:rgba(0,0,0,0.10); --rule2:rgba(0,0,0,0.06);
+  --amber:#E8830A; --amber-lt:#FEF3E2; --teal:#0F6E56; --teal-lt:#E1F5EE;
+  --rose:#B83232; --rose-lt:#FCEBEB; --navy:#003865;
+  --mono:'Courier New',monospace; --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5;}
+a{color:inherit;text-decoration:none;}
+
+/* ── MASTHEAD ── */
+.masthead{background:var(--navy);color:#fff;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;}
+.masthead-brand{font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;}
+.masthead-meta{font-size:11px;opacity:.7;}
+.masthead-status{font-size:11px;background:rgba(255,255,255,.12);padding:3px 10px;border-radius:12px;}
+
+/* ── NAV ── */
+.nav{background:#fff;border-bottom:1px solid var(--rule);padding:0 24px;display:flex;align-items:center;gap:0;}
+.nav-tab{padding:12px 20px;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;color:var(--ink3);border-bottom:2px solid transparent;transition:all .15s;}
+.nav-tab:hover{color:var(--ink2);}
+.nav-tab.active{color:var(--navy);border-bottom-color:var(--amber);}
+
+/* ── LAYOUT ── */
+.main{max-width:1200px;margin:0 auto;padding:24px;}
+.panel{display:none;}
+.panel.active{display:block;}
+
+/* ── KPI STRIP ── */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.kpi{background:#fff;border:1px solid var(--rule);border-radius:6px;padding:14px 16px;}
+.kpi-label{font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;}
+.kpi-val{font-size:24px;font-weight:600;color:var(--ink);line-height:1.1;}
+.kpi-delta{font-size:11px;margin-top:3px;}
+.up{color:var(--teal);} .down{color:var(--rose);} .neutral{color:var(--ink3);}
+
+/* ── SECTION HEADER ── */
+.section-hd{font-size:11px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.section-hd::after{content:'';flex:1;height:1px;background:var(--rule);}
+
+/* ── SHOW CARDS ── */
+.card-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px;}
+.show-card{background:#fff;border:1px solid var(--rule);border-radius:8px;padding:14px;cursor:pointer;transition:box-shadow .15s;position:relative;}
+.show-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.08);}
+.show-card.s-green{border-left:3px solid var(--teal);}
+.show-card.s-amber{border-left:3px solid var(--amber);}
+.show-card.s-red{border-left:3px solid var(--rose);}
+.show-card.s-pending{border-style:dashed;opacity:.6;}
+.card-name{font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px;}
+.card-dates{font-size:11px;color:var(--ink3);margin-bottom:10px;}
+.card-metrics{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;}
+.cm{background:var(--bg2);border-radius:4px;padding:7px 9px;}
+.cm-label{font-size:10px;color:var(--ink3);}
+.cm-val{font-size:15px;font-weight:600;color:var(--ink);line-height:1.2;}
+.cm-vs{font-size:10px;margin-top:1px;}
+.card-expand{font-size:10px;color:var(--ink3);border-top:1px solid var(--rule2);padding-top:7px;display:flex;justify-content:space-between;align-items:center;}
+.badge{display:inline-block;font-size:9px;font-weight:600;padding:2px 5px;border-radius:10px;vertical-align:middle;margin-left:4px;letter-spacing:.03em;text-transform:uppercase;}
+.badge-new{background:var(--amber-lt);color:var(--amber);}
+.badge-debut{background:var(--teal-lt);color:var(--teal);}
+
+/* ── MINI SPARKLINE ── */
+.spark{height:28px;display:flex;align-items:flex-end;gap:2px;margin:6px 0;}
+.sp-bar{width:7px;border-radius:1px 1px 0 0;background:rgba(0,56,101,.2);}
+.sp-bar.cur{background:var(--navy);}
+
+/* ── EXPANDED CARD DETAIL ── */
+.card-detail{display:none;background:var(--bg2);border-radius:0 0 8px 8px;margin:-1px -1px 0;padding:12px 14px;}
+.card-detail.open{display:block;}
+.detail-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--rule2);font-size:12px;}
+.detail-row:last-child{border-bottom:none;}
+
+/* ── HISTORY TABLE ── */
+.hist-controls{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.season-pills{display:flex;flex-wrap:wrap;gap:6px;}
+.season-pill{font-size:11px;font-weight:600;padding:4px 10px;border-radius:12px;border:1px solid var(--rule);background:#fff;cursor:pointer;color:var(--ink3);transition:all .15s;}
+.season-pill.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+.hist-table{width:100%;border-collapse:collapse;font-size:12px;background:#fff;border:1px solid var(--rule);border-radius:6px;overflow:hidden;}
+.hist-table th{padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink3);background:var(--bg2);border-bottom:1px solid var(--rule);cursor:pointer;}
+.hist-table th:hover{color:var(--ink);}
+.hist-table td{padding:9px 12px;border-bottom:1px solid var(--rule2);}
+.hist-table tr:last-child td{border-bottom:none;}
+.hist-table tr:hover td{background:var(--bg2);}
+.hist-table tr.expandable{cursor:pointer;}
+
+/* ── WHAT'S NEXT ── */
+.next-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.next-card{background:#fff;border:1px solid var(--rule);border-radius:8px;padding:14px;}
+.next-name{font-size:13px;font-weight:600;margin-bottom:2px;}
+.next-sub{font-size:11px;color:var(--ink3);margin-bottom:10px;}
+.next-metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
+.nm{background:var(--bg2);border-radius:4px;padding:6px 8px;text-align:center;}
+.nm-label{font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;}
+.nm-val{font-size:14px;font-weight:600;color:var(--ink);}
+.fit-bar{height:4px;background:var(--bg2);border-radius:2px;margin-top:10px;overflow:hidden;}
+.fit-fill{height:100%;border-radius:2px;}
+.fit-label{font-size:10px;color:var(--ink3);margin-top:4px;display:flex;justify-content:space-between;}
+
+/* ── UTIL ── */
+.no-data{padding:32px;text-align:center;color:var(--ink3);font-size:13px;}
+.loading{padding:32px;text-align:center;color:var(--ink3);font-size:13px;}
+.tag-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <div>
+    <div class="masthead-brand">Bushnell · Broadway Intelligence</div>
+    <div class="masthead-meta">Hartford, CT · decision-focused view</div>
+  </div>
+  <div id="masterStatus" class="masthead-status">Loading…</div>
+</div>
+
+<nav class="nav">
+  <div class="nav-tab active" onclick="showTab('this-season')">This Season</div>
+  <div class="nav-tab" onclick="showTab('history')">Show History</div>
+  <div class="nav-tab" onclick="showTab('whats-next')">What's Next</div>
+</nav>
+
+<div class="main">
+
+  <!-- THIS SEASON -->
+  <div class="panel active" id="panel-this-season">
+    <div class="kpi-row" id="kpi-season"></div>
+    <div class="section-hd">2026–2027 season shows — Hartford only</div>
+    <div class="card-grid" id="season-cards"><div class="loading">Loading show data…</div></div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="panel" id="panel-history">
+    <div class="hist-controls">
+      <div class="season-pills" id="hist-season-pills"></div>
+    </div>
+    <table class="hist-table" id="hist-table">
+      <thead>
+        <tr>
+          <th onclick="sortHist('show')">Show</th>
+          <th onclick="sortHist('season')">Season</th>
+          <th onclick="sortHist('gross')">Our Gross</th>
+          <th onclick="sortHist('cap')">% Cap</th>
+          <th onclick="sortHist('weeks')">Wks</th>
+          <th onclick="sortHist('vs')">vs National</th>
+        </tr>
+      </thead>
+      <tbody id="hist-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- WHAT'S NEXT -->
+  <div class="panel" id="panel-whats-next">
+    <div class="kpi-row" id="kpi-next"></div>
+    <div class="section-hd">shows not in our schedule — touring now or recently · sorted by fit score for Bushnell</div>
+    <div class="next-grid" id="next-cards"><div class="loading">Analyzing opportunities…</div></div>
+  </div>
+
+</div>
+
+<script>
+const DATA_JSON_URL = 'https://white-pebble-01710020f.7.azurestaticapps.net/data.json';
+const PEERS_JSON_URL = 'peers.json';
+const HARTFORD = 'hartford';
+const CURRENT_SEASON = '2026-2027';
+
+const SEASONS = [
+  {
+    id: '2026-2027', name: '2026-2027 Season',
+    start: '2026-07-01', end: '2027-06-30',
+    shows: [
+      {title:'Oh, Mary!',           matchStr:'Oh, Mary',            open:'2026-09-19', close:'2026-09-23', sub:false},
+      {title:'The Great Gatsby',    matchStr:'Great Gatsby',        open:'2026-09-29', close:'2026-10-04', sub:true},
+      {title:'Mamma Mia! (25th Anniversary)',          matchStr:'Mamma Mia',           open:'2026-10-20', close:'2026-10-25', sub:true},
+      {title:'BOOP! The Betty Boop Musical Pre',                matchStr:'Boop',                open:'2026-11-10', close:'2026-11-15', sub:true},
+      {title:"Hell's Kitchen",      matchStr:"Hell's Kitchen",      open:'2026-12-08', close:'2026-12-13', sub:true},
+      {title:'Maybe Happy Ending',  matchStr:'Maybe Happy Ending',  open:'2027-02-16', close:'2027-02-21', sub:true},
+      {title:'Jersey Boys 2',         matchStr:'Jersey Boys',         open:'2027-03-09', close:'2027-03-14', sub:false},
+      {title:'Waitress',            matchStr:'Waitress',            open:'2027-03-30', close:'2027-04-04', sub:true},
+      {title:'Operation Mincemeat: A New Musical', matchStr:'Operation Mincemeat', open:'2027-05-04', close:'2027-05-09', sub:true},
+      {title:'The Outsiders',       matchStr:'The Outsiders',       open:'2027-06-01', close:'2027-06-06', sub:true},
+    ]
+  },
+  {
+    id: '2025-2026', name: '2025-2026 Season',
+    start: '2025-07-01', end: '2026-06-30',
+    shows: [
+      {title:"The Notebook",                          matchStr:"The Notebook",                          open:"2025-10-05", close:"2025-10-11", sub:true},
+      {title:"Hamilton (Angelica)",                   matchStr:"Hamilton (Angelica)",                   open:"2025-11-09", close:"2025-11-15", sub:false},
+      {title:"Spamalot 2025",                         matchStr:"Spamalot 2025",                         open:"2025-12-14", close:"2025-12-20", sub:true},
+      {title:"Suffs",                                 matchStr:"Suffs",                                 open:"2026-02-01", close:"2026-02-07", sub:true},
+      {title:"Shucked",                               matchStr:"Shucked",                               open:"2026-03-01", close:"2026-03-07", sub:true},
+      {title:"Kinky Boots 2025",                      matchStr:"Kinky Boots 2025",                      open:"2026-03-22", close:"2026-03-28", sub:true},
+      {title:"Beauty and the Beast - 30th Anniversary",matchStr:"Beauty and the Beast - 30th Anniversary",open:"2026-04-12", close:"2026-04-18", sub:true},
+      {title:"& Juliet",                              matchStr:"& Juliet",                              open:"2026-05-10", close:"2026-05-16", sub:true},
+    ]
+  },
+  {
+    id: '2024-2025', name: '2024-2025 Season',
+    start: '2024-07-01', end: '2025-06-30',
+    shows: [
+      {title:"A Beautiful Noise, The Neil Diamond Musical",matchStr:"A Beautiful Noise, The Neil Diamond Musical",open:"2024-10-06", close:"2024-10-12", sub:true},
+      {title:"Les Misérables 2022",                   matchStr:"Les Misérables 2022",                   open:"2024-11-03", close:"2024-11-09", sub:false},
+      {title:"The Lion King Rafiki",                  matchStr:"The Lion King Rafiki",                  open:"2024-11-17", close:"2024-11-23", sub:false},
+      {title:"MJ The Musical",                        matchStr:"MJ The Musical",                        open:"2024-12-15", close:"2024-12-21", sub:true},
+      {title:"Six (Boleyn)",                          matchStr:"Six (Boleyn)",                          open:"2025-01-05", close:"2025-01-11", sub:false},
+      {title:"The Wiz 2025",                          matchStr:"The Wiz 2025",                          open:"2025-03-16", close:"2025-03-22", sub:true},
+      {title:"Some Like it Hot",                      matchStr:"Some Like it Hot",                      open:"2025-05-04", close:"2025-05-10", sub:true},
+      {title:"Back to the Future: The Musical",       matchStr:"Back to the Future: The Musical",       open:"2025-06-08", close:"2025-06-14", sub:true},
+    ]
+  },
+  {
+    id: '2023-2024', name: '2023-2024 Season',
+    start: '2023-07-01', end: '2024-06-30',
+    shows: [
+      {title:"Mrs. Doubtfire",                        matchStr:"Mrs. Doubtfire",                        open:"2023-10-08", close:"2023-10-14", sub:true},
+      {title:"Moulin Rouge! The Musical",             matchStr:"Moulin Rouge! The Musical",             open:"2023-11-26", close:"2023-12-02", sub:true},
+      {title:"Frozen",                                matchStr:"Frozen",                                open:"2024-02-11", close:"2024-02-17", sub:true},
+      {title:"The Cher Show",                         matchStr:"The Cher Show",                         open:"2024-03-10", close:"2024-03-16", sub:true},
+      {title:"Wicked 2",                              matchStr:"Wicked 2",                              open:"2024-04-28", close:"2024-05-04", sub:false},
+      {title:"Beetlejuice",                           matchStr:"Beetlejuice",                           open:"2024-06-02", close:"2024-06-08", sub:true},
+      {title:"Funny Girl 2023",                       matchStr:"Funny Girl 2023",                       open:"2024-06-23", close:"2024-06-29", sub:false},
+    ]
+  },
+  {
+    id: '2022-2023', name: '2022-2023 Season',
+    start: '2022-07-01', end: '2023-06-30',
+    shows: [
+      {title:"Mean Girls",                            matchStr:"Mean Girls",                            open:"2022-10-02", close:"2022-10-08", sub:true},
+      {title:"Aladdin 2022",                          matchStr:"Aladdin 2022",                          open:"2022-11-13", close:"2022-11-19", sub:true},
+      {title:"Come From Away",                        matchStr:"Come From Away",                        open:"2022-12-25", close:"2022-12-31", sub:false},
+      {title:"Six (Aragon)",                          matchStr:"Six (Aragon)",                          open:"2023-01-22", close:"2023-01-28", sub:true},
+      {title:"Tootsie",                               matchStr:"Tootsie",                               open:"2023-02-26", close:"2023-03-04", sub:true},
+      {title:"Hadestown",                             matchStr:"Hadestown",                             open:"2023-03-12", close:"2023-03-18", sub:true},
+      {title:"The Simon and Garfunkel Story",         matchStr:"The Simon and Garfunkel Story",         open:"2023-03-12", close:"2023-03-18", sub:false},
+      {title:"Tina - The Tina Turner Musical",        matchStr:"Tina - The Tina Turner Musical",        open:"2023-04-16", close:"2023-04-22", sub:true},
+      {title:"Jagged Little Pill",                    matchStr:"Jagged Little Pill",                    open:"2023-05-14", close:"2023-05-20", sub:true},
+      {title:"Ain't Too Proud",                       matchStr:"Ain't Too Proud",                       open:"2023-06-04", close:"2023-06-10", sub:true},
+      {title:"To Kill a Mockingbird",                 matchStr:"To Kill a Mockingbird",                 open:"2023-07-02", close:"2023-07-08", sub:true},
+    ]
+  },
+  {
+    id: '2021-2022', name: '2021-2022 Season',
+    start: '2021-07-01', end: '2022-06-30',
+    note: 'Partial season — Broadway reopened Oct 2021',
+    shows: [
+      {title:"Rent 25th Anniversary",                 matchStr:"Rent 25th Anniversary",                 open:"2021-11-07", close:"2021-11-13", sub:false},
+      {title:"The Bands Visit",                       matchStr:"The Bands Visit",                       open:"2021-11-21", close:"2021-11-27", sub:true},
+      {title:"What the Constitution Means to Me",     matchStr:"What the Constitution Means to Me",     open:"2022-01-30", close:"2022-02-05", sub:false},
+      {title:"My Fair Lady 2019",                     matchStr:"My Fair Lady 2019",                     open:"2022-03-13", close:"2022-03-19", sub:true},
+      {title:"Blue Man Group",                        matchStr:"Blue Man Group",                        open:"2022-03-20", close:"2022-03-26", sub:false},
+      {title:"Dear Evan Hansen",                      matchStr:"Dear Evan Hansen",                      open:"2022-04-03", close:"2022-04-09", sub:true},
+      {title:"Pretty Woman: The Musical",             matchStr:"Pretty Woman: The Musical",             open:"2022-05-01", close:"2022-05-07", sub:true},
+      {title:"Stomp",                                 matchStr:"Stomp",                                 open:"2022-05-29", close:"2022-06-04", sub:false},
+      {title:"Hamilton (Philip)",                     matchStr:"Hamilton (Philip)",                     open:"2022-06-26", close:"2022-07-02", sub:true},
+    ]
+  },
+  {
+    id: '2019-2020', name: '2019-2020 Season',
+    start: '2019-07-01', end: '2020-06-30',
+    note: 'Partial season — COVID shutdown March 2020',
+    shows: [
+      {title:"The Book of Mormon (Jumamosi)",         matchStr:"The Book of Mormon",                    open:"2019-10-20", close:"2019-10-26", sub:false},
+      {title:"Hello, Dolly! 2018",                    matchStr:"Hello, Dolly",                          open:"2019-11-17", close:"2019-11-23", sub:true},
+      {title:"Dr. Seuss How the Grinch Stole Christmas 2019",                 matchStr:"Grinch",                                open:"2019-12-15", close:"2019-12-21", sub:false},
+      {title:"Anastasia",                             matchStr:"Anastasia",                             open:"2020-01-19", close:"2020-01-25", sub:true},
+      {title:"Jesus Christ Superstar 2019",           matchStr:"Jesus Christ Superstar",                open:"2020-03-01", close:"2020-03-07", sub:true},
+    ]
+  },
+];
+
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+let ALL_DATA = [], PEER_META = [];
+let HIST_SEASON = null; // null = all
+let HIST_SORT = {col:'gross', dir:-1};
+
+// ── UTILS ──────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const fmt$ = v => v==null?'—':v>=1e6?'$'+(v/1e6).toFixed(2)+'M':v>=1e3?'$'+(v/1e3).toFixed(0)+'K':'$'+v.toFixed(0);
+const fmtPct = v => v==null?'—':v.toFixed(1)+'%';
+const avg = arr => { const v=arr.filter(x=>x!=null&&!isNaN(x)); return v.length?v.reduce((a,b)=>a+b,0)/v.length:null; };
+const isBushnell = d => (d.city||'').toLowerCase().trim() === HARTFORD;
+const getFY = dateStr => {
+  if(!dateStr) return null;
+  const y=parseInt(dateStr.slice(0,4)), m=parseInt(dateStr.slice(5,7));
+  return m>=7 ? y+'-'+(y+1) : (y-1)+'-'+y;
+};
+
+function showTab(id) {
+  document.querySelectorAll('.nav-tab').forEach((t,i)=>{
+    const ids=['this-season','history','whats-next'];
+    t.classList.toggle('active',ids[i]===id);
+  });
+  document.querySelectorAll('.panel').forEach(p=>{
+    p.classList.toggle('active',p.id==='panel-'+id);
+  });
+  if(id==='history') renderHistory();
+  if(id==='whats-next') renderWhatsNext();
+}
+
+// ── LOAD ───────────────────────────────────────────────────────────────────
+async function init() {
+  try {
+    const urls = [DATA_JSON_URL, PEERS_JSON_URL];
+    const [dataRes, peersRes] = await Promise.all(urls.map(u=>fetch(u,{cache:'no-store'}).catch(()=>null)));
+    ALL_DATA = dataRes ? await dataRes.json() : [];
+    PEER_META = peersRes ? await peersRes.json().catch(()=>[]) : [];
+    // normalize
+    ALL_DATA.forEach(d=>{
+      if(d.report_date) d.report_date = d.report_date.slice(0,10);
+      if(typeof d.on_subscription==='boolean') d.on_subscription = d.on_subscription?1:0;
+      if(typeof d.similar_bushnell_cap!=='boolean') d.similar_bushnell_cap = !!d.similar_bushnell_cap;
+      if(typeof d.noengagement!=='boolean') d.noengagement = !!d.noengagement;
+    });
+    const dates = [...new Set(ALL_DATA.map(d=>d.report_date))].sort();
+    $("masterStatus").textContent = ALL_DATA.length.toLocaleString()+' records · through '+fmtDate(dates[dates.length-1]);
+    renderThisSeason();
+  } catch(e) {
+    $("masterStatus").textContent = 'Error loading data';
+    console.error(e);
+  }
+}
+
+const fmtDate = d => {
+  if(!d) return '';
+  const dt = new Date(d+'T12:00:00');
+  return dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+};
+
+// ── SHOW PROFILE ───────────────────────────────────────────────────────────
+function getShowProfile(show, fyFilter) {
+  // Bushnell rows for this show
+  const matchLC = (show.matchStr||show.title).toLowerCase();
+  const bushnellRows = ALL_DATA.filter(d =>
+    isBushnell(d) &&
+    (d.show||'').toLowerCase().includes(matchLC) &&
+    (!fyFilter || getFY(d.report_date)===fyFilter)
+  );
+  // National rows (all venues) for same show
+  const nationalRows = ALL_DATA.filter(d =>
+    (d.show||'').toLowerCase().includes(matchLC) &&
+    (!fyFilter || getFY(d.report_date)===fyFilter)
+  );
+  // Peer rows
+  const peerRows = nationalRows.filter(d=>d.similar_bushnell_cap);
+
+  const bGross = bushnellRows.filter(d=>d.gross_gross).map(d=>d.gross_gross);
+  const bCap   = bushnellRows.filter(d=>d.pct_capacity_paid).map(d=>d.pct_capacity_paid);
+  const nGross = nationalRows.filter(d=>d.gross_gross&&!isBushnell(d)).map(d=>d.gross_gross);
+  const pCap   = peerRows.filter(d=>d.pct_capacity_paid).map(d=>d.pct_capacity_paid);
+
+  const ourGross  = bGross.reduce((a,b)=>a+b,0)||null;
+  const ourCap    = avg(bCap);
+  const natGross  = avg(nGross);
+  const peerCap   = avg(pCap);
+  const weeks     = new Set(bushnellRows.map(d=>d.report_date)).size;
+
+  // WoW: compare last two reported weeks at Bushnell
+  const bDates = [...new Set(bushnellRows.map(d=>d.report_date))].sort();
+  let wow = null;
+  if(bDates.length>=2) {
+    const g1 = bushnellRows.filter(d=>d.report_date===bDates[bDates.length-2]&&d.gross_gross).reduce((a,d)=>a+d.gross_gross,0);
+    const g2 = bushnellRows.filter(d=>d.report_date===bDates[bDates.length-1]&&d.gross_gross).reduce((a,d)=>a+d.gross_gross,0);
+    if(g1>0) wow = ((g2-g1)/g1)*100;
+  }
+
+  // vs national
+  const vsNat = (ourGross&&natGross&&nGross.length>=3) ? ((ourGross/weeks - natGross)/natGross)*100 : null;
+
+  // Weekly gross for sparkline
+  const weeklyGross = bDates.map(w=>({
+    date:w,
+    gross:bushnellRows.filter(d=>d.report_date===w&&d.gross_gross).reduce((a,d)=>a+d.gross_gross,0)||0
+  }));
+
+  // Score for card color
+  const score = ourCap!=null ? ourCap : (peerCap||0);
+
+  return {show, ourGross, ourCap, natGross, peerCap, vsNat, wow, weeks, weeklyGross, score, bDates, bushnellRows, nationalRows};
+}
+
+// ── THIS SEASON ────────────────────────────────────────────────────────────
+function renderThisSeason() {
+  const season = SEASONS.find(s=>s.id===CURRENT_SEASON);
+  if(!season) return;
+
+  // KPIs
+  const allBushSeason = ALL_DATA.filter(d=>isBushnell(d)&&getFY(d.report_date)===CURRENT_SEASON);
+  const prevSeason = SEASONS.find(s=>s.id==='2025-2026');
+  const allBushPrev = ALL_DATA.filter(d=>isBushnell(d)&&getFY(d.report_date)==='2025-2026');
+
+  const seasonGross = allBushSeason.filter(d=>d.gross_gross).reduce((a,d)=>a+d.gross_gross,0);
+  const prevGross   = allBushPrev.filter(d=>d.gross_gross).reduce((a,d)=>a+d.gross_gross,0);
+  const grossDelta  = prevGross>0?((seasonGross-prevGross)/prevGross)*100:null;
+  const avgCap      = avg(allBushSeason.filter(d=>d.pct_capacity_paid).map(d=>d.pct_capacity_paid));
+  const showsData   = season.shows.filter(s=>getShowProfile(s,CURRENT_SEASON).weeks>0).length;
+  const peerCap     = avg(ALL_DATA.filter(d=>d.similar_bushnell_cap&&getFY(d.report_date)===CURRENT_SEASON&&d.pct_capacity_paid).map(d=>d.pct_capacity_paid));
+
+  $("kpi-season").innerHTML = `
+    <div class="kpi"><div class="kpi-label">Season Gross</div><div class="kpi-val">${fmt$(seasonGross||null)}</div>
+      <div class="kpi-delta ${grossDelta==null?'neutral':grossDelta>=0?'up':'down'}">${grossDelta!=null?(grossDelta>=0?'↑':'↓')+Math.abs(grossDelta).toFixed(1)+'% vs 2025–26':''}</div></div>
+    <div class="kpi"><div class="kpi-label">Avg % Cap Paid</div><div class="kpi-val">${fmtPct(avgCap)}</div>
+      <div class="kpi-delta neutral">${peerCap?'vs '+fmtPct(peerCap)+' peer avg':''}</div></div>
+    <div class="kpi"><div class="kpi-label">Shows Reporting</div><div class="kpi-val">${showsData} of ${season.shows.length}</div>
+      <div class="kpi-delta neutral">${season.shows.length-showsData} upcoming</div></div>
+    <div class="kpi"><div class="kpi-label">Weeks Reported</div><div class="kpi-val">${new Set(allBushSeason.map(d=>d.report_date)).size}</div>
+      <div class="kpi-delta neutral">since Jul 2026</div></div>
+  `;
+
+  // Cards
+  const profiles = season.shows.map(s=>getShowProfile(s,CURRENT_SEASON));
+  $("season-cards").innerHTML = profiles.map((p,i)=>{
+    if(p.weeks===0) {
+      return `<div class="show-card s-pending">
+        <div class="card-name">${p.show.title}${p.show.newTour?'<span class="badge badge-new">New Tour</span>':''}</div>
+        <div class="card-dates">${fmtDate(p.show.open)} · upcoming — no data yet</div>
+        <div style="padding:20px 0;text-align:center;color:var(--ink3);font-size:12px;">Awaiting Broadway League reports</div>
+      </div>`;
+    }
+    const score = p.ourCap||0;
+    const cls = score>=85?'s-green':score>=65?'s-amber':'s-red';
+    const wowStr = p.wow!=null?(p.wow>=0?'<span class="up">↑':'<span class="down">↓')+Math.abs(p.wow).toFixed(1)+'% WoW</span>':'';
+    const vsStr = p.vsNat!=null?(p.vsNat>=5?'<span class="up">↑ '+p.vsNat.toFixed(1)+'% vs national</span>':p.vsNat<=-5?'<span class="down">↓ '+Math.abs(p.vsNat).toFixed(1)+'% vs national</span>':'<span class="neutral">≈ national avg</span>'):'';
+    const peerCapStr = p.peerCap!=null?(p.ourCap-p.peerCap>=3?'<span class="up">↑ '+Math.abs(p.ourCap-p.peerCap).toFixed(1)+'pts vs peers</span>':p.peerCap-p.ourCap>=3?'<span class="down">↓ '+Math.abs(p.ourCap-p.peerCap).toFixed(1)+'pts vs peers</span>':'<span class="neutral">≈ peer avg</span>'):'';
+    const spark = p.weeklyGross.slice(-6).map((w,j,arr)=>
+      `<div class="sp-bar ${j===arr.length-1?'cur':''}" style="height:${Math.round((w.gross/Math.max(...arr.map(x=>x.gross)||[1]))*100)||4}%"></div>`
+    ).join('');
+    return `<div class="show-card ${cls}" onclick="toggleCard(${i})">
+      <div class="card-name">${p.show.title}${p.show.newTour?'<span class="badge badge-new">New</span>':p.show.bushnellDebut?'<span class="badge badge-debut">Debut</span>':''}</div>
+      <div class="card-dates">${fmtDate(p.show.open)} · ${p.weeks} wk${p.weeks!==1?'s':''}</div>
+      <div class="card-metrics">
+        <div class="cm"><div class="cm-label">Our gross</div><div class="cm-val">${fmt$(p.ourGross)}</div><div class="cm-vs">${vsStr}</div></div>
+        <div class="cm"><div class="cm-label">% cap paid</div><div class="cm-val">${fmtPct(p.ourCap)}</div><div class="cm-vs">${peerCapStr}</div></div>
+      </div>
+      <div class="spark">${spark}</div>
+      <div class="card-expand"><span>${wowStr}</span><span>▾ weekly detail</span></div>
+      <div class="card-detail" id="detail-${i}">
+        ${p.weeklyGross.slice(-8).reverse().map(w=>`
+          <div class="detail-row"><span>${fmtDate(w.date)}</span><span style="font-weight:600">${fmt$(w.gross)}</span></div>
+        `).join('')}
+        ${p.natGross?`<div class="detail-row" style="color:var(--ink3)"><span>National avg (same show)</span><span>${fmt$(p.natGross)}/wk</span></div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window._openCard = null;
+function toggleCard(i) {
+  const el = $('detail-'+i);
+  if(!el) return;
+  const isOpen = el.classList.contains('open');
+  document.querySelectorAll('.card-detail.open').forEach(d=>d.classList.remove('open'));
+  if(!isOpen) el.classList.add('open');
+}
+
+// ── HISTORY ────────────────────────────────────────────────────────────────
+function renderHistory() {
+  const pastSeasons = SEASONS.filter(s=>s.id!==CURRENT_SEASON);
+
+  // Season pills
+  $("hist-season-pills").innerHTML =
+    '<button class="season-pill '+(!HIST_SEASON?'active':'')+'" onclick="setHistSeason(null)">All Seasons</button>' +
+    pastSeasons.map(s=>`<button class="season-pill ${HIST_SEASON===s.id?'active':''}" onclick="setHistSeason('${s.id}')">${s.id.slice(2,4)}–${s.id.slice(7,9)}</button>`).join('');
+
+  // Build rows from Bushnell data
+  const bushnellShows = [];
+  pastSeasons.forEach(season=>{
+    if(HIST_SEASON && HIST_SEASON!==season.id) return;
+    season.shows.forEach(show=>{
+      const p = getShowProfile(show, season.id);
+      if(p.weeks===0) return;
+      bushnellShows.push({
+        show: show.title,
+        season: season.id,
+        gross: p.ourGross,
+        cap: p.ourCap,
+        weeks: p.weeks,
+        vsNat: p.vsNat
+      });
+    });
+  });
+
+  // Sort
+  bushnellShows.sort((a,b)=>{
+    const av=a[HIST_SORT.col], bv=b[HIST_SORT.col];
+    if(av==null) return 1; if(bv==null) return -1;
+    return HIST_SORT.dir*(av>bv?1:av<bv?-1:0);
+  });
+
+  $("hist-tbody").innerHTML = bushnellShows.map(r=>{
+    const vsClass = r.vsNat==null?'neutral':r.vsNat>=5?'up':r.vsNat<=-5?'down':'neutral';
+    const vsStr = r.vsNat!=null?(r.vsNat>=5?'↑ ':r.vsNat<=-5?'↓ ':'≈ ')+Math.abs(r.vsNat).toFixed(1)+'%':'-';
+    return `<tr>
+      <td style="font-weight:500">${r.show}</td>
+      <td style="color:var(--ink3)">${r.season}</td>
+      <td style="font-family:var(--mono)">${fmt$(r.gross)}</td>
+      <td style="font-family:var(--mono)">${fmtPct(r.cap)}</td>
+      <td style="font-family:var(--mono)">${r.weeks}</td>
+      <td class="${vsClass}" style="font-family:var(--mono)">${vsStr}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" class="no-data">No data for selected seasons</td></tr>';
+}
+
+function setHistSeason(id) {
+  HIST_SEASON = id;
+  renderHistory();
+}
+
+function sortHist(col) {
+  if(HIST_SORT.col===col) HIST_SORT.dir*=-1;
+  else { HIST_SORT.col=col; HIST_SORT.dir=-1; }
+  renderHistory();
+}
+
+// ── WHAT'S NEXT ────────────────────────────────────────────────────────────
+function renderWhatsNext() {
+  // All scheduled Bushnell show titles (all seasons)
+  const scheduled = new Set(SEASONS.flatMap(s=>s.shows.map(sh=>(sh.matchStr||sh.title).toLowerCase())));
+
+  // All shows in data
+  const allShows = [...new Set(ALL_DATA.map(d=>d.show).filter(Boolean))];
+
+  // Filter to shows NOT in schedule, with enough data
+  const candidates = allShows
+    .filter(s=>!([...scheduled].some(sc=>s.toLowerCase().includes(sc)||sc.includes(s.toLowerCase()))))
+    .map(s=>{
+      const rows = ALL_DATA.filter(d=>d.show===s);
+      const peerRows = rows.filter(d=>d.similar_bushnell_cap);
+      const recentRows = rows.filter(d=>d.report_date>=(new Date(Date.now()-365*86400000*2).toISOString().slice(0,10)));
+
+      const natGross = avg(rows.filter(d=>d.gross_gross).map(d=>d.gross_gross));
+      const peerCap  = avg(peerRows.filter(d=>d.pct_capacity_paid).map(d=>d.pct_capacity_paid));
+      const peerGross= avg(peerRows.filter(d=>d.gross_gross).map(d=>d.gross_gross));
+      const recency  = recentRows.length;
+      const totalWks = new Set(rows.map(d=>d.report_date)).size;
+
+      // Fit score: weighted blend of peer cap and peer gross
+      let score = 50;
+      if(peerCap!=null)   score += (peerCap-70)*0.5;
+      if(peerGross!=null && natGross!=null) score += (peerGross/natGross - 1)*20;
+      if(recency<3)       score -= 15;
+      if(totalWks<5)      score -= 10;
+      score = Math.max(0,Math.min(100,Math.round(score)));
+
+      return {show:s, natGross, peerCap, peerGross, recency, totalWks, score};
+    })
+    .filter(c=>c.totalWks>=5&&c.peerCap!=null)
+    .sort((a,b)=>b.score-a.score)
+    .slice(0,12);
+
+  // KPIs
+  $("kpi-next").innerHTML = `
+    <div class="kpi"><div class="kpi-label">Candidates identified</div><div class="kpi-val">${candidates.length}</div><div class="kpi-delta neutral">with 5+ weeks of data</div></div>
+    <div class="kpi"><div class="kpi-label">Top fit score</div><div class="kpi-val">${candidates[0]?.score||'—'}</div><div class="kpi-delta neutral">${candidates[0]?.show?.slice(0,20)||''}</div></div>
+    <div class="kpi"><div class="kpi-label">Avg peer % cap</div><div class="kpi-val">${fmtPct(avg(candidates.map(c=>c.peerCap)))}</div><div class="kpi-delta neutral">top candidates</div></div>
+    <div class="kpi"><div class="kpi-label">Active in last 2 yrs</div><div class="kpi-val">${candidates.filter(c=>c.recency>=3).length}</div><div class="kpi-delta neutral">of ${candidates.length} candidates</div></div>
+  `;
+
+  const scoreColor = s => s>=75?'var(--teal)':s>=50?'var(--amber)':'var(--rose)';
+  $("next-cards").innerHTML = candidates.map(c=>`
+    <div class="next-card">
+      <div class="next-name">${c.show}</div>
+      <div class="next-sub">${c.totalWks} weeks of data · ${c.recency>=3?'active recently':'limited recent data'}</div>
+      <div class="next-metrics">
+        <div class="nm"><div class="nm-label">Nat avg gross</div><div class="nm-val">${fmt$(c.natGross)}</div></div>
+        <div class="nm"><div class="nm-label">Peer % cap</div><div class="nm-val">${fmtPct(c.peerCap)}</div></div>
+        <div class="nm"><div class="nm-label">Fit score</div><div class="nm-val" style="color:${scoreColor(c.score)}">${c.score}</div></div>
+      </div>
+      <div class="fit-bar"><div class="fit-fill" style="width:${c.score}%;background:${scoreColor(c.score)}"></div></div>
+      <div class="fit-label"><span>fit for Bushnell</span><span>${c.score}/100</span></div>
+    </div>
+  `).join('') || '<div class="no-data">No candidates found</div>';
+}
+
+init();
+</script>
+</body>
+</html>
