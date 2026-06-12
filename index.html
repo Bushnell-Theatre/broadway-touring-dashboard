@@ -790,7 +790,7 @@ tbody td:last-child{border-right:none;}
 
     <!-- TIER -->
     <div class="sidebar-section">
-      <span class="sidebar-label tip">Tier <span class="tip-icon" tabindex="0">?</span><span class="tip-text">Primary markets are major touring cities. Secondary markets are smaller regional cities. Broadway League designates each market.</span></span>
+      <span class="sidebar-label tip">Tier <span class="tip-icon" tabindex="0" id="tip-tier">?</span></span>
       <div class="pill-row">
         <button class="pill active" data-tier="" onclick="setTier(this,'')" aria-label="All tiers">All</button>
         <button class="pill" data-tier="Primary" onclick="setTier(this,'Primary')" aria-label="Primary tier">Primary</button>
@@ -800,7 +800,7 @@ tbody td:last-child{border-right:none;}
 
     <!-- SUBSCRIPTION -->
     <div class="sidebar-section">
-      <span class="sidebar-label tip">Subscription <span class="tip-icon" tabindex="0">?</span><span class="tip-text">Subscription shows are part of the venue's subscriber package. Non-subscription shows are add-ons or specials not included in the season subscription.</span></span>
+      <span class="sidebar-label tip">Subscription <span class="tip-icon" tabindex="0" id="tip-sub">?</span></span>
       <div class="pill-row">
         <button class="pill active" data-sub="" onclick="setSub(this,'')" aria-label="All subscriptions">All</button>
         <button class="pill" data-sub="1" onclick="setSub(this,'1')" aria-label="Subscribed only">Sub</button>
@@ -810,7 +810,7 @@ tbody td:last-child{border-right:none;}
 
     <!-- PEER VENUES -->
     <div class="sidebar-section">
-      <span class="sidebar-label tip">Peer Venues <span class="tip-icon" tabindex="0">?</span><span class="tip-text">Venues with a similar per-show sellable capacity to the Bushnell, as calculated from Broadway League data. Used for benchmarking.</span></span>
+      <span class="sidebar-label tip">Peer Venues <span class="tip-icon" tabindex="0" id="tip-peer">?</span></span>
       <div class="pill-row">
         <button class="pill active" data-peer="" onclick="setPeer(this,'')" aria-label="All venues">All</button>
         <button class="pill" data-peer="1" onclick="setPeer(this,'1')" aria-label="Peer venues only">Peer Only</button>
@@ -1241,7 +1241,58 @@ function getFiscalYear(dateStr) {
   if (!dateStr) return null;
   const y = parseInt(dateStr.slice(0,4));
   const m = parseInt(dateStr.slice(5,7));
-  return m >= 7 ? y+'-'+(y+1).toString().slice(2) : (y-1)+'-'+y.toString().slice(2);
+  return m >= 7 ? y+'-'+(y+1) : (y-1)+'-'+y;
+}
+
+
+// ── HELP TEXT (single source of truth for tooltips and FAQ) ──────────────────
+const HELP_TEXT = {
+  // Filters
+  tier:         "Primary markets are major touring cities designated by the Broadway League. Secondary markets are smaller regional cities.",
+  subscription: "Subscription shows are part of the venue's subscriber package. Non-subscription shows are add-ons or specials not included in the season subscription.",
+  peerVenues:   "Venues whose per-show sellable (total seats / performances) is within +/- 10% of the Bushnell. Not based on raw seat count.",
+  season:       "Filters data to one or more Bushnell fiscal seasons (July-June). Multiple seasons can be selected simultaneously. Works independently of the date range filter.",
+  dateRange:    "Narrows results to a specific date window. Dates snap to the nearest Sunday to align with Broadway League reporting.",
+  venue:        "Filter to a specific venue across all Broadway League markets.",
+  city:         "Filter to a specific city across all Broadway League markets.",
+  shows:        "Select specific show titles to focus analysis. Use the search box to find shows quickly.",
+  advanced:     "Gross range, capacity range, and performance count filters for detailed data slicing.",
+
+  // Metrics
+  grossGross:   "Total gross revenue for the week at that venue — all tickets sold at all price points.",
+  grossPotential: "The theoretical maximum revenue if every seat sold at full price for every performance.",
+  ggPctGp:      "Gross Gross as a percentage of Gross Potential. Over 100% indicates premium pricing or above-capacity revenue. Under 100% indicates unsold seats or discounting.",
+  pctCapPaid:   "Paid tickets sold divided by total sellable capacity. The primary measure of how full the house was.",
+  pctCapTotal:  "Total tickets (including comps) divided by total sellable capacity.",
+  avgPaidAdm:   "Average price paid per ticket: Gross Gross divided by Paid Tickets.",
+  wow:          "Week-over-Week. The percentage change in gross revenue from the previous report week to the current week.",
+  topPaidPrice: "The highest price at which a ticket was sold that week.",
+  numPerf:      "Number of performances in the report week (typically 8 for a standard Broadway week).",
+
+  // Data
+  broadwayLeague: "Weekly touring report published by The Broadway League covering gross revenue, capacity, and performance data for Broadway touring productions across North America.",
+  reportWeek:   "Each record represents one week of performances at one venue. Reports are published weekly, typically on Sundays.",
+  fiscalYear:   "The Bushnell fiscal year runs July 1 through June 30. All season and annual comparisons use this calendar.",
+  dataCurrency: "Data reflects Broadway League reports uploaded to this system. The most recent report date is shown in the masthead.",
+
+  // Peer venues
+  peerDef:      "Venues whose per-show sellable capacity — total sellable seats divided by number of performances — is within +/- 10% of the Bushnell. Not based on raw seat count.",
+  meaningfulPeers: "Venues with 10+ reporting weeks and average gross within 50% of the Bushnell average are considered meaningful comparators and receive full synopses on the Peer Venues tab.",
+  peerBenchmark:  "Peer comparisons show how Bushnell gross and capacity performance compares to similar venues presenting the same touring productions.",
+
+  // Charts
+  weeklyTrend:  "Total gross across all filtered venues by report week. Default view shows the current season. Extend the date range to view historical data including the COVID gap (2020-2021).",
+  eightWeekMA:  "Rolling 8-week moving average overlaid on the weekly gross chart. Includes zero weeks so the COVID shutdown appears as a ramp down and recovery.",
+  seasonality:  "Average gross by fiscal period (July-June) across all years in the filter. Shows seasonal patterns in Broadway touring revenue.",
+  yoy:          "Fiscal year gross by period, overlaid for comparison. Years labeled in 2024-25 format reflecting the July-June fiscal calendar.",
+  ggPctChart:   "Teal bars indicate shows averaging at or above 100% of gross potential — strong demand or premium pricing. Navy bars indicate below potential.",
+  mktCapChart:  "Average paid capacity utilization by city. Color coded: green 90% or above, amber 60-89%, red below 60%.",
+};
+
+// Helper: render a tooltip icon
+function tipIcon(key) {
+  const text = HELP_TEXT[key] || '';
+  return `<span class="tip-icon" tabindex="0" title="${text}" aria-label="${text}">?</span>`;
 }
 
 // ── SUNDAY SNAP ───────────────────────────────────────────────────────────────
@@ -1328,6 +1379,7 @@ async function initData() {
   // Default to current season
   const currentSeason = SEASONS.find(s => s.id === '2025-2026');
   if (currentSeason) {
+    ACTIVE_SEASONS.add('2025-2026');
     window._DATE_RANGE = {
       start: snapToSunday(currentSeason.start, 'back'),
       end: snapToSunday(currentSeason.end, 'forward')
@@ -1351,6 +1403,22 @@ let DEFAULT_RANGE = null;
 
 // ── BOOT ──────────────────────────────────────────────────────────────────────
 function boot() {
+  // Apply HELP_TEXT to tooltip icons
+  const tipMap = {
+    'tip-tier': 'tier', 'tip-sub': 'subscription', 'tip-peer': 'peerVenues'
+  };
+  Object.entries(tipMap).forEach(([id, key]) => {
+    const el = document.getElementById(id);
+    if (el && HELP_TEXT[key]) {
+      el.setAttribute('title', HELP_TEXT[key]);
+      el.setAttribute('aria-label', HELP_TEXT[key]);
+      // Also inject tip-text span for CSS tooltip
+      const span = document.createElement('span');
+      span.className = 'tip-text';
+      span.textContent = HELP_TEXT[key];
+      el.insertAdjacentElement('afterend', span);
+    }
+  });
   populateVenueCity();
   populateShowList();
   updateDataStatus();
@@ -1501,7 +1569,7 @@ function applyFilters() {
     if (ACTIVE_SUB !== '' && String(d.on_subscription) !== ACTIVE_SUB) return false;
     if (ACTIVE_SEASONS.size > 0) {
       const fy = getFiscalYear(d.report_date);
-      if (!fy || !ACTIVE_SEASONS.has(fy.split('-')[0]+'-'+('20'+fy.split('-')[1]))) return false;
+      if (!fy || !ACTIVE_SEASONS.has(fy)) return false;
     }
     if (ACTIVE_PEER === '1' && !d.similar_bushnell_cap) return false;
     if (venueF && d.theatre !== venueF) return false;
@@ -1535,22 +1603,24 @@ function applyFilters() {
 }
 
 function resetFilters() {
-  document.getElementById('fDate').value = '';
-  document.getElementById('fGrossMin').value = '';
-  document.getElementById('fGrossMax').value = '';
-  document.getElementById('fCapMin').value = '';
-  document.getElementById('fCapMax').value = '';
-  document.getElementById('fPerfMin').value = '';
-  document.getElementById('fPerfMax').value = '';
-  document.getElementById('showSearch').value = '';
-  window._DATE_RANGE = null;
-  document.querySelectorAll('[data-preset]').forEach(b=>b.classList.remove('active'));
+  if (document.getElementById('fGrossMin')) document.getElementById('fGrossMin').value = '';
+  if (document.getElementById('fGrossMax')) document.getElementById('fGrossMax').value = '';
+  if (document.getElementById('fCapMin')) document.getElementById('fCapMin').value = '';
+  if (document.getElementById('fCapMax')) document.getElementById('fCapMax').value = '';
+  if (document.getElementById('fPerfMin')) document.getElementById('fPerfMin').value = '';
+  if (document.getElementById('fPerfMax')) document.getElementById('fPerfMax').value = '';
+  if (document.getElementById('showSearch')) document.getElementById('showSearch').value = '';
+  if (document.getElementById('fVenue')) document.getElementById('fVenue').value = '';
+  if (document.getElementById('fCity')) document.getElementById('fCity').value = '';
   document.getElementById('fDateFrom').value = '';
   document.getElementById('fDateTo').value = '';
-  const sel = document.getElementById('fDate');
-  const allWeeks = [...new Set(ALL_DATA.map(d=>d.report_date))].sort();
-  sel.innerHTML = '<option value="">All Weeks</option>' + allWeeks.map(w=>`<option value="${w}">${fmtWeek(w)}</option>`).join('');
-  filterShowList(); setTier(null,''); setSub(null,''); setPeer(null,''); setSeasonFilter(null); selectAllShows();
+  window._DATE_RANGE = null;
+  // Reset to default season (2025-2026)
+  ACTIVE_SEASONS.clear();
+  ACTIVE_SEASONS.add('2025-2026');
+  document.querySelectorAll('[data-season]').forEach(b=>b.classList.toggle('active', b.dataset.season==='2025-2026'));
+  filterShowList(); setTier(null,''); setSub(null,''); setPeer(null,''); selectAllShows();
+  applyFilters();
 }
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
@@ -2088,7 +2158,7 @@ function renderAnalytics() {
         const fw=fiscalWeek(d.report_date);
         byFW[fw]=(byFW[fw]||0)+d.gross_gross;
       });
-      const label = fy+'-'+(fy+1).toString().slice(2);
+      const label = String(fy)+'-'+String(fy+1);
       return {label,data:fwNums.map(fw=>byFW[fw]||null),
         borderColor:palette[i%palette.length],backgroundColor:'transparent',
         fill:false,tension:0.3,pointRadius:2,borderWidth:1.5,spanGaps:true};
@@ -2113,7 +2183,7 @@ function renderAnalytics() {
         const fm=fiscalMonth(parseInt(d.report_date.slice(5,7)));
         byFM[fm]=(byFM[fm]||0)+d.gross_gross;
       });
-      const label = fy+'-'+(fy+1).toString().slice(2);
+      const label = String(fy)+'-'+String(fy+1);
       return {label,data:[...Array(12).keys()].map(i=>byFM[i+1]||null),
         borderColor:palette[i%palette.length],backgroundColor:'transparent',
         fill:false,tension:0.3,pointRadius:3,borderWidth:1.5,spanGaps:true};
@@ -2714,39 +2784,39 @@ function renderFaq() {
     <div style="max-width:860px;">
 
       ${section('Data Source', [
-        ['Broadway League','Weekly touring report published by The Broadway League covering gross revenue, capacity, and performance data for Broadway touring productions across North America.'],
-        ['Report Week','Each record represents one week of performances at one venue. Reports are published weekly, typically on Sundays.'],
-        ['Fiscal Year','The Bushnell fiscal year runs July 1 through June 30. All season and annual comparisons use this calendar.'],
-        ['Data Currency','Data reflects Broadway League reports uploaded to this system. The most recent report date is shown in the masthead.'],
+        ['Broadway League', HELP_TEXT.broadwayLeague],
+        ['Report Week',     HELP_TEXT.reportWeek],
+        ['Fiscal Year',     HELP_TEXT.fiscalYear],
+        ['Data Currency',   HELP_TEXT.dataCurrency],
       ])}
 
       ${section('Key Metrics & Acronyms', [
-        ['Gross Gross (GG)','Total gross revenue for the week at that venue — all tickets sold at all price points.'],
-        ['Gross Potential (GP)','The theoretical maximum revenue if every seat sold at full price for every performance.'],
-        ['GG% of GP','Gross Gross as a percentage of Gross Potential. Over 100% indicates premium pricing or above-capacity revenue. Under 100% indicates unsold seats or discounting.'],
-        ['% Capacity Paid','Paid tickets sold divided by total sellable capacity. The primary measure of how full the house was.'],
-        ['% Capacity Total','Total tickets (including comps) divided by total sellable capacity.'],
-        ['Avg Paid Admission','Average price paid per ticket: Gross Gross ÷ Paid Tickets.'],
-        ['WoW','Week-over-Week. The percentage change in gross revenue from the previous report week to the current week.'],
-        ['Top Paid Price','The highest price at which a ticket was sold that week.'],
-        ['# Performances','Number of performances in the report week (typically 8 for a standard Broadway week).'],
+        ['Gross Gross (GG)',    HELP_TEXT.grossGross],
+        ['Gross Potential (GP)',HELP_TEXT.grossPotential],
+        ['GG% of GP',          HELP_TEXT.ggPctGp],
+        ['% Capacity Paid',    HELP_TEXT.pctCapPaid],
+        ['% Capacity Total',   HELP_TEXT.pctCapTotal],
+        ['Avg Paid Admission',  HELP_TEXT.avgPaidAdm],
+        ['WoW',                HELP_TEXT.wow],
+        ['Top Paid Price',     HELP_TEXT.topPaidPrice],
+        ['# Performances',     HELP_TEXT.numPerf],
       ])}
 
       ${section('Filters', [
-        ['Season','Filters data to one or more Bushnell fiscal seasons (July–June). Multiple seasons can be selected simultaneously. Season selection works independently of the date range filter.'],
-        ['Date Range','Narrows results within the selected season(s) to a specific date window. Dates snap to the nearest Sunday to align with Broadway League reporting.'],
-        ['Tier','Primary markets are major touring cities designated by the Broadway League. Secondary markets are smaller regional cities.'],
-        ['Subscription','Subscription shows are included in the Bushnell subscriber package. Non-subscription shows are add-ons not part of the standard season package.'],
-        ['Peer Venues','Venues with a similar per-show sellable capacity to the Bushnell, as calculated from Broadway League data. Selecting "Peer Only" limits data to these comparable venues.'],
-        ['Venue / City','Filter data to a specific venue or city across all Broadway League markets.'],
-        ['Shows','Select specific show titles to focus analysis. Use the search box to find shows quickly.'],
-        ['Advanced Filters','Gross range, capacity range, and performance count filters for detailed data slicing.'],
+        ['Season',        HELP_TEXT.season],
+        ['Date Range',    HELP_TEXT.dateRange],
+        ['Tier',          HELP_TEXT.tier],
+        ['Subscription',  HELP_TEXT.subscription],
+        ['Peer Venues',   HELP_TEXT.peerVenues],
+        ['Venue / City',  HELP_TEXT.venue + ' / ' + HELP_TEXT.city],
+        ['Shows',         HELP_TEXT.shows],
+        ['Advanced Filters', HELP_TEXT.advanced],
       ])}
 
       ${section('Peer Venues', [
-        ['Definition','A peer venue is one whose per-show sellable capacity — calculated as total sellable seats divided by number of performances — is comparable to the Bushnell. This is not raw seat count.'],
-        ['Meaningful Peers','Venues with 10+ reporting weeks and average gross within 50% of the Bushnell average are considered meaningful comparators and receive full synopses on the Peer Venues tab.'],
-        ['Benchmarking','Peer comparisons show how Bushnell gross and capacity performance compares to similar venues presenting the same touring productions.'],
+        ['Definition',      HELP_TEXT.peerDef],
+        ['Meaningful Peers',HELP_TEXT.meaningfulPeers],
+        ['Benchmarking',    HELP_TEXT.peerBenchmark],
       ])}
 
       ${section('Seasons Tab', [
@@ -2756,12 +2826,12 @@ function renderFaq() {
       ])}
 
       ${section('Charts & Analytics', [
-        ['Weekly Gross Trend','Total gross across all filtered venues by report week. Default view shows the current season. Extend the date range to view historical data including the COVID gap (2020–2021).'],
-        ['8-Week Trend','Rolling 8-week moving average overlaid on the weekly gross chart. Includes zero weeks so the COVID shutdown appears as a ramp down and recovery.'],
-        ['Seasonality','Average gross by fiscal period (July–June) across all years in the filter. Shows seasonal patterns in Broadway touring revenue.'],
-        ['Year over Year','Fiscal year gross by period, overlaid for comparison. Years labeled in 2024-25 format reflecting the July–June fiscal calendar.'],
-        ['GG% of Potential','Teal bars indicate shows averaging at or above 100% of gross potential — strong demand or premium pricing. Navy bars indicate below potential.'],
-        ['% Capacity by Market','Average paid capacity utilization by city. Color coded: green ≥90%, amber 60–89%, red <60%.'],
+        ['Weekly Gross Trend', HELP_TEXT.weeklyTrend],
+        ['8-Week Trend',       HELP_TEXT.eightWeekMA],
+        ['Seasonality',        HELP_TEXT.seasonality],
+        ['Year over Year',     HELP_TEXT.yoy],
+        ['GG% of Potential',   HELP_TEXT.ggPctChart],
+        ['% Capacity by Market', HELP_TEXT.mktCapChart],
       ])}
 
     </div>`;
