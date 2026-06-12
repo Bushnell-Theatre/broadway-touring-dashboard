@@ -1379,6 +1379,7 @@ async function initData() {
   // Default to current season
   const currentSeason = SEASONS.find(s => s.id === '2025-2026');
   if (currentSeason) {
+    ACTIVE_SEASONS.add('2025-2026');
     window._DATE_RANGE = {
       start: snapToSunday(currentSeason.start, 'back'),
       end: snapToSunday(currentSeason.end, 'forward')
@@ -1602,22 +1603,24 @@ function applyFilters() {
 }
 
 function resetFilters() {
-  document.getElementById('fDate').value = '';
-  document.getElementById('fGrossMin').value = '';
-  document.getElementById('fGrossMax').value = '';
-  document.getElementById('fCapMin').value = '';
-  document.getElementById('fCapMax').value = '';
-  document.getElementById('fPerfMin').value = '';
-  document.getElementById('fPerfMax').value = '';
-  document.getElementById('showSearch').value = '';
-  window._DATE_RANGE = null;
-  document.querySelectorAll('[data-preset]').forEach(b=>b.classList.remove('active'));
+  if (document.getElementById('fGrossMin')) document.getElementById('fGrossMin').value = '';
+  if (document.getElementById('fGrossMax')) document.getElementById('fGrossMax').value = '';
+  if (document.getElementById('fCapMin')) document.getElementById('fCapMin').value = '';
+  if (document.getElementById('fCapMax')) document.getElementById('fCapMax').value = '';
+  if (document.getElementById('fPerfMin')) document.getElementById('fPerfMin').value = '';
+  if (document.getElementById('fPerfMax')) document.getElementById('fPerfMax').value = '';
+  if (document.getElementById('showSearch')) document.getElementById('showSearch').value = '';
+  if (document.getElementById('fVenue')) document.getElementById('fVenue').value = '';
+  if (document.getElementById('fCity')) document.getElementById('fCity').value = '';
   document.getElementById('fDateFrom').value = '';
   document.getElementById('fDateTo').value = '';
-  const sel = document.getElementById('fDate');
-  const allWeeks = [...new Set(ALL_DATA.map(d=>d.report_date))].sort();
-  sel.innerHTML = '<option value="">All Weeks</option>' + allWeeks.map(w=>`<option value="${w}">${fmtWeek(w)}</option>`).join('');
-  filterShowList(); setTier(null,''); setSub(null,''); setPeer(null,''); setSeasonFilter(null); selectAllShows();
+  window._DATE_RANGE = null;
+  // Reset to default season (2025-2026)
+  ACTIVE_SEASONS.clear();
+  ACTIVE_SEASONS.add('2025-2026');
+  document.querySelectorAll('[data-season]').forEach(b=>b.classList.toggle('active', b.dataset.season==='2025-2026'));
+  filterShowList(); setTier(null,''); setSub(null,''); setPeer(null,''); selectAllShows();
+  applyFilters();
 }
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
