@@ -1219,20 +1219,9 @@ const SEASONS = [
 let ACTIVE_SEASONS = new Set(); // supports multiple seasons
 
 function setSeasonFilter(seasonId) {
-  if (!seasonId) {
-    ACTIVE_SEASONS.clear();
-    document.querySelectorAll('[data-season]').forEach(b=>b.classList.toggle('active', b.dataset.season===''));
-  } else {
-    if (ACTIVE_SEASONS.has(seasonId)) {
-      ACTIVE_SEASONS.delete(seasonId);
-    } else {
-      ACTIVE_SEASONS.add(seasonId);
-    }
-    document.querySelector('[data-season=""]')?.classList.toggle('active', ACTIVE_SEASONS.size === 0);
-    document.querySelectorAll('[data-season]:not([data-season=""])').forEach(b=>{
-      b.classList.toggle('active', ACTIVE_SEASONS.has(b.dataset.season));
-    });
-  }
+  ACTIVE_SEASONS.clear();
+  if (seasonId) ACTIVE_SEASONS.add(seasonId);
+  document.querySelectorAll('[data-season]').forEach(b=>b.classList.toggle('active', b.dataset.season===seasonId));
   applyFilters();
 }
 
@@ -1362,29 +1351,11 @@ async function initData() {
     ALL_DATA = [];
 
   }
-  // Set last report date and default 3-year range
+  // Set last report date
   const allDates = ALL_DATA.map(d=>d.report_date).filter(Boolean).sort();
   LAST_REPORT_DATE = allDates[allDates.length-1] ? allDates[allDates.length-1].slice(0,10) : null;
-  if (LAST_REPORT_DATE) {
-    const last = new Date(LAST_REPORT_DATE);
-    const start = new Date(last);
-    start.setFullYear(start.getFullYear()-3);
-    const defaultStart = start.getFullYear()+'-'+String(start.getMonth()+1).padStart(2,'0')+'-'+String(start.getDate()).padStart(2,'0');
-    DEFAULT_RANGE = {
-      start: snapToSunday(defaultStart, 'back'),
-      end: LAST_REPORT_DATE
-    };
-    window._DATE_RANGE = {...DEFAULT_RANGE};
-  }
   // Default to current season
-  const currentSeason = SEASONS.find(s => s.id === '2025-2026');
-  if (currentSeason) {
-    ACTIVE_SEASONS.add('2025-2026');
-    window._DATE_RANGE = {
-      start: snapToSunday(currentSeason.start, 'back'),
-      end: snapToSunday(currentSeason.end, 'forward')
-    };
-  }
+  ACTIVE_SEASONS.add('2025-2026');
   boot();
 }
 
