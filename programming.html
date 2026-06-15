@@ -25,6 +25,14 @@
 .peer-badge-size_extended { background:#5a7fa8; color:#fff; }
 .peer-badge-proximity { background:#c8a84b; color:#003865; }
 .peer-badge-market { background:#e8f0f8; color:#003865; border:1px solid #b0c4d8; }
+.tip-icon{display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;border-radius:50%;background:var(--rule);color:var(--ink3);font-size:.55rem;font-weight:700;cursor:help;border:1px solid var(--rule);position:relative;flex-shrink:0;vertical-align:middle;margin-left:3px;}
+.tip-text{position:absolute;top:calc(100% + 6px);left:50%;transform:translateX(-50%) translateY(4px);width:220px;background:var(--ink);color:#fff;font-size:.6rem;line-height:1.5;padding:7px 10px;border-radius:3px;opacity:0;visibility:hidden;transition:opacity .15s,transform .15s;z-index:900;pointer-events:none;}
+.tip-text::before{content:'';position:absolute;bottom:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-bottom-color:var(--ink);}
+.tip-icon:hover .tip-text,.tip-icon:focus .tip-text{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0);}
+.faq-section{margin-bottom:32px;}.faq-section h3{font-size:.75rem;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px;border-bottom:1px solid var(--rule);padding-bottom:6px;}
+.faq-grid{display:grid;grid-template-columns:200px 1fr;gap:8px 20px;}
+.faq-grid dt{font-size:.65rem;font-weight:700;color:var(--ink);padding-top:2px;}
+.faq-grid dd{font-size:.65rem;color:var(--ink2);margin:0;line-height:1.55;}
 </style>
 </head>
 <body>
@@ -49,7 +57,7 @@
     <div class="sidebar-section"><span class="sidebar-label">Decision View</span><div class="pill-row"><button class="pill active" data-tab="brief" onclick="showTab('brief')">Brief</button><button class="pill" data-tab="current" onclick="showTab('current')">Current</button><button class="pill" data-tab="history" onclick="showTab('history')">History</button><button class="pill" data-tab="future" onclick="showTab('future')">Future</button></div></div>
     <div class="sidebar-section"><span class="sidebar-label">Show Search</span><input id="showSearch" type="text" placeholder="Search all shows..." oninput="renderShowHistory()"></div>
     <div class="sidebar-section">
-      <span class="sidebar-label">Tier</span>
+      <span class="sidebar-label">Tier <span class="tip-icon" tabindex="0" data-tip="tier">?</span></span>
       <div class="pill-row">
         <button class="pill active" data-tier="" onclick="setTier(this,'')">All</button>
         <button class="pill" data-tier="Primary" onclick="setTier(this,'Primary')">Primary</button>
@@ -57,7 +65,7 @@
       </div>
     </div>
     <div class="sidebar-section">
-      <span class="sidebar-label">Subscription</span>
+      <span class="sidebar-label">Subscription <span class="tip-icon" tabindex="0" data-tip="subscription">?</span></span>
       <div class="pill-row">
         <button class="pill active" data-sub="" onclick="setSub(this,'')">All</button>
         <button class="pill" data-sub="1" onclick="setSub(this,'1')">Sub</button>
@@ -65,7 +73,7 @@
       </div>
     </div>
     <div class="sidebar-section">
-      <span class="sidebar-label">Peer Venues</span>
+      <span class="sidebar-label">Peer Venues <span class="tip-icon" tabindex="0" data-tip="peerVenues">?</span></span>
       <div class="pill-row">
         <button class="pill active" data-peer="" onclick="setPeer(this,'')" aria-label="All venues">All</button>
         <button class="pill" data-peer="any" onclick="setPeer(this,'any')" aria-label="Any peer">Any Peer</button>
@@ -76,7 +84,7 @@
       </div>
     </div>
     <div class="sidebar-section">
-      <span class="sidebar-label">Tour Type</span>
+      <span class="sidebar-label">Tour Type <span class="tip-icon" tabindex="0" data-tip="tourType">?</span></span>
       <div class="pill-row">
         <button class="pill active" data-equity="" onclick="setEquity(this,'')">All</button>
         <button class="pill" data-equity="no" onclick="setEquity(this,'no')">Equity</button>
@@ -101,6 +109,7 @@
       <div class="nav-tab" data-tab="future" onclick="showTab('future')">Future Planning</div>
       <div class="nav-tab" data-tab="peers" onclick="showTab('peers')">Peer Intelligence</div>
       <div class="nav-tab" data-tab="opportunity" onclick="showTab('opportunity')">Opportunity Engine</div>
+      <div class="nav-tab" data-tab="faq" onclick="showTab('faq')">Help / FAQ</div>
     </nav>
     <section class="panel active" id="tab-brief"></section>
     <section class="panel" id="tab-current"></section>
@@ -108,11 +117,47 @@
     <section class="panel" id="tab-future"></section>
     <section class="panel" id="tab-peers"></section>
     <section class="panel" id="tab-opportunity"></section>
+    <section class="panel" id="tab-faq"><div style="padding:24px 32px;" id="faqContent"></div></section>
   </div>
 </div>
 <footer class="footer"><div><strong>CONFIDENTIAL</strong> — For internal use only. The Bushnell Center for the Performing Arts.</div><div>Broadway Touring Programming Intelligence · v2 concept</div></footer>
 <script>
 const DATA_URLS = ['./data.json','https://white-pebble-01710020f.7.azurestaticapps.net/data.json'];
+const HELP_TEXT = {
+  tier: 'Primary markets are major touring cities designated by the Broadway League. Secondary markets are smaller regional cities.',
+  subscription: "Subscription shows are part of the venue's subscriber package. Non-subscription shows are add-ons or specials not included in the season subscription.",
+  peerVenues: 'Peers classified by type: Size (±10% of Bushnell sellable seats, 2,450–2,994), Proximity (Northeast/New England), Market (comparable nonprofit mid-sized city PACs), Extended (±15% range).',
+  season: 'Filters data to one or more Bushnell fiscal seasons (July–June). Multiple seasons can be selected simultaneously.',
+  dateRange: 'Narrows results to a specific date window. Dates snap to the nearest Sunday to align with Broadway League reporting.',
+  venue: 'Filter to a specific venue across all Broadway League markets.',
+  city: 'Filter to a specific city across all Broadway League markets.',
+  shows: 'Select specific show titles to focus analysis.',
+  tourType: 'Equity tours are productions under an Actors\' Equity Association contract. Non-Equity tours operate outside the AEA contract.',
+  engagement: 'Performed = the show had at least one performance and reported gross revenue that week. No Performance = the week was a layoff or dark week.',
+  grossGross: 'Total gross revenue for the week at that venue — all tickets sold at all price points.',
+  grossPotential: 'The theoretical maximum revenue if every seat sold at full price for every performance.',
+  ggPctGp: 'Gross Gross as a percentage of Gross Potential. Over 100% indicates premium pricing. Under 100% indicates unsold seats or discounting.',
+  pctCapPaid: 'Paid tickets sold divided by total sellable capacity. The primary measure of how full the house was.',
+  pctCapTotal: 'Total tickets (including comps) divided by total sellable capacity.',
+  avgPaidAdm: 'Average price paid per ticket: Gross Gross divided by Paid Tickets.',
+  wow: 'Week-over-Week. The percentage change in gross revenue from the previous report week to the current week.',
+  topPaidPrice: 'The highest price at which a ticket was sold that week.',
+  numPerf: 'Number of performances in the report week (typically 8 for a standard Broadway week).',
+  broadwayLeague: 'Weekly touring report published by The Broadway League covering gross revenue, capacity, and performance data for Broadway touring productions across North America.',
+  reportWeek: 'Each record represents one week of performances at one venue. Reports are published weekly, typically on Sundays.',
+  fiscalYear: 'The Bushnell fiscal year runs July 1 through June 30. All season and annual comparisons use this calendar.',
+  dataCurrency: 'Data reflects Broadway League reports uploaded to this system. The most recent report date is shown in the masthead.',
+  peerDef: 'Peers classified by type: Size (±10% of Bushnell sellable seats, 2,450–2,994), Proximity (Northeast/New England), Market (comparable nonprofit mid-sized city PACs), Extended (±15% range).',
+  meaningfulPeers: 'Venues with 10+ reporting weeks and average gross within 50% of the Bushnell average are considered meaningful comparators and receive full synopses on the Peer Venues tab.',
+  peerBenchmark: 'Peer comparisons show how Bushnell gross and capacity performance compares to similar venues presenting the same touring productions.',
+  fitScore: 'A composite score (0–100) estimating how well a touring show fits the Bushnell based on its national capacity utilization and peer venue performance. Higher = stronger historical draw at similar venues.',
+  weeklyTrend: 'Total gross across all filtered venues by report week.',
+  eightWeekMA: 'Rolling 8-week moving average overlaid on the weekly gross chart.',
+  seasonality: 'Average gross by fiscal period (July–June) across all years in the filter.',
+  yoy: 'Fiscal year gross by period, overlaid for comparison.',
+  ggPctChart: 'Teal bars indicate shows averaging at or above 100% of gross potential. Navy bars indicate below potential.',
+  mktCapChart: 'Average paid capacity utilization by city.'
+};
 const SEASONS = [
   {id:'2026-2027',name:'2026-2027 Season',start:'2026-07-01',end:'2027-06-30',shows:[
     {title:'Oh, Mary!',match:'Oh, Mary',sub:false},{title:'The Great Gatsby',match:'Great Gatsby',sub:true},{title:'Mamma Mia! (25th Anniversary)',match:'Mamma Mia',sub:true},{title:'BOOP! The Betty Boop Musical Pre',match:'Boop',sub:true},{title:"Hell's Kitchen",match:"Hell's Kitchen",sub:true},{title:'Maybe Happy Ending',match:'Maybe Happy Ending',sub:true},{title:'Jersey Boys 2',match:'Jersey Boys',sub:false},{title:'Waitress',match:'Waitress',sub:true},{title:'Operation Mincemeat: A New Musical',match:'Operation Mincemeat',sub:true},{title:'The Outsiders',match:'The Outsiders',sub:true}]},
@@ -170,7 +215,7 @@ async function loadData(){let data=[];for(const url of DATA_URLS){try{const r=aw
   ALL=(Array.isArray(data)?data:(data.records||[])).map(d=>({...d,week_of:d.week_of?d.week_of.slice(0,10):null,on_sub:d.on_sub===true?1:d.on_sub===false?0:d.on_sub,similar_bushnell:!!d.similar_bushnell,no_engagement:!!d.no_engagement}));
   init();
 }
-function init(){const sel=$('seasonSelect');sel.innerHTML=SEASONS.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');sel.value=STATE.season;renderAll();}
+function init(){const sel=$('seasonSelect');sel.innerHTML=SEASONS.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');sel.value=STATE.season;document.querySelectorAll('.tip-icon[data-tip]').forEach(el=>{const span=document.createElement('span');span.className='tip-text';span.textContent=HELP_TEXT[el.dataset.tip]||'';el.appendChild(span);});renderFaq();renderAll();}
 function setSeason(v){STATE.season=v;renderAll()}
 function setTier(btn,v){ACTIVE_TIER=v;document.querySelectorAll('[data-tier]').forEach(b=>b.classList.toggle('active',b.dataset.tier===v));renderAll();}
 function setSub(btn,v){ACTIVE_SUB=v;document.querySelectorAll('[data-sub]').forEach(b=>b.classList.toggle('active',b.dataset.sub===v));renderAll();}
@@ -184,11 +229,12 @@ function resetAll(){
   ['tier','sub','peer','equity','engage'].forEach(k=>document.querySelectorAll('[data-'+k+']').forEach(b=>b.classList.toggle('active',b.dataset[k]==='')));
   showTab('brief');
 }
-function showTab(tab){STATE.tab=tab;document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));$('tab-'+tab).classList.add('active');document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));renderActive();}
+function showTab(tab){STATE.tab=tab;document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));$('tab-'+tab).classList.add('active');document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));if(tab==='faq')renderFaq();renderActive();}
 function destroy(id){if(CHARTS[id]){CHARTS[id].destroy();delete CHARTS[id]}}
 function renderAll(){const dates=ALL.map(d=>d.week_of).filter(Boolean).sort();$('dataStatus').innerHTML=`<strong>${ALL.length.toLocaleString()}</strong> records · <strong>${new Set(dates).size.toLocaleString()}</strong> weeks total`;
   const profiles=seasonShows().shows.map(showProfile);const active=profiles.filter(p=>p.metrics.count>0);$('kSeason').textContent=STATE.season.slice(2).replace('-20','-');$('kScheduled').textContent=profiles.length;$('kTourCap').textContent=pct(avg(active.map(p=>p.metrics.cap)),0);$('kPeerCap').textContent=pct(avg(active.map(p=>p.metrics.peerCap)),0);$('kIndex').textContent=num(avg(active.map(p=>p.metrics.index)),0);$('kHighFit').textContent=profiles.filter(p=>p.score>=80).length;$('kWatch').textContent=profiles.filter(p=>p.score<60&&p.metrics.count>0).length;$('kLatest').textContent=dates.length?fmtDate(dates[dates.length-1]).replace(', 20',''):'—';renderActive();}
-function renderActive(){if(STATE.tab==='brief')renderBrief();if(STATE.tab==='current')renderCurrent();if(STATE.tab==='history')renderShowHistory();if(STATE.tab==='future')renderFuture();if(STATE.tab==='peers')renderPeers();if(STATE.tab==='opportunity')renderOpportunity();}
+function renderActive(){if(STATE.tab==='brief')renderBrief();if(STATE.tab==='current')renderCurrent();if(STATE.tab==='history')renderShowHistory();if(STATE.tab==='future')renderFuture();if(STATE.tab==='peers')renderPeers();if(STATE.tab==='opportunity')renderOpportunity();if(STATE.tab==='faq')renderFaq();}
+function renderFaq(){const el=$('faqContent');if(!el)return;const section=(title,items)=>`<div class="faq-section"><h3>${title}</h3><dl class="faq-grid">${items.map(([t,d])=>`<dt>${t}</dt><dd>${d}</dd>`).join('')}</dl></div>`;el.innerHTML=[section('Data Source',[['Broadway League',HELP_TEXT.broadwayLeague],['Report Week',HELP_TEXT.reportWeek],['Fiscal Year',HELP_TEXT.fiscalYear],['Data Currency',HELP_TEXT.dataCurrency]]),section('Key Metrics & Acronyms',[['Gross Gross (GG)',HELP_TEXT.grossGross],['Gross Potential (GP)',HELP_TEXT.grossPotential],['GG% of GP',HELP_TEXT.ggPctGp],['% Capacity Paid',HELP_TEXT.pctCapPaid],['% Capacity Total',HELP_TEXT.pctCapTotal],['Avg Paid Admission',HELP_TEXT.avgPaidAdm],['WoW',HELP_TEXT.wow],['Top Paid Price',HELP_TEXT.topPaidPrice],['# Performances',HELP_TEXT.numPerf]]),section('Filters',[['Season',HELP_TEXT.season],['Date Range',HELP_TEXT.dateRange],['Tier',HELP_TEXT.tier],['Subscription',HELP_TEXT.subscription],['Peer Venues',HELP_TEXT.peerVenues],['Tour Type',HELP_TEXT.tourType],['Engagement',HELP_TEXT.engagement]]),section('Programming Tools',[['Fit Score',HELP_TEXT.fitScore],['Peer Definition',HELP_TEXT.peerDef],['Meaningful Peers',HELP_TEXT.meaningfulPeers],['Benchmarking',HELP_TEXT.peerBenchmark]]),section('Charts & Analytics',[['Weekly Gross Trend',HELP_TEXT.weeklyTrend],['8-Week Trend',HELP_TEXT.eightWeekMA],['Seasonality',HELP_TEXT.seasonality],['Year over Year',HELP_TEXT.yoy],['GG% of Potential',HELP_TEXT.ggPctChart],['% Capacity by Market',HELP_TEXT.mktCapChart]])].join('');}
 function renderBrief(){const season=seasonShows();const profiles=season.shows.map(showProfile).sort((a,b)=>b.score-a.score);const high=profiles.filter(p=>p.score>=80).slice(0,3);const watch=profiles.filter(p=>p.score<65&&p.metrics.count>0).slice(0,3);const withData=profiles.filter(p=>p.metrics.count>0);const avgIndex=avg(withData.map(p=>p.metrics.index));let status='Needs More Hartford Data', klass='neutral', msg='Most of this view is using national and peer tour behavior until Hartford/Bushnell-specific records are available.';if(avgIndex){status=avgIndex>=105?'Above National Fit':avgIndex>=95?'In Line With National':'Below National Fit';klass=avgIndex>=105?'good':avgIndex>=95?'neutral':'warn';msg=`Selected season shows are indexing at ${num(avgIndex,0)} against national capacity where Hartford records exist.`}
   $('tab-brief').innerHTML=`<div class="section-divider"><h2>Executive Brief</h2><div class="section-divider-line"></div><div class="section-divider-meta">${season.name} · programming decision view</div></div><div class="brief"><div class="callout ${klass}"><h3>${status}</h3><p>${msg}</p></div><div class="card"><div class="card-hd">What this page answers</div><div class="card-sub">How current shows are doing, how previous shows performed, and what next season candidates may do for Bushnell.</div><div class="metric-row"><div class="metric"><div class="val">${pct(avg(withData.map(p=>p.metrics.cap)),0)}</div><div class="lbl">Tour Capacity</div></div><div class="metric"><div class="val">${pct(avg(withData.map(p=>p.metrics.peerCap)),0)}</div><div class="lbl">Peer Capacity</div></div><div class="metric"><div class="val">${num(avg(withData.map(p=>p.score)),0)}</div><div class="lbl">Avg Fit</div></div></div></div></div><div class="grid grid-3" style="margin-top:18px"><div class="card"><div class="card-hd">Strongest Signals</div><div class="rank-list">${rankItems(high,p=>p.show.title, p=>`Fit ${p.score} · ${pct(p.metrics.cap,0)} tour cap`, p=>p.score)}</div></div><div class="card"><div class="card-hd">Watchlist</div><div class="rank-list">${watch.length?rankItems(watch,p=>p.show.title,p=>`Fit ${p.score} · ${p.metrics.count} records`,p=>p.score):'<div class="empty">No current watchlist items with available data.</div>'}</div></div><div class="card"><div class="card-hd">Programming Signals</div><div class="insight-list" id="briefInsights"></div></div></div><div class="grid grid-2" style="margin-top:18px"><div class="card"><div class="card-hd">Season Show Fit</div><canvas id="cBriefFit"></canvas></div><div class="card"><div class="card-hd">Capacity: Tour vs Peer</div><canvas id="cBriefCap"></canvas></div></div>`;
   $('briefInsights').innerHTML=makeInsights(profiles).map((x,i)=>`<div class="insight"><div class="insight-mark">${i+1}</div><div><strong>${x.title}</strong><span>${x.text}</span></div></div>`).join('');chartFit(profiles,'cBriefFit');chartCap(profiles,'cBriefCap');}
