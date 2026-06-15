@@ -2028,34 +2028,16 @@ function renderCharts() {
 
   // ── CHART: Weekly Gross Trend (cWeekly) ──────────────────────────────────────
   // Tab: Charts | Type: Line (two datasets)
-  // Dataset 1: Weekly gross per report week
+  // Dataset 1: Weekly gross per report week (actual filtered weeks only)
   // Dataset 2: 8-week rolling moving average (MA constant = 8, see var MA)
-  // Spine logic: if date range extends before 2022-01-01, full weekly spine is
-  // generated from 2019-07-14 to today to show COVID gap; otherwise uses actual
-  // report dates from last 2 years only (no phantom zero weeks)
   try {
   dc('wk');
-  // Use spine only if range includes the COVID period (before 2022-01-01)
   const _filteredDates = new Set(FILTERED.map(d=>d.week_of));
   const _baseWeeks = [..._filteredDates].filter(Boolean).sort();
-  const hasDateFilter = _baseWeeks.length > 0 && _baseWeeks[0] < '2022-01-01';
   const weeklyNote = document.getElementById('weeklyChartNote');
-  if (weeklyNote) weeklyNote.style.display = hasDateFilter ? 'none' : 'inline';
-  let weeks;
-  if (hasDateFilter) {
-    // Full history with spine to show COVID gap
-    const fmtISO=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    const spineEnd=new Date(); spineEnd.setHours(0,0,0,0);
-    spineEnd.setDate(spineEnd.getDate()+(7-spineEnd.getDay())%7);
-    const spine=[];
-    for(let d=new Date(2019,6,14);d<=spineEnd;d.setDate(d.getDate()+7)){spine.push(fmtISO(d));}
-    weeks=spine;
-  } else {
-    // Default: actual report dates from last 2 years only — no gaps, no spine needed
-    const twoYearsAgo=new Date(); twoYearsAgo.setFullYear(twoYearsAgo.getFullYear()-2);
-    const cutoff=twoYearsAgo.toISOString().slice(0,10);
-    weeks=[...new Set(FILTERED.filter(d=>d.week_of>=cutoff).map(d=>d.week_of))].sort();
-  }
+  if (weeklyNote) weeklyNote.style.display = 'none';
+  // Always use actual filtered weeks — no spine, no rolling window
+  const weeks = _baseWeeks;
   const wkGross=weeks.map(w=>CACHE.byWeek[w]?.gross || 0);
   const MA=8;
   const wkTrend=wkGross.map((v,i,arr)=>{
