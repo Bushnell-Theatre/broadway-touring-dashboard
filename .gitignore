@@ -1,2 +1,8 @@
 show_list.csv
 process_touring.py
+watcher.py
+start_watcher.bat
+watcher.log
+*.log
+~$*.xlsx
+ 
