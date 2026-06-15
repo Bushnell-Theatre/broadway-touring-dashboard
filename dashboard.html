@@ -1416,6 +1416,8 @@ const HELP_TEXT = {
   city:         "Filter to a specific city across all Broadway League markets.",
   shows:        "Select specific show titles to focus analysis. Use the search box to find shows quickly.",
   advanced:     "Gross range, capacity range, and performance count filters for detailed data slicing.",
+  tourType:     "Equity tours are productions under an Actors' Equity Association contract. Non-Equity tours operate outside the AEA contract. Both are reported by Broadway League member venues.",
+  engagement:   "Performed = the show had at least one performance and reported gross revenue that week. No Performance = the week was a layoff, dark week, or had no reportable data.",
 
   // Metrics
   grossGross:   "Total gross revenue for the week at that venue — all tickets sold at all price points.",
@@ -1440,8 +1442,8 @@ const HELP_TEXT = {
   peerBenchmark:  "Peer comparisons show how Bushnell gross and capacity performance compares to similar venues presenting the same touring productions.",
 
   // Charts
-  weeklyTrend:  "Total gross across all filtered venues by report week. Default view shows the current season. Extend the date range to view historical data including the COVID gap (2020-2021).",
-  eightWeekMA:  "Rolling 8-week moving average overlaid on the weekly gross chart. Includes zero weeks so the COVID shutdown appears as a ramp down and recovery.",
+  weeklyTrend:  "Total gross across all filtered venues by report week. The chart spans the full date range of the current filter — missing report weeks appear as zero. Use the season pills or date range filter to change the view.",
+  eightWeekMA:  "Rolling 8-week moving average overlaid on the weekly gross chart. Missing weeks count as zero in the average calculation.",
   seasonality:  "Average gross by fiscal period (July-June) across all years in the filter. Shows seasonal patterns in Broadway touring revenue.",
   yoy:          "Fiscal year gross by period, overlaid for comparison. Years labeled in 2024-25 format reflecting the July-June fiscal calendar.",
   ggPctChart:   "Teal bars indicate shows averaging at or above 100% of gross potential — strong demand or premium pricing. Navy bars indicate below potential.",
@@ -1549,7 +1551,8 @@ let DEFAULT_RANGE = null;
 function boot() {
   // Apply HELP_TEXT to tooltip icons
   const tipMap = {
-    'tip-tier': 'tier', 'tip-sub': 'subscription', 'tip-peer': 'peerVenues'
+    'tip-tier': 'tier', 'tip-sub': 'subscription', 'tip-peer': 'peerVenues',
+    'tip-equity': 'tourType', 'tip-engage': 'engagement'
   };
   Object.entries(tipMap).forEach(([id, key]) => {
     const el = document.getElementById(id);
