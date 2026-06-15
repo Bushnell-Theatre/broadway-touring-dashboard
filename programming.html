@@ -25,7 +25,7 @@
 <header class="masthead">
   <div class="masthead-brand"><div class="brand-icon">B</div><div class="brand-text"><h1>Broadway Touring</h1><div class="sub">Programming Intelligence</div></div></div>
   <div class="masthead-status"><div class="dot"></div><span id="dataStatus"><strong>–</strong> records · <strong>–</strong> weeks total</span></div>
-  <div class="masthead-actions"><button class="btn btn-outline" onclick="resetAll()">↺ Reset</button><button class="btn btn-outline" onclick="window.print()">⎙ Print</button></div>
+  <div class="masthead-actions"><a class="btn btn-outline" href="index.html">⌂ Hub</a><a class="btn btn-outline" href="dashboard.html">Dashboard</a><a class="btn btn-outline" href="exec_summary.html">Exec Summary</a><button class="btn btn-outline" onclick="resetAll()">↺ Reset</button><button class="btn btn-outline" onclick="window.print()">⎙ Print</button></div>
 </header>
 <div class="kpi-strip">
   <div class="kpi-cell"><div class="kpi-label">Season Focus</div><div class="kpi-value" id="kSeason">—</div><div class="kpi-sub">Bushnell schedule</div></div>
@@ -42,7 +42,45 @@
     <div class="sidebar-section"><span class="sidebar-label">Season</span><select id="seasonSelect" onchange="setSeason(this.value)"></select></div>
     <div class="sidebar-section"><span class="sidebar-label">Decision View</span><div class="pill-row"><button class="pill active" data-tab="brief" onclick="showTab('brief')">Brief</button><button class="pill" data-tab="current" onclick="showTab('current')">Current</button><button class="pill" data-tab="history" onclick="showTab('history')">History</button><button class="pill" data-tab="future" onclick="showTab('future')">Future</button></div></div>
     <div class="sidebar-section"><span class="sidebar-label">Show Search</span><input id="showSearch" type="text" placeholder="Search all shows..." oninput="renderShowHistory()"></div>
-    <div class="sidebar-section"><span class="sidebar-label">Planning Lens</span><div class="pill-row"><button class="pill active" data-lens="all" onclick="setLens('all')">All</button><button class="pill" data-lens="sub" onclick="setLens('sub')">Sub</button><button class="pill" data-lens="peer" onclick="setLens('peer')">Peer</button><button class="pill" data-lens="hartford" onclick="setLens('hartford')">Hartford</button></div></div>
+    <div class="sidebar-section">
+      <span class="sidebar-label">Tier</span>
+      <div class="pill-row">
+        <button class="pill active" data-tier="" onclick="setTier(this,'')">All</button>
+        <button class="pill" data-tier="Primary" onclick="setTier(this,'Primary')">Primary</button>
+        <button class="pill" data-tier="Secondary" onclick="setTier(this,'Secondary')">Secondary</button>
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <span class="sidebar-label">Subscription</span>
+      <div class="pill-row">
+        <button class="pill active" data-sub="" onclick="setSub(this,'')">All</button>
+        <button class="pill" data-sub="1" onclick="setSub(this,'1')">Sub</button>
+        <button class="pill" data-sub="0" onclick="setSub(this,'0')">Non-Sub</button>
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <span class="sidebar-label">Peer Venues</span>
+      <div class="pill-row">
+        <button class="pill active" data-peer="" onclick="setPeer(this,'')">All</button>
+        <button class="pill" data-peer="1" onclick="setPeer(this,'1')">Peer Only</button>
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <span class="sidebar-label">Non-Equity</span>
+      <div class="pill-row">
+        <button class="pill active" data-equity="" onclick="setEquity(this,'')">All</button>
+        <button class="pill" data-equity="no" onclick="setEquity(this,'no')">Equity Only</button>
+        <button class="pill" data-equity="yes" onclick="setEquity(this,'yes')">Non-Equity Only</button>
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <span class="sidebar-label">Engagement</span>
+      <div class="pill-row">
+        <button class="pill active" data-engage="" onclick="setEngage(this,'')">All</button>
+        <button class="pill" data-engage="no" onclick="setEngage(this,'no')">Engaged Only</button>
+        <button class="pill" data-engage="yes" onclick="setEngage(this,'yes')">No Engagement</button>
+      </div>
+    </div>
     <div class="sidebar-section"><span class="sidebar-label">Core Idea</span><div class="card-sub" style="margin:0">V2 is organized by programming questions: how current shows are doing, how previous shows performed, and what may fit next season.</div></div>
   </aside>
   <div class="main-pane">
@@ -81,7 +119,8 @@ const SEASONS = [
   {id:'2019-2020',name:'2019-2020 Season',start:'2019-07-01',end:'2020-06-30',shows:[
     {title:'The Book of Mormon (Jumamosi)',match:'Book of Mormon',sub:false},{title:'Hello, Dolly! 2018',match:'Hello, Dolly',sub:true},{title:'Dr. Seuss How the Grinch Stole Christmas 2019',match:'Grinch',sub:false},{title:'Anastasia',match:'Anastasia',sub:true},{title:'Jesus Christ Superstar 2019',match:'Jesus Christ Superstar',sub:true}]}
 ];
-let ALL=[], STATE={season:'2025-2026', tab:'brief', lens:'all'}, CHARTS={}, CURRENT_PROFILES=[], HISTORY_PROFILES=[];
+let ALL=[], FILTERED=[], STATE={season:'2025-2026', tab:'brief'}, CHARTS={}, CURRENT_PROFILES=[], HISTORY_PROFILES=[];
+let ACTIVE_TIER='', ACTIVE_SUB='', ACTIVE_PEER='', ACTIVE_EQUITY='', ACTIVE_ENGAGE='';
 const $=id=>document.getElementById(id);
 const fmt$=v=>v==null?'—':v>=1e9?'$'+(v/1e9).toFixed(2)+'B':v>=1e6?'$'+(v/1e6).toFixed(2)+'M':v>=1e3?'$'+(v/1e3).toFixed(0)+'K':'$'+Math.round(v).toLocaleString();
 const pct=(v,d=1)=>v==null||Number.isNaN(v)?'—':v.toFixed(d)+'%';
@@ -96,14 +135,36 @@ function matchRows(show, rows=ALL){const m=normalizeName(show.match||show.title|
 function rowMetric(rows){const active=rows.filter(d=>d.gross_gross!=null&&!d.no_engagement);const cap=avg(active.map(d=>d.cap_paid));const gross=avg(active.map(d=>d.gross_gross));const gg=avg(active.map(d=>d.gg_pct_gp));const peer=active.filter(d=>d.similar_bushnell);const peerCap=avg(peer.map(d=>d.cap_paid));const bush=active.filter(isBushnell);const bushCap=avg(bush.map(d=>d.cap_paid));const index=(bushCap!=null&&cap)?(bushCap/cap)*100:null;return {rows:active,all:rows,cap,gross,gg,peerCap,bushCap,index,count:active.length,peerCount:peer.length,bushCount:bush.length,subShare:active.length?active.filter(d=>d.on_sub===1).length/active.length*100:null,dark:rows.filter(d=>d.no_engagement).length}}
 function fitScore(m){let score=50;if(m.cap!=null)score+=(m.cap-70)*0.55;if(m.peerCap!=null)score+=(m.peerCap-70)*0.25;if(m.gg!=null)score+=(m.gg-75)*0.18;if(m.index!=null)score+=(m.index-100)*0.35;if(m.count<3)score-=12;return Math.max(0,Math.min(100,Math.round(score)))}
 function seasonShows(){return SEASONS.find(s=>s.id===STATE.season)||SEASONS[1]}
-function showProfile(show){const rows=matchRows(show);const m=rowMetric(applyLens(rows));const raw=rowMetric(rows);return {show,rows,metrics:m,raw,score:fitScore(m)}}
-function applyLens(rows){if(STATE.lens==='sub')return rows.filter(d=>d.on_sub===1);if(STATE.lens==='peer')return rows.filter(d=>d.similar_bushnell);if(STATE.lens==='hartford')return rows.filter(isBushnell);return rows}
+function showProfile(show){const rows=matchRows(show);const m=rowMetric(applyFilters(rows));const raw=rowMetric(rows);return {show,rows,metrics:m,raw,score:fitScore(m)}}
+function applyFilters(rows){
+  let r = rows || ALL;
+  if(ACTIVE_TIER) r=r.filter(d=>d.tier===ACTIVE_TIER);
+  if(ACTIVE_SUB!=='') r=r.filter(d=>String(d.on_sub)===ACTIVE_SUB);
+  if(ACTIVE_PEER==='1') r=r.filter(d=>d.similar_bushnell);
+  if(ACTIVE_EQUITY==='yes') r=r.filter(d=>d.non_equity);
+  else if(ACTIVE_EQUITY==='no') r=r.filter(d=>!d.non_equity);
+  if(ACTIVE_ENGAGE==='yes') r=r.filter(d=>d.no_engagement);
+  else if(ACTIVE_ENGAGE==='no') r=r.filter(d=>!d.no_engagement);
+  return r;
+}
 async function loadData(){let data=[];for(const url of DATA_URLS){try{const r=await fetch(url,{cache:'no-store'});if(r.ok){data=await r.json();break}}catch(e){}}
   ALL=(Array.isArray(data)?data:(data.records||[])).map(d=>({...d,week_of:d.week_of?d.week_of.slice(0,10):null,on_sub:d.on_sub===true?1:d.on_sub===false?0:d.on_sub,similar_bushnell:!!d.similar_bushnell,no_engagement:!!d.no_engagement}));
   init();
 }
 function init(){const sel=$('seasonSelect');sel.innerHTML=SEASONS.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');sel.value=STATE.season;renderAll();}
-function setSeason(v){STATE.season=v;renderAll()}function setLens(v){STATE.lens=v;document.querySelectorAll('[data-lens]').forEach(b=>b.classList.toggle('active',b.dataset.lens===v));renderAll()}function resetAll(){STATE={season:'2025-2026',tab:'brief',lens:'all'};$('seasonSelect').value=STATE.season;document.querySelectorAll('[data-lens]').forEach(b=>b.classList.toggle('active',b.dataset.lens==='all'));showTab('brief')}
+function setSeason(v){STATE.season=v;renderAll()}
+function setTier(btn,v){ACTIVE_TIER=v;document.querySelectorAll('[data-tier]').forEach(b=>b.classList.toggle('active',b.dataset.tier===v));renderAll();}
+function setSub(btn,v){ACTIVE_SUB=v;document.querySelectorAll('[data-sub]').forEach(b=>b.classList.toggle('active',b.dataset.sub===v));renderAll();}
+function setPeer(btn,v){ACTIVE_PEER=v;document.querySelectorAll('[data-peer]').forEach(b=>b.classList.toggle('active',b.dataset.peer===v));renderAll();}
+function setEquity(btn,v){ACTIVE_EQUITY=v;document.querySelectorAll('[data-equity]').forEach(b=>b.classList.toggle('active',b.dataset.equity===v));renderAll();}
+function setEngage(btn,v){ACTIVE_ENGAGE=v;document.querySelectorAll('[data-engage]').forEach(b=>b.classList.toggle('active',b.dataset.engage===v));renderAll();}
+function resetAll(){
+  STATE={season:'2025-2026',tab:'brief'};
+  ACTIVE_TIER='';ACTIVE_SUB='';ACTIVE_PEER='';ACTIVE_EQUITY='';ACTIVE_ENGAGE='';
+  $('seasonSelect').value=STATE.season;
+  ['tier','sub','peer','equity','engage'].forEach(k=>document.querySelectorAll('[data-'+k+']').forEach(b=>b.classList.toggle('active',b.dataset[k]==='')));
+  showTab('brief');
+}
 function showTab(tab){STATE.tab=tab;document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));$('tab-'+tab).classList.add('active');document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));renderActive();}
 function destroy(id){if(CHARTS[id]){CHARTS[id].destroy();delete CHARTS[id]}}
 function renderAll(){const dates=ALL.map(d=>d.week_of).filter(Boolean).sort();$('dataStatus').innerHTML=`<strong>${ALL.length.toLocaleString()}</strong> records · <strong>${new Set(dates).size.toLocaleString()}</strong> weeks total`;

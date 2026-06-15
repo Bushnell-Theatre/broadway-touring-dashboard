@@ -706,6 +706,9 @@ tbody td:last-child{border-right:none;}
     <span id="dataStatus"><strong>–</strong> records · <strong>–</strong> weeks total</span><br><span id="filteredStatus" style="font-size:0.58rem;color:rgba(255,255,255,0.45);">Filtered: — records</span>
   </div>
   <div class="masthead-actions">
+    <a class="btn btn-outline" href="index.html">⌂ Hub</a>
+    <a class="btn btn-outline" href="programming.html">Programming</a>
+    <a class="btn btn-outline" href="exec_summary.html">Exec Summary</a>
     <button class="btn btn-outline" onclick="clearAllData()" aria-label="Reload data from source">↺ Reset</button>
     <button class="btn btn-outline" id="printBtn" onclick="printDashboard()" aria-label="Print dashboard">⎙ Print</button>
     <!-- Import button — commented out pending Power Automate / SharePoint List wiring
@@ -814,6 +817,26 @@ tbody td:last-child{border-right:none;}
       <div class="pill-row">
         <button class="pill active" data-peer="" onclick="setPeer(this,'')" aria-label="All venues">All</button>
         <button class="pill" data-peer="1" onclick="setPeer(this,'1')" aria-label="Peer venues only">Peer Only</button>
+      </div>
+    </div>
+
+    <!-- NON-EQUITY -->
+    <div class="sidebar-section">
+      <span class="sidebar-label tip">Non-Equity <span class="tip-icon" tabindex="0" id="tip-equity">?</span></span>
+      <div class="pill-row">
+        <button class="pill active" data-equity="" onclick="setEquity(this,'')">All</button>
+        <button class="pill" data-equity="no" onclick="setEquity(this,'no')">Equity Only</button>
+        <button class="pill" data-equity="yes" onclick="setEquity(this,'yes')">Non-Equity Only</button>
+      </div>
+    </div>
+
+    <!-- ENGAGEMENT -->
+    <div class="sidebar-section">
+      <span class="sidebar-label tip">Engagement <span class="tip-icon" tabindex="0" id="tip-engage">?</span></span>
+      <div class="pill-row">
+        <button class="pill active" data-engage="" onclick="setEngage(this,'')">All</button>
+        <button class="pill" data-engage="no" onclick="setEngage(this,'no')">Engaged Only</button>
+        <button class="pill" data-engage="yes" onclick="setEngage(this,'yes')">No Engagement</button>
       </div>
     </div>
 
@@ -1514,6 +1537,8 @@ let SORT_DIR = -1;
 let ACTIVE_TIER = '';
 let ACTIVE_SUB = '';
 let ACTIVE_PEER = '';
+let ACTIVE_EQUITY = '';
+let ACTIVE_ENGAGE = '';
 let CHARTS = {};
 let CACHE = {}; // pre-computed aggregations from FILTERED
 let PEER_META = {}; // loaded from peers.json
@@ -1602,6 +1627,8 @@ function updateFilterCount() {
   if (ACTIVE_TIER) count++;
   if (ACTIVE_SUB !== '') count++;
   if (ACTIVE_PEER === '1') count++;
+  if (ACTIVE_EQUITY !== '') count++;
+  if (ACTIVE_ENGAGE !== '') count++;
   if (document.getElementById('fVenue')?.value) count++;
   if (document.getElementById('fCity')?.value) count++;
   if (window._DATE_RANGE && DEFAULT_RANGE &&
@@ -1669,6 +1696,16 @@ function setPeer(btn, val) {
   document.querySelectorAll('[data-peer]').forEach(b=>b.classList.toggle('active', b.dataset.peer===val));
   applyFilters();
 }
+function setEquity(btn, val) {
+  ACTIVE_EQUITY = val;
+  document.querySelectorAll('[data-equity]').forEach(b=>b.classList.toggle('active', b.dataset.equity===val));
+  applyFilters();
+}
+function setEngage(btn, val) {
+  ACTIVE_ENGAGE = val;
+  document.querySelectorAll('[data-engage]').forEach(b=>b.classList.toggle('active', b.dataset.engage===val));
+  applyFilters();
+}
 
 function applyFilters() {
   const venueF = document.getElementById('fVenue')?.value || '';
@@ -1692,6 +1729,10 @@ function applyFilters() {
       if (!fy || !ACTIVE_SEASONS.has(fy)) return false;
     }
     if (ACTIVE_PEER === '1' && !d.similar_bushnell) return false;
+    if (ACTIVE_EQUITY === 'yes' && !d.non_equity) return false;
+    if (ACTIVE_EQUITY === 'no' && d.non_equity) return false;
+    if (ACTIVE_ENGAGE === 'yes' && !d.no_engagement) return false;
+    if (ACTIVE_ENGAGE === 'no' && d.no_engagement) return false;
     if (venueF && d.theatre !== venueF) return false;
     if (cityF && d.city !== cityF) return false;
     if (d.gross_gross !== null) {
@@ -1740,7 +1781,7 @@ function resetFilters() {
   ACTIVE_SEASONS.clear();
   ACTIVE_SEASONS.add('2025-2026');
   document.querySelectorAll('[data-season]').forEach(b=>b.classList.toggle('active', b.dataset.season==='2025-2026'));
-  filterShowList(); setTier(null,''); setSub(null,''); setPeer(null,''); selectAllShows();
+  filterShowList(); setTier(null,''); setSub(null,''); setPeer(null,''); setEquity(null,''); setEngage(null,''); selectAllShows();
   applyFilters();
 }
 
