@@ -2255,16 +2255,26 @@ function renderRankings() {
             const isPos=d._val>=0;
             const col=isPos?'var(--teal)':'var(--rose)';
             const rowId='wow-bd-'+wi;
-            const venueData=FILTERED.filter(r=>r.week_of===w2&&r.show===d._label&&r.gross_gross).sort((a,b)=>b.gross_gross-a.gross_gross);
-            const nVenues=venueData.length;
-            const venueRows=venueData.map(r=>{
-              const pc=r.cap_paid;
-              const pcCol=pc>=90?'var(--teal)':pc>=60?'var(--amber)':'var(--rose)';
+            const venueDataW2=FILTERED.filter(r=>r.week_of===w2&&r.show===d._label&&r.gross_gross).sort((a,b)=>b.gross_gross-a.gross_gross);
+            const venueDataW1=FILTERED.filter(r=>r.week_of===w1&&r.show===d._label&&r.gross_gross);
+            const nVenues=venueDataW2.length;
+            const venueRows=venueDataW2.map(r=>{
+              const pc2=r.cap_paid;
+              const pc2Col=pc2>=90?'var(--teal)':pc2>=60?'var(--amber)':'var(--rose)';
+              const prior=venueDataW1.find(p=>p.theatre===r.theatre&&p.city===r.city);
+              const g1=prior?.gross_gross??null;
+              const pc1=prior?.cap_paid??null;
+              const pc1Col=pc1>=90?'var(--teal)':pc1>=60?'var(--amber)':'var(--rose)';
+              const vWow=g1?((r.gross_gross-g1)/g1)*100:null;
+              const vWowCol=vWow==null?'var(--ink3)':vWow>=0?'var(--teal)':'var(--rose)';
               return '<tr style="background:var(--bg2);border-top:1px solid var(--rule2);">'
-                +'<td style="padding:4px 10px 4px 26px;color:var(--ink2);font-size:0.62rem;" colspan="2">'+r.theatre+'<span style="color:var(--ink3);margin-left:6px;">'+r.city+'</span></td>'
+                +'<td style="padding:4px 10px 4px 26px;color:var(--ink2);font-size:0.62rem;">'+r.theatre+'<span style="color:var(--ink3);margin-left:6px;">'+r.city+'</span></td>'
+                +'<td style="padding:4px 10px;text-align:right;font-family:var(--mono);font-size:0.62rem;color:var(--ink3);">'+(g1?fmt$(g1):'—')+'</td>'
+                +'<td style="padding:4px 10px;text-align:right;font-family:var(--mono);font-size:0.62rem;color:'+(pc1?pc1Col:'var(--ink3)')+';">'+(pc1?fmtN(pc1)+'%':'—')+'</td>'
                 +'<td style="padding:4px 10px;text-align:right;font-family:var(--mono);font-size:0.62rem;">'+fmt$(r.gross_gross)+'</td>'
-                +'<td style="padding:4px 10px;text-align:right;font-family:var(--mono);font-size:0.62rem;color:'+pcCol+';">'+(pc?fmtN(pc)+'%':'—')+'</td>'
-                +'<td></td></tr>';
+                +'<td style="padding:4px 10px;text-align:right;font-family:var(--mono);font-size:0.62rem;color:'+pc2Col+';">'+(pc2?fmtN(pc2)+'%':'—')+'</td>'
+                +'<td style="padding:4px 10px;text-align:right;font-family:var(--mono);font-size:0.62rem;font-weight:700;color:'+vWowCol+';">'+(vWow==null?'—':(vWow>=0?'+':'')+fmtN(vWow)+'%')+'</td>'
+                +'</tr>';
             }).join('');
             return '<tr style="border-bottom:1px solid var(--rule2);cursor:pointer;" onclick="toggleWowDetail(\'' + rowId + '\')">'
               +'<td style="padding:8px 10px;color:var(--ink);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><span id="' + rowId + '-arr" style="font-size:0.6rem;color:var(--ink3);margin-right:4px;">&#9654;</span>' + d._label + '</td>'
@@ -2275,13 +2285,17 @@ function renderRankings() {
               +'</tr>'
               +'<tr id="' + rowId + '" style="display:none;">'
               +'<td colspan="5" style="padding:0;border-bottom:2px solid var(--rule);">'
-              +'<table style="width:100%;border-collapse:collapse;">'
+              +'<table style="width:100%;border-collapse:collapse;table-layout:fixed;">'
+              +'<colgroup><col style="width:28%"><col style="width:13%"><col style="width:10%"><col style="width:13%"><col style="width:10%"><col style="width:10%"></colgroup>'
               +'<thead><tr style="background:var(--bg2);">'
-              +'<th colspan="2" style="padding:4px 10px 4px 26px;font-size:0.52rem;color:var(--ink3);text-align:left;">Venue &middot; City</th>'
-              +'<th style="padding:4px 10px;font-size:0.52rem;color:var(--ink3);text-align:right;">Gross</th>'
+              +'<th style="padding:4px 10px 4px 26px;font-size:0.52rem;color:var(--ink3);text-align:left;">Venue &middot; City</th>'
+              +'<th style="padding:4px 10px;font-size:0.52rem;color:var(--ink3);text-align:right;">'+fmtWeek(w1)+' Gross</th>'
               +'<th style="padding:4px 10px;font-size:0.52rem;color:var(--ink3);text-align:right;">% Cap</th>'
-              +'<th></th></tr></thead>'
-              +'<tbody>' + (venueRows||'<tr><td colspan=5 style="padding:6px 26px;font-size:0.62rem;color:var(--ink3);font-style:italic;">No venue detail</td></tr>') + '</tbody>'
+              +'<th style="padding:4px 10px;font-size:0.52rem;color:var(--ink3);text-align:right;">'+fmtWeek(w2)+' Gross</th>'
+              +'<th style="padding:4px 10px;font-size:0.52rem;color:var(--ink3);text-align:right;">% Cap</th>'
+              +'<th style="padding:4px 10px;font-size:0.52rem;color:var(--ink3);text-align:right;">WoW Δ</th>'
+              +'</tr></thead>'
+              +'<tbody>' + (venueRows||'<tr><td colspan=6 style="padding:6px 26px;font-size:0.62rem;color:var(--ink3);font-style:italic;">No venue detail</td></tr>') + '</tbody>'
               +'</table></td></tr>';
           }).join('')}</tbody>
         </table>`;
