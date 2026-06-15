@@ -2028,7 +2028,8 @@ function renderCharts() {
 
   // ── CHART: Weekly Gross Trend (cWeekly) ──────────────────────────────────────
   // Tab: Charts | Type: Line (two datasets)
-  // Dataset 1: Weekly gross per report week (actual filtered weeks only)
+  // Dataset 1: Weekly gross per report week — spine generated from filtered date range
+  // Missing weeks show as 0 to make gaps visible
   // Dataset 2: 8-week rolling moving average (MA constant = 8, see var MA)
   try {
   dc('wk');
@@ -2036,8 +2037,19 @@ function renderCharts() {
   const _baseWeeks = [..._filteredDates].filter(Boolean).sort();
   const weeklyNote = document.getElementById('weeklyChartNote');
   if (weeklyNote) weeklyNote.style.display = 'none';
-  // Always use actual filtered weeks — no spine, no rolling window
-  const weeks = _baseWeeks;
+
+  // Build a full Sunday spine between earliest and latest filtered date
+  let weeks = _baseWeeks;
+  if (_baseWeeks.length >= 2) {
+    const fmtISO = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const start = new Date(_baseWeeks[0] + 'T12:00:00');
+    const end   = new Date(_baseWeeks[_baseWeeks.length-1] + 'T12:00:00');
+    const spine = [];
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate()+7)) {
+      spine.push(fmtISO(d));
+    }
+    weeks = spine;
+  }
   const wkGross=weeks.map(w=>CACHE.byWeek[w]?.gross || 0);
   const MA=8;
   const wkTrend=wkGross.map((v,i,arr)=>{
