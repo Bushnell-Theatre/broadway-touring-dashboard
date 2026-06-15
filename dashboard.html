@@ -822,11 +822,11 @@ tbody td:last-child{border-right:none;}
 
     <!-- NON-EQUITY -->
     <div class="sidebar-section">
-      <span class="sidebar-label tip">Non-Equity <span class="tip-icon" tabindex="0" id="tip-equity">?</span></span>
+      <span class="sidebar-label tip">Tour Type <span class="tip-icon" tabindex="0" id="tip-equity">?</span></span>
       <div class="pill-row">
         <button class="pill active" data-equity="" onclick="setEquity(this,'')">All</button>
-        <button class="pill" data-equity="no" onclick="setEquity(this,'no')">Equity Only</button>
-        <button class="pill" data-equity="yes" onclick="setEquity(this,'yes')">Non-Equity Only</button>
+        <button class="pill" data-equity="no" onclick="setEquity(this,'no')">Equity</button>
+        <button class="pill" data-equity="yes" onclick="setEquity(this,'yes')">Non-Equity</button>
       </div>
     </div>
 
@@ -835,8 +835,8 @@ tbody td:last-child{border-right:none;}
       <span class="sidebar-label tip">Engagement <span class="tip-icon" tabindex="0" id="tip-engage">?</span></span>
       <div class="pill-row">
         <button class="pill active" data-engage="" onclick="setEngage(this,'')">All</button>
-        <button class="pill" data-engage="no" onclick="setEngage(this,'no')">Engaged Only</button>
-        <button class="pill" data-engage="yes" onclick="setEngage(this,'yes')">No Engagement</button>
+        <button class="pill" data-engage="no" onclick="setEngage(this,'no')">Performed</button>
+        <button class="pill" data-engage="yes" onclick="setEngage(this,'yes')">No Performance</button>
       </div>
     </div>
 
@@ -1231,10 +1231,10 @@ tbody td:last-child{border-right:none;}
     </div>
 
     <div class="chart-card">
-      <div class="chart-hd">No Engagement Rate</div>
+      <div class="chart-hd">No Performance Rate</div>
       <div class="chart-sub">Shows with both active and dark weeks — dark week % of total appearances, min 3 active weeks</div>
     <!-- ═══════════════════════════════════════════════════
-         CHART: No Engagement (Dark Week) Rate by Show
+         CHART: No Performance (Dark Week) Rate by Show
          Tab: Analytics | Canvas ID: cNoEng
          Type: Horizontal bar
          Shows: % of a show's total appearances that were dark (no engagement) weeks
@@ -2566,7 +2566,7 @@ function renderAnalytics() {
       scales:{x:{grid:{color:CC.grid},ticks:{callback:v=>v+'%'}},y:{grid:{display:false}}}}});
 
   // ── Dark Week Rate by Show (shows with BOTH active and dark weeks) ──────────
-  // ── CHART: No Engagement (Dark Week) Rate by Show (cNoEng) ──────────────────
+  // ── CHART: No Performance (Dark Week) Rate by Show (cNoEng) ──────────────────
   // Tab: Analytics | Type: Horizontal bar
   // Shows: % of total appearances that were dark weeks (no_engagement=true)
   // Only shows with BOTH active AND dark weeks qualify | Min 3 active weeks
