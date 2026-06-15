@@ -910,20 +910,20 @@ tbody td:last-child{border-right:none;}
       <div class="tbl-wrap">
         <table>
           <thead><tr>
-            <th onclick="sortBy('report_date')">Week <span id="s-report_date"></span></th>
+            <th onclick="sortBy('week_of')">Week <span id="s-week_of"></span></th>
             <th onclick="sortBy('tier')">Tier <span id="s-tier"></span></th>
             <th onclick="sortBy('show')">Show <span id="s-show"></span></th>
             <th onclick="sortBy('city')">City <span id="s-city"></span></th>
-            <th onclick="sortBy('num_performances')"># Perf <span id="s-num_performances"></span></th>
+            <th onclick="sortBy('num_perf')"># Perf <span id="s-num_perf"></span></th>
             <th onclick="sortBy('gross_gross')">Gross <span id="s-gross_gross">↓</span></th>
             <th onclick="sortBy('gross_potential')">Potential <span id="s-gross_potential"></span></th>
             <th onclick="sortBy('gg_pct_gp')">GG%GP <span id="s-gg_pct_gp"></span></th>
-            <th onclick="sortBy('pct_capacity_paid')">% Cap Paid <span id="s-pct_capacity_paid"></span></th>
-            <th onclick="sortBy('total_capacity')">Total Cap <span id="s-total_capacity"></span></th>
-            <th onclick="sortBy('paid_tickets')">Paid Tix <span id="s-paid_tickets"></span></th>
-            <th onclick="sortBy('avg_paid_admission')">Avg Adm <span id="s-avg_paid_admission"></span></th>
-            <th onclick="sortBy('top_paid_price')">Top Price <span id="s-top_paid_price"></span></th>
-            <th onclick="sortBy('on_subscription')">Sub <span id="s-on_subscription"></span></th>
+            <th onclick="sortBy('cap_paid')">% Cap Paid <span id="s-cap_paid"></span></th>
+            <th onclick="sortBy('capacity')">Total Cap <span id="s-capacity"></span></th>
+            <th onclick="sortBy('paid_tix')">Paid Tix <span id="s-paid_tix"></span></th>
+            <th onclick="sortBy('avg_adm')">Avg Adm <span id="s-avg_adm"></span></th>
+            <th onclick="sortBy('top_price')">Top Price <span id="s-top_price"></span></th>
+            <th onclick="sortBy('on_sub')">Sub <span id="s-on_sub"></span></th>
           </tr></thead>
           <tbody id="tableBody"></tbody>
         </table>
@@ -1231,7 +1231,7 @@ tbody td:last-child{border-right:none;}
          Type: Multi-line
          Shows: Weekly avg % capacity paid — Bushnell-size peer venues (blue)
          vs all non-peer venues (red), over time
-         Peer venues = similar_bushnell_cap flag set to true in data
+         Peer venues = similar_bushnell flag set to true in data
          Rendered by: renderAnalytics() — look for dc('pg')
          ═══════════════════════════════════════════════════ -->
       <canvas id="cPeerGap" role="img" aria-label="Bushnell versus peer venue capacity gap"></canvas>
@@ -1466,11 +1466,11 @@ async function initData() {
         PEER_META[key] = v;
       });
     }
-    ALL_DATA = (Array.isArray(json) ? json : (json.value || [])).map(d => {
-      // Snap report_date to nearest Sunday
+    ALL_DATA = (Array.isArray(json) ? json : (json.records || [])).map(d => {
+      // Snap week_of to nearest Sunday
       let rd = null;
-      if (d.report_date) {
-        const base = d.report_date.slice(0,10);
+      if (d.week_of) {
+        const base = d.week_of.slice(0,10);
         const dt = new Date(base + 'T12:00:00');
         const day = dt.getDay();
         const diff = day === 0 ? 0 : day <= 3 ? -day : 7 - day;
@@ -1483,14 +1483,14 @@ async function initData() {
       return {
         ...d,
         theatre,
-        report_date: rd,
-        on_subscription: d.on_subscription===true?1:d.on_subscription===false?0:d.on_subscription,
-        similar_bushnell_cap: !!d.similar_bushnell_cap,
-        noengagement: !!d.noengagement,
-        total_capacity: d.total_capacity != null ? Math.round(d.total_capacity) : null,
-        paid_tickets: d.paid_tickets != null ? Math.round(d.paid_tickets) : null,
-        total_tickets: d.total_tickets != null ? Math.round(d.total_tickets) : null,
-        num_performances: d.num_performances != null ? Math.round(d.num_performances) : null,
+        week_of: rd,
+        on_sub: d.on_sub===true?1:d.on_sub===false?0:d.on_sub,
+        similar_bushnell: !!d.similar_bushnell,
+        no_engagement: !!d.no_engagement,
+        capacity: d.capacity != null ? Math.round(d.capacity) : null,
+        paid_tix: d.paid_tix != null ? Math.round(d.paid_tix) : null,
+        total_tix: d.total_tix != null ? Math.round(d.total_tix) : null,
+        num_perf: d.num_perf != null ? Math.round(d.num_perf) : null,
       };
     });
   } catch(e) {
@@ -1499,7 +1499,7 @@ async function initData() {
 
   }
   // Set last report date
-  const allDates = ALL_DATA.map(d=>d.report_date).filter(Boolean).sort();
+  const allDates = ALL_DATA.map(d=>d.week_of).filter(Boolean).sort();
   LAST_REPORT_DATE = allDates[allDates.length-1] ? allDates[allDates.length-1].slice(0,10) : null;
   // Default to current season
   ACTIVE_SEASONS.add('2025-2026');
@@ -1617,13 +1617,13 @@ function updateFilterCount() {
 }
 
 function updateDataStatus() {
-  const allWeeks = [...new Set(ALL_DATA.map(d=>d.report_date))];
+  const allWeeks = [...new Set(ALL_DATA.map(d=>d.week_of))];
   document.getElementById('dataStatus').innerHTML =
     `<strong>${ALL_DATA.length.toLocaleString()}</strong> records · <strong>${allWeeks.length.toLocaleString()}</strong> weeks total`;
 }
 
 function updateFilteredStatus() {
-  const filtWeeks = [...new Set(FILTERED.map(d=>d.report_date))];
+  const filtWeeks = [...new Set(FILTERED.map(d=>d.week_of))];
   const wkCount = filtWeeks.length;
   let span;
   if (wkCount < 4) span = `${wkCount} week${wkCount!==1?'s':''}`;
@@ -1683,25 +1683,25 @@ function applyFilters() {
 
   FILTERED = ALL_DATA.filter(d => {
     if (ACTIVE_SEASONS.size === 0 && window._DATE_RANGE) {
-      if (d.report_date < window._DATE_RANGE.start || d.report_date > window._DATE_RANGE.end) return false;
+      if (d.week_of < window._DATE_RANGE.start || d.week_of > window._DATE_RANGE.end) return false;
     }
     if (ACTIVE_TIER && d.tier !== ACTIVE_TIER) return false;
-    if (ACTIVE_SUB !== '' && String(d.on_subscription) !== ACTIVE_SUB) return false;
+    if (ACTIVE_SUB !== '' && String(d.on_sub) !== ACTIVE_SUB) return false;
     if (ACTIVE_SEASONS.size > 0) {
-      const fy = getFiscalYear(d.report_date);
+      const fy = getFiscalYear(d.week_of);
       if (!fy || !ACTIVE_SEASONS.has(fy)) return false;
     }
-    if (ACTIVE_PEER === '1' && !d.similar_bushnell_cap) return false;
+    if (ACTIVE_PEER === '1' && !d.similar_bushnell) return false;
     if (venueF && d.theatre !== venueF) return false;
     if (cityF && d.city !== cityF) return false;
     if (d.gross_gross !== null) {
       if (d.gross_gross < grossMin || d.gross_gross > grossMax) return false;
     } else if (grossMin > 0) return false;
-    if (d.pct_capacity_paid !== null) {
-      if (d.pct_capacity_paid < capMin || d.pct_capacity_paid > capMax) return false;
+    if (d.cap_paid !== null) {
+      if (d.cap_paid < capMin || d.cap_paid > capMax) return false;
     }
-    if (d.num_performances !== null) {
-      if (d.num_performances < perfMin || d.num_performances > perfMax) return false;
+    if (d.num_perf !== null) {
+      if (d.num_perf < perfMin || d.num_perf > perfMax) return false;
     }
     if (!checked.includes(d.show)) return false;
     return true;
@@ -1760,16 +1760,16 @@ function renderKPIs() {
   const wg = FILTERED.filter(d=>d.gross_gross!=null);
   document.getElementById('kCount').textContent = wg.length.toLocaleString();
   document.getElementById('kGross').textContent = fmt$(wg.reduce((a,d)=>a+d.gross_gross,0));
-  const ac = avg(FILTERED.map(d=>d.pct_capacity_paid));
+  const ac = avg(FILTERED.map(d=>d.cap_paid));
   document.getElementById('kCap').textContent = ac?fmtN(ac)+'%':'—';
   const ag = avg(FILTERED.map(d=>d.gg_pct_gp));
   document.getElementById('kGgPct').textContent = ag?fmtN(ag)+'%':'—';
-  const aa = avg(FILTERED.map(d=>d.avg_paid_admission));
+  const aa = avg(FILTERED.map(d=>d.avg_adm));
   document.getElementById('kAdm').textContent = aa?'$'+fmtN(aa,2):'—';
-  const subAvgG = avg(FILTERED.filter(d=>d.on_subscription===1&&d.gross_gross).map(d=>d.gross_gross));
+  const subAvgG = avg(FILTERED.filter(d=>d.on_sub===1&&d.gross_gross).map(d=>d.gross_gross));
   document.getElementById('kSubAvg').textContent = subAvgG ? fmt$(subAvgG) : '—';
-  const peerRows = FILTERED.filter(d=>d.similar_bushnell_cap);
-  const peerCap = avg(peerRows.map(d=>d.pct_capacity_paid));
+  const peerRows = FILTERED.filter(d=>d.similar_bushnell);
+  const peerCap = avg(peerRows.map(d=>d.cap_paid));
   const peerGross = avg(peerRows.filter(d=>d.gross_gross).map(d=>d.gross_gross));
   document.getElementById('kPeerCap').textContent = peerCap ? fmtN(peerCap)+'%' : '—';
   document.getElementById('kPeerGross').textContent = peerGross ? fmt$(peerGross) : '—';
@@ -1794,25 +1794,25 @@ function renderTable() {
   document.getElementById('tableCount').textContent = `${sorted.length.toLocaleString()} engagements`;
   if(!sorted.length){tb.innerHTML='<tr><td colspan="14" class="no-data">No data matches current filters</td></tr>';return;}
   tb.innerHTML = sorted.map(d=>{
-    const pct=d.pct_capacity_paid;
+    const pct=d.cap_paid;
     const fc = pct>95?'fill-hi':pct<50?'fill-lo':'fill-mid';
     const bw = pct?Math.min(pct,100):0;
-    const wk = fmtWeek(d.report_date);
+    const wk = fmtWeek(d.week_of);
     return `<tr>
       <td style="font-family:var(--mono);font-size:0.65rem;color:var(--ink3)">${wk}</td>
       <td><span class="badge badge-${d.tier.toLowerCase()}">${d.tier}</span></td>
       <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;font-weight:500;color:var(--ink)">${d.show}</td>
       <td>${d.city}</td>
-      <td style="font-family:var(--mono);text-align:right">${d.num_performances??'—'}</td>
+      <td style="font-family:var(--mono);text-align:right">${d.num_perf??'—'}</td>
       <td style="font-family:var(--mono);font-weight:600;color:var(--ink)">${fmt$(d.gross_gross)}</td>
       <td style="font-family:var(--mono);color:var(--ink3)">${fmt$(d.gross_potential)}</td>
       <td style="font-family:var(--mono)">${d.gg_pct_gp!=null?fmtN(d.gg_pct_gp)+'%':'—'}</td>
       <td><div class="cap-cell"><div class="cap-bar"><div class="cap-fill ${fc}" style="width:${bw}%"></div></div><span style="font-family:var(--mono)">${pct!=null?fmtN(pct)+'%':'—'}</span></div></td>
-      <td style="font-family:var(--mono);color:var(--ink3)">${d.total_capacity!=null?d.total_capacity.toLocaleString():'—'}</td>
-      <td style="font-family:var(--mono);color:var(--ink3)">${d.paid_tickets!=null?d.paid_tickets.toLocaleString():'—'}</td>
-      <td style="font-family:var(--mono)">${d.avg_paid_admission!=null?'$'+fmtN(d.avg_paid_admission,2):'—'}</td>
-      <td style="font-family:var(--mono)">${d.top_paid_price?'$'+d.top_paid_price:'—'}</td>
-      <td style="text-align:center">${d.on_subscription?'<span class="sub-y">✓</span>':'<span class="sub-n">—</span>'}</td>
+      <td style="font-family:var(--mono);color:var(--ink3)">${d.capacity!=null?d.capacity.toLocaleString():'—'}</td>
+      <td style="font-family:var(--mono);color:var(--ink3)">${d.paid_tix!=null?d.paid_tix.toLocaleString():'—'}</td>
+      <td style="font-family:var(--mono)">${d.avg_adm!=null?'$'+fmtN(d.avg_adm,2):'—'}</td>
+      <td style="font-family:var(--mono)">${d.top_price?'$'+d.top_price:'—'}</td>
+      <td style="text-align:center">${d.on_sub?'<span class="sub-y">✓</span>':'<span class="sub-n">—</span>'}</td>
     </tr>`;
   }).join('');
 }
@@ -1847,14 +1847,14 @@ function buildCache() {
   FILTERED.forEach(d => {
     const show = d.show;
     const city = d.city;
-    const date = d.report_date;
+    const date = d.week_of;
     const fy   = getFiscalYear(date);
     const fw   = date ? fiscalWeekGlobal(date) : null;
     const fm   = date ? ((parseInt(date.slice(5,7)) - 7 + 12) % 12) + 1 : null;
-    const isSub  = d.on_subscription === 1;
-    const isPeer = !!d.similar_bushnell_cap;
+    const isSub  = d.on_sub === 1;
+    const isPeer = !!d.similar_bushnell;
     const g  = d.gross_gross;
-    const cp = d.pct_capacity_paid;
+    const cp = d.cap_paid;
     const gg = d.gg_pct_gp;
     const hasGross = g != null;
     const hasCap   = cp != null;
@@ -1867,10 +1867,10 @@ function buildCache() {
       if (hasGg)    { byShow[show].ggSum += gg; byShow[show].ggCnt++; }
       if (hasCap)   { byShow[show].capSum += cp; byShow[show].capCnt++; }
       if (date) byShow[show].weeks.add(date);
-      // A row is dark only if noengagement flag is set AND no real performance data exists.
+      // A row is dark only if no_engagement flag is set AND no real performance data exists.
       // If any performance data is present, treat as active regardless of the flag.
-      const hasPerformanceData = hasGross || d.paid_tickets != null || d.total_capacity != null || d.num_performances != null || d.avg_paid_admission != null;
-      if (d.noengagement && !hasPerformanceData) byShow[show].dark++;
+      const hasPerformanceData = hasGross || d.paid_tix != null || d.capacity != null || d.num_perf != null || d.avg_adm != null;
+      if (d.no_engagement && !hasPerformanceData) byShow[show].dark++;
       else byShow[show].active++;
     }
 
@@ -1995,7 +1995,7 @@ function renderCharts() {
   try {
   dc('wk');
   // Use spine only if range includes the COVID period (before 2022-01-01)
-  const _filteredDates = new Set(FILTERED.map(d=>d.report_date));
+  const _filteredDates = new Set(FILTERED.map(d=>d.week_of));
   const _baseWeeks = [..._filteredDates].filter(Boolean).sort();
   const hasDateFilter = _baseWeeks.length > 0 && _baseWeeks[0] < '2022-01-01';
   const weeklyNote = document.getElementById('weeklyChartNote');
@@ -2013,7 +2013,7 @@ function renderCharts() {
     // Default: actual report dates from last 2 years only — no gaps, no spine needed
     const twoYearsAgo=new Date(); twoYearsAgo.setFullYear(twoYearsAgo.getFullYear()-2);
     const cutoff=twoYearsAgo.toISOString().slice(0,10);
-    weeks=[...new Set(FILTERED.filter(d=>d.report_date>=cutoff).map(d=>d.report_date))].sort();
+    weeks=[...new Set(FILTERED.filter(d=>d.week_of>=cutoff).map(d=>d.week_of))].sort();
   }
   const wkGross=weeks.map(w=>CACHE.byWeek[w]?.gross || 0);
   const MA=8;
@@ -2156,7 +2156,7 @@ function renderRankings() {
   const sgBottomArr=Object.entries(sg).sort((a,b)=>a[1]-b[1]).slice(0,10).map(([s,v])=>({_label:s,_val:v}));
   mkRankList('rShowGrossBottom',sgBottomArr,d=>d._val,()=>'cumulative gross',fmt$,sgArr[0]?._val,showBreakdown);
 
-  const weeks=[...new Set(FILTERED.map(d=>d.report_date))].sort();
+  const weeks=[...new Set(FILTERED.map(d=>d.week_of))].sort();
   const wowLabel=document.getElementById('wowWeekLabel');
   if(weeks.length===0){
     if(wowLabel) wowLabel.textContent='';
@@ -2168,15 +2168,15 @@ function renderRankings() {
     const w1=weeks[weeks.length-2],w2=weeks[weeks.length-1];
     if(wowLabel) wowLabel.textContent=fmtWeek(w1)+' → '+fmtWeek(w2);
     const ww=[];
-    const showsW2=[...new Set(FILTERED.filter(d=>d.report_date===w2&&d.gross_gross).map(d=>d.show))];
+    const showsW2=[...new Set(FILTERED.filter(d=>d.week_of===w2&&d.gross_gross).map(d=>d.show))];
     showsW2.forEach(s=>{
       // Sum all venues for this show in each week
-      const w1rows=FILTERED.filter(d=>d.report_date===w1&&d.show===s&&d.gross_gross);
-      const w2rows=FILTERED.filter(d=>d.report_date===w2&&d.show===s&&d.gross_gross);
+      const w1rows=FILTERED.filter(d=>d.week_of===w1&&d.show===s&&d.gross_gross);
+      const w2rows=FILTERED.filter(d=>d.week_of===w2&&d.show===s&&d.gross_gross);
       if(!w1rows.length||!w2rows.length) return;
       const g1=w1rows.reduce((a,d)=>a+d.gross_gross,0);
       const g2=w2rows.reduce((a,d)=>a+d.gross_gross,0);
-      const caps=w2rows.filter(d=>d.pct_capacity_paid).map(d=>d.pct_capacity_paid);
+      const caps=w2rows.filter(d=>d.cap_paid).map(d=>d.cap_paid);
       const avgCap=caps.length?caps.reduce((a,b)=>a+b,0)/caps.length:null;
       const chg=((g2-g1)/g1)*100;
       ww.push({_label:s,_val:chg,_g2:g2,_cap:avgCap,_venues:w2rows.length});
@@ -2197,10 +2197,10 @@ function renderRankings() {
             const isPos=d._val>=0;
             const col=isPos?'var(--teal)':'var(--rose)';
             const rowId='wow-bd-'+wi;
-            const venueData=FILTERED.filter(r=>r.report_date===w2&&r.show===d._label&&r.gross_gross).sort((a,b)=>b.gross_gross-a.gross_gross);
+            const venueData=FILTERED.filter(r=>r.week_of===w2&&r.show===d._label&&r.gross_gross).sort((a,b)=>b.gross_gross-a.gross_gross);
             const nVenues=venueData.length;
             const venueRows=venueData.map(r=>{
-              const pc=r.pct_capacity_paid;
+              const pc=r.cap_paid;
               const pcCol=pc>=90?'var(--teal)':pc>=60?'var(--amber)':'var(--rose)';
               return '<tr style="background:var(--bg2);border-top:1px solid var(--rule2);">'
                 +'<td style="padding:4px 10px 4px 26px;color:var(--ink2);font-size:0.62rem;" colspan="2">'+r.theatre+'<span style="color:var(--ink3);margin-left:6px;">'+r.city+'</span></td>'
@@ -2241,7 +2241,7 @@ function renderRankings() {
     .map(([c,v])=>({_label:c,_val:v.capSum/v.capCnt}))
     .sort((a,b)=>b._val-a._val).slice(0,10);
   mkRankList('rMarketCap',mcArr,d=>d._val,d=>{
-    const shows=FILTERED.filter(x=>x.city===d._label&&x.pct_capacity_paid).length;
+    const shows=FILTERED.filter(x=>x.city===d._label&&x.cap_paid).length;
     return `${shows} engagement${shows!==1?'s':''}`;
   },v=>fmtN(v)+'%',100);
 
@@ -2254,8 +2254,8 @@ function renderRankings() {
   const sizeB=[{label:'< 5K',min:0,max:5000},{label:'5–10K',min:5000,max:10000},
     {label:'10–15K',min:10000,max:15000},{label:'15–20K',min:15000,max:20000},{label:'20K+',min:20000,max:Infinity}];
   const sizeData=sizeB.map(b=>{
-    const items=FILTERED.filter(d=>d.total_capacity&&d.pct_capacity_paid&&d.total_capacity>=b.min&&d.total_capacity<b.max);
-    return {label:b.label,avgCap:avg(items.map(d=>d.pct_capacity_paid)),avgGross:avg(items.map(d=>d.gross_gross)),count:items.length};
+    const items=FILTERED.filter(d=>d.capacity&&d.cap_paid&&d.capacity>=b.min&&d.capacity<b.max);
+    return {label:b.label,avgCap:avg(items.map(d=>d.cap_paid)),avgGross:avg(items.map(d=>d.gross_gross)),count:items.length};
   });
   document.getElementById('rTheatreSize').innerHTML=sizeData.map(b=>`
     <div class="size-cell">
@@ -2527,7 +2527,7 @@ function renderAnalytics() {
   // ── Dark Week Rate by Show (shows with BOTH active and dark weeks) ──────────
   // ── CHART: No Engagement (Dark Week) Rate by Show (cNoEng) ──────────────────
   // Tab: Analytics | Type: Horizontal bar
-  // Shows: % of total appearances that were dark weeks (noengagement=true)
+  // Shows: % of total appearances that were dark weeks (no_engagement=true)
   // Only shows with BOTH active AND dark weeks qualify | Min 3 active weeks
   // Tooltip: dark week %, dark count, active count, total appearances
   dc('ne');
@@ -2556,7 +2556,7 @@ function renderAnalytics() {
   // ── Bushnell vs Peer Gap ──────────────────────────────────────────────────
   // ── CHART: Bushnell vs Peer Gap — Weekly Avg % Capacity (cPeerGap) ──────────
   // Tab: Analytics | Type: Multi-line
-  // Blue line: avg % capacity paid at peer venues (similar_bushnell_cap = true)
+  // Blue line: avg % capacity paid at peer venues (similar_bushnell = true)
   // Red line: avg % capacity paid at all non-peer venues
   // Data source: CACHE.byWeek — peerCapSum/peerCapCnt and otherCapSum/otherCapCnt
   dc('pg');
@@ -2597,12 +2597,12 @@ function renderSeasons() {
 
   container.innerHTML = SEASONS.map(season => {
     const isActive = ACTIVE_SEASONS.has(season.id);
-    const seasonData = ALL_DATA.filter(d => d.report_date >= season.start && d.report_date <= season.end);
+    const seasonData = ALL_DATA.filter(d => d.week_of >= season.start && d.week_of <= season.end);
     const hasData = seasonData.length > 0;
 
     // Season-level KPIs
     const totalGross = seasonData.filter(d=>d.gross_gross).reduce((a,d)=>a+d.gross_gross,0);
-    const avgCap = avg(seasonData.map(d=>d.pct_capacity_paid));
+    const avgCap = avg(seasonData.map(d=>d.cap_paid));
     const subShows = season.shows.filter(s=>s.sub).length;
 
     const showRows = season.shows.map(show => {
@@ -2612,19 +2612,19 @@ function renderSeasons() {
       // Bushnell records — city Hartford
       const bushnellData = showData.filter(d => (d.city||'').toLowerCase() === 'hartford');
       const bushnellGross = bushnellData.filter(d=>d.gross_gross).reduce((a,d)=>a+d.gross_gross,0) || null;
-      const bushnellCap = avg(bushnellData.map(d=>d.pct_capacity_paid));
+      const bushnellCap = avg(bushnellData.map(d=>d.cap_paid));
 
-      // Peer records — similar_bushnell_cap, exclude Hartford
-      const peerData = showData.filter(d => d.similar_bushnell_cap && (d.city||'').toLowerCase() !== 'hartford');
+      // Peer records — similar_bushnell, exclude Hartford
+      const peerData = showData.filter(d => d.similar_bushnell && (d.city||'').toLowerCase() !== 'hartford');
       const peerGross = peerData.length ? avg(peerData.filter(d=>d.gross_gross).map(d=>d.gross_gross)) : null;
-      const peerCap = avg(peerData.map(d=>d.pct_capacity_paid));
+      const peerCap = avg(peerData.map(d=>d.cap_paid));
 
       // All venues (non-Hartford) for broader comparison
       const allData = showData.filter(d => (d.city||'').toLowerCase() !== 'hartford');
       const allGross = allData.length ? avg(allData.filter(d=>d.gross_gross).map(d=>d.gross_gross)) : null;
-      const allCap = avg(allData.map(d=>d.pct_capacity_paid));
+      const allCap = avg(allData.map(d=>d.cap_paid));
 
-      const wks = [...new Set(bushnellData.map(d=>d.report_date))].length;
+      const wks = [...new Set(bushnellData.map(d=>d.week_of))].length;
       const hasData = bushnellData.length > 0;
 
       const capCell = (bushnell, peer) => {
@@ -2645,22 +2645,22 @@ function renderSeasons() {
       // Peer detail rows — all peer reports for this show within the season
       const showKey = show.matchStr.toLowerCase();
       const peerRows = seasonData
-        .filter(d => d.similar_bushnell_cap && (d.city||'').toLowerCase() !== 'hartford'
+        .filter(d => d.similar_bushnell && (d.city||'').toLowerCase() !== 'hartford'
           && d.show && d.show.toLowerCase().includes(showKey))
-        .sort((a,b) => a.report_date > b.report_date ? 1 : -1);
+        .sort((a,b) => a.week_of > b.week_of ? 1 : -1);
 
       const rowId = 'peer-detail-' + season.id + '-' + show.open.replace(/-/g,'');
       const peerDetailHTML = peerRows.length ? peerRows.map(p => {
-        const isBefore = bushnellData.length && p.report_date < bushnellData[0]?.report_date;
-        const isAfter  = bushnellData.length && p.report_date > bushnellData[bushnellData.length-1]?.report_date;
+        const isBefore = bushnellData.length && p.week_of < bushnellData[0]?.week_of;
+        const isAfter  = bushnellData.length && p.week_of > bushnellData[bushnellData.length-1]?.week_of;
         const timing = isBefore ? '<span style="color:var(--teal);font-size:0.6rem;">▶ Before us</span>'
                      : isAfter  ? '<span style="color:var(--rose);font-size:0.6rem;">◀ After us</span>'
                      : '<span style="color:var(--amber);font-size:0.6rem;">↔ Same time</span>';
-        const pc = p.pct_capacity_paid;
+        const pc = p.cap_paid;
         const pcColor = pc>=90?'var(--teal)':pc>=60?'var(--amber)':'var(--rose)';
         return `<tr style="background:var(--bg2);border-bottom:1px solid var(--rule2);">
           <td style="padding:6px 10px 6px 24px;color:var(--ink2);font-size:0.65rem;">${p.theatre}</td>
-          <td style="padding:6px 10px;color:var(--ink3);font-size:0.62rem;font-family:var(--mono);">${fmtWeek(p.report_date)}</td>
+          <td style="padding:6px 10px;color:var(--ink3);font-size:0.62rem;font-family:var(--mono);">${fmtWeek(p.week_of)}</td>
           <td style="padding:6px 10px;text-align:center;">${timing}</td>
           <td style="padding:6px 10px;font-family:var(--mono);text-align:right;font-size:0.72rem;">${p.gross_gross?fmt$(p.gross_gross):'—'}</td>
           <td style="padding:6px 10px;font-family:var(--mono);text-align:right;color:var(--ink3);font-size:0.65rem;">—</td>
@@ -2944,16 +2944,16 @@ function renderPeers() {
   // Calculate Bushnell benchmarks from filtered data
   const bushnellData = FILTERED.filter(d => (d.city||'').toLowerCase() === 'hartford');
   const bushnellAvgGross = avg(bushnellData.filter(d=>d.gross_gross).map(d=>d.gross_gross));
-  const bushnellAvgCap = avg(bushnellData.map(d=>d.pct_capacity_paid));
+  const bushnellAvgCap = avg(bushnellData.map(d=>d.cap_paid));
 
   // Build peer stats from FILTERED
   const peerStats = {};
-  FILTERED.filter(d=>d.similar_bushnell_cap && (d.city||'').toLowerCase() !== 'hartford').forEach(d=>{
+  FILTERED.filter(d=>d.similar_bushnell && (d.city||'').toLowerCase() !== 'hartford').forEach(d=>{
     const key = d.theatre;
     if (!key) return;
     if (!peerStats[key]) peerStats[key] = {city:d.city, gross:[], cap:[], shows:new Set()};
     if (d.gross_gross) peerStats[key].gross.push(d.gross_gross);
-    if (d.pct_capacity_paid) peerStats[key].cap.push(d.pct_capacity_paid);
+    if (d.cap_paid) peerStats[key].cap.push(d.cap_paid);
     if (d.show) peerStats[key].shows.add(d.show);
   });
 
@@ -3211,13 +3211,13 @@ async function processFile(file) {
       if(['layoff','nan',''].includes((city||'').toLowerCase())) continue;
       if(show.toLowerCase().includes('for engagements')) continue;
 
-      const isDupe=ALL_DATA.some(d=>d.report_date===rdate&&d.show===show&&d.city===city&&d.tier===tier);
+      const isDupe=ALL_DATA.some(d=>d.week_of===rdate&&d.show===show&&d.city===city&&d.tier===tier);
       if(isDupe){dupes++;continue;}
 
-      ALL_DATA.push({report_date:rdate,tier,show,theatre:theatre||'',city:city||'',
-        ticket_range:trng&&trng!=='null'?trng:null,top_paid_price:topP,num_performances:nPerf,
-        gross_gross:gg,gross_potential:gp,gg_pct_gp:ggpct,paid_tickets:ptix,total_tickets:ttix,
-        total_capacity:tcap,pct_capacity_paid:cpaid,pct_capacity_total:ctot,on_subscription:sub,avg_paid_admission:avgA});
+      ALL_DATA.push({week_of:rdate,tier,show,theatre:theatre||'',city:city||'',
+        ticket_range:trng&&trng!=='null'?trng:null,top_price:topP,num_perf:nPerf,
+        gross_gross:gg,gross_potential:gp,gg_pct_gp:ggpct,paid_tix:ptix,total_tix:ttix,
+        capacity:tcap,cap_paid:cpaid,cap_total:ctot,on_sub:sub,avg_adm:avgA});
       added++;
     }
   }
