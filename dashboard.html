@@ -906,9 +906,9 @@ tbody td:last-child{border-right:none;}
         </div>
         <span class="sidebar-label" style="margin-top:8px;display:block;">% Capacity Paid</span>
         <div class="range-row">
-          <input type="number" id="fCapMin" placeholder="Min %" min="0" max="100" oninput="applyFilters()">
+          <input type="number" id="fCapMin" placeholder="Min %" min="0" max="150" oninput="applyFilters()">
           <span class="range-sep">&#8211;</span>
-          <input type="number" id="fCapMax" placeholder="Max %" min="0" max="100" oninput="applyFilters()">
+          <input type="number" id="fCapMax" placeholder="Max %" min="0" max="150" oninput="applyFilters()">
         </div>
         <span class="sidebar-label" style="margin-top:8px;display:block;"># Performances</span>
         <div class="range-row">
@@ -1860,7 +1860,7 @@ function renderTable() {
   tb.innerHTML = sorted.map(d=>{
     const pct=d.cap_paid;
     const fc = pct>95?'fill-hi':pct<50?'fill-lo':'fill-mid';
-    const bw = pct?Math.min(pct,100):0;
+    const bw = pct?Math.min(pct,120):0; // allow up to 120% display; cap % can legitimately exceed 100%
     const wk = fmtWeek(d.week_of);
     return `<tr>
       <td style="font-family:var(--mono);font-size:0.65rem;color:var(--ink3)">${wk}</td>
@@ -3325,7 +3325,7 @@ initData();
     Unauthorized distribution or reproduction is strictly prohibited.
   </div>
   <div class="footer-right">
-    Broadway Touring Sales Intelligence · <strong>v4</strong><br>
+    Broadway Touring Sales Intelligence · <strong>v4.1</strong><br>
     Build date: June 16, 2026
   </div>
 </footer>
