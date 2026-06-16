@@ -6,3 +6,4 @@ watcher.log
 *.log
 ~$*.xlsx
  
+.claude/launch.json
