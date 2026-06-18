@@ -8,6 +8,7 @@
 <meta name="referrer" content="no-referrer">
 <title>Broadway Touring Intelligence V2</title>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Libre+Franklin:ital,wght@0,300;0,400;0,600;0,700;0,900;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="utils.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 :root{
@@ -176,22 +177,11 @@ const SEASONS = [
 ];
 let ALL=[], FILTERED=[], STATE={season:'2025-2026', tab:'brief'}, CHARTS={}, CURRENT_PROFILES=[], HISTORY_PROFILES=[];
 let ACTIVE_TIER='', ACTIVE_SUB='', ACTIVE_PEER='', ACTIVE_EQUITY='', ACTIVE_ENGAGE='';
-let PEER_META={};
-function isPeerType(d, type) {
-  if (!type) return true;
-  const meta = PEER_META[d.theatre + '|' + d.city];
-  if (!meta || !meta.peer_types) return false;
-  if (type === 'any') return meta.peer_types.length > 0;
-  return meta.peer_types.includes(type);
-}
+// PEER_META → window.PEER_META from utils.js
+// isPeerType, fmt$, pct, avg, fmtDate, fiscalYear → utils.js
 const $=id=>document.getElementById(id);
-const fmt$=v=>v==null?'—':v>=1e9?'$'+(v/1e9).toFixed(2)+'B':v>=1e6?'$'+(v/1e6).toFixed(2)+'M':v>=1e3?'$'+(v/1e3).toFixed(0)+'K':'$'+Math.round(v).toLocaleString();
-const pct=(v,d=1)=>v==null||Number.isNaN(v)?'—':v.toFixed(d)+'%';
-const num=(v,d=0)=>v==null||Number.isNaN(v)?'—':v.toFixed(d);
-const avg=a=>{const v=a.filter(x=>x!=null&&!Number.isNaN(x));return v.length?v.reduce((s,x)=>s+x,0)/v.length:null};
+const num=(v,d=0)=>v==null||Number.isNaN(v)?'—':v.toFixed(d); // page-specific: d=0 default
 const sum=a=>a.filter(x=>x!=null&&!Number.isNaN(x)).reduce((s,x)=>s+x,0);
-const fmtDate=d=>{if(!d)return '—';const p=d.slice(0,10).split('-');return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+p[1]-1]+' '+(+p[2])+', '+p[0]};
-function fiscalYear(dateStr){if(!dateStr)return null;const y=+dateStr.slice(0,4),m=+dateStr.slice(5,7);return m>=7?`${y}-${y+1}`:`${y-1}-${y}`}
 function isBushnell(d){return /hartford/i.test(d.city||'')||/bushnell|mortensen/i.test(d.theatre||'')}
 function normalizeName(s){return (s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
 function matchRows(show, rows=ALL){const m=normalizeName(show.match||show.title||show);const t=normalizeName(show.title||show.match||show);return rows.filter(d=>{const n=normalizeName(d.show);return n.includes(m)||m.includes(n)||n.includes(t)||t.includes(n)})}

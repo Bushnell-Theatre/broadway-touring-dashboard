@@ -11,11 +11,9 @@
  */
 
 // ── DATA URLs ─────────────────────────────────────────────────────────────────
-
-const DATA_URLS = [
-  './data.json',
-  'https://broadway-touring-dashboard.azurestaticapps.net/data.json'
-];
+// Pages declare their own DATA_URLS / DATA_JSON_URL before this file runs.
+// initData() reads window.DATA_URLS if set; falls back to local data.json.
+// Do NOT declare DATA_URLS here — it would collide with page-level const declarations.
 
 const PEERS_URL = './peers.json';
 
@@ -130,9 +128,11 @@ window.applyFilters = function applyFilters(rows, opts = {}) {
  * @param {Function} [onError] — called with error message on failure
  */
 window.initData = async function initData(onReady, onError) {
+  // Use page-declared DATA_URLS if available, otherwise fall back to local
+  const urls = window.DATA_URLS || ['./data.json'];
   // Try each data URL in order until one succeeds
   let rawData = null;
-  for (const url of DATA_URLS) {
+  for (const url of urls) {
     try {
       const r = await fetch(url, { cache: 'no-store' });
       if (r.ok) { rawData = await r.json(); break; }
