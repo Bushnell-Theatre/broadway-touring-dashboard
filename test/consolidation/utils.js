@@ -49,9 +49,9 @@ window.fmtN = (v, d = 1) =>
 window.avg = arr =>
   arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
 
-/** "Jun 8, 2025" from "2025-06-08" */
+/** "Jun 8, 2025" from "2025-06-08"; returns "—" for null/empty */
 window.fmtDate = s => {
-  if (!s) return '';
+  if (!s) return '—';
   const [y, m, d] = s.split('-').map(Number);
   return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 };
