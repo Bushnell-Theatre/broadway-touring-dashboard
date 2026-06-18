@@ -8,6 +8,7 @@
 <meta name="referrer" content="no-referrer">
 <title>Broadway Touring Intelligence</title>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Libre+Franklin:ital,wght@0,300;0,400;0,600;0,700;0,900;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="utils.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -1406,13 +1407,7 @@ function setSeasonFilter(seasonId) {
   applyFilters();
 }
 
-// ── FISCAL YEAR (for filtering) ───────────────────────────────────────────────
-function getFiscalYear(dateStr) {
-  if (!dateStr) return null;
-  const y = parseInt(dateStr.slice(0,4));
-  const m = parseInt(dateStr.slice(5,7));
-  return m >= 7 ? y+'-'+(y+1) : (y-1)+'-'+y;
-}
+// getFiscalYear → utils.js
 
 
 // ── HELP TEXT (single source of truth for tooltips and FAQ) ──────────────────
@@ -1484,7 +1479,7 @@ function snapToSunday(dateStr, direction) {
 // the null. The dashboard will fetch live data automatically. No other changes
 // needed. Leave as null to use embedded seed data.
 const PEERS_JSON_URL = 'peers.json';
-const DATA_JSON_URL = 'https://white-pebble-01710020f.7.azurestaticapps.net/data.json';
+const DATA_JSON_URL = './data.json'; // local for sandbox; production uses Azure URL
 
 async function initData() {
   try {
@@ -1534,14 +1529,7 @@ async function initData() {
     ALL_DATA = [];
 
   }
-  // isPeerType helper — checks peer_types array from peers.json
-  window.isPeerType = function isPeerType(d, type) {
-    if (!type) return true;
-    const meta = PEER_META[d.theatre + '|' + d.city];
-    if (!meta || !meta.peer_types) return false;
-    if (type === 'any') return meta.peer_types.length > 0;
-    return meta.peer_types.includes(type);
-  };
+  // isPeerType → utils.js
 
   // Set last report date
   const allDates = ALL_DATA.map(d=>d.week_of).filter(Boolean).sort();
@@ -1563,7 +1551,7 @@ let ACTIVE_EQUITY = '';
 let ACTIVE_ENGAGE = '';
 let CHARTS = {};
 let CACHE = {}; // pre-computed aggregations from FILTERED
-let PEER_META = {}; // loaded from peers.json
+// PEER_META → window.PEER_META from utils.js
 let LAST_REPORT_DATE = null;
 let DEFAULT_RANGE = null;
 
@@ -1808,16 +1796,8 @@ function resetFilters() {
   applyFilters();
 }
 
-// ── HELPERS ───────────────────────────────────────────────────────────────────
-const fmt$ = v => v==null?'—': v>=1e9?'$'+(v/1e9).toFixed(2)+'B': v>=1e6?'$'+(v/1e6).toFixed(2)+'M': v>=1e3?'$'+(v/1e3).toFixed(0)+'K':'$'+v.toFixed(0);
-const fmtN = (v,d=1) => v==null?'—':v.toFixed(d);
-const avg = arr => { const v=arr.filter(x=>x!=null); return v.length?v.reduce((a,b)=>a+b,0)/v.length:null; };
-const fmtWeek = d => {
-  if(!d) return '';
-  const parts = d.split('-');
-  const y = parts[0], m = parseInt(parts[1]), dy = parseInt(parts[2]);
-  return `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1]} ${dy}, ${y}`;
-};
+// ── HELPERS → utils.js ────────────────────────────────────────────────────────
+// fmt$, fmtN, avg, fmtWeek, getFiscalYear, isPeerType all live in utils.js
 
 // ── KPIs ──────────────────────────────────────────────────────────────────────
 function renderKPIs() {

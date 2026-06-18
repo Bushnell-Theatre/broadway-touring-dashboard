@@ -56,18 +56,22 @@ window.fmtDate = s => {
   return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
-/** "YYYY" → "YYYY-YYYY" fiscal year label (July start) */
+/** "YYYY-MM-DD" → "YYYY-YYYY" fiscal year label (July start) */
 window.fiscalYear = dateStr => {
   if (!dateStr) return null;
   const y = +dateStr.slice(0, 4), mo = +dateStr.slice(5, 7);
   return mo >= 7 ? `${y}-${y + 1}` : `${y - 1}-${y}`;
 };
 
-/** "2025-06-08" → "Jun 8" short week label */
+/** Alias used by dashboard.html */
+window.getFiscalYear = window.fiscalYear;
+
+/** "2025-06-08" → "Jun 8, 2025" week label */
 window.fmtWeek = s => {
   if (!s) return '';
-  const [y, m, d] = s.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const parts = s.split('-');
+  const y = parts[0], m = parseInt(parts[1]), d = parseInt(parts[2]);
+  return `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1]} ${d}, ${y}`;
 };
 
 // ── PEER HELPERS ──────────────────────────────────────────────────────────────
