@@ -54,7 +54,7 @@
 </div>
 <div class="workspace">
   <aside class="sidebar">
-    <div class="sidebar-section"><span class="sidebar-label">Season</span><select id="seasonSelect" onchange="setSeason(this.value)"></select></div>
+    <div class="sidebar-section"><span class="sidebar-label">Season Lens <span class="tip-icon" data-tip="season" tabindex="0">?</span></span><div class="pill-row" id="seasonPills"></div></div>
     <div class="sidebar-section"><span class="sidebar-label">Decision View</span><div class="pill-row"><button class="pill active" data-tab="brief" onclick="showTab('brief')">Brief</button><button class="pill" data-tab="current" onclick="showTab('current')">Current</button><button class="pill" data-tab="history" onclick="showTab('history')">History</button><button class="pill" data-tab="future" onclick="showTab('future')">Future</button></div></div>
     <div class="sidebar-section"><span class="sidebar-label">Show Search</span><input id="showSearch" type="text" placeholder="Search all shows..." oninput="renderShowHistory()"></div>
     <div class="sidebar-section">
@@ -128,7 +128,7 @@ const HELP_TEXT = {
   tier: 'Primary markets are major touring cities designated by the Broadway League. Secondary markets are smaller regional cities.',
   subscription: "Subscription shows are part of the venue's subscriber package. Non-subscription shows are add-ons or specials not included in the season subscription.",
   peerVenues: 'Peers classified by type: Size (±10% of Bushnell sellable seats, 2,450–2,994), Proximity (Northeast/New England), Market (comparable nonprofit mid-sized city PACs), Extended (±15% range).',
-  season: 'Filters data to one or more Bushnell fiscal seasons (July–June). Multiple seasons can be selected simultaneously.',
+  season: 'Seasons follow the Bushnell fiscal year: July 1 through June 30. A show reporting in August 2025 belongs to the 25-26 season. Season is derived from each record\'s Broadway League report week date — not the show\'s opening or closing night.',
   dateRange: 'Narrows results to a specific date window. Dates snap to the nearest Sunday to align with Broadway League reporting.',
   venue: 'Filter to a specific venue across all Broadway League markets.',
   city: 'Filter to a specific city across all Broadway League markets.',
@@ -205,8 +205,8 @@ async function loadData(){let data=[];for(const url of DATA_URLS){try{const r=aw
   ALL=(Array.isArray(data)?data:(data.records||[])).map(d=>({...d,week_of:d.week_of?d.week_of.slice(0,10):null,on_sub:d.on_sub===true?1:d.on_sub===false?0:d.on_sub,similar_bushnell:!!d.similar_bushnell,no_engagement:!!d.no_engagement}));
   init();
 }
-function init(){const sel=$('seasonSelect');sel.innerHTML=SEASONS.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');sel.value=STATE.season;document.querySelectorAll('.tip-icon[data-tip]').forEach(el=>{const span=document.createElement('span');span.className='tip-text';span.textContent=HELP_TEXT[el.dataset.tip]||'';el.appendChild(span);});renderFaq();renderAll();}
-function setSeason(v){STATE.season=v;renderAll()}
+function init(){$('seasonPills').innerHTML=SEASONS.map(s=>`<button class="pill ${s.id===STATE.season?'active':''}" data-season="${s.id}" onclick="setSeason('${s.id}')">${s.id.slice(2,4)}-${s.id.slice(7,9)}</button>`).join('');document.querySelectorAll('.tip-icon[data-tip]').forEach(el=>{const span=document.createElement('span');span.className='tip-text';span.textContent=HELP_TEXT[el.dataset.tip]||'';el.appendChild(span);});renderFaq();renderAll();}
+function setSeason(v){STATE.season=v;document.querySelectorAll('[data-season]').forEach(b=>b.classList.toggle('active',b.dataset.season===v));renderAll();}
 function setTier(btn,v){ACTIVE_TIER=v;document.querySelectorAll('[data-tier]').forEach(b=>b.classList.toggle('active',b.dataset.tier===v));renderAll();}
 function setSub(btn,v){ACTIVE_SUB=v;document.querySelectorAll('[data-sub]').forEach(b=>b.classList.toggle('active',b.dataset.sub===v));renderAll();}
 function setPeer(btn,v){ACTIVE_PEER=v;document.querySelectorAll('[data-peer]').forEach(b=>b.classList.toggle('active',b.dataset.peer===v));renderAll();}
@@ -215,7 +215,7 @@ function setEngage(btn,v){ACTIVE_ENGAGE=v;document.querySelectorAll('[data-engag
 function resetAll(){
   STATE={season:'2025-2026',tab:'brief'};
   ACTIVE_TIER='';ACTIVE_SUB='';ACTIVE_PEER='';ACTIVE_EQUITY='';ACTIVE_ENGAGE='';
-  $('seasonSelect').value=STATE.season;
+  document.querySelectorAll('[data-season]').forEach(b=>b.classList.toggle('active',b.dataset.season===STATE.season));
   ['tier','sub','peer','equity','engage'].forEach(k=>document.querySelectorAll('[data-'+k+']').forEach(b=>b.classList.toggle('active',b.dataset[k]==='')));
   showTab('brief');
 }
