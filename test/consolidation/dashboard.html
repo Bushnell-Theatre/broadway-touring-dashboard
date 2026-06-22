@@ -2008,7 +2008,7 @@ function renderCharts() {
   CHARTS.sg=new Chart(document.getElementById('cShowGross'),{type:'bar',
     data:{labels:se.map(([s])=>s.length>22?s.slice(0,22)+'…':s),
           datasets:[{data:se.map(([,v])=>v),backgroundColor:CC.amber,borderRadius:2}]},
-    options:{indexAxis:'y',responsive:true,
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`Total Gross: ${fmt$(ctx.raw)}`}}},
       scales:{x:{grid:{color:CC.grid},ticks:{callback:v=>fmt$(v)}},y:{grid:{display:false}}},
       datasets:{bar:{maxBarThickness:22,minBarLength:2}}}});
@@ -2024,7 +2024,7 @@ function renderCharts() {
   CHARTS.gp=new Chart(document.getElementById('cGgPct'),{type:'bar',
     data:{labels:ge.map(([s])=>s.length>22?s.slice(0,22)+'…':s),
           datasets:[{data:ge.map(([,v])=>v),backgroundColor:ge.map(([,v])=>v>100?CC.teal:CC.amber),borderRadius:2}]},
-    options:{indexAxis:'y',responsive:true,
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`Avg GG% Potential: ${fmtN(ctx.raw)}%`}}},
       scales:{x:{grid:{color:CC.grid},ticks:{callback:v=>v+'%'}},y:{grid:{display:false}}},
       datasets:{bar:{maxBarThickness:22,minBarLength:2}}}});
