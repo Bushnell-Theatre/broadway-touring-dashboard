@@ -2493,7 +2493,7 @@ function renderAnalytics() {
       data:{labels:fwNums.map(w=>`Wk ${w}`),datasets:yyDS},
       options:{responsive:true,maintainAspectRatio:false,
         plugins:{
-          legend:{labels:{color:CC.text,font:{size:9},boxWidth:12}},
+          legend:{labels:{color:CC.text,font:{size:10},boxWidth:12}},
           tooltip:{callbacks:{title:ctx=>`Fiscal Week ${ctx[0].label}`,label:ctx=>`${ctx.dataset.label}: ${fmt$(ctx.raw)}`}}
         },
         scales:{
@@ -2512,7 +2512,7 @@ function renderAnalytics() {
       data:{labels:FM_LABELS,datasets:yyDS},
       options:{responsive:true,maintainAspectRatio:false,
         plugins:{
-          legend:{labels:{color:CC.text,font:{size:9},boxWidth:12}},
+          legend:{labels:{color:CC.text,font:{size:10},boxWidth:12}},
           tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${fmt$(ctx.raw)}`}}
         },
         scales:{x:{grid:{color:CC.grid}},y:{grid:{color:CC.grid},ticks:{callback:v=>fmt$(v)}}}}});
