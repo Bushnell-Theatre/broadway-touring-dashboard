@@ -8,7 +8,7 @@
 <meta name="referrer" content="no-referrer">
 <title>Broadway Touring Intelligence</title>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Libre+Franklin:ital,wght@0,300;0,400;0,600;0,700;0,900;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="utils.js"></script>
+<script src="js/utils.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -1478,8 +1478,8 @@ function snapToSunday(dateStr, direction) {
 // When the Power Automate HTTP endpoint is ready, IT sets this URL and removes
 // the null. The dashboard will fetch live data automatically. No other changes
 // needed. Leave as null to use embedded seed data.
-const PEERS_JSON_URL = 'peers.json';
-const DATA_JSON_URL = './data.json'; // local for sandbox; production uses Azure URL
+const PEERS_JSON_URL = 'data/peers.json';
+const DATA_JSON_URL = 'data/data.json';
 
 async function initData() {
   try {

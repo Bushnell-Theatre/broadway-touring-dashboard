@@ -8,6 +8,7 @@
 <meta name="referrer" content="no-referrer">
 <title>Broadway Touring Intelligence V2</title>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Libre+Franklin:ital,wght@0,300;0,400;0,600;0,700;0,900;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="js/utils.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 :root{
@@ -38,7 +39,7 @@
 <body>
 <header class="masthead">
   <div class="masthead-brand"><div class="brand-icon">B</div><div class="brand-text"><h1>Broadway Touring</h1><div class="sub">Programming Intelligence</div></div></div>
-  <div class="masthead-status"><div class="dot"></div><span id="dataStatus"><strong>–</strong> records · <strong>–</strong> weeks total</span></div>
+  <div class="masthead-status"><div class="dot"></div><span id="dataStatus"><strong>–</strong> records · <strong>–</strong> weeks total</span><br><span id="filteredStatus" style="font-size:0.58rem;color:rgba(255,255,255,0.45);">Filtered: — records</span></div>
   <div class="masthead-actions"><a class="btn btn-outline" href="index.html">⌂ Hub</a><a class="btn btn-outline" href="dashboard.html">Dashboard</a><a class="btn btn-outline" href="exec_summary.html">Exec Summary</a><button class="btn btn-outline" onclick="resetAll()">↺ Reset</button><button class="btn btn-outline" onclick="window.print()">⎙ Print</button></div>
 </header>
 <div class="kpi-strip">
@@ -122,7 +123,7 @@
 </div>
 <footer class="footer"><div><strong>CONFIDENTIAL</strong> — For internal use only. The Bushnell Center for the Performing Arts.</div><div>Broadway Touring Programming Intelligence · <strong>v1</strong> · Build date: June 16, 2026</div></footer>
 <script>
-const DATA_URLS = ['./data.json','https://white-pebble-01710020f.7.azurestaticapps.net/data.json'];
+const DATA_URLS = ['data/data.json','https://white-pebble-01710020f.7.azurestaticapps.net/data.json'];
 const HELP_TEXT = {
   tier: 'Primary markets are major touring cities designated by the Broadway League. Secondary markets are smaller regional cities.',
   subscription: "Subscription shows are part of the venue's subscriber package. Non-subscription shows are add-ons or specials not included in the season subscription.",
@@ -176,22 +177,11 @@ const SEASONS = [
 ];
 let ALL=[], FILTERED=[], STATE={season:'2025-2026', tab:'brief'}, CHARTS={}, CURRENT_PROFILES=[], HISTORY_PROFILES=[];
 let ACTIVE_TIER='', ACTIVE_SUB='', ACTIVE_PEER='', ACTIVE_EQUITY='', ACTIVE_ENGAGE='';
-let PEER_META={};
-function isPeerType(d, type) {
-  if (!type) return true;
-  const meta = PEER_META[d.theatre + '|' + d.city];
-  if (!meta || !meta.peer_types) return false;
-  if (type === 'any') return meta.peer_types.length > 0;
-  return meta.peer_types.includes(type);
-}
+// PEER_META → window.PEER_META from utils.js
+// isPeerType, fmt$, pct, avg, fmtDate, fiscalYear → utils.js
 const $=id=>document.getElementById(id);
-const fmt$=v=>v==null?'—':v>=1e9?'$'+(v/1e9).toFixed(2)+'B':v>=1e6?'$'+(v/1e6).toFixed(2)+'M':v>=1e3?'$'+(v/1e3).toFixed(0)+'K':'$'+Math.round(v).toLocaleString();
-const pct=(v,d=1)=>v==null||Number.isNaN(v)?'—':v.toFixed(d)+'%';
-const num=(v,d=0)=>v==null||Number.isNaN(v)?'—':v.toFixed(d);
-const avg=a=>{const v=a.filter(x=>x!=null&&!Number.isNaN(x));return v.length?v.reduce((s,x)=>s+x,0)/v.length:null};
+const num=(v,d=0)=>v==null||Number.isNaN(v)?'—':v.toFixed(d); // page-specific: d=0 default
 const sum=a=>a.filter(x=>x!=null&&!Number.isNaN(x)).reduce((s,x)=>s+x,0);
-const fmtDate=d=>{if(!d)return '—';const p=d.slice(0,10).split('-');return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+p[1]-1]+' '+(+p[2])+', '+p[0]};
-function fiscalYear(dateStr){if(!dateStr)return null;const y=+dateStr.slice(0,4),m=+dateStr.slice(5,7);return m>=7?`${y}-${y+1}`:`${y-1}-${y}`}
 function isBushnell(d){return /hartford/i.test(d.city||'')||/bushnell|mortensen/i.test(d.theatre||'')}
 function normalizeName(s){return (s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
 function matchRows(show, rows=ALL){const m=normalizeName(show.match||show.title||show);const t=normalizeName(show.title||show.match||show);return rows.filter(d=>{const n=normalizeName(d.show);return n.includes(m)||m.includes(n)||n.includes(t)||t.includes(n)})}
@@ -211,7 +201,7 @@ function applyFilters(rows){
   return r;
 }
 async function loadData(){let data=[];for(const url of DATA_URLS){try{const r=await fetch(url,{cache:'no-store'});if(r.ok){data=await r.json();break}}catch(e){}}
-  try{const pr=await fetch('./peers.json');if(pr.ok){const pj=await pr.json();(pj.venues||[]).forEach(v=>{PEER_META[v.theatre+'|'+v.city]=v;});}}catch(e){}
+  try{const pr=await fetch('data/peers.json');if(pr.ok){const pj=await pr.json();(pj.venues||[]).forEach(v=>{PEER_META[v.theatre+'|'+v.city]=v;});}}catch(e){}
   ALL=(Array.isArray(data)?data:(data.records||[])).map(d=>({...d,week_of:d.week_of?d.week_of.slice(0,10):null,on_sub:d.on_sub===true?1:d.on_sub===false?0:d.on_sub,similar_bushnell:!!d.similar_bushnell,no_engagement:!!d.no_engagement}));
   init();
 }
@@ -231,7 +221,7 @@ function resetAll(){
 }
 function showTab(tab){STATE.tab=tab;document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));$('tab-'+tab).classList.add('active');document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));if(tab==='faq')renderFaq();renderActive();}
 function destroy(id){if(CHARTS[id]){CHARTS[id].destroy();delete CHARTS[id]}}
-function renderAll(){const dates=ALL.map(d=>d.week_of).filter(Boolean).sort();$('dataStatus').innerHTML=`<strong>${ALL.length.toLocaleString()}</strong> records · <strong>${new Set(dates).size.toLocaleString()}</strong> weeks total`;
+function renderAll(){const dates=ALL.map(d=>d.week_of).filter(Boolean).sort();$('dataStatus').innerHTML=`<strong>${ALL.length.toLocaleString()}</strong> records · <strong>${new Set(dates).size.toLocaleString()}</strong> weeks total`;const _fsEl=$('filteredStatus');if(_fsEl){const _sRows=ALL.filter(d=>fiscalYear(d.week_of)===STATE.season);_fsEl.innerHTML=`Filtered: <strong>${_sRows.length.toLocaleString()}</strong> records · Season ${STATE.season}`;}
   const profiles=seasonShows().shows.map(showProfile);const active=profiles.filter(p=>p.metrics.count>0);$('kSeason').textContent=STATE.season.slice(2).replace('-20','-');$('kScheduled').textContent=profiles.length;$('kTourCap').textContent=pct(avg(active.map(p=>p.metrics.cap)),0);$('kPeerCap').textContent=pct(avg(active.map(p=>p.metrics.peerCap)),0);$('kIndex').textContent=num(avg(active.map(p=>p.metrics.index)),0);$('kHighFit').textContent=profiles.filter(p=>p.score>=80).length;$('kWatch').textContent=profiles.filter(p=>p.score<60&&p.metrics.count>0).length;renderActive();}
 function renderActive(){if(STATE.tab==='brief')renderBrief();if(STATE.tab==='current')renderCurrent();if(STATE.tab==='history')renderShowHistory();if(STATE.tab==='future')renderFuture();if(STATE.tab==='peers')renderPeers();if(STATE.tab==='opportunity')renderOpportunity();if(STATE.tab==='faq')renderFaq();}
 function renderFaq(){const el=$('faqContent');if(!el)return;const section=(title,items)=>`<div class="faq-section"><h3>${title}</h3><dl class="faq-grid">${items.map(([t,d])=>`<dt>${t}</dt><dd>${d}</dd>`).join('')}</dl></div>`;el.innerHTML=[section('Data Source',[['Broadway League',HELP_TEXT.broadwayLeague],['Report Week',HELP_TEXT.reportWeek],['Fiscal Year',HELP_TEXT.fiscalYear],['Data Currency',HELP_TEXT.dataCurrency]]),section('Key Metrics & Acronyms',[['Gross Gross (GG)',HELP_TEXT.grossGross],['Gross Potential (GP)',HELP_TEXT.grossPotential],['GG% of GP',HELP_TEXT.ggPctGp],['% Capacity Paid',HELP_TEXT.pctCapPaid],['% Capacity Total',HELP_TEXT.pctCapTotal],['Avg Paid Admission',HELP_TEXT.avgPaidAdm],['WoW',HELP_TEXT.wow],['Top Paid Price',HELP_TEXT.topPaidPrice],['# Performances',HELP_TEXT.numPerf]]),section('Filters',[['Season',HELP_TEXT.season],['Date Range',HELP_TEXT.dateRange],['Tier',HELP_TEXT.tier],['Subscription',HELP_TEXT.subscription],['Peer Venues',HELP_TEXT.peerVenues],['Tour Type',HELP_TEXT.tourType],['Engagement',HELP_TEXT.engagement]]),section('Programming Tools',[['Fit Score',HELP_TEXT.fitScore],['Peer Definition',HELP_TEXT.peerDef],['Meaningful Peers',HELP_TEXT.meaningfulPeers],['Benchmarking',HELP_TEXT.peerBenchmark]]),section('Charts & Analytics',[['Weekly Gross Trend',HELP_TEXT.weeklyTrend],['8-Week Trend',HELP_TEXT.eightWeekMA],['Seasonality',HELP_TEXT.seasonality],['Year over Year',HELP_TEXT.yoy],['GG% of Potential',HELP_TEXT.ggPctChart],['% Capacity by Market',HELP_TEXT.mktCapChart]])].join('');}
@@ -254,6 +244,8 @@ function chartFit(profiles,id){destroy(id);const ctx=$(id);if(!ctx)return;CHARTS
 function chartCap(profiles,id){destroy(id);const ctx=$(id);if(!ctx)return;CHARTS[id]=new Chart(ctx,{type:'bar',data:{labels:profiles.map(p=>short(p.show.title,16)),datasets:[{label:'Tour',data:profiles.map(p=>p.metrics.cap||0),backgroundColor:'#003865',borderRadius:2},{label:'Peer',data:profiles.map(p=>p.metrics.peerCap||0),backgroundColor:'rgba(26,78,138,.65)',borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#6b6b6b',font:{size:10}}}},scales:{x:{grid:{display:false}},y:{min:0,max:110,ticks:{callback:v=>v+'%'}}}}})}
 function chartPeers(arr){destroy('cPeers');CHARTS.cPeers=new Chart($('cPeers'),{type:'bar',data:{labels:arr.slice(0,12).map(v=>short(v.city,14)),datasets:[{data:arr.slice(0,12).map(v=>v.cap),backgroundColor:'#003865',borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:0,max:110,ticks:{callback:v=>v+'%'}},x:{grid:{display:false}}}}})}
 function short(s,n){return s&&s.length>n?s.slice(0,n)+'…':s}function escapeHtml(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+Chart.defaults.font.family = "'Libre Franklin', sans-serif";
+Chart.defaults.font.size = 10;
 loadData();
 </script>
 </body>
