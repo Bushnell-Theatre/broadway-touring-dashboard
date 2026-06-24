@@ -37,9 +37,7 @@ ENV_FILE     = REPO_ROOT / ".env"
 
 NOAA_BASE    = "https://www.ncdc.noaa.gov/cdo-web/api/v2/data"
 NOAA_STATION = "GHCND:USW00014740"   # Hartford Bradley Airport (KBDL)
-NOAA_HEADERS = {"token": "", "User-Agent": "BushnellDashboard/1.0"}
-# NOAA CDO does not require an API key for basic data access;
-# the token field is left blank intentionally.
+# NOAA_HEADERS is built after load_dotenv() below so it picks up the token.
 
 FRED_BASE    = "https://api.stlouisfed.org/fred/series/observations"
 FRED_SERIES  = {
@@ -56,10 +54,16 @@ FRED_RETRY_DELAY = 0.3
 # ── SETUP ─────────────────────────────────────────────────────────────────────
 
 load_dotenv(ENV_FILE)
-FRED_API_KEY = os.getenv("FRED_API_KEY", "")
+FRED_API_KEY   = os.getenv("FRED_API_KEY",   "")
+NOAA_CDO_TOKEN = os.getenv("NOAA_CDO_TOKEN", "")
 
 if not FRED_API_KEY:
-    print("WARNING: FRED_API_KEY not found in .env — economic data will be null")
+    print("WARNING: FRED_API_KEY not found in .env -- economic data will be null")
+if not NOAA_CDO_TOKEN:
+    print("WARNING: NOAA_CDO_TOKEN not found in .env -- weather data will be null")
+    print("         Register free at https://www.ncdc.noaa.gov/cdo-web/token")
+
+NOAA_HEADERS = {"token": NOAA_CDO_TOKEN, "User-Agent": "BushnellDashboard/1.0"}
 
 
 # ── HELPERS ───────────────────────────────────────────────────────────────────
@@ -95,7 +99,7 @@ def load_weeks() -> list[str]:
     records = raw.get("records", raw) if isinstance(raw, dict) else raw
     weeks = sorted({r["week_of"] for r in records if r.get("week_of")})
     print(f"Found {len(weeks)} distinct weeks in data.json "
-          f"({weeks[0]} → {weeks[-1]})")
+          f"({weeks[0]} to {weeks[-1]})")
     return weeks
 
 
@@ -127,6 +131,9 @@ def fetch_noaa_week(week_start: date) -> dict:
     Pull daily GHCND observations for the week and aggregate to weekly stats.
     Returns a weather dict (all fields may be None if no data available).
     """
+    if not NOAA_CDO_TOKEN:
+        return _empty_weather()
+
     end = week_end(week_start)
     params = {
         "datasetid":  "GHCND",
