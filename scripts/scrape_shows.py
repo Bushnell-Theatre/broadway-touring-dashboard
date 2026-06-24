@@ -59,7 +59,8 @@ def load_season_shows(season):
         with open(SEASONS_IN, encoding="utf-8") as f:
             seasons = json.load(f)
         if season in seasons:
-            shows = seasons[season]
+            entry = seasons[season]
+            shows = entry.get("shows", entry) if isinstance(entry, dict) else entry
             print(f"Loaded {len(shows)} shows from seasons.json for {season}")
             return shows
         print(f"Season {season} not found in seasons.json — falling back to data.json")
@@ -156,6 +157,10 @@ def _fetch_wikidata_item(wikidata_id):
             "image_url":     _commons_image_url(b["image"]["value"].split("/")[-1]) if "image" in b else None,
         }
     except Exception as e:
+        if "429" in str(e):
+            print(f"  SPARQL rate-limited — falling back to REST API for {wikidata_id}...")
+            time.sleep(2)
+            return _fetch_wikidata_item_rest(wikidata_id)
         print(f"  Item fetch error for {wikidata_id}: {e}")
         return None
 
@@ -163,6 +168,99 @@ def _commons_image_url(filename):
     """Convert a Wikimedia Commons filename to a direct image URL."""
     encoded = quote(filename.replace(" ", "_"), safe="")
     return f"https://commons.wikimedia.org/wiki/Special:FilePath/{encoded}?width=400"
+
+
+def _get_entity_label(entity_id):
+    """Fetch the English label for a Wikidata entity ID via REST API."""
+    if not entity_id:
+        return None
+    try:
+        resp = requests.get(
+            WIKIDATA_API,
+            params={"action": "wbgetentities", "ids": entity_id,
+                    "format": "json", "props": "labels", "languages": "en"},
+            timeout=10,
+            headers={"User-Agent": _USER_AGENT},
+        )
+        if resp.status_code != 200:
+            return None
+        entity = resp.json().get("entities", {}).get(entity_id, {})
+        return entity.get("labels", {}).get("en", {}).get("value")
+    except Exception:
+        return None
+
+
+def _fetch_wikidata_item_rest(wikidata_id):
+    """
+    Fetch structured metadata for a Wikidata item via the wbgetentities REST API.
+    Used as a fallback when the SPARQL endpoint is rate-limited or unavailable.
+    """
+    try:
+        resp = requests.get(
+            WIKIDATA_API,
+            params={"action": "wbgetentities", "ids": wikidata_id,
+                    "format": "json", "props": "claims|sitelinks", "languages": "en"},
+            timeout=15,
+            headers={"User-Agent": _USER_AGENT},
+        )
+        if resp.status_code == 429:
+            print(f"  REST API also rate-limited for {wikidata_id}")
+            return None
+        if resp.status_code != 200:
+            return None
+        entity = resp.json().get("entities", {}).get(wikidata_id, {})
+        if not entity or entity.get("missing"):
+            return None
+
+        claims   = entity.get("claims", {})
+        sitelinks = entity.get("sitelinks", {})
+
+        def claim_time(prop):
+            cs = claims.get(prop, [])
+            if not cs:
+                return None
+            t = cs[0].get("mainsnak", {}).get("datavalue", {}).get("value", {}).get("time", "")
+            return t.lstrip("+")[:10] if t else None
+
+        def claim_entity_id(prop):
+            cs = claims.get(prop, [])
+            if not cs:
+                return None
+            v = cs[0].get("mainsnak", {}).get("datavalue", {}).get("value", {})
+            return v.get("id") if isinstance(v, dict) else None
+
+        def claim_str(prop):
+            cs = claims.get(prop, [])
+            if not cs:
+                return None
+            return cs[0].get("mainsnak", {}).get("datavalue", {}).get("value")
+
+        composer_label = _get_entity_label(claim_entity_id("P86"))
+        lyricist_label = _get_entity_label(claim_entity_id("P676"))
+
+        wiki_url = None
+        if "enwiki" in sitelinks:
+            title = sitelinks["enwiki"].get("title", "")
+            if title:
+                wiki_url = "https://en.wikipedia.org/wiki/" + quote(title.replace(" ", "_"))
+
+        image_val = claim_str("P18")
+        image_url = None
+        if isinstance(image_val, str) and image_val:
+            image_url = _commons_image_url(image_val.split("/")[-1])
+
+        return {
+            "wikidata_id":   wikidata_id,
+            "opening_date":  claim_time("P571"),
+            "closing_date":  claim_time("P576"),
+            "composer":      composer_label,
+            "lyricist":      lyricist_label,
+            "wikipedia_url": wiki_url,
+            "image_url":     image_url,
+        }
+    except Exception as e:
+        print(f"  REST fetch error for {wikidata_id}: {e}")
+        return None
 
 # ── WIKIDATA SEARCH FALLBACK ──────────────────────────────────────────────────
 def _search_wikidata(show_name):
@@ -249,7 +347,10 @@ def query_wikidata(show_name):
             }
 
     except Exception as e:
-        print(f"  Wikidata exact-match error for '{show_name}': {e}")
+        if "429" in str(e):
+            print(f"  SPARQL rate-limited for '{show_name}' — skipping to fuzzy+REST path...")
+        else:
+            print(f"  Wikidata exact-match error for '{show_name}': {e}")
 
     # Fuzzy fallback via wbsearchentities
     print(f"  Exact match failed — trying fuzzy search...")
