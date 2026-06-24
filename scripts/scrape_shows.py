@@ -502,29 +502,48 @@ def enrich_show(show_entry, season):
 
 
 # ── MAIN ──────────────────────────────────────────────────────────────────────
+def all_seasons():
+    """Return all season IDs from seasons.json, sorted newest first."""
+    if SEASONS_IN.exists():
+        with open(SEASONS_IN, encoding="utf-8") as f:
+            data = json.load(f)
+        return sorted(data.keys(), reverse=True)
+    return [current_season()]
+
+
 def main():
-    season = current_season()
+    # --season X  → single season; default → all seasons in seasons.json
     if "--season" in sys.argv:
         idx = sys.argv.index("--season")
-        if idx + 1 < len(sys.argv):
-            season = sys.argv[idx + 1]
+        seasons_to_scrape = [sys.argv[idx + 1]] if idx + 1 < len(sys.argv) else [current_season()]
+    else:
+        seasons_to_scrape = all_seasons()
 
-    print(f"\nScraping show metadata for season: {season}")
+    print(f"\nScraping show metadata for: {', '.join(seasons_to_scrape)}")
     print("=" * 60)
 
-    shows = load_season_shows(season)
-
+    # Load all existing records keyed by show name
     existing = {}
     if DATA_OUT.exists():
         with open(DATA_OUT, encoding="utf-8") as f:
             existing = {s["name"]: s for s in json.load(f)}
         print(f"Loaded {len(existing)} existing records from shows.json")
 
-    results = []
+    # Collect unique shows across all target seasons (newest season wins on dupe)
+    seen_names = {}
+    for season in seasons_to_scrape:
+        for entry in load_season_shows(season):
+            name = entry["name"]
+            if name not in seen_names:
+                seen_names[name] = (entry, season)
 
-    for i, entry in enumerate(shows, 1):
+    all_entries = list(seen_names.values())
+    print(f"Total unique shows across all seasons: {len(all_entries)}")
+
+    results = []
+    for i, (entry, season) in enumerate(all_entries, 1):
         name = entry["name"]
-        print(f"\n[{i}/{len(shows)}] {name}  (league: {entry.get('league_name', name)})")
+        print(f"\n[{i}/{len(all_entries)}] {name}  (season: {season}, league: {entry.get('league_name', name)})")
 
         if name in existing:
             rec = existing[name]
