@@ -3,8 +3,10 @@ Broadway Touring Dashboard — Weekly File Watcher
 Bushnell Center for the Performing Arts
 
 Monitors the Broadway League report uploads folder for new XLSX files.
-When a new file is detected, runs process_touring.py --append and then
-commits the updated data.json to GitHub.
+When a new file is detected:
+  1. Runs process_touring.py --append to update data.json
+  2. Runs scrape_shows.py to enrich any new show names in shows.json
+  3. Commits both files to GitHub and pushes
 
 Requirements:
     pip install watchdog
@@ -17,10 +19,12 @@ in the same directory as this script.
 """
 
 import os
+import json
+import sys
 import subprocess
 import logging
 import time
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -30,7 +34,9 @@ from watchdog.events import FileSystemEventHandler
 WATCH_FOLDER  = r"C:\Users\rnunley\Bushnell Center for the Performing Arts\AI Taskforce Group-Testing-Development - Broadway League Report Uploads\reports"
 REPO_FOLDER   = r"C:\Users\rnunley\OneDrive - Bushnell Center for the Performing Arts\Documents\GitHub\broadway-touring-dashboard"
 SCRIPT_PATH   = os.path.join(REPO_FOLDER, "scripts", "process_touring.py")
+SCRAPE_PATH   = os.path.join(REPO_FOLDER, "scripts", "scrape_shows.py")
 DATA_JSON     = os.path.join(REPO_FOLDER, "src", "data", "data.json")
+SHOWS_JSON    = os.path.join(REPO_FOLDER, "src", "data", "shows.json")
 LOG_FILE      = os.path.join(os.path.dirname(__file__), "watcher.log")
 
 # ── LOGGING ───────────────────────────────────────────────────────────────────
@@ -45,10 +51,97 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
+# ── SHOW ENRICHMENT ───────────────────────────────────────────────────────────
+
+def _current_season():
+    today = date.today()
+    year  = today.year if today.month >= 7 else today.year - 1
+    return f"{year}-{year + 1}"
+
+def _season_bounds(season_str):
+    year = int(season_str.split("-")[0])
+    return f"{year}-07-01", f"{year + 1}-06-30"
+
+def enrich_new_shows():
+    """
+    Detect show names in data.json that are missing from shows.json, then
+    call scrape_shows.py to enrich them. Returns True if shows.json was updated.
+    """
+    # Load current data.json show names for the active season
+    season = _current_season()
+    start, end = _season_bounds(season)
+    try:
+        with open(DATA_JSON, encoding="utf-8") as f:
+            records = json.load(f)
+    except Exception as e:
+        log.error(f"Could not read data.json: {e}")
+        return False
+
+    data_shows = {
+        r.get("show", "").strip()
+        for r in records
+        if start <= r.get("week_of", "") <= end and r.get("show", "").strip()
+    }
+
+    # Load existing shows.json
+    known_shows = set()
+    if os.path.isfile(SHOWS_JSON):
+        try:
+            with open(SHOWS_JSON, encoding="utf-8") as f:
+                known_shows = {s["show"] for s in json.load(f)}
+        except Exception as e:
+            log.warning(f"Could not read shows.json: {e}")
+
+    new_shows = data_shows - known_shows
+    if not new_shows:
+        log.info("No new shows to enrich.")
+        return False
+
+    log.info(f"Enriching {len(new_shows)} new show(s): {', '.join(sorted(new_shows))}")
+
+    # Import scrape_shows at runtime so watcher doesn't require SPARQLWrapper at startup
+    try:
+        scrape_dir = os.path.dirname(SCRAPE_PATH)
+        if scrape_dir not in sys.path:
+            sys.path.insert(0, scrape_dir)
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("scrape_shows", SCRAPE_PATH)
+        scrape = importlib.util.load_from_spec(spec)
+        spec.loader.exec_module(scrape)
+    except Exception as e:
+        log.error(f"Could not import scrape_shows.py: {e}")
+        return False
+
+    # Load existing shows.json records to preserve cached entries
+    existing = {}
+    if os.path.isfile(SHOWS_JSON):
+        try:
+            with open(SHOWS_JSON, encoding="utf-8") as f:
+                existing = {s["show"]: s for s in json.load(f)}
+        except Exception:
+            pass
+
+    for show in sorted(new_shows):
+        log.info(f"  Scraping: {show}")
+        try:
+            record = scrape.enrich_show(show, season)
+            existing[show] = record
+        except Exception as e:
+            log.error(f"  Failed to enrich '{show}': {e}")
+
+    try:
+        with open(SHOWS_JSON, "w", encoding="utf-8") as f:
+            json.dump(list(existing.values()), f, indent=2, ensure_ascii=False)
+        log.info(f"shows.json updated ({len(existing)} total records)")
+        return True
+    except Exception as e:
+        log.error(f"Could not write shows.json: {e}")
+        return False
+
 # ── PROCESSING ────────────────────────────────────────────────────────────────
 
 def process_new_file(filepath):
-    """Run append mode then commit to GitHub."""
+    """Run append mode, enrich new shows, then commit both files to GitHub."""
     fname = os.path.basename(filepath)
     log.info(f"New file detected: {fname}")
 
@@ -74,12 +167,20 @@ def process_new_file(filepath):
             log.error(result.stderr)
         return
 
-    # Step 2: Git add, commit, push
-    log.info("Committing data.json to GitHub...")
+    # Step 2: Enrich any new shows
+    shows_updated = enrich_new_shows()
+
+    # Step 3: Git add, commit, push
+    files_to_add = ["src/data/data.json"]
+    if shows_updated:
+        files_to_add.append("src/data/shows.json")
+
+    log.info(f"Committing {', '.join(files_to_add)} to GitHub...")
     commit_msg = f"Weekly update: {fname} — {datetime.now().strftime('%Y-%m-%d %H:%M')}"
 
+    add_cmd = ["git", "-C", REPO_FOLDER, "add"] + files_to_add
     git_commands = [
-        ["git", "-C", REPO_FOLDER, "add", "src/data/data.json"],
+        add_cmd,
         ["git", "-C", REPO_FOLDER, "commit", "-m", commit_msg],
         ["git", "-C", REPO_FOLDER, "push"],
     ]
