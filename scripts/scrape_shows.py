@@ -85,11 +85,12 @@ def load_season_shows(season):
 
 # ── SPARQL HELPERS ────────────────────────────────────────────────────────────
 SPARQL_ENDPOINT = "https://query.wikidata.org/sparql"
+DBPEDIA_ENDPOINT = "https://dbpedia.org/sparql"
 WIKIDATA_API    = "https://www.wikidata.org/w/api.php"
 _USER_AGENT = "BushnellDashboard/1.0 (broadway-touring-dashboard; contact: broadway@bushnell.org)"
 
-def _sparql_client():
-    sparql = SPARQLWrapper(SPARQL_ENDPOINT)
+def _sparql_client(endpoint=SPARQL_ENDPOINT):
+    sparql = SPARQLWrapper(endpoint)
     sparql.addCustomHttpHeader("User-Agent", _USER_AGENT)
     sparql.setReturnFormat(JSON)
     return sparql
@@ -263,39 +264,66 @@ def _fetch_wikidata_item_rest(wikidata_id):
         return None
 
 # ── WIKIDATA SEARCH FALLBACK ──────────────────────────────────────────────────
-def _search_wikidata(show_name):
+def _qid_from_wikipedia(show_name):
     """
-    Use wbsearchentities to find a Wikidata item by fuzzy name.
-    Returns the first result whose description mentions 'musical', or None.
+    Look up a show's Wikidata QID via the Wikipedia API (pageprops).
+    Tries 'SHOW (musical)' then 'SHOW' as Wikipedia article titles.
+    More reliable than Wikidata fuzzy search, especially during SPARQL outages.
     """
+    candidates = [f"{show_name} (musical)", show_name]
     try:
         resp = requests.get(
-            WIKIDATA_API,
-            params={
-                "action":   "wbsearchentities",
-                "search":   show_name,
-                "language": "en",
-                "type":     "item",
-                "limit":    5,
-                "format":   "json",
-            },
+            "https://en.wikipedia.org/w/api.php",
+            params={"action": "query", "titles": "|".join(candidates),
+                    "prop": "pageprops", "format": "json"},
             timeout=10,
             headers={"User-Agent": _USER_AGENT},
         )
-        if resp.status_code == 429:
-            print(f"  Rate limited (429) on search — waiting 60s...")
-            time.sleep(60)
-            return None
         if resp.status_code != 200:
             return None
-        for result in resp.json().get("search", []):
-            desc = result.get("description", "").lower()
-            if "musical" in desc or "broadway" in desc:
-                return result["id"]
-        return None
+        for page in resp.json().get("query", {}).get("pages", {}).values():
+            qid = page.get("pageprops", {}).get("wikibase_item")
+            if qid:
+                print(f"  Wikipedia QID lookup: {page.get('title')} -> {qid}")
+                return qid
     except Exception as e:
-        print(f"  Wikidata search error for '{show_name}': {e}")
-        return None
+        print(f"  Wikipedia QID lookup error for '{show_name}': {e}")
+    return None
+
+
+def _search_wikidata(show_name):
+    """
+    Fuzzy fallback: use wbsearchentities when Wikipedia QID lookup fails.
+    Tries 'SHOW musical' then bare show name.
+    """
+    for query in [f"{show_name} musical", show_name]:
+        try:
+            resp = requests.get(
+                WIKIDATA_API,
+                params={
+                    "action":   "wbsearchentities",
+                    "search":   query,
+                    "language": "en",
+                    "type":     "item",
+                    "limit":    10,
+                    "format":   "json",
+                },
+                timeout=10,
+                headers={"User-Agent": _USER_AGENT},
+            )
+            if resp.status_code == 429:
+                print(f"  Rate limited (429) on search — waiting 60s...")
+                time.sleep(60)
+                return None
+            if resp.status_code != 200:
+                continue
+            for result in resp.json().get("search", []):
+                desc = result.get("description", "").lower()
+                if "musical" in desc or "broadway" in desc or "theatre" in desc:
+                    return result["id"]
+        except Exception as e:
+            print(f"  Wikidata search error for '{query}': {e}")
+    return None
 
 # ── WIKIDATA SPARQL ───────────────────────────────────────────────────────────
 def query_wikidata(show_name):
@@ -352,28 +380,78 @@ def query_wikidata(show_name):
         else:
             print(f"  Wikidata exact-match error for '{show_name}': {e}")
 
-    # Fuzzy fallback via wbsearchentities
-    print(f"  Exact match failed — trying fuzzy search...")
-    time.sleep(3)
-    wikidata_id = _search_wikidata(show_name)
+    # Wikipedia QID lookup (reliable, not SPARQL-dependent)
+    print(f"  Exact SPARQL match failed — trying Wikipedia QID lookup...")
+    wikidata_id = _qid_from_wikipedia(show_name)
+
+    # Fuzzy Wikidata search as final fallback
+    if not wikidata_id:
+        print(f"  Trying Wikidata fuzzy search...")
+        time.sleep(2)
+        wikidata_id = _search_wikidata(show_name)
+        if wikidata_id:
+            print(f"  Fuzzy match: {wikidata_id}")
+
     if wikidata_id:
-        print(f"  Fuzzy match: {wikidata_id}")
-        time.sleep(3)
+        time.sleep(2)
         return _fetch_wikidata_item(wikidata_id)
 
     return None
 
 
+def _tony_from_claims(claims):
+    """
+    Extract Tony nomination/win counts directly from Wikidata claims dict.
+    Batch-fetches award entity labels to avoid one-per-award API calls.
+    Returns (nominations, wins) tuple.
+    """
+    def award_ids(prop):
+        out = set()
+        for c in claims.get(prop, []):
+            v = c.get("mainsnak", {}).get("datavalue", {}).get("value", {})
+            if isinstance(v, dict) and "id" in v:
+                out.add(v["id"])
+        return out
+
+    win_ids = award_ids("P166")
+    nom_ids = award_ids("P1411")
+    all_ids = list(win_ids | nom_ids)
+    if not all_ids:
+        return 0, 0
+
+    tony_ids = set()
+    for i in range(0, len(all_ids), 50):
+        batch = "|".join(all_ids[i:i + 50])
+        try:
+            resp = requests.get(
+                WIKIDATA_API,
+                params={"action": "wbgetentities", "ids": batch, "format": "json",
+                        "props": "labels", "languages": "en"},
+                timeout=10,
+                headers={"User-Agent": _USER_AGENT},
+            )
+            if resp.status_code == 200:
+                for eid, entity in resp.json().get("entities", {}).items():
+                    label = entity.get("labels", {}).get("en", {}).get("value", "")
+                    if "tony award" in label.lower():
+                        tony_ids.add(eid)
+        except Exception:
+            pass
+
+    wins = len(win_ids & tony_ids)
+    noms = len(nom_ids & tony_ids) + wins  # P1411 = nominated-not-won; total = both
+    return noms, wins
+
+
 def query_tony_awards(wikidata_id):
     """
-    Given a Wikidata item ID (e.g. 'Q123456'), return (nominations, wins).
-    Uses separate OPTIONAL blocks to count nominations (P1411) and wins (P166).
+    Given a Wikidata item ID, return (nominations, wins).
+    Tries SPARQL first; falls back to REST claim extraction on 429.
     """
     if not wikidata_id:
         return 0, 0
 
     sparql = _sparql_client()
-
     query = f"""
     SELECT
       (COUNT(DISTINCT ?nomAward) AS ?nominations)
@@ -389,22 +467,216 @@ def query_tony_awards(wikidata_id):
       }}
     }}
     """
-
     try:
         sparql.setQuery(query)
         results = _run_sparql(sparql)
         bindings = results["results"]["bindings"]
-
         if bindings:
             b = bindings[0]
-            noms = int(b.get("nominations", {}).get("value", 0))
-            wins = int(b.get("wins",        {}).get("value", 0))
-            return noms, wins
+            return int(b.get("nominations", {}).get("value", 0)), int(b.get("wins", {}).get("value", 0))
+        return 0, 0
+    except Exception as e:
+        if "429" in str(e):
+            print(f"  Tony SPARQL rate-limited — using REST claim extraction...")
+            # Fetch claims for this item via REST and count Tony awards
+            try:
+                resp = requests.get(
+                    WIKIDATA_API,
+                    params={"action": "wbgetentities", "ids": wikidata_id, "format": "json",
+                            "props": "claims"},
+                    timeout=15, headers={"User-Agent": _USER_AGENT},
+                )
+                if resp.status_code == 200:
+                    entity = resp.json().get("entities", {}).get(wikidata_id, {})
+                    return _tony_from_claims(entity.get("claims", {}))
+            except Exception as e2:
+                print(f"  Tony REST fallback error: {e2}")
+        else:
+            print(f"  Tony query error for {wikidata_id}: {e}")
         return 0, 0
 
+
+# ── IBDB ──────────────────────────────────────────────────────────────────────
+IBDB_SEARCH = "https://www.ibdb.com/search-results.php"
+IBDB_BASE   = "https://www.ibdb.com"
+
+def _ibdb_search(show_name):
+    """Search IBDB and return the URL of the best-matching production page."""
+    try:
+        resp = requests.get(
+            IBDB_SEARCH,
+            params={"searchterm": show_name, "searchtype": "shows"},
+            timeout=15,
+            headers={"User-Agent": _USER_AGENT, "Accept": "text/html"},
+        )
+        if resp.status_code != 200:
+            return None
+        # Look for first production link: /broadway-production/title-12345
+        import re as _re
+        m = _re.search(r'href="(/broadway-production/[^"]+)"', resp.text)
+        return IBDB_BASE + m.group(1) if m else None
     except Exception as e:
-        print(f"  Tony query error for {wikidata_id}: {e}")
-        return 0, 0
+        print(f"  IBDB search error for '{show_name}': {e}")
+        return None
+
+
+def scrape_ibdb(show_name):
+    """
+    Scrape IBDB for Tony awards, opening/closing dates, and composer.
+    Returns a dict of fields found, or empty dict on failure.
+    """
+    url = _ibdb_search(show_name)
+    if not url:
+        return {}
+    try:
+        resp = requests.get(url, timeout=15,
+                            headers={"User-Agent": _USER_AGENT, "Accept": "text/html"})
+        if resp.status_code != 200:
+            return {}
+        text = resp.text
+
+        import re as _re
+
+        result = {"ibdb_url": url}
+
+        # Opening date — look for pattern like "Opening Night: Month DD, YYYY"
+        m = _re.search(r'Opening Night[^<]*?(\w+ \d{1,2},\s*\d{4})', text)
+        if m:
+            result["opening_date_ibdb"] = m.group(1).strip()
+
+        # Tony awards — count occurrences of "Tony Award" sections
+        tony_wins = len(_re.findall(r'(?i)tony award[^<]*?winner', text))
+        tony_noms = len(_re.findall(r'(?i)tony award', text))
+        if tony_noms:
+            result["tony_nominations_ibdb"] = tony_noms
+            result["tony_wins_ibdb"] = tony_wins
+
+        print(f"  IBDB: {url}")
+        if tony_noms:
+            print(f"  IBDB Tony: ~{tony_wins} wins / ~{tony_noms} nominations (text count)")
+
+        return result
+    except Exception as e:
+        print(f"  IBDB scrape error for '{show_name}': {e}")
+        return {}
+
+
+# ── DBPEDIA ───────────────────────────────────────────────────────────────────
+def query_dbpedia(show_name):
+    """
+    Query DBpedia for a Broadway musical. Independent of Wikidata — useful
+    when Wikidata's SPARQL endpoint is rate-limited or down.
+    Returns a dict of available fields, or None on failure.
+    """
+    sparql = _sparql_client(DBPEDIA_ENDPOINT)
+    # Normalize name to DBpedia resource format: spaces → underscores, append _(musical)
+    candidate = show_name.replace(" ", "_")
+    resource  = f"http://dbpedia.org/resource/{candidate}_(musical)"
+
+    query = f"""
+    PREFIX dbo: <http://dbpedia.org/ontology/>
+    PREFIX dbp: <http://dbpedia.org/property/>
+    PREFIX dct: <http://purl.org/dc/terms/>
+    SELECT DISTINCT ?composer ?lyricist ?openDate ?abstract ?thumbnail
+    WHERE {{
+      OPTIONAL {{ <{resource}> dbo:composer    ?composer    . }}
+      OPTIONAL {{ <{resource}> dbp:lyrics      ?lyricist    . }}
+      OPTIONAL {{ <{resource}> dbo:openingDate ?openDate    . }}
+      OPTIONAL {{ <{resource}> dbo:abstract    ?abstract    . FILTER(LANG(?abstract)="en") }}
+      OPTIONAL {{ <{resource}> dbo:thumbnail   ?thumbnail   . }}
+    }}
+    LIMIT 1
+    """
+    try:
+        sparql.setQuery(query)
+        results = _run_sparql(sparql, max_retries=2)
+        bindings = results["results"]["bindings"]
+        if not bindings or not any(bindings[0].values()):
+            # Try without _(musical) suffix
+            resource2 = f"http://dbpedia.org/resource/{candidate}"
+            query2 = query.replace(resource, resource2)
+            sparql.setQuery(query2)
+            results = _run_sparql(sparql, max_retries=2)
+            bindings = results["results"]["bindings"]
+
+        if not bindings or not any(bindings[0].values()):
+            return None
+
+        b = bindings[0]
+
+        # Composer may be a URI like dbr:Lin-Manuel_Miranda — extract label
+        composer_raw = b["composer"]["value"] if "composer" in b else None
+        composer = None
+        if composer_raw:
+            if composer_raw.startswith("http"):
+                composer = composer_raw.split("/")[-1].replace("_", " ")
+            else:
+                composer = composer_raw
+
+        lyricist_raw = b["lyricist"]["value"] if "lyricist" in b else None
+        lyricist = None
+        if lyricist_raw:
+            if lyricist_raw.startswith("http"):
+                lyricist = lyricist_raw.split("/")[-1].replace("_", " ")
+            else:
+                lyricist = lyricist_raw
+
+        open_date = None
+        if "openDate" in b:
+            open_date = b["openDate"]["value"][:10]
+
+        abstract = b["abstract"]["value"] if "abstract" in b else None
+        thumbnail = b["thumbnail"]["value"] if "thumbnail" in b else None
+
+        # Tony count: query DBpedia for award claims
+        tony_noms, tony_wins = _dbpedia_tony_count(resource)
+
+        result = {
+            "composer":     composer,
+            "lyricist":     lyricist,
+            "opening_date": open_date,
+            "abstract":     abstract[:500] if abstract else None,
+            "image_url":    thumbnail,
+            "tony_nominations": tony_noms,
+            "tony_wins":        tony_wins,
+            "dbpedia_resource": resource,
+        }
+        print(f"  DBpedia: opened {open_date or '?'} | composer: {composer or '?'} | Tonys: {tony_wins}W/{tony_noms}N")
+        return result
+
+    except Exception as e:
+        print(f"  DBpedia error for '{show_name}': {e}")
+        return None
+
+
+def _dbpedia_tony_count(resource):
+    """Count Tony Award nominations and wins for a DBpedia resource."""
+    sparql = _sparql_client(DBPEDIA_ENDPOINT)
+    query = f"""
+    PREFIX dbo: <http://dbpedia.org/ontology/>
+    PREFIX dbr: <http://dbpedia.org/resource/>
+    SELECT (COUNT(DISTINCT ?nom) AS ?noms) (COUNT(DISTINCT ?win) AS ?wins)
+    WHERE {{
+      OPTIONAL {{
+        <{resource}> dbo:award ?win .
+        ?win a dbo:Award .
+        FILTER(CONTAINS(STR(?win), "Tony"))
+      }}
+      OPTIONAL {{
+        <{resource}> dbo:nomination ?nom .
+        FILTER(CONTAINS(STR(?nom), "Tony"))
+      }}
+    }}
+    """
+    try:
+        sparql.setQuery(query)
+        results = _run_sparql(sparql, max_retries=2)
+        b = results["results"]["bindings"]
+        if b:
+            return int(b[0].get("noms", {}).get("value", 0)), int(b[0].get("wins", {}).get("value", 0))
+    except Exception:
+        pass
+    return 0, 0
 
 
 # ── WIKIPEDIA ─────────────────────────────────────────────────────────────────
@@ -444,9 +716,9 @@ def query_wikipedia(wikipedia_url, max_retries=3):
 # ── CORE ENRICHMENT ───────────────────────────────────────────────────────────
 def enrich_show(show_entry, season):
     """
-    Fetch all metadata for a show. show_entry is a dict with 'name' and
-    'league_name'. 'name' is used for Wikidata search; 'league_name' is
-    stored so callers can match back to data.json records.
+    Fetch metadata for a show from multiple sources, documenting each.
+    Sources tried: Wikidata (SPARQL → REST fallback), Wikipedia, IBDB.
+    Each field in 'sources' records which service provided that value.
     Exposed at module level so watcher.py can call it directly.
     """
     name        = show_entry["name"]
@@ -467,36 +739,79 @@ def enrich_show(show_entry, season):
         "wikipedia_summary":  None,
         "image_url":          None,
         "wikidata_id":        None,
+        "ibdb_url":           None,
+        "sources":            {},
     }
 
+    # ── Wikidata ──────────────────────────────────────────────────────────────
     wd = query_wikidata(name)
     time.sleep(3)
 
     if wd:
-        record.update({
-            "opening_date":  wd.get("opening_date"),
-            "closing_date":  wd.get("closing_date"),
-            "composer":      wd.get("composer"),
-            "lyricist":      wd.get("lyricist"),
-            "wikipedia_url": wd.get("wikipedia_url"),
-            "image_url":     wd.get("image_url"),
-            "wikidata_id":   wd.get("wikidata_id"),
-        })
+        wd_source = "Wikidata"
+        for field in ("opening_date", "closing_date", "composer", "lyricist",
+                      "wikipedia_url", "image_url", "wikidata_id"):
+            if wd.get(field):
+                record[field] = wd[field]
+                record["sources"][field] = wd_source
         print(f"  Wikidata: opened {wd.get('opening_date','?')} | composer: {wd.get('composer','?')}")
 
         noms, wins = query_tony_awards(wd.get("wikidata_id"))
-        record["tony_nominations"] = noms
-        record["tony_wins"]        = wins
-        print(f"  Tonys: {wins} wins / {noms} nominations")
+        if noms or wins:
+            record["tony_nominations"] = noms
+            record["tony_wins"]        = wins
+            record["sources"]["tony_nominations"] = wd_source
+            record["sources"]["tony_wins"]        = wd_source
+        print(f"  Tonys (Wikidata): {wins} wins / {noms} nominations")
         time.sleep(3)
 
         summary = query_wikipedia(wd.get("wikipedia_url"))
         if summary:
             record["wikipedia_summary"] = summary
+            record["sources"]["wikipedia_summary"] = "Wikipedia"
             print(f"  Wikipedia: {summary[:80]}...")
         time.sleep(1)
     else:
-        print(f"  No Wikidata match found")
+        print(f"  No Wikidata match — trying DBpedia...")
+        db = query_dbpedia(name)
+        time.sleep(2)
+        if db:
+            for field in ("composer", "lyricist", "opening_date", "image_url"):
+                if db.get(field) and not record[field]:
+                    record[field] = db[field]
+                    record["sources"][field] = "DBpedia"
+            if db.get("abstract") and not record["wikipedia_summary"]:
+                record["wikipedia_summary"] = db["abstract"]
+                record["sources"]["wikipedia_summary"] = "DBpedia"
+            if db.get("tony_nominations") and not record["tony_nominations"]:
+                record["tony_nominations"] = db["tony_nominations"]
+                record["tony_wins"]        = db["tony_wins"]
+                record["sources"]["tony_nominations"] = "DBpedia"
+                record["sources"]["tony_wins"]        = "DBpedia"
+
+    # ── IBDB ─────────────────────────────────────────────────────────────────
+    ibdb = scrape_ibdb(name)
+    time.sleep(2)
+
+    if ibdb:
+        if ibdb.get("ibdb_url"):
+            record["ibdb_url"] = ibdb["ibdb_url"]
+            record["sources"]["ibdb_url"] = "IBDB"
+
+        # Fill opening date from IBDB if Wikidata didn't provide one
+        if not record["opening_date"] and ibdb.get("opening_date_ibdb"):
+            record["opening_date"] = ibdb["opening_date_ibdb"]
+            record["sources"]["opening_date"] = "IBDB"
+
+        # IBDB Tony counts: use if Wikidata returned nothing or as a cross-check
+        ibdb_noms = ibdb.get("tony_nominations_ibdb", 0)
+        ibdb_wins = ibdb.get("tony_wins_ibdb", 0)
+        if ibdb_noms and not record["tony_nominations"]:
+            record["tony_nominations"] = ibdb_noms
+            record["tony_wins"]        = ibdb_wins
+            record["sources"]["tony_nominations"] = "IBDB"
+            record["sources"]["tony_wins"]        = "IBDB"
+            print(f"  Tonys (IBDB): ~{ibdb_wins} wins / ~{ibdb_noms} nominations")
 
     return record
 
