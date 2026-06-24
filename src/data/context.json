@@ -1,0 +1,3983 @@
+{
+  "2019-07-21": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 98.4,
+      "ct_unemployment": 3.9,
+      "confidence_trend": "stable",
+      "source_month": "2019-07"
+    }
+  },
+  "2019-07-28": {
+    "weather": {
+      "events": [
+        {
+          "type": "Thunderstorm Wind",
+          "begin": "2019-07-31",
+          "end": "2019-07-31",
+          "magnitude": "50.00 EG",
+          "narrative": "Numerous trees and wires were downed on Albany Avenue in West Hartford."
+        }
+      ],
+      "significant": true,
+      "summary": "Thunderstorm Wind"
+    },
+    "economic": {
+      "consumer_confidence": 98.4,
+      "ct_unemployment": 3.9,
+      "confidence_trend": "stable",
+      "source_month": "2019-07"
+    }
+  },
+  "2019-08-04": {
+    "weather": {
+      "events": [
+        {
+          "type": "Flood",
+          "begin": "2019-08-07",
+          "end": "2019-08-07",
+          "magnitude": null,
+          "narrative": "In Hartford, Milford Street at Homestead Avenue was flooded and impassable."
+        },
+        {
+          "type": "Flash Flood",
+          "begin": "2019-08-07",
+          "end": "2019-08-07",
+          "magnitude": null,
+          "narrative": "In West Hartford, Albany Avenue at Mohegan Drive was flooded and impassable. Cars were stuck in flash flood waters at King Philip Drive and Brewster Road.  There were reports of eight cars stuck in flash flood waters on Mohegan Drive near the intersection with Brewster Road, which was impassable."
+        }
+      ],
+      "significant": true,
+      "summary": "Flood; Flash Flood"
+    },
+    "economic": {
+      "consumer_confidence": 89.8,
+      "ct_unemployment": 3.7,
+      "confidence_trend": "falling",
+      "source_month": "2019-08"
+    }
+  },
+  "2019-08-11": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 89.8,
+      "ct_unemployment": 3.7,
+      "confidence_trend": "falling",
+      "source_month": "2019-08"
+    }
+  },
+  "2019-08-18": {
+    "weather": {
+      "events": [
+        {
+          "type": "Thunderstorm Wind",
+          "begin": "2019-08-21",
+          "end": "2019-08-21",
+          "magnitude": "50.00 EG",
+          "narrative": "In East Hartford, large branches were down on Birchwood and Milwood Roads.  A large branch was down at the the corner of Birchwood Road and Silver Lane."
+        }
+      ],
+      "significant": true,
+      "summary": "Thunderstorm Wind"
+    },
+    "economic": {
+      "consumer_confidence": 89.8,
+      "ct_unemployment": 3.7,
+      "confidence_trend": "falling",
+      "source_month": "2019-08"
+    }
+  },
+  "2019-08-25": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 89.8,
+      "ct_unemployment": 3.7,
+      "confidence_trend": "falling",
+      "source_month": "2019-08"
+    }
+  },
+  "2019-09-01": {
+    "weather": {
+      "events": [
+        {
+          "type": "Thunderstorm Wind",
+          "begin": "2019-09-04",
+          "end": "2019-09-04",
+          "magnitude": "50.00 EG",
+          "narrative": "In Enfield, power lines were down from wind on South Road at Phoenix Avenue."
+        }
+      ],
+      "significant": true,
+      "summary": "Thunderstorm Wind"
+    },
+    "economic": {
+      "consumer_confidence": 93.2,
+      "ct_unemployment": 3.3,
+      "confidence_trend": "rising",
+      "source_month": "2019-09"
+    }
+  },
+  "2019-09-08": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 93.2,
+      "ct_unemployment": 3.3,
+      "confidence_trend": "rising",
+      "source_month": "2019-09"
+    }
+  },
+  "2019-09-15": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 93.2,
+      "ct_unemployment": 3.3,
+      "confidence_trend": "rising",
+      "source_month": "2019-09"
+    }
+  },
+  "2019-09-22": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 93.2,
+      "ct_unemployment": 3.3,
+      "confidence_trend": "rising",
+      "source_month": "2019-09"
+    }
+  },
+  "2019-09-29": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 93.2,
+      "ct_unemployment": 3.3,
+      "confidence_trend": "rising",
+      "source_month": "2019-09"
+    }
+  },
+  "2019-10-06": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 95.5,
+      "ct_unemployment": 3.3,
+      "confidence_trend": "rising",
+      "source_month": "2019-10"
+    }
+  },
+  "2019-10-13": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 95.5,
+      "ct_unemployment": 3.3,
+      "confidence_trend": "rising",
+      "source_month": "2019-10"
+    }
+  },
+  "2019-10-20": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 95.5,
+      "ct_unemployment": 3.3,
+      "confidence_trend": "rising",
+      "source_month": "2019-10"
+    }
+  },
+  "2019-10-27": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 95.5,
+      "ct_unemployment": 3.3,
+      "confidence_trend": "rising",
+      "source_month": "2019-10"
+    }
+  },
+  "2019-11-03": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 96.8,
+      "ct_unemployment": 3.1,
+      "confidence_trend": "rising",
+      "source_month": "2019-11"
+    }
+  },
+  "2019-11-10": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 96.8,
+      "ct_unemployment": 3.1,
+      "confidence_trend": "rising",
+      "source_month": "2019-11"
+    }
+  },
+  "2019-11-17": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 96.8,
+      "ct_unemployment": 3.1,
+      "confidence_trend": "rising",
+      "source_month": "2019-11"
+    }
+  },
+  "2019-11-24": {
+    "weather": {
+      "events": [
+        {
+          "type": "Strong Wind",
+          "begin": "2019-11-28",
+          "end": "2019-11-28",
+          "magnitude": "39.00 EG",
+          "narrative": "In Burlington, a trained spotter reported an 8-inch diameter gray birch tree was snapped off about 3 feet above ground, approximately 25 feet long, blocking Woodhaven Drive."
+        }
+      ],
+      "significant": true,
+      "summary": "Strong Wind"
+    },
+    "economic": {
+      "consumer_confidence": 96.8,
+      "ct_unemployment": 3.1,
+      "confidence_trend": "rising",
+      "source_month": "2019-11"
+    }
+  },
+  "2019-12-01": {
+    "weather": {
+      "events": [
+        {
+          "type": "Heavy Snow",
+          "begin": "2019-12-01",
+          "end": "2019-12-03",
+          "magnitude": null,
+          "narrative": "Final snow totals ranged from 8 to 12 inches in southern Hartford County to 12 to 18 inches in northern Hartford County.  A trained spotter in North Granby, which had two heavy bands (one on the evening of the 1st and the other overnight on the 2nd/3rd) reported 18.0 inches."
+        }
+      ],
+      "significant": true,
+      "summary": "Heavy Snow"
+    },
+    "economic": {
+      "consumer_confidence": 99.3,
+      "ct_unemployment": 3.1,
+      "confidence_trend": "rising",
+      "source_month": "2019-12"
+    }
+  },
+  "2019-12-08": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 99.3,
+      "ct_unemployment": 3.1,
+      "confidence_trend": "rising",
+      "source_month": "2019-12"
+    }
+  },
+  "2019-12-15": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 99.3,
+      "ct_unemployment": 3.1,
+      "confidence_trend": "rising",
+      "source_month": "2019-12"
+    }
+  },
+  "2020-01-05": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 99.8,
+      "ct_unemployment": 4.3,
+      "confidence_trend": "stable",
+      "source_month": "2020-01"
+    }
+  },
+  "2020-01-12": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 99.8,
+      "ct_unemployment": 4.3,
+      "confidence_trend": "stable",
+      "source_month": "2020-01"
+    }
+  },
+  "2020-01-19": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 99.8,
+      "ct_unemployment": 4.3,
+      "confidence_trend": "stable",
+      "source_month": "2020-01"
+    }
+  },
+  "2020-01-26": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 99.8,
+      "ct_unemployment": 4.3,
+      "confidence_trend": "stable",
+      "source_month": "2020-01"
+    }
+  },
+  "2020-02-02": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 101.0,
+      "ct_unemployment": 4.2,
+      "confidence_trend": "rising",
+      "source_month": "2020-02"
+    }
+  },
+  "2020-02-09": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 101.0,
+      "ct_unemployment": 4.2,
+      "confidence_trend": "rising",
+      "source_month": "2020-02"
+    }
+  },
+  "2020-02-16": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 101.0,
+      "ct_unemployment": 4.2,
+      "confidence_trend": "rising",
+      "source_month": "2020-02"
+    }
+  },
+  "2020-02-23": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 101.0,
+      "ct_unemployment": 4.2,
+      "confidence_trend": "rising",
+      "source_month": "2020-02"
+    }
+  },
+  "2020-03-01": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 89.1,
+      "ct_unemployment": 4.7,
+      "confidence_trend": "falling",
+      "source_month": "2020-03"
+    }
+  },
+  "2020-03-08": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 89.1,
+      "ct_unemployment": 4.7,
+      "confidence_trend": "falling",
+      "source_month": "2020-03"
+    }
+  },
+  "2021-10-24": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 71.7,
+      "ct_unemployment": 5.3,
+      "confidence_trend": "falling",
+      "source_month": "2021-10"
+    }
+  },
+  "2021-10-31": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 71.7,
+      "ct_unemployment": 5.3,
+      "confidence_trend": "falling",
+      "source_month": "2021-10"
+    }
+  },
+  "2021-11-07": {
+    "weather": {
+      "events": [
+        {
+          "type": "Thunderstorm Wind",
+          "begin": "2021-11-13",
+          "end": "2021-11-13",
+          "magnitude": "70.00 EG",
+          "narrative": "In Windsor Locks at 404 PM EST. the ASOS at Bradley International Airport (KBDL) recorded a gust to 47 knots.  However, the Bradley Weather Contract Observer Supervisor estimated that a gust to 70 knots occurred within one-half mile of the ASOS.  A small brick wall just outside of the Signature b..."
+        }
+      ],
+      "significant": true,
+      "summary": "Thunderstorm Wind"
+    },
+    "economic": {
+      "consumer_confidence": 67.4,
+      "ct_unemployment": 4.7,
+      "confidence_trend": "falling",
+      "source_month": "2021-11"
+    }
+  },
+  "2021-11-21": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 67.4,
+      "ct_unemployment": 4.7,
+      "confidence_trend": "falling",
+      "source_month": "2021-11"
+    }
+  },
+  "2021-11-28": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 67.4,
+      "ct_unemployment": 4.7,
+      "confidence_trend": "falling",
+      "source_month": "2021-11"
+    }
+  },
+  "2021-12-05": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 70.6,
+      "ct_unemployment": 4.4,
+      "confidence_trend": "rising",
+      "source_month": "2021-12"
+    }
+  },
+  "2021-12-12": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 70.6,
+      "ct_unemployment": 4.4,
+      "confidence_trend": "rising",
+      "source_month": "2021-12"
+    }
+  },
+  "2021-12-26": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 70.6,
+      "ct_unemployment": 4.4,
+      "confidence_trend": "rising",
+      "source_month": "2021-12"
+    }
+  },
+  "2022-01-02": {
+    "weather": {
+      "events": [
+        {
+          "type": "Heavy Snow",
+          "begin": "2022-01-07",
+          "end": "2022-01-07",
+          "magnitude": null,
+          "narrative": "Snowfall ranged from 5 to 9 inches with the highest amount (9 inches) reported in Newington. The heavier snow (6-10 inches) fell in southeast Hartford county with less snow (3-6 inches) in the northwest of the county."
+        }
+      ],
+      "significant": true,
+      "summary": "Heavy Snow"
+    },
+    "economic": {
+      "consumer_confidence": 67.2,
+      "ct_unemployment": 5.4,
+      "confidence_trend": "falling",
+      "source_month": "2022-01"
+    }
+  },
+  "2022-01-09": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 67.2,
+      "ct_unemployment": 5.4,
+      "confidence_trend": "falling",
+      "source_month": "2022-01"
+    }
+  },
+  "2022-01-16": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 67.2,
+      "ct_unemployment": 5.4,
+      "confidence_trend": "falling",
+      "source_month": "2022-01"
+    }
+  },
+  "2022-01-23": {
+    "weather": {
+      "events": [
+        {
+          "type": "Heavy Snow",
+          "begin": "2022-01-28",
+          "end": "2022-01-29",
+          "magnitude": null,
+          "narrative": "Snowfall generally ranged from 3 to 13 inches. The highest amounts were in eastern Hartford county with lesser amounts to the west. The highest report was 13.8 inches in Manchester. Winds gusted 30 to 40 mph."
+        }
+      ],
+      "significant": true,
+      "summary": "Heavy Snow"
+    },
+    "economic": {
+      "consumer_confidence": 67.2,
+      "ct_unemployment": 5.4,
+      "confidence_trend": "falling",
+      "source_month": "2022-01"
+    }
+  },
+  "2022-01-30": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 67.2,
+      "ct_unemployment": 5.4,
+      "confidence_trend": "falling",
+      "source_month": "2022-01"
+    }
+  },
+  "2022-02-06": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 62.8,
+      "ct_unemployment": 5.2,
+      "confidence_trend": "falling",
+      "source_month": "2022-02"
+    }
+  },
+  "2022-02-13": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 62.8,
+      "ct_unemployment": 5.2,
+      "confidence_trend": "falling",
+      "source_month": "2022-02"
+    }
+  },
+  "2022-02-20": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 62.8,
+      "ct_unemployment": 5.2,
+      "confidence_trend": "falling",
+      "source_month": "2022-02"
+    }
+  },
+  "2022-02-27": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 62.8,
+      "ct_unemployment": 5.2,
+      "confidence_trend": "falling",
+      "source_month": "2022-02"
+    }
+  },
+  "2022-03-06": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 59.4,
+      "ct_unemployment": 4.5,
+      "confidence_trend": "falling",
+      "source_month": "2022-03"
+    }
+  },
+  "2022-03-13": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 59.4,
+      "ct_unemployment": 4.5,
+      "confidence_trend": "falling",
+      "source_month": "2022-03"
+    }
+  },
+  "2022-03-20": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 59.4,
+      "ct_unemployment": 4.5,
+      "confidence_trend": "falling",
+      "source_month": "2022-03"
+    }
+  },
+  "2022-03-27": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 59.4,
+      "ct_unemployment": 4.5,
+      "confidence_trend": "falling",
+      "source_month": "2022-03"
+    }
+  },
+  "2022-04-03": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 65.2,
+      "ct_unemployment": 3.9,
+      "confidence_trend": "rising",
+      "source_month": "2022-04"
+    }
+  },
+  "2022-04-10": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 65.2,
+      "ct_unemployment": 3.9,
+      "confidence_trend": "rising",
+      "source_month": "2022-04"
+    }
+  },
+  "2022-04-17": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 65.2,
+      "ct_unemployment": 3.9,
+      "confidence_trend": "rising",
+      "source_month": "2022-04"
+    }
+  },
+  "2022-04-24": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 65.2,
+      "ct_unemployment": 3.9,
+      "confidence_trend": "rising",
+      "source_month": "2022-04"
+    }
+  },
+  "2022-05-01": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 58.4,
+      "ct_unemployment": 4.2,
+      "confidence_trend": "falling",
+      "source_month": "2022-05"
+    }
+  },
+  "2022-05-08": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 58.4,
+      "ct_unemployment": 4.2,
+      "confidence_trend": "falling",
+      "source_month": "2022-05"
+    }
+  },
+  "2022-05-15": {
+    "weather": {
+      "events": [
+        {
+          "type": "Thunderstorm Wind",
+          "begin": "2022-05-16",
+          "end": "2022-05-16",
+          "magnitude": "45.00 EG",
+          "narrative": "In Hartford, a tree was downed, along with wires, on Holcomb Street.  Wires also were downed on Barbour Street."
+        }
+      ],
+      "significant": true,
+      "summary": "Thunderstorm Wind"
+    },
+    "economic": {
+      "consumer_confidence": 58.4,
+      "ct_unemployment": 4.2,
+      "confidence_trend": "falling",
+      "source_month": "2022-05"
+    }
+  },
+  "2022-05-22": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 58.4,
+      "ct_unemployment": 4.2,
+      "confidence_trend": "falling",
+      "source_month": "2022-05"
+    }
+  },
+  "2022-05-29": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 58.4,
+      "ct_unemployment": 4.2,
+      "confidence_trend": "falling",
+      "source_month": "2022-05"
+    }
+  },
+  "2022-06-05": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 50.0,
+      "ct_unemployment": 4.0,
+      "confidence_trend": "falling",
+      "source_month": "2022-06"
+    }
+  },
+  "2022-06-12": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 50.0,
+      "ct_unemployment": 4.0,
+      "confidence_trend": "falling",
+      "source_month": "2022-06"
+    }
+  },
+  "2022-06-19": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 50.0,
+      "ct_unemployment": 4.0,
+      "confidence_trend": "falling",
+      "source_month": "2022-06"
+    }
+  },
+  "2022-06-26": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 50.0,
+      "ct_unemployment": 4.0,
+      "confidence_trend": "falling",
+      "source_month": "2022-06"
+    }
+  },
+  "2022-07-03": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 51.5,
+      "ct_unemployment": 4.3,
+      "confidence_trend": "rising",
+      "source_month": "2022-07"
+    }
+  },
+  "2022-07-10": {
+    "weather": {
+      "events": [
+        {
+          "type": "Thunderstorm Wind",
+          "begin": "2022-07-12",
+          "end": "2022-07-12",
+          "magnitude": "50.00 EG",
+          "narrative": "In East Windsor, a tree and wires were down on Holcomb Terrace.  Report relayed by amateur radio."
+        }
+      ],
+      "significant": true,
+      "summary": "Thunderstorm Wind"
+    },
+    "economic": {
+      "consumer_confidence": 51.5,
+      "ct_unemployment": 4.3,
+      "confidence_trend": "rising",
+      "source_month": "2022-07"
+    }
+  },
+  "2022-07-17": {
+    "weather": {
+      "events": [
+        {
+          "type": "Thunderstorm Wind",
+          "begin": "2022-07-21",
+          "end": "2022-07-21",
+          "magnitude": "50.00 EG",
+          "narrative": "In Wethersfield, multiple wires were down on Olney Road; large branches were down in a backyard on Clearfield Road; wires were down on Harold Street; multiple wires and a branch were down on Olney Road; a branch was down on wires on Church Street; and a branch was on top of the roof of a house on..."
+        }
+      ],
+      "significant": true,
+      "summary": "Thunderstorm Wind"
+    },
+    "economic": {
+      "consumer_confidence": 51.5,
+      "ct_unemployment": 4.3,
+      "confidence_trend": "rising",
+      "source_month": "2022-07"
+    }
+  },
+  "2022-07-24": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 51.5,
+      "ct_unemployment": 4.3,
+      "confidence_trend": "rising",
+      "source_month": "2022-07"
+    }
+  },
+  "2022-07-31": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 51.5,
+      "ct_unemployment": 4.3,
+      "confidence_trend": "rising",
+      "source_month": "2022-07"
+    }
+  },
+  "2022-08-07": {
+    "weather": {
+      "events": [
+        {
+          "type": "Thunderstorm Wind",
+          "begin": "2022-08-07",
+          "end": "2022-08-07",
+          "magnitude": "50.00 EG",
+          "narrative": "In Suffield, a tree fell on two cars on Barndoor Hills Drive."
+        }
+      ],
+      "significant": true,
+      "summary": "Thunderstorm Wind"
+    },
+    "economic": {
+      "consumer_confidence": 58.2,
+      "ct_unemployment": 3.9,
+      "confidence_trend": "rising",
+      "source_month": "2022-08"
+    }
+  },
+  "2022-08-14": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 58.2,
+      "ct_unemployment": 3.9,
+      "confidence_trend": "rising",
+      "source_month": "2022-08"
+    }
+  },
+  "2022-08-21": {
+    "weather": {
+      "events": [
+        {
+          "type": "Thunderstorm Wind",
+          "begin": "2022-08-26",
+          "end": "2022-08-26",
+          "magnitude": "50.00 EG",
+          "narrative": "In Windsor, a large tree was down on Stone Road."
+        },
+        {
+          "type": "Flood",
+          "begin": "2022-08-26",
+          "end": "2022-08-26",
+          "magnitude": null,
+          "narrative": "In East Granby, the public reported street flooding with a road closure of an unspecified road a couple of miles south-southwest of the town center."
+        }
+      ],
+      "significant": true,
+      "summary": "Thunderstorm Wind; Flood"
+    },
+    "economic": {
+      "consumer_confidence": 58.2,
+      "ct_unemployment": 3.9,
+      "confidence_trend": "rising",
+      "source_month": "2022-08"
+    }
+  },
+  "2022-08-28": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 58.2,
+      "ct_unemployment": 3.9,
+      "confidence_trend": "rising",
+      "source_month": "2022-08"
+    }
+  },
+  "2022-09-04": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 58.6,
+      "ct_unemployment": 3.4,
+      "confidence_trend": "stable",
+      "source_month": "2022-09"
+    }
+  },
+  "2022-09-11": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 58.6,
+      "ct_unemployment": 3.4,
+      "confidence_trend": "stable",
+      "source_month": "2022-09"
+    }
+  },
+  "2022-09-18": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 58.6,
+      "ct_unemployment": 3.4,
+      "confidence_trend": "stable",
+      "source_month": "2022-09"
+    }
+  },
+  "2022-09-25": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 58.6,
+      "ct_unemployment": 3.4,
+      "confidence_trend": "stable",
+      "source_month": "2022-09"
+    }
+  },
+  "2022-10-02": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 59.9,
+      "ct_unemployment": 3.5,
+      "confidence_trend": "rising",
+      "source_month": "2022-10"
+    }
+  },
+  "2022-10-09": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 59.9,
+      "ct_unemployment": 3.5,
+      "confidence_trend": "rising",
+      "source_month": "2022-10"
+    }
+  },
+  "2022-10-16": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 59.9,
+      "ct_unemployment": 3.5,
+      "confidence_trend": "rising",
+      "source_month": "2022-10"
+    }
+  },
+  "2022-10-23": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 59.9,
+      "ct_unemployment": 3.5,
+      "confidence_trend": "rising",
+      "source_month": "2022-10"
+    }
+  },
+  "2022-10-30": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 59.9,
+      "ct_unemployment": 3.5,
+      "confidence_trend": "rising",
+      "source_month": "2022-10"
+    }
+  },
+  "2022-11-06": {
+    "weather": {
+      "events": [
+        {
+          "type": "Strong Wind",
+          "begin": "2022-11-11",
+          "end": "2022-11-11",
+          "magnitude": "39.00 EG",
+          "narrative": "In Windham, at 824 PM EST, a 1 foot diameter tree was down on Plains Road.  Also, at 1043 PM EST, a tree fell onto a house on Oakwood Drive, per Fire Dept."
+        },
+        {
+          "type": "Strong Wind",
+          "begin": "2022-11-12",
+          "end": "2022-11-12",
+          "magnitude": "39.00 EG",
+          "narrative": "In Glastonbury at 445 AM EST, a tree was down on wires on Newell Lane.  Confirmed via photo on Twitter."
+        }
+      ],
+      "significant": true,
+      "summary": "Strong Wind"
+    },
+    "economic": {
+      "consumer_confidence": 56.7,
+      "ct_unemployment": 3.2,
+      "confidence_trend": "falling",
+      "source_month": "2022-11"
+    }
+  },
+  "2022-11-13": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 56.7,
+      "ct_unemployment": 3.2,
+      "confidence_trend": "falling",
+      "source_month": "2022-11"
+    }
+  },
+  "2022-11-20": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 56.7,
+      "ct_unemployment": 3.2,
+      "confidence_trend": "falling",
+      "source_month": "2022-11"
+    }
+  },
+  "2022-11-27": {
+    "weather": {
+      "events": [
+        {
+          "type": "Strong Wind",
+          "begin": "2022-11-30",
+          "end": "2022-11-30",
+          "magnitude": "43.00 EG",
+          "narrative": "In Burlington, a tree was down on Rio Road."
+        }
+      ],
+      "significant": true,
+      "summary": "Strong Wind"
+    },
+    "economic": {
+      "consumer_confidence": 56.7,
+      "ct_unemployment": 3.2,
+      "confidence_trend": "falling",
+      "source_month": "2022-11"
+    }
+  },
+  "2022-12-04": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 59.8,
+      "ct_unemployment": 2.9,
+      "confidence_trend": "rising",
+      "source_month": "2022-12"
+    }
+  },
+  "2022-12-11": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 59.8,
+      "ct_unemployment": 2.9,
+      "confidence_trend": "rising",
+      "source_month": "2022-12"
+    }
+  },
+  "2022-12-18": {
+    "weather": {
+      "events": [
+        {
+          "type": "Strong Wind",
+          "begin": "2022-12-23",
+          "end": "2022-12-23",
+          "magnitude": "43.00 EG",
+          "narrative": "In Avon at 550 AM EST, two 40-foot tall red pine trees were blow down on Irontree Court. In Wethersfield at 6 AM EST, a tree was down on Broad Street.  In East Hartford at 913 AM, the public reported tree branches down on Silver Lane at Oak Street near the Manchester line.  In Rockville at 1217 P..."
+        }
+      ],
+      "significant": true,
+      "summary": "Strong Wind"
+    },
+    "economic": {
+      "consumer_confidence": 59.8,
+      "ct_unemployment": 2.9,
+      "confidence_trend": "rising",
+      "source_month": "2022-12"
+    }
+  },
+  "2022-12-25": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 59.8,
+      "ct_unemployment": 2.9,
+      "confidence_trend": "rising",
+      "source_month": "2022-12"
+    }
+  },
+  "2023-01-01": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 64.9,
+      "ct_unemployment": 3.8,
+      "confidence_trend": "rising",
+      "source_month": "2023-01"
+    }
+  },
+  "2023-01-08": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 64.9,
+      "ct_unemployment": 3.8,
+      "confidence_trend": "rising",
+      "source_month": "2023-01"
+    }
+  },
+  "2023-01-15": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 64.9,
+      "ct_unemployment": 3.8,
+      "confidence_trend": "rising",
+      "source_month": "2023-01"
+    }
+  },
+  "2023-01-22": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 64.9,
+      "ct_unemployment": 3.8,
+      "confidence_trend": "rising",
+      "source_month": "2023-01"
+    }
+  },
+  "2023-01-29": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 64.9,
+      "ct_unemployment": 3.8,
+      "confidence_trend": "rising",
+      "source_month": "2023-01"
+    }
+  },
+  "2023-02-05": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 66.9,
+      "ct_unemployment": 4.0,
+      "confidence_trend": "rising",
+      "source_month": "2023-02"
+    }
+  },
+  "2023-02-12": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 66.9,
+      "ct_unemployment": 4.0,
+      "confidence_trend": "rising",
+      "source_month": "2023-02"
+    }
+  },
+  "2023-02-19": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 66.9,
+      "ct_unemployment": 4.0,
+      "confidence_trend": "rising",
+      "source_month": "2023-02"
+    }
+  },
+  "2023-02-26": {
+    "weather": {
+      "events": [
+        {
+          "type": "Heavy Snow",
+          "begin": "2023-02-27",
+          "end": "2023-02-28",
+          "magnitude": null,
+          "narrative": "Hartford County generally received 4 to 8 inches of snow.  Some specific amounts included:  8.0 inches in Granby; 7.0 inches in both North Canton and Simsbury; 6.8 inches in Bristol; 6.5 inches in East Windsor; 6.2 inches in Newington; 6.0 inches in Glastonbury; 5.9 inches a Bradley International..."
+        }
+      ],
+      "significant": true,
+      "summary": "Heavy Snow"
+    },
+    "economic": {
+      "consumer_confidence": 66.9,
+      "ct_unemployment": 4.0,
+      "confidence_trend": "rising",
+      "source_month": "2023-02"
+    }
+  },
+  "2023-03-05": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 62.0,
+      "ct_unemployment": 3.4,
+      "confidence_trend": "falling",
+      "source_month": "2023-03"
+    }
+  },
+  "2023-03-12": {
+    "weather": {
+      "events": [
+        {
+          "type": "Heavy Snow",
+          "begin": "2023-03-13",
+          "end": "2023-03-14",
+          "magnitude": null,
+          "narrative": "Snowfall totals varied widely from as much as 18 in the northwest hills of Hartford county to as little as 1.5 inches in the southeast section of the county.  Some specific totals include - 18.0 in Granby/Hartland, 12.5 in Burlington, 7.2 Suffield, 5.1 in Bristol, 4.5 at Bradley International Air..."
+        }
+      ],
+      "significant": true,
+      "summary": "Heavy Snow"
+    },
+    "economic": {
+      "consumer_confidence": 62.0,
+      "ct_unemployment": 3.4,
+      "confidence_trend": "falling",
+      "source_month": "2023-03"
+    }
+  },
+  "2023-03-26": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 62.0,
+      "ct_unemployment": 3.4,
+      "confidence_trend": "falling",
+      "source_month": "2023-03"
+    }
+  },
+  "2023-04-02": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 63.7,
+      "ct_unemployment": 2.6,
+      "confidence_trend": "rising",
+      "source_month": "2023-04"
+    }
+  },
+  "2023-04-09": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 63.7,
+      "ct_unemployment": 2.6,
+      "confidence_trend": "rising",
+      "source_month": "2023-04"
+    }
+  },
+  "2023-04-16": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 63.7,
+      "ct_unemployment": 2.6,
+      "confidence_trend": "rising",
+      "source_month": "2023-04"
+    }
+  },
+  "2023-04-23": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 63.7,
+      "ct_unemployment": 2.6,
+      "confidence_trend": "rising",
+      "source_month": "2023-04"
+    }
+  },
+  "2023-04-30": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 63.7,
+      "ct_unemployment": 2.6,
+      "confidence_trend": "rising",
+      "source_month": "2023-04"
+    }
+  },
+  "2023-05-07": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 59.0,
+      "ct_unemployment": 3.2,
+      "confidence_trend": "falling",
+      "source_month": "2023-05"
+    }
+  },
+  "2023-05-14": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 59.0,
+      "ct_unemployment": 3.2,
+      "confidence_trend": "falling",
+      "source_month": "2023-05"
+    }
+  },
+  "2023-05-21": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 59.0,
+      "ct_unemployment": 3.2,
+      "confidence_trend": "falling",
+      "source_month": "2023-05"
+    }
+  },
+  "2023-05-28": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 59.0,
+      "ct_unemployment": 3.2,
+      "confidence_trend": "falling",
+      "source_month": "2023-05"
+    }
+  },
+  "2023-06-04": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 64.2,
+      "ct_unemployment": 3.0,
+      "confidence_trend": "rising",
+      "source_month": "2023-06"
+    }
+  },
+  "2023-06-11": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 64.2,
+      "ct_unemployment": 3.0,
+      "confidence_trend": "rising",
+      "source_month": "2023-06"
+    }
+  },
+  "2023-06-18": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 64.2,
+      "ct_unemployment": 3.0,
+      "confidence_trend": "rising",
+      "source_month": "2023-06"
+    }
+  },
+  "2023-06-25": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 64.2,
+      "ct_unemployment": 3.0,
+      "confidence_trend": "rising",
+      "source_month": "2023-06"
+    }
+  },
+  "2023-07-02": {
+    "weather": {
+      "events": [
+        {
+          "type": "Thunderstorm Wind",
+          "begin": "2023-07-02",
+          "end": "2023-07-02",
+          "magnitude": "50.00 EG",
+          "narrative": "In Burlington, a tree and wires were down on Route 4 between Rt 179 and River Rd in Farmington."
+        },
+        {
+          "type": "Flash Flood",
+          "begin": "2023-07-03",
+          "end": "2023-07-03",
+          "magnitude": null,
+          "narrative": "In Rocky Hill, Main St was flooded from Dividend Rd to Elm St."
+        },
+        {
+          "type": "Flash Flood",
+          "begin": "2023-07-04",
+          "end": "2023-07-04",
+          "magnitude": null,
+          "narrative": "In Hartford, several cars were stuck in flood waters on Scarborough St."
+        },
+        {
+          "type": "Flash Flood",
+          "begin": "2023-07-08",
+          "end": "2023-07-08",
+          "magnitude": null,
+          "narrative": "In Suffield, Hale St at Taintor St was closed due to flooding."
+        }
+      ],
+      "significant": true,
+      "summary": "Thunderstorm Wind; Flash Flood"
+    },
+    "economic": {
+      "consumer_confidence": 71.5,
+      "ct_unemployment": 3.4,
+      "confidence_trend": "rising",
+      "source_month": "2023-07"
+    }
+  },
+  "2023-07-09": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 71.5,
+      "ct_unemployment": 3.4,
+      "confidence_trend": "rising",
+      "source_month": "2023-07"
+    }
+  },
+  "2023-07-16": {
+    "weather": {
+      "events": [
+        {
+          "type": "Thunderstorm Wind",
+          "begin": "2023-07-16",
+          "end": "2023-07-16",
+          "magnitude": "50.00 EG",
+          "narrative": "In Rocky Hill, a large tree was uprooted, per picture on social media.  Time estimated by radar."
+        },
+        {
+          "type": "Flash Flood",
+          "begin": "2023-07-16",
+          "end": "2023-07-16",
+          "magnitude": null,
+          "narrative": "In Hartford, parts of Franlkin Ave were closed from 1 foot of water."
+        },
+        {
+          "type": "Flood",
+          "begin": "2023-07-16",
+          "end": "2023-07-16",
+          "magnitude": null,
+          "narrative": "In Bristol, a portion of Rt 229 at Rt 72 was closed due to flooding."
+        },
+        {
+          "type": "Flash Flood",
+          "begin": "2023-07-21",
+          "end": "2023-07-21",
+          "magnitude": null,
+          "narrative": "In East Hartford, Brewer St was flooded with depth up to the wheel base of sedans."
+        }
+      ],
+      "significant": true,
+      "summary": "Thunderstorm Wind; Flash Flood; Flood"
+    },
+    "economic": {
+      "consumer_confidence": 71.5,
+      "ct_unemployment": 3.4,
+      "confidence_trend": "rising",
+      "source_month": "2023-07"
+    }
+  },
+  "2023-07-23": {
+    "weather": {
+      "events": [
+        {
+          "type": "Thunderstorm Wind",
+          "begin": "2023-07-25",
+          "end": "2023-07-25",
+          "magnitude": "50.00 EG",
+          "narrative": "In Southington, trees and wires were down across the road near East St at Kensington Rd."
+        },
+        {
+          "type": "Flash Flood",
+          "begin": "2023-07-25",
+          "end": "2023-07-25",
+          "magnitude": null,
+          "narrative": "In Enfield, Pearl St was flooded and impassable."
+        },
+        {
+          "type": "Thunderstorm Wind",
+          "begin": "2023-07-27",
+          "end": "2023-07-27",
+          "magnitude": "50.00 EG",
+          "narrative": "In Farmington, wires were down on Rt. 4 and New Britain Ave."
+        }
+      ],
+      "significant": true,
+      "summary": "Thunderstorm Wind; Flash Flood"
+    },
+    "economic": {
+      "consumer_confidence": 71.5,
+      "ct_unemployment": 3.4,
+      "confidence_trend": "rising",
+      "source_month": "2023-07"
+    }
+  },
+  "2023-07-30": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 71.5,
+      "ct_unemployment": 3.4,
+      "confidence_trend": "rising",
+      "source_month": "2023-07"
+    }
+  },
+  "2023-08-06": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 69.4,
+      "ct_unemployment": 3.3,
+      "confidence_trend": "falling",
+      "source_month": "2023-08"
+    }
+  },
+  "2023-08-13": {
+    "weather": {
+      "events": [
+        {
+          "type": "Flood",
+          "begin": "2023-08-18",
+          "end": "2023-08-18",
+          "magnitude": null,
+          "narrative": "In Southington, the northbound lane of Rt 322 was flooded and impassable."
+        },
+        {
+          "type": "Thunderstorm Wind",
+          "begin": "2023-08-18",
+          "end": "2023-08-18",
+          "magnitude": "50.00 EG",
+          "narrative": "In Berlin, power lines were down partially blocking Mill Rd."
+        }
+      ],
+      "significant": true,
+      "summary": "Flood; Thunderstorm Wind"
+    },
+    "economic": {
+      "consumer_confidence": 69.4,
+      "ct_unemployment": 3.3,
+      "confidence_trend": "falling",
+      "source_month": "2023-08"
+    }
+  },
+  "2023-08-20": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 69.4,
+      "ct_unemployment": 3.3,
+      "confidence_trend": "falling",
+      "source_month": "2023-08"
+    }
+  },
+  "2023-08-27": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 69.4,
+      "ct_unemployment": 3.3,
+      "confidence_trend": "falling",
+      "source_month": "2023-08"
+    }
+  },
+  "2023-09-03": {
+    "weather": {
+      "events": [
+        {
+          "type": "Thunderstorm Wind",
+          "begin": "2023-09-08",
+          "end": "2023-09-08",
+          "magnitude": "50.00 EG",
+          "narrative": "In Enfield, a tree and wires were down on School St and Nonotuck St."
+        }
+      ],
+      "significant": true,
+      "summary": "Thunderstorm Wind"
+    },
+    "economic": {
+      "consumer_confidence": 67.8,
+      "ct_unemployment": 2.9,
+      "confidence_trend": "falling",
+      "source_month": "2023-09"
+    }
+  },
+  "2023-09-10": {
+    "weather": {
+      "events": [
+        {
+          "type": "Flash Flood",
+          "begin": "2023-09-13",
+          "end": "2023-09-13",
+          "magnitude": null,
+          "narrative": "In Bristol, there was a car stuck in floodwaters on King St."
+        },
+        {
+          "type": "Thunderstorm Wind",
+          "begin": "2023-09-13",
+          "end": "2023-09-13",
+          "magnitude": "50.00 EG",
+          "narrative": "In New Britain, there were downed power lines at the intersection of Hartford Rd and Stanley St."
+        }
+      ],
+      "significant": true,
+      "summary": "Flash Flood; Thunderstorm Wind"
+    },
+    "economic": {
+      "consumer_confidence": 67.8,
+      "ct_unemployment": 2.9,
+      "confidence_trend": "falling",
+      "source_month": "2023-09"
+    }
+  },
+  "2023-09-17": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 67.8,
+      "ct_unemployment": 2.9,
+      "confidence_trend": "falling",
+      "source_month": "2023-09"
+    }
+  },
+  "2023-09-24": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 67.8,
+      "ct_unemployment": 2.9,
+      "confidence_trend": "falling",
+      "source_month": "2023-09"
+    }
+  },
+  "2023-10-01": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 63.8,
+      "ct_unemployment": 3.1,
+      "confidence_trend": "falling",
+      "source_month": "2023-10"
+    }
+  },
+  "2023-10-08": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 63.8,
+      "ct_unemployment": 3.1,
+      "confidence_trend": "falling",
+      "source_month": "2023-10"
+    }
+  },
+  "2023-10-15": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 63.8,
+      "ct_unemployment": 3.1,
+      "confidence_trend": "falling",
+      "source_month": "2023-10"
+    }
+  },
+  "2023-10-22": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 63.8,
+      "ct_unemployment": 3.1,
+      "confidence_trend": "falling",
+      "source_month": "2023-10"
+    }
+  },
+  "2023-10-29": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 63.8,
+      "ct_unemployment": 3.1,
+      "confidence_trend": "falling",
+      "source_month": "2023-10"
+    }
+  },
+  "2023-11-05": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 61.3,
+      "ct_unemployment": 2.9,
+      "confidence_trend": "falling",
+      "source_month": "2023-11"
+    }
+  },
+  "2023-11-12": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 61.3,
+      "ct_unemployment": 2.9,
+      "confidence_trend": "falling",
+      "source_month": "2023-11"
+    }
+  },
+  "2023-11-19": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 61.3,
+      "ct_unemployment": 2.9,
+      "confidence_trend": "falling",
+      "source_month": "2023-11"
+    }
+  },
+  "2023-11-26": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 61.3,
+      "ct_unemployment": 2.9,
+      "confidence_trend": "falling",
+      "source_month": "2023-11"
+    }
+  },
+  "2023-12-03": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 69.7,
+      "ct_unemployment": 2.8,
+      "confidence_trend": "rising",
+      "source_month": "2023-12"
+    }
+  },
+  "2023-12-10": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 69.7,
+      "ct_unemployment": 2.8,
+      "confidence_trend": "rising",
+      "source_month": "2023-12"
+    }
+  },
+  "2023-12-17": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 69.7,
+      "ct_unemployment": 2.8,
+      "confidence_trend": "rising",
+      "source_month": "2023-12"
+    }
+  },
+  "2023-12-24": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 69.7,
+      "ct_unemployment": 2.8,
+      "confidence_trend": "rising",
+      "source_month": "2023-12"
+    }
+  },
+  "2023-12-31": {
+    "weather": {
+      "events": [
+        {
+          "type": "Heavy Snow",
+          "begin": "2024-01-06",
+          "end": "2024-01-07",
+          "magnitude": null,
+          "narrative": "Generally 3 to 17 inches of snow fell. There was a big gradient from southern Hartford county to the hills of northwest Hartford county. Some accumulations included 17 inches in North Granby, 13.2 inches in Hartland, 11 inches in Avon, 10.4 inches at Bradley Airport, and 8 inches in Southington."
+        }
+      ],
+      "significant": true,
+      "summary": "Heavy Snow"
+    },
+    "economic": {
+      "consumer_confidence": 69.7,
+      "ct_unemployment": 2.8,
+      "confidence_trend": "rising",
+      "source_month": "2023-12"
+    }
+  },
+  "2024-01-07": {
+    "weather": {
+      "events": [
+        {
+          "type": "Heavy Snow",
+          "begin": "2024-01-06",
+          "end": "2024-01-07",
+          "magnitude": null,
+          "narrative": "Generally 3 to 17 inches of snow fell. There was a big gradient from southern Hartford county to the hills of northwest Hartford county. Some accumulations included 17 inches in North Granby, 13.2 inches in Hartland, 11 inches in Avon, 10.4 inches at Bradley Airport, and 8 inches in Southington."
+        }
+      ],
+      "significant": true,
+      "summary": "Heavy Snow"
+    },
+    "economic": {
+      "consumer_confidence": 79.0,
+      "ct_unemployment": 3.7,
+      "confidence_trend": "rising",
+      "source_month": "2024-01"
+    }
+  },
+  "2024-01-14": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 79.0,
+      "ct_unemployment": 3.7,
+      "confidence_trend": "rising",
+      "source_month": "2024-01"
+    }
+  },
+  "2024-01-21": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 79.0,
+      "ct_unemployment": 3.7,
+      "confidence_trend": "rising",
+      "source_month": "2024-01"
+    }
+  },
+  "2024-01-28": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 79.0,
+      "ct_unemployment": 3.7,
+      "confidence_trend": "rising",
+      "source_month": "2024-01"
+    }
+  },
+  "2024-02-04": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 76.9,
+      "ct_unemployment": 3.9,
+      "confidence_trend": "falling",
+      "source_month": "2024-02"
+    }
+  },
+  "2024-02-11": {
+    "weather": {
+      "events": [
+        {
+          "type": "Heavy Snow",
+          "begin": "2024-02-13",
+          "end": "2024-02-13",
+          "magnitude": null,
+          "narrative": "Generally 4 to 11 inches of snow fell in Hartford County. This was the bullseye of the snow totals in southern New England. Some notable accumulations included 15.5 inches in Farmington, 15.2 inches in West Hartford, and 12.5 inches in East Windsor."
+        }
+      ],
+      "significant": true,
+      "summary": "Heavy Snow"
+    },
+    "economic": {
+      "consumer_confidence": 76.9,
+      "ct_unemployment": 3.9,
+      "confidence_trend": "falling",
+      "source_month": "2024-02"
+    }
+  },
+  "2024-02-18": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 76.9,
+      "ct_unemployment": 3.9,
+      "confidence_trend": "falling",
+      "source_month": "2024-02"
+    }
+  },
+  "2024-02-25": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 76.9,
+      "ct_unemployment": 3.9,
+      "confidence_trend": "falling",
+      "source_month": "2024-02"
+    }
+  },
+  "2024-03-03": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 79.4,
+      "ct_unemployment": 3.3,
+      "confidence_trend": "rising",
+      "source_month": "2024-03"
+    }
+  },
+  "2024-03-10": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 79.4,
+      "ct_unemployment": 3.3,
+      "confidence_trend": "rising",
+      "source_month": "2024-03"
+    }
+  },
+  "2024-03-17": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 79.4,
+      "ct_unemployment": 3.3,
+      "confidence_trend": "rising",
+      "source_month": "2024-03"
+    }
+  },
+  "2024-03-24": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 79.4,
+      "ct_unemployment": 3.3,
+      "confidence_trend": "rising",
+      "source_month": "2024-03"
+    }
+  },
+  "2024-03-31": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 79.4,
+      "ct_unemployment": 3.3,
+      "confidence_trend": "rising",
+      "source_month": "2024-03"
+    }
+  },
+  "2024-04-07": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 77.2,
+      "ct_unemployment": 2.7,
+      "confidence_trend": "falling",
+      "source_month": "2024-04"
+    }
+  },
+  "2024-04-14": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 77.2,
+      "ct_unemployment": 2.7,
+      "confidence_trend": "falling",
+      "source_month": "2024-04"
+    }
+  },
+  "2024-04-21": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 77.2,
+      "ct_unemployment": 2.7,
+      "confidence_trend": "falling",
+      "source_month": "2024-04"
+    }
+  },
+  "2024-04-28": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 77.2,
+      "ct_unemployment": 2.7,
+      "confidence_trend": "falling",
+      "source_month": "2024-04"
+    }
+  },
+  "2024-05-05": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 69.1,
+      "ct_unemployment": 3.2,
+      "confidence_trend": "falling",
+      "source_month": "2024-05"
+    }
+  },
+  "2024-05-12": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 69.1,
+      "ct_unemployment": 3.2,
+      "confidence_trend": "falling",
+      "source_month": "2024-05"
+    }
+  },
+  "2024-05-19": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 69.1,
+      "ct_unemployment": 3.2,
+      "confidence_trend": "falling",
+      "source_month": "2024-05"
+    }
+  },
+  "2024-05-26": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 69.1,
+      "ct_unemployment": 3.2,
+      "confidence_trend": "falling",
+      "source_month": "2024-05"
+    }
+  },
+  "2024-06-02": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 68.2,
+      "ct_unemployment": 3.0,
+      "confidence_trend": "stable",
+      "source_month": "2024-06"
+    }
+  },
+  "2024-06-09": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 68.2,
+      "ct_unemployment": 3.0,
+      "confidence_trend": "stable",
+      "source_month": "2024-06"
+    }
+  },
+  "2024-06-16": {
+    "weather": {
+      "events": [
+        {
+          "type": "Thunderstorm Wind",
+          "begin": "2024-06-21",
+          "end": "2024-06-21",
+          "magnitude": "50.00 EG",
+          "narrative": "In East Windsor, there was a tree down near South Rd and Phelps Rd. There was a utility pole and wires down at Phelps Rd and Rt 5."
+        },
+        {
+          "type": "Flood",
+          "begin": "2024-06-21",
+          "end": "2024-06-21",
+          "magnitude": null,
+          "narrative": "In Enfield, there was road flooding along Freshwater Blvd and Cranbrook Blvd that resulted in cars getting stuck."
+        },
+        {
+          "type": "Flash Flood",
+          "begin": "2024-06-21",
+          "end": "2024-06-21",
+          "magnitude": null,
+          "narrative": "In Avon, parts of Rt 44 had flooding with water covering the road."
+        }
+      ],
+      "significant": true,
+      "summary": "Thunderstorm Wind; Flood; Flash Flood"
+    },
+    "economic": {
+      "consumer_confidence": 68.2,
+      "ct_unemployment": 3.0,
+      "confidence_trend": "stable",
+      "source_month": "2024-06"
+    }
+  },
+  "2024-06-23": {
+    "weather": {
+      "events": [
+        {
+          "type": "Thunderstorm Wind",
+          "begin": "2024-06-23",
+          "end": "2024-06-23",
+          "magnitude": "50.00 EG",
+          "narrative": "In Southington, there were many reports of trees and wires down across town. There were unconfirmed reports of trees down on at least two homes."
+        },
+        {
+          "type": "Thunderstorm Wind",
+          "begin": "2024-06-26",
+          "end": "2024-06-26",
+          "magnitude": "67.00 MG",
+          "narrative": "At Bradley Airport the ASOS Station (KBDL) gusted to 77 mph."
+        }
+      ],
+      "significant": true,
+      "summary": "Thunderstorm Wind"
+    },
+    "economic": {
+      "consumer_confidence": 68.2,
+      "ct_unemployment": 3.0,
+      "confidence_trend": "stable",
+      "source_month": "2024-06"
+    }
+  },
+  "2024-06-30": {
+    "weather": {
+      "events": [
+        {
+          "type": "Flash Flood",
+          "begin": "2024-06-30",
+          "end": "2024-06-30",
+          "magnitude": null,
+          "narrative": "In Plainville, a spotter reported widespread flooding in the area."
+        },
+        {
+          "type": "Thunderstorm Wind",
+          "begin": "2024-06-30",
+          "end": "2024-06-30",
+          "magnitude": "52.00 MG",
+          "narrative": "In Newington, a spotter measured a gust to 60 mph."
+        }
+      ],
+      "significant": true,
+      "summary": "Flash Flood; Thunderstorm Wind"
+    },
+    "economic": {
+      "consumer_confidence": 68.2,
+      "ct_unemployment": 3.0,
+      "confidence_trend": "stable",
+      "source_month": "2024-06"
+    }
+  },
+  "2024-07-07": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 66.4,
+      "ct_unemployment": 3.8,
+      "confidence_trend": "falling",
+      "source_month": "2024-07"
+    }
+  },
+  "2024-07-14": {
+    "weather": {
+      "events": [
+        {
+          "type": "Thunderstorm Wind",
+          "begin": "2024-07-16",
+          "end": "2024-07-16",
+          "magnitude": "50.00 EG",
+          "narrative": "In West Hartford, there were multiple reports of trees and wires down including Timber Ln."
+        }
+      ],
+      "significant": true,
+      "summary": "Thunderstorm Wind"
+    },
+    "economic": {
+      "consumer_confidence": 66.4,
+      "ct_unemployment": 3.8,
+      "confidence_trend": "falling",
+      "source_month": "2024-07"
+    }
+  },
+  "2024-07-21": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 66.4,
+      "ct_unemployment": 3.8,
+      "confidence_trend": "falling",
+      "source_month": "2024-07"
+    }
+  },
+  "2024-07-28": {
+    "weather": {
+      "events": [
+        {
+          "type": "Thunderstorm Wind",
+          "begin": "2024-08-02",
+          "end": "2024-08-02",
+          "magnitude": "56.00 EG",
+          "narrative": "Damage was reported at the Simsbury Airport. A small plane was flipped up on its wings as well as damage to an airport hangar."
+        }
+      ],
+      "significant": true,
+      "summary": "Thunderstorm Wind"
+    },
+    "economic": {
+      "consumer_confidence": 66.4,
+      "ct_unemployment": 3.8,
+      "confidence_trend": "falling",
+      "source_month": "2024-07"
+    }
+  },
+  "2024-08-04": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 67.9,
+      "ct_unemployment": 3.5,
+      "confidence_trend": "rising",
+      "source_month": "2024-08"
+    }
+  },
+  "2024-08-11": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 67.9,
+      "ct_unemployment": 3.5,
+      "confidence_trend": "rising",
+      "source_month": "2024-08"
+    }
+  },
+  "2024-08-18": {
+    "weather": {
+      "events": [
+        {
+          "type": "Flash Flood",
+          "begin": "2024-08-18",
+          "end": "2024-08-18",
+          "magnitude": null,
+          "narrative": "In Newington, there were several reports of flooding around town. Main St and Dowd St was flooded and impassable."
+        }
+      ],
+      "significant": true,
+      "summary": "Flash Flood"
+    },
+    "economic": {
+      "consumer_confidence": 67.9,
+      "ct_unemployment": 3.5,
+      "confidence_trend": "rising",
+      "source_month": "2024-08"
+    }
+  },
+  "2024-08-25": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 67.9,
+      "ct_unemployment": 3.5,
+      "confidence_trend": "rising",
+      "source_month": "2024-08"
+    }
+  },
+  "2024-09-01": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 70.1,
+      "ct_unemployment": 3.0,
+      "confidence_trend": "rising",
+      "source_month": "2024-09"
+    }
+  },
+  "2024-09-08": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 70.1,
+      "ct_unemployment": 3.0,
+      "confidence_trend": "rising",
+      "source_month": "2024-09"
+    }
+  },
+  "2024-09-15": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 70.1,
+      "ct_unemployment": 3.0,
+      "confidence_trend": "rising",
+      "source_month": "2024-09"
+    }
+  },
+  "2024-09-22": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 70.1,
+      "ct_unemployment": 3.0,
+      "confidence_trend": "rising",
+      "source_month": "2024-09"
+    }
+  },
+  "2024-09-29": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 70.1,
+      "ct_unemployment": 3.0,
+      "confidence_trend": "rising",
+      "source_month": "2024-09"
+    }
+  },
+  "2024-10-06": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 70.5,
+      "ct_unemployment": 3.2,
+      "confidence_trend": "stable",
+      "source_month": "2024-10"
+    }
+  },
+  "2024-10-13": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 70.5,
+      "ct_unemployment": 3.2,
+      "confidence_trend": "stable",
+      "source_month": "2024-10"
+    }
+  },
+  "2024-10-20": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 70.5,
+      "ct_unemployment": 3.2,
+      "confidence_trend": "stable",
+      "source_month": "2024-10"
+    }
+  },
+  "2024-10-27": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 70.5,
+      "ct_unemployment": 3.2,
+      "confidence_trend": "stable",
+      "source_month": "2024-10"
+    }
+  },
+  "2024-11-03": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 71.8,
+      "ct_unemployment": 3.2,
+      "confidence_trend": "rising",
+      "source_month": "2024-11"
+    }
+  },
+  "2024-11-10": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 71.8,
+      "ct_unemployment": 3.2,
+      "confidence_trend": "rising",
+      "source_month": "2024-11"
+    }
+  },
+  "2024-11-17": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 71.8,
+      "ct_unemployment": 3.2,
+      "confidence_trend": "rising",
+      "source_month": "2024-11"
+    }
+  },
+  "2024-11-24": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 71.8,
+      "ct_unemployment": 3.2,
+      "confidence_trend": "rising",
+      "source_month": "2024-11"
+    }
+  },
+  "2024-12-01": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 74.0,
+      "ct_unemployment": 3.0,
+      "confidence_trend": "rising",
+      "source_month": "2024-12"
+    }
+  },
+  "2024-12-08": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 74.0,
+      "ct_unemployment": 3.0,
+      "confidence_trend": "rising",
+      "source_month": "2024-12"
+    }
+  },
+  "2024-12-15": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 74.0,
+      "ct_unemployment": 3.0,
+      "confidence_trend": "rising",
+      "source_month": "2024-12"
+    }
+  },
+  "2024-12-22": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 74.0,
+      "ct_unemployment": 3.0,
+      "confidence_trend": "rising",
+      "source_month": "2024-12"
+    }
+  },
+  "2024-12-29": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 74.0,
+      "ct_unemployment": 3.0,
+      "confidence_trend": "rising",
+      "source_month": "2024-12"
+    }
+  },
+  "2025-01-05": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 71.7,
+      "ct_unemployment": 4.1,
+      "confidence_trend": "falling",
+      "source_month": "2025-01"
+    }
+  },
+  "2025-01-12": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 71.7,
+      "ct_unemployment": 4.1,
+      "confidence_trend": "falling",
+      "source_month": "2025-01"
+    }
+  },
+  "2025-01-19": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 71.7,
+      "ct_unemployment": 4.1,
+      "confidence_trend": "falling",
+      "source_month": "2025-01"
+    }
+  },
+  "2025-01-26": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 71.7,
+      "ct_unemployment": 4.1,
+      "confidence_trend": "falling",
+      "source_month": "2025-01"
+    }
+  },
+  "2025-02-02": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 64.7,
+      "ct_unemployment": 4.3,
+      "confidence_trend": "falling",
+      "source_month": "2025-02"
+    }
+  },
+  "2025-02-09": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 64.7,
+      "ct_unemployment": 4.3,
+      "confidence_trend": "falling",
+      "source_month": "2025-02"
+    }
+  },
+  "2025-02-16": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 64.7,
+      "ct_unemployment": 4.3,
+      "confidence_trend": "falling",
+      "source_month": "2025-02"
+    }
+  },
+  "2025-02-23": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 64.7,
+      "ct_unemployment": 4.3,
+      "confidence_trend": "falling",
+      "source_month": "2025-02"
+    }
+  },
+  "2025-03-02": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 57.0,
+      "ct_unemployment": 3.9,
+      "confidence_trend": "falling",
+      "source_month": "2025-03"
+    }
+  },
+  "2025-03-09": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 57.0,
+      "ct_unemployment": 3.9,
+      "confidence_trend": "falling",
+      "source_month": "2025-03"
+    }
+  },
+  "2025-03-16": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 57.0,
+      "ct_unemployment": 3.9,
+      "confidence_trend": "falling",
+      "source_month": "2025-03"
+    }
+  },
+  "2025-03-23": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 57.0,
+      "ct_unemployment": 3.9,
+      "confidence_trend": "falling",
+      "source_month": "2025-03"
+    }
+  },
+  "2025-03-30": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 57.0,
+      "ct_unemployment": 3.9,
+      "confidence_trend": "falling",
+      "source_month": "2025-03"
+    }
+  },
+  "2025-04-06": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 52.2,
+      "ct_unemployment": 3.3,
+      "confidence_trend": "falling",
+      "source_month": "2025-04"
+    }
+  },
+  "2025-04-13": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 52.2,
+      "ct_unemployment": 3.3,
+      "confidence_trend": "falling",
+      "source_month": "2025-04"
+    }
+  },
+  "2025-04-20": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 52.2,
+      "ct_unemployment": 3.3,
+      "confidence_trend": "falling",
+      "source_month": "2025-04"
+    }
+  },
+  "2025-04-27": {
+    "weather": {
+      "events": [
+        {
+          "type": "Thunderstorm Wind",
+          "begin": "2025-05-03",
+          "end": "2025-05-03",
+          "magnitude": "50.00 EG",
+          "narrative": "In Granby, a tree was down on Holcomb St."
+        }
+      ],
+      "significant": true,
+      "summary": "Thunderstorm Wind"
+    },
+    "economic": {
+      "consumer_confidence": 52.2,
+      "ct_unemployment": 3.3,
+      "confidence_trend": "falling",
+      "source_month": "2025-04"
+    }
+  },
+  "2025-05-04": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 52.2,
+      "ct_unemployment": 3.8,
+      "confidence_trend": "stable",
+      "source_month": "2025-05"
+    }
+  },
+  "2025-05-11": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 52.2,
+      "ct_unemployment": 3.8,
+      "confidence_trend": "stable",
+      "source_month": "2025-05"
+    }
+  },
+  "2025-05-18": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 52.2,
+      "ct_unemployment": 3.8,
+      "confidence_trend": "stable",
+      "source_month": "2025-05"
+    }
+  },
+  "2025-05-25": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 52.2,
+      "ct_unemployment": 3.8,
+      "confidence_trend": "stable",
+      "source_month": "2025-05"
+    }
+  },
+  "2025-06-01": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 60.7,
+      "ct_unemployment": 3.6,
+      "confidence_trend": "rising",
+      "source_month": "2025-06"
+    }
+  },
+  "2025-06-08": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 60.7,
+      "ct_unemployment": 3.6,
+      "confidence_trend": "rising",
+      "source_month": "2025-06"
+    }
+  },
+  "2025-06-15": {
+    "weather": {
+      "events": [
+        {
+          "type": "Thunderstorm Wind",
+          "begin": "2025-06-19",
+          "end": "2025-06-19",
+          "magnitude": "50.00 EG",
+          "narrative": "In Canton, there were power lines down on Cherry Road."
+        }
+      ],
+      "significant": true,
+      "summary": "Thunderstorm Wind"
+    },
+    "economic": {
+      "consumer_confidence": 60.7,
+      "ct_unemployment": 3.6,
+      "confidence_trend": "rising",
+      "source_month": "2025-06"
+    }
+  },
+  "2025-07-06": {
+    "weather": {
+      "events": [
+        {
+          "type": "Thunderstorm Wind",
+          "begin": "2025-07-08",
+          "end": "2025-07-08",
+          "magnitude": "50.00 EG",
+          "narrative": "In Farmington, strong wind gusts resulted in a few downed trees and large branches."
+        }
+      ],
+      "significant": true,
+      "summary": "Thunderstorm Wind"
+    },
+    "economic": {
+      "consumer_confidence": 61.7,
+      "ct_unemployment": 4.3,
+      "confidence_trend": "stable",
+      "source_month": "2025-07"
+    }
+  },
+  "2025-07-13": {
+    "weather": {
+      "events": [
+        {
+          "type": "Flash Flood",
+          "begin": "2025-07-14",
+          "end": "2025-07-14",
+          "magnitude": null,
+          "narrative": "In Canton, there was water pouring into a basement through a hatchway."
+        }
+      ],
+      "significant": true,
+      "summary": "Flash Flood"
+    },
+    "economic": {
+      "consumer_confidence": 61.7,
+      "ct_unemployment": 4.3,
+      "confidence_trend": "stable",
+      "source_month": "2025-07"
+    }
+  },
+  "2025-07-20": {
+    "weather": {
+      "events": [
+        {
+          "type": "Thunderstorm Wind",
+          "begin": "2025-07-20",
+          "end": "2025-07-20",
+          "magnitude": "50.00 EG",
+          "narrative": "A tree was down on wires and a tree was down on a house."
+        }
+      ],
+      "significant": true,
+      "summary": "Thunderstorm Wind"
+    },
+    "economic": {
+      "consumer_confidence": 61.7,
+      "ct_unemployment": 4.3,
+      "confidence_trend": "stable",
+      "source_month": "2025-07"
+    }
+  },
+  "2025-07-27": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 61.7,
+      "ct_unemployment": 4.3,
+      "confidence_trend": "stable",
+      "source_month": "2025-07"
+    }
+  },
+  "2025-08-03": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 58.2,
+      "ct_unemployment": 4.1,
+      "confidence_trend": "falling",
+      "source_month": "2025-08"
+    }
+  },
+  "2025-08-10": {
+    "weather": {
+      "events": [
+        {
+          "type": "Thunderstorm Wind",
+          "begin": "2025-08-13",
+          "end": "2025-08-13",
+          "magnitude": "50.00 EG",
+          "narrative": "In East Windsor, two tree limbs about 4 inches in diameter were downed on Ellington Rd."
+        }
+      ],
+      "significant": true,
+      "summary": "Thunderstorm Wind"
+    },
+    "economic": {
+      "consumer_confidence": 58.2,
+      "ct_unemployment": 4.1,
+      "confidence_trend": "falling",
+      "source_month": "2025-08"
+    }
+  },
+  "2025-08-17": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 58.2,
+      "ct_unemployment": 4.1,
+      "confidence_trend": "falling",
+      "source_month": "2025-08"
+    }
+  },
+  "2025-08-24": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 58.2,
+      "ct_unemployment": 4.1,
+      "confidence_trend": "falling",
+      "source_month": "2025-08"
+    }
+  },
+  "2025-08-31": {
+    "weather": {
+      "events": [
+        {
+          "type": "Thunderstorm Wind",
+          "begin": "2025-09-06",
+          "end": "2025-09-06",
+          "magnitude": "50.00 EG",
+          "narrative": "In New Britain, power lines and a tree were down through a house."
+        }
+      ],
+      "significant": true,
+      "summary": "Thunderstorm Wind"
+    },
+    "economic": {
+      "consumer_confidence": 58.2,
+      "ct_unemployment": 4.1,
+      "confidence_trend": "falling",
+      "source_month": "2025-08"
+    }
+  },
+  "2025-09-07": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 55.1,
+      "ct_unemployment": 4.0,
+      "confidence_trend": "falling",
+      "source_month": "2025-09"
+    }
+  },
+  "2025-09-14": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 55.1,
+      "ct_unemployment": 4.0,
+      "confidence_trend": "falling",
+      "source_month": "2025-09"
+    }
+  },
+  "2025-09-21": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 55.1,
+      "ct_unemployment": 4.0,
+      "confidence_trend": "falling",
+      "source_month": "2025-09"
+    }
+  },
+  "2025-09-28": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 55.1,
+      "ct_unemployment": 4.0,
+      "confidence_trend": "falling",
+      "source_month": "2025-09"
+    }
+  },
+  "2025-10-05": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 53.6,
+      "ct_unemployment": 4.0,
+      "confidence_trend": "falling",
+      "source_month": "2025-10"
+    }
+  },
+  "2025-10-12": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 53.6,
+      "ct_unemployment": 4.0,
+      "confidence_trend": "falling",
+      "source_month": "2025-10"
+    }
+  },
+  "2025-10-19": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 53.6,
+      "ct_unemployment": 4.0,
+      "confidence_trend": "falling",
+      "source_month": "2025-10"
+    }
+  },
+  "2025-10-26": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 53.6,
+      "ct_unemployment": 4.0,
+      "confidence_trend": "falling",
+      "source_month": "2025-10"
+    }
+  },
+  "2025-11-02": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 51.0,
+      "ct_unemployment": 4.4,
+      "confidence_trend": "falling",
+      "source_month": "2025-11"
+    }
+  },
+  "2025-11-09": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 51.0,
+      "ct_unemployment": 4.4,
+      "confidence_trend": "falling",
+      "source_month": "2025-11"
+    }
+  },
+  "2025-11-16": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 51.0,
+      "ct_unemployment": 4.4,
+      "confidence_trend": "falling",
+      "source_month": "2025-11"
+    }
+  },
+  "2025-11-23": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 51.0,
+      "ct_unemployment": 4.4,
+      "confidence_trend": "falling",
+      "source_month": "2025-11"
+    }
+  },
+  "2025-11-30": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 51.0,
+      "ct_unemployment": 4.4,
+      "confidence_trend": "falling",
+      "source_month": "2025-11"
+    }
+  },
+  "2025-12-07": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 52.9,
+      "ct_unemployment": 4.1,
+      "confidence_trend": "rising",
+      "source_month": "2025-12"
+    }
+  },
+  "2025-12-14": {
+    "weather": {
+      "events": [
+        {
+          "type": "High Wind",
+          "begin": "2025-12-19",
+          "end": "2025-12-19",
+          "magnitude": "52.00 MG",
+          "narrative": "Winds generally gusted 40-50 mph but some gusts were higher including a 60 mph gust in Berlin at 12:46 PM EST. In South Windsor a tree came down on wires near the Manchester line. In East Windsor a tree was blocking the north bound lane of Barber Hill Rd. In Manchester power lines were down on Sp..."
+        }
+      ],
+      "significant": true,
+      "summary": "High Wind"
+    },
+    "economic": {
+      "consumer_confidence": 52.9,
+      "ct_unemployment": 4.1,
+      "confidence_trend": "rising",
+      "source_month": "2025-12"
+    }
+  },
+  "2025-12-21": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 52.9,
+      "ct_unemployment": 4.1,
+      "confidence_trend": "rising",
+      "source_month": "2025-12"
+    }
+  },
+  "2025-12-28": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 52.9,
+      "ct_unemployment": 4.1,
+      "confidence_trend": "rising",
+      "source_month": "2025-12"
+    }
+  },
+  "2026-01-04": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 56.4,
+      "ct_unemployment": 5.5,
+      "confidence_trend": "rising",
+      "source_month": "2026-01"
+    }
+  },
+  "2026-01-11": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 56.4,
+      "ct_unemployment": 5.5,
+      "confidence_trend": "rising",
+      "source_month": "2026-01"
+    }
+  },
+  "2026-01-18": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 56.4,
+      "ct_unemployment": 5.5,
+      "confidence_trend": "rising",
+      "source_month": "2026-01"
+    }
+  },
+  "2026-01-25": {
+    "weather": {
+      "events": [
+        {
+          "type": "Heavy Snow",
+          "begin": "2026-01-25",
+          "end": "2026-01-26",
+          "magnitude": null,
+          "narrative": "Generally 12 (lowlands) to 20 (high terrain) of inches fell with some of the highest totals being 21 inches in Simsbury and 20 inches in Bloomfield. Some of the lower amounts were 11.3 inches in West Hartford and 12.5 inches in Bristol."
+        }
+      ],
+      "significant": true,
+      "summary": "Heavy Snow"
+    },
+    "economic": {
+      "consumer_confidence": 56.4,
+      "ct_unemployment": 5.5,
+      "confidence_trend": "rising",
+      "source_month": "2026-01"
+    }
+  },
+  "2026-02-01": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 56.6,
+      "ct_unemployment": 5.8,
+      "confidence_trend": "stable",
+      "source_month": "2026-02"
+    }
+  },
+  "2026-02-08": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 56.6,
+      "ct_unemployment": 5.8,
+      "confidence_trend": "stable",
+      "source_month": "2026-02"
+    }
+  },
+  "2026-02-15": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 56.6,
+      "ct_unemployment": 5.8,
+      "confidence_trend": "stable",
+      "source_month": "2026-02"
+    }
+  },
+  "2026-02-22": {
+    "weather": {
+      "events": [
+        {
+          "type": "Heavy Snow",
+          "begin": "2026-02-22",
+          "end": "2026-02-23",
+          "magnitude": null,
+          "narrative": "Generally 9 to 12 inches of snow fell. Some of the highest reports included 17 inches in Marlborough and 16.5 inches in Burlington."
+        }
+      ],
+      "significant": true,
+      "summary": "Heavy Snow"
+    },
+    "economic": {
+      "consumer_confidence": 56.6,
+      "ct_unemployment": 5.8,
+      "confidence_trend": "stable",
+      "source_month": "2026-02"
+    }
+  },
+  "2026-03-01": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 53.3,
+      "ct_unemployment": 5.1,
+      "confidence_trend": "falling",
+      "source_month": "2026-03"
+    }
+  },
+  "2026-03-08": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 53.3,
+      "ct_unemployment": 5.1,
+      "confidence_trend": "falling",
+      "source_month": "2026-03"
+    }
+  },
+  "2026-03-15": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 53.3,
+      "ct_unemployment": 5.1,
+      "confidence_trend": "falling",
+      "source_month": "2026-03"
+    }
+  },
+  "2026-03-22": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 53.3,
+      "ct_unemployment": 5.1,
+      "confidence_trend": "falling",
+      "source_month": "2026-03"
+    }
+  },
+  "2026-03-29": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 53.3,
+      "ct_unemployment": 5.1,
+      "confidence_trend": "falling",
+      "source_month": "2026-03"
+    }
+  },
+  "2026-04-05": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 49.8,
+      "ct_unemployment": 5.2,
+      "confidence_trend": "falling",
+      "source_month": "2026-04"
+    }
+  },
+  "2026-04-12": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 49.8,
+      "ct_unemployment": 5.2,
+      "confidence_trend": "falling",
+      "source_month": "2026-04"
+    }
+  },
+  "2026-04-19": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 49.8,
+      "ct_unemployment": 5.2,
+      "confidence_trend": "falling",
+      "source_month": "2026-04"
+    }
+  },
+  "2026-04-26": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 49.8,
+      "ct_unemployment": 5.2,
+      "confidence_trend": "falling",
+      "source_month": "2026-04"
+    }
+  },
+  "2026-05-03": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 49.8,
+      "ct_unemployment": 5.2,
+      "confidence_trend": "stable",
+      "source_month": "2026-05"
+    }
+  },
+  "2026-05-10": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 49.8,
+      "ct_unemployment": 5.2,
+      "confidence_trend": "stable",
+      "source_month": "2026-05"
+    }
+  },
+  "2026-05-17": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 49.8,
+      "ct_unemployment": 5.2,
+      "confidence_trend": "stable",
+      "source_month": "2026-05"
+    }
+  },
+  "2026-05-24": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 49.8,
+      "ct_unemployment": 5.2,
+      "confidence_trend": "stable",
+      "source_month": "2026-05"
+    }
+  },
+  "2026-05-31": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 49.8,
+      "ct_unemployment": 5.2,
+      "confidence_trend": "stable",
+      "source_month": "2026-05"
+    }
+  },
+  "2026-06-07": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 49.8,
+      "ct_unemployment": 5.2,
+      "confidence_trend": "stable",
+      "source_month": "2026-06"
+    }
+  },
+  "2026-06-14": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 49.8,
+      "ct_unemployment": 5.2,
+      "confidence_trend": "stable",
+      "source_month": "2026-06"
+    }
+  }
+}
