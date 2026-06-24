@@ -111,6 +111,7 @@
       <div class="nav-tab" data-tab="peers" onclick="showTab('peers')">Peer Intelligence</div>
       <div class="nav-tab" data-tab="opportunity" onclick="showTab('opportunity')">Opportunity Engine</div>
       <div class="nav-tab" data-tab="faq" onclick="showTab('faq')">Help / FAQ</div>
+      <div class="nav-tab" data-tab="intel" onclick="showTab('intel')">Show Intel</div>
     </nav>
     <section class="panel active" id="tab-brief"></section>
     <section class="panel" id="tab-current"></section>
@@ -119,6 +120,7 @@
     <section class="panel" id="tab-peers"></section>
     <section class="panel" id="tab-opportunity"></section>
     <section class="panel" id="tab-faq"><div style="padding:24px 32px;" id="faqContent"></div></section>
+    <div class="panel" id="tab-intel"></div>
   </div>
 </div>
 <footer class="footer"><div><strong>CONFIDENTIAL</strong> — For internal use only. The Bushnell Center for the Performing Arts.</div><div>Broadway Touring Programming Intelligence · <strong>v1</strong> · Build date: June 16, 2026</div></footer>
@@ -222,7 +224,7 @@ function resetAll(){
   ['tier','sub','peer','equity','engage'].forEach(k=>document.querySelectorAll('[data-'+k+']').forEach(b=>b.classList.toggle('active',b.dataset[k]==='')));
   showTab('brief');
 }
-function showTab(tab){STATE.tab=tab;document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));$('tab-'+tab).classList.add('active');document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));if(tab==='faq')renderFaq();renderActive();}
+function showTab(tab){STATE.tab=tab;document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));$('tab-'+tab).classList.add('active');document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));if(tab==='faq')renderFaq();if(tab==='intel')renderIntel();renderActive();}
 function destroy(id){if(CHARTS[id]){CHARTS[id].destroy();delete CHARTS[id]}}
 function renderAll(){const dates=ALL.map(d=>d.week_of).filter(Boolean).sort();$('dataStatus').innerHTML=`<strong>${ALL.length.toLocaleString()}</strong> records · <strong>${new Set(dates).size.toLocaleString()}</strong> weeks total`;const _fsEl=$('filteredStatus');if(_fsEl){const _sRows=ALL.filter(d=>fiscalYear(d.week_of)===STATE.season);const _last=dates[dates.length-1]||null;_fsEl.innerHTML=`Filtered: <strong>${_sRows.length.toLocaleString()}</strong> records · Last report: <strong>${_last?fmtWeek(_last):'—'}</strong>`;}
   const profiles=seasonShows().shows.map(showProfile);const active=profiles.filter(p=>p.metrics.count>0);$('kSeason').textContent=STATE.season.slice(2).replace('-20','-');$('kScheduled').textContent=profiles.length;$('kTourCap').textContent=pct(avg(active.map(p=>p.metrics.cap)),0);$('kPeerCap').textContent=pct(avg(active.map(p=>p.metrics.peerCap)),0);$('kIndex').textContent=num(avg(active.map(p=>p.metrics.index)),0);$('kHighFit').textContent=profiles.filter(p=>p.score>=80).length;$('kWatch').textContent=profiles.filter(p=>p.score<60&&p.metrics.count>0).length;renderActive();}
@@ -249,6 +251,129 @@ function chartPeers(arr){destroy('cPeers');CHARTS.cPeers=new Chart($('cPeers'),{
 function short(s,n){return s&&s.length>n?s.slice(0,n)+'…':s}function escapeHtml(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 Chart.defaults.font.family = "'Libre Franklin', sans-serif";
 Chart.defaults.font.size = 10;
+function renderIntel() {
+  const season = seasonShows();
+  const shows = season.shows.map(s => s.title);
+  $('tab-intel').innerHTML = `
+    <div class="section-divider">
+      <h2>Show Intel</h2>
+      <div class="section-divider-line"></div>
+      <div class="section-divider-meta">Production history and buzz for ${season.name}</div>
+    </div>
+    <div class="explainer">
+      <p><strong>Purpose:</strong> this tab surfaces Broadway production history, Tony recognition, and critical context for current season shows. Use it to normalize fit scoring against show-level factors that raw capacity data cannot capture — a new tour, a major revival, or a Tony sweep all affect demand in ways the feed alone will not explain.</p>
+    </div>
+    <div class="grid grid-2">
+      <div class="card full">
+        <div class="card-hd">Current Season Show Metadata</div>
+        <table class="mini-table">
+          <thead>
+            <tr>
+              <th>Show</th>
+              <th>Opened</th>
+              <th class="num">Tony Wins</th>
+              <th class="num">Nominations</th>
+              <th>Composer</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody id="intelTableBody">
+            <tr><td colspan="6" class="empty">Loading show metadata...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-hd">Selected Show</div>
+        <div id="intelDetail"><div class="empty">Select a show from the table above.</div></div>
+      </div>
+      <div class="card">
+        <div class="card-hd">Tony Recognition</div>
+        <canvas id="cIntelTony" class="small-canvas"></canvas>
+      </div>
+    </div>`;
+  loadShowIntel(shows);
+}
+
+function loadShowIntel(shows) {
+  const SHOWS_JSON_URLS = [
+    'https://white-pebble-01710020f.7.azurestaticapps.net/data/shows.json',
+    'data/shows.json'
+  ];
+  const tryFetch = async (urls) => {
+    for (const url of urls) {
+      try {
+        const r = await fetch(url);
+        if (r.ok) return await r.json();
+      } catch(e) {}
+    }
+    return null;
+  };
+  tryFetch(SHOWS_JSON_URLS).then(data => {
+    if (!data) {
+      document.getElementById('intelTableBody').innerHTML =
+        '<tr><td colspan="6" class="empty">shows.json not yet available. Run scripts/scrape_shows.py to generate it.</td></tr>';
+      return;
+    }
+    const map = {};
+    data.forEach(s => { map[normalizeName(s.show)] = s; });
+    const rows = shows.map(title => {
+      const rec = map[normalizeName(title)] || {};
+      return { title, rec };
+    });
+    document.getElementById('intelTableBody').innerHTML = rows.map((r, i) =>
+      `<tr onclick="intelDetail(${i})" style="cursor:pointer">
+        <td>${r.title}</td>
+        <td>${r.rec.opening_date ? r.rec.opening_date.slice(0,4) : '—'}</td>
+        <td class="num">${r.rec.tony_wins ?? '—'}</td>
+        <td class="num">${r.rec.tony_nominations ?? '—'}</td>
+        <td>${r.rec.composer || '—'}</td>
+        <td>${r.rec.wikidata_id ? '<span class="status good">Matched</span>' : '<span class="status warn">No Match</span>'}</td>
+      </tr>`
+    ).join('');
+    window._INTEL_ROWS = rows;
+    if (rows[0]) intelDetail(0);
+    chartIntelTony(rows);
+  });
+}
+
+function intelDetail(i) {
+  const r = window._INTEL_ROWS[i];
+  if (!r) return;
+  const rec = r.rec;
+  document.getElementById('intelDetail').innerHTML = `
+    <div class="card-title">${r.title}</div>
+    <div class="card-sub">${rec.wikipedia_summary ? rec.wikipedia_summary.slice(0, 300) + '...' : 'No Wikipedia summary available.'}</div>
+    <div class="metric-row">
+      <div class="metric"><div class="val">${rec.opening_date ? rec.opening_date.slice(0,4) : '—'}</div><div class="lbl">Opened</div></div>
+      <div class="metric"><div class="val">${rec.tony_wins ?? '—'}</div><div class="lbl">Tony Wins</div></div>
+      <div class="metric"><div class="val">${rec.tony_nominations ?? '—'}</div><div class="lbl">Nominations</div></div>
+    </div>
+    ${rec.wikipedia_url ? `<a href="${rec.wikipedia_url}" target="_blank" rel="noopener" style="font-size:.62rem;color:var(--amber);margin-top:12px;display:inline-block;">View on Wikipedia →</a>` : ''}`;
+}
+
+function chartIntelTony(rows) {
+  destroy('cIntelTony');
+  const ctx = $('cIntelTony');
+  if (!ctx || !window.Chart) return;
+  const filtered = rows.filter(r => r.rec.tony_nominations > 0);
+  if (!filtered.length) return;
+  CHARTS['cIntelTony'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: filtered.map(r => short(r.title, 16)),
+      datasets: [
+        { label: 'Wins', data: filtered.map(r => r.rec.tony_wins || 0), backgroundColor: '#003865', borderRadius: 2 },
+        { label: 'Nominations', data: filtered.map(r => r.rec.tony_nominations || 0), backgroundColor: 'rgba(0,56,101,.3)', borderRadius: 2 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#6b6b6b', font: { size: 10 } } } },
+      scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,.06)' } } }
+    }
+  });
+}
+
 loadData();
 </script>
 </body>
