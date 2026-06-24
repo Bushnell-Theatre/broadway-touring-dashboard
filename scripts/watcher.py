@@ -6,7 +6,8 @@ Monitors the Broadway League report uploads folder for new XLSX files.
 When a new file is detected:
   1. Runs process_touring.py --append to update data.json
   2. Runs scrape_shows.py to enrich any new show names in shows.json
-  3. Commits both files to GitHub and pushes
+  3. Runs scrape_context.py to refresh context.json (weather + econ)
+  4. Commits updated files to GitHub and pushes
 
 Requirements:
     pip install watchdog
@@ -35,9 +36,11 @@ WATCH_FOLDER  = r"C:\Users\rnunley\Bushnell Center for the Performing Arts\AI Ta
 REPO_FOLDER   = r"C:\Users\rnunley\OneDrive - Bushnell Center for the Performing Arts\Documents\GitHub\broadway-touring-dashboard"
 SCRIPT_PATH   = os.path.join(REPO_FOLDER, "scripts", "process_touring.py")
 SCRAPE_PATH   = os.path.join(REPO_FOLDER, "scripts", "scrape_shows.py")
+CONTEXT_PATH  = os.path.join(REPO_FOLDER, "scripts", "scrape_context.py")
 DATA_JSON     = os.path.join(REPO_FOLDER, "src", "data", "data.json")
 SEASONS_JSON  = os.path.join(REPO_FOLDER, "src", "data", "seasons.json")
 SHOWS_JSON    = os.path.join(REPO_FOLDER, "src", "data", "shows.json")
+CONTEXT_JSON  = os.path.join(REPO_FOLDER, "src", "data", "context.json")
 LOG_FILE      = os.path.join(os.path.dirname(__file__), "watcher.log")
 
 # ── LOGGING ───────────────────────────────────────────────────────────────────
@@ -191,10 +194,27 @@ def process_new_file(filepath):
     # Step 2: Enrich any new shows
     shows_updated = enrich_new_shows()
 
+    # Step 2.5: Refresh context.json (weather + econ for new weeks)
+    log.info("Running: scrape_context.py")
+    ctx_result = subprocess.run(
+        ["python", CONTEXT_PATH],
+        capture_output=True, text=True, cwd=REPO_FOLDER
+    )
+    if ctx_result.stdout:
+        for line in ctx_result.stdout.strip().splitlines():
+            log.info(f"  {line}")
+    if ctx_result.returncode != 0:
+        log.warning("scrape_context.py failed — context.json may be stale")
+        if ctx_result.stderr:
+            log.warning(ctx_result.stderr.strip())
+    context_updated = ctx_result.returncode == 0
+
     # Step 3: Git add, commit, push
     files_to_add = ["src/data/data.json"]
     if shows_updated:
         files_to_add.append("src/data/shows.json")
+    if context_updated:
+        files_to_add.append("src/data/context.json")
 
     log.info(f"Committing {', '.join(files_to_add)} to GitHub...")
     commit_msg = f"Weekly update: {fname} — {datetime.now().strftime('%Y-%m-%d %H:%M')}"
