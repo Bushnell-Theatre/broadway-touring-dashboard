@@ -159,7 +159,8 @@ const HELP_TEXT = {
   ggPctChart: 'Teal bars indicate shows averaging at or above 100% of gross potential. Navy bars indicate below potential.',
   mktCapChart: 'Average paid capacity utilization by city.'
 };
-const SEASONS = [
+let SEASONS=[];function _buildSeasons(raw){SEASONS=Object.entries(raw).map(([id,data])=>{const yr=parseInt(id.slice(0,4),10);return{id,name:id+' Season',start:yr+'-07-01',end:(yr+1)+'-06-30',note:data.note||null,shows:(data.shows||[]).map(s=>({title:s.name,match:s.league_name,open:s.open||null,close:s.close||null,sub:s.sub}))};}).sort((a,b)=>b.id.localeCompare(a.id));}
+const _SEASONS_FALLBACK = [
   {id:'2026-2027',name:'2026-2027 Season',start:'2026-07-01',end:'2027-06-30',shows:[
     {title:'Oh, Mary!',match:'Oh, Mary',sub:false},{title:'The Great Gatsby',match:'Great Gatsby',sub:true},{title:'Mamma Mia! (25th Anniversary)',match:'Mamma Mia',sub:true},{title:'BOOP! The Betty Boop Musical Pre',match:'Boop',sub:true},{title:"Hell's Kitchen",match:"Hell's Kitchen",sub:true},{title:'Maybe Happy Ending',match:'Maybe Happy Ending',sub:true},{title:'Jersey Boys 2',match:'Jersey Boys',sub:false},{title:'Waitress',match:'Waitress',sub:true},{title:'Operation Mincemeat: A New Musical',match:'Operation Mincemeat',sub:true},{title:'The Outsiders',match:'The Outsiders',sub:true}]},
   {id:'2025-2026',name:'2025-2026 Season',start:'2025-07-01',end:'2026-06-30',shows:[
@@ -175,6 +176,7 @@ const SEASONS = [
   {id:'2019-2020',name:'2019-2020 Season',start:'2019-07-01',end:'2020-06-30',shows:[
     {title:'The Book of Mormon (Jumamosi)',match:'Book of Mormon',sub:false},{title:'Hello, Dolly! 2018',match:'Hello, Dolly',sub:true},{title:'Dr. Seuss How the Grinch Stole Christmas 2019',match:'Grinch',sub:false},{title:'Anastasia',match:'Anastasia',sub:true},{title:'Jesus Christ Superstar 2019',match:'Jesus Christ Superstar',sub:true}]}
 ];
+SEASONS=[..._SEASONS_FALLBACK];
 let ALL=[], FILTERED=[], STATE={season:'2025-2026', tab:'brief'}, CHARTS={}, CURRENT_PROFILES=[], HISTORY_PROFILES=[];
 let ACTIVE_TIER='', ACTIVE_SUB='', ACTIVE_PEER='', ACTIVE_EQUITY='', ACTIVE_ENGAGE='';
 // PEER_META → window.PEER_META from utils.js
@@ -202,6 +204,7 @@ function applyFilters(rows){
 }
 async function loadData(){let data=[];for(const url of DATA_URLS){try{const r=await fetch(url,{cache:'no-store'});if(r.ok){data=await r.json();break}}catch(e){}}
   try{const pr=await fetch('data/peers.json');if(pr.ok){const pj=await pr.json();(pj.venues||[]).forEach(v=>{PEER_META[v.theatre+'|'+v.city]=v;});}}catch(e){}
+  try{const sr=await fetch('data/seasons.json');if(sr.ok){const sj=await sr.json();_buildSeasons(sj);}}catch(e){}
   ALL=(Array.isArray(data)?data:(data.records||[])).map(d=>({...d,week_of:d.week_of?d.week_of.slice(0,10):null,on_sub:d.on_sub===true?1:d.on_sub===false?0:d.on_sub,similar_bushnell:!!d.similar_bushnell,no_engagement:!!d.no_engagement}));
   init();
 }

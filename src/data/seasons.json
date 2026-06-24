@@ -1,0 +1,91 @@
+{
+  "2026-2027": {
+    "shows": [
+      { "name": "Oh, Mary!",                              "league_name": "Oh, Mary!",                                         "sub": false, "open": "2026-09-19", "close": "2026-09-23" },
+      { "name": "The Great Gatsby",                       "league_name": "The Great Gatsby",                                  "sub": true,  "open": "2026-09-29", "close": "2026-10-04" },
+      { "name": "Mamma Mia!",                             "league_name": "Mamma Mia!",                                        "sub": true,  "open": "2026-10-20", "close": "2026-10-25" },
+      { "name": "BOOP! The Betty Boop Musical",           "league_name": "BOOP! The Betty Boop Musical",                      "sub": true,  "open": "2026-11-10", "close": "2026-11-15" },
+      { "name": "Hell's Kitchen",                         "league_name": "Hell's Kitchen",                                    "sub": true,  "open": "2026-12-08", "close": "2026-12-13" },
+      { "name": "Maybe Happy Ending",                     "league_name": "Maybe Happy Ending",                                "sub": true,  "open": "2027-02-16", "close": "2027-02-21" },
+      { "name": "Jersey Boys",                            "league_name": "Jersey Boys",                                       "sub": false, "open": "2027-03-09", "close": "2027-03-14" },
+      { "name": "Waitress",                               "league_name": "Waitress",                                          "sub": true,  "open": "2027-03-30", "close": "2027-04-04" },
+      { "name": "Operation Mincemeat: A New Musical",     "league_name": "Operation Mincemeat: A New Musical",                "sub": true,  "open": "2027-05-04", "close": "2027-05-09" },
+      { "name": "The Outsiders",                          "league_name": "The Outsiders",                                     "sub": true,  "open": "2027-06-01", "close": "2027-06-06" }
+    ]
+  },
+  "2025-2026": {
+    "shows": [
+      { "name": "The Notebook",                           "league_name": "The Notebook",                                      "sub": true,  "open": "2025-10-05", "close": "2025-10-11" },
+      { "name": "Hamilton",                               "league_name": "Hamilton (Angelica)",                               "sub": false, "open": "2025-11-09", "close": "2025-11-15" },
+      { "name": "Spamalot",                               "league_name": "Spamalot 2025",                                     "sub": true,  "open": "2025-12-14", "close": "2025-12-20" },
+      { "name": "Suffs",                                  "league_name": "Suffs",                                             "sub": true,  "open": "2026-02-01", "close": "2026-02-07" },
+      { "name": "Shucked",                                "league_name": "Shucked",                                           "sub": true,  "open": "2026-03-01", "close": "2026-03-07" },
+      { "name": "Kinky Boots",                            "league_name": "Kinky Boots 2025",                                  "sub": true,  "open": "2026-03-22", "close": "2026-03-28" },
+      { "name": "Beauty and the Beast",                   "league_name": "Beauty and the Beast - 30th Anniversary",           "sub": true,  "open": "2026-04-12", "close": "2026-04-18" },
+      { "name": "& Juliet",                               "league_name": "& Juliet",                                          "sub": true,  "open": "2026-05-10", "close": "2026-05-16" },
+      { "name": "Water for Elephants",                    "league_name": "Water for Elephants",                               "sub": true,  "open": "2026-06-02", "close": "2026-06-07" }
+    ]
+  },
+  "2024-2025": {
+    "shows": [
+      { "name": "A Beautiful Noise: The Neil Diamond Musical", "league_name": "A Beautiful Noise, The Neil Diamond Musical",  "sub": true,  "open": "2024-10-06", "close": "2024-10-12" },
+      { "name": "Les Misérables",                         "league_name": "Les Misérables 2022",                               "sub": false, "open": "2024-11-03", "close": "2024-11-09" },
+      { "name": "The Lion King",                          "league_name": "The Lion King Rafiki",                              "sub": false, "open": "2024-11-17", "close": "2024-11-23" },
+      { "name": "MJ The Musical",                         "league_name": "MJ The Musical",                                    "sub": true,  "open": "2024-12-15", "close": "2024-12-21" },
+      { "name": "Six",                                    "league_name": "Six (Boleyn)",                                      "sub": false, "open": "2025-01-05", "close": "2025-01-11" },
+      { "name": "The Wiz",                                "league_name": "The Wiz 2025",                                      "sub": true,  "open": "2025-03-16", "close": "2025-03-22" },
+      { "name": "Some Like It Hot",                       "league_name": "Some Like it Hot",                                  "sub": true,  "open": "2025-05-04", "close": "2025-05-10" },
+      { "name": "Back to the Future: The Musical",        "league_name": "Back to the Future: The Musical",                   "sub": true,  "open": "2025-06-08", "close": "2025-06-14" }
+    ]
+  },
+  "2023-2024": {
+    "shows": [
+      { "name": "Mrs. Doubtfire",                         "league_name": "Mrs. Doubtfire",                                    "sub": true,  "open": "2023-10-08", "close": "2023-10-14" },
+      { "name": "Moulin Rouge! The Musical",              "league_name": "Moulin Rouge! The Musical",                         "sub": true,  "open": "2023-11-26", "close": "2023-12-02" },
+      { "name": "Frozen",                                 "league_name": "Frozen",                                            "sub": true,  "open": "2024-02-11", "close": "2024-02-17" },
+      { "name": "The Cher Show",                          "league_name": "The Cher Show",                                     "sub": true,  "open": "2024-03-10", "close": "2024-03-16" },
+      { "name": "Wicked",                                 "league_name": "Wicked 2",                                          "sub": false, "open": "2024-04-28", "close": "2024-05-04" },
+      { "name": "Beetlejuice",                            "league_name": "Beetlejuice",                                       "sub": true,  "open": "2024-06-02", "close": "2024-06-08" },
+      { "name": "Funny Girl",                             "league_name": "Funny Girl 2023",                                   "sub": false, "open": "2024-06-23", "close": "2024-06-29" }
+    ]
+  },
+  "2022-2023": {
+    "shows": [
+      { "name": "Mean Girls",                             "league_name": "Mean Girls",                                        "sub": true,  "open": "2022-10-02", "close": "2022-10-08" },
+      { "name": "Aladdin",                                "league_name": "Aladdin 2022",                                      "sub": true,  "open": "2022-11-13", "close": "2022-11-19" },
+      { "name": "Come From Away",                         "league_name": "Come From Away",                                    "sub": false, "open": "2022-12-25", "close": "2022-12-31" },
+      { "name": "Six",                                    "league_name": "Six (Aragon)",                                      "sub": true,  "open": "2023-01-22", "close": "2023-01-28" },
+      { "name": "Tootsie",                                "league_name": "Tootsie",                                           "sub": true,  "open": "2023-02-26", "close": "2023-03-04" },
+      { "name": "Hadestown",                              "league_name": "Hadestown",                                         "sub": true,  "open": "2023-03-12", "close": "2023-03-18" },
+      { "name": "The Simon & Garfunkel Story",            "league_name": "The Simon and Garfunkel Story",                     "sub": false, "open": "2023-03-12", "close": "2023-03-18" },
+      { "name": "Tina: The Tina Turner Musical",          "league_name": "Tina - The Tina Turner Musical",                    "sub": true,  "open": "2023-04-16", "close": "2023-04-22" },
+      { "name": "Jagged Little Pill",                     "league_name": "Jagged Little Pill",                                "sub": true,  "open": "2023-05-14", "close": "2023-05-20" },
+      { "name": "Ain't Too Proud",                        "league_name": "Ain't Too Proud",                                   "sub": true,  "open": "2023-06-04", "close": "2023-06-10" },
+      { "name": "To Kill a Mockingbird",                  "league_name": "To Kill a Mockingbird",                             "sub": false, "open": "2023-07-02", "close": "2023-07-08" }
+    ]
+  },
+  "2021-2022": {
+    "note": "Partial season — Broadway reopened Oct 2021",
+    "shows": [
+      { "name": "Rent",                                   "league_name": "Rent 25th Anniversary",                             "sub": false, "open": "2021-11-07", "close": "2021-11-13" },
+      { "name": "The Band's Visit",                       "league_name": "The Bands Visit",                                   "sub": true,  "open": "2021-11-21", "close": "2021-11-27" },
+      { "name": "What the Constitution Means to Me",      "league_name": "What the Constitution Means to Me",                 "sub": false, "open": "2022-01-30", "close": "2022-02-05" },
+      { "name": "My Fair Lady",                           "league_name": "My Fair Lady 2019",                                 "sub": true,  "open": "2022-03-13", "close": "2022-03-19" },
+      { "name": "Blue Man Group",                         "league_name": "Blue Man Group",                                    "sub": false, "open": "2022-03-20", "close": "2022-03-26" },
+      { "name": "Dear Evan Hansen",                       "league_name": "Dear Evan Hansen",                                  "sub": true,  "open": "2022-04-03", "close": "2022-04-09" },
+      { "name": "Pretty Woman: The Musical",              "league_name": "Pretty Woman: The Musical",                         "sub": true,  "open": "2022-05-01", "close": "2022-05-07" },
+      { "name": "Stomp",                                  "league_name": "Stomp",                                             "sub": false, "open": "2022-05-29", "close": "2022-06-04" },
+      { "name": "Hamilton",                               "league_name": "Hamilton (Philip)",                                 "sub": true,  "open": "2022-06-26", "close": "2022-07-02" }
+    ]
+  },
+  "2019-2020": {
+    "note": "Partial season — COVID shutdown March 2020",
+    "shows": [
+      { "name": "The Book of Mormon",                     "league_name": "The Book of Mormon (Jumamosi)",                     "sub": false, "open": "2019-10-20", "close": "2019-10-26" },
+      { "name": "Hello, Dolly!",                          "league_name": "Hello, Dolly! 2018",                                "sub": true,  "open": "2019-11-17", "close": "2019-11-23" },
+      { "name": "Dr. Seuss' How the Grinch Stole Christmas", "league_name": "Dr. Seuss How the Grinch Stole Christmas 2019", "sub": false, "open": "2019-12-15", "close": "2019-12-21" },
+      { "name": "Anastasia",                              "league_name": "Anastasia",                                         "sub": true,  "open": "2020-01-19", "close": "2020-01-25" },
+      { "name": "Jesus Christ Superstar",                 "league_name": "Jesus Christ Superstar 2019",                       "sub": true,  "open": "2020-03-01", "close": "2020-03-07" }
+    ]
+  }
+}

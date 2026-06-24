@@ -787,16 +787,7 @@ tbody td:last-child{border-right:none;}
     <!-- SEASON -->
     <div class="sidebar-section">
       <span class="sidebar-label">Season</span>
-      <div class="pill-row" style="flex-wrap:wrap;gap:4px;">
-        <button class="pill" data-season="" onclick="setSeasonFilter('')" aria-label="All seasons">All</button>
-        <button class="pill" data-season="2026-2027" onclick="setSeasonFilter('2026-2027')" aria-label="2026-2027 Season">2026-27</button>
-        <button class="pill active" data-season="2025-2026" onclick="setSeasonFilter('2025-2026')" aria-label="2025-2026 Season">2025-26</button>
-        <button class="pill" data-season="2024-2025" onclick="setSeasonFilter('2024-2025')" aria-label="2024-2025 Season">2024-25</button>
-        <button class="pill" data-season="2023-2024" onclick="setSeasonFilter('2023-2024')" aria-label="2023-2024 Season">2023-24</button>
-        <button class="pill" data-season="2022-2023" onclick="setSeasonFilter('2022-2023')" aria-label="2022-2023 Season">2022-23</button>
-        <button class="pill" data-season="2021-2022" onclick="setSeasonFilter('2021-2022')" aria-label="2021-2022 Season">2021-22</button>
-        <button class="pill" data-season="2019-2020" onclick="setSeasonFilter('2019-2020')" aria-label="2019-2020 Season">2019-20</button>
-      </div>
+      <div class="pill-row" style="flex-wrap:wrap;gap:4px;" id="seasonPills"></div>
     </div>
 
     <!-- TIER -->
@@ -1292,7 +1283,8 @@ tbody td:last-child{border-right:none;}
 <script>
 
 // ── SEASONS CONFIG ────────────────────────────────────────────────────────────
-const SEASONS = [
+let SEASONS=[];function _buildSeasons(raw){SEASONS=Object.entries(raw).map(([id,data])=>{const yr=parseInt(id.slice(0,4),10);return{id,name:id+' Season',start:yr+'-07-01',end:(yr+1)+'-06-30',note:data.note||null,shows:(data.shows||[]).map(s=>({title:s.name,matchStr:s.league_name,open:s.open||null,close:s.close||null,sub:s.sub}))};}).sort((a,b)=>b.id.localeCompare(a.id));}
+const _SEASONS_FALLBACK = [
   {
     id: '2026-2027', name: '2026-2027 Season',
     start: '2026-07-01', end: '2027-06-30',
@@ -1397,6 +1389,7 @@ const SEASONS = [
     ]
   },
 ];
+SEASONS=[..._SEASONS_FALLBACK];
 
 let ACTIVE_SEASONS = new Set(); // supports multiple seasons
 
@@ -1484,10 +1477,12 @@ const DATA_JSON_URL = 'data/data.json';
 async function initData() {
   try {
     // Fetch data.json and peers.json in parallel
-    const [res, peersRes] = await Promise.all([
+    const [res, peersRes, seasonsRes] = await Promise.all([
       fetch(DATA_JSON_URL),
-      fetch(PEERS_JSON_URL).catch(() => null)
+      fetch(PEERS_JSON_URL).catch(() => null),
+      fetch('data/seasons.json').catch(() => null)
     ]);
+    if (seasonsRes && seasonsRes.ok) { const sj = await seasonsRes.json(); _buildSeasons(sj); }
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     if (peersRes && peersRes.ok) {
@@ -1557,6 +1552,19 @@ let DEFAULT_RANGE = null;
 
 // ── BOOT ──────────────────────────────────────────────────────────────────────
 function boot() {
+  // Render season pills dynamically
+  const pillContainer = document.getElementById('seasonPills');
+  if (pillContainer) {
+    const defaultSeason = '2025-2026';
+    pillContainer.innerHTML =
+      `<button class="pill" data-season="" onclick="setSeasonFilter('')" aria-label="All seasons">All</button>` +
+      SEASONS.map(s => {
+        const label = s.id.slice(2,4) + '-' + s.id.slice(7,9);
+        const active = s.id === defaultSeason ? ' active' : '';
+        return `<button class="pill${active}" data-season="${s.id}" onclick="setSeasonFilter('${s.id}')" aria-label="${s.name}">${label}</button>`;
+      }).join('');
+    ACTIVE_SEASONS.add(defaultSeason);
+  }
   // Apply HELP_TEXT to tooltip icons
   const tipMap = {
     'tip-tier': 'tier', 'tip-sub': 'subscription', 'tip-peer': 'peerVenues',

@@ -1,9 +1,12 @@
 """
 scrape_shows.py
 ---------------
-Reads src/data/data.json, extracts distinct show names for the current
-Broadway League fiscal season (July 1 – June 30), then enriches each
-show with production metadata from Wikidata and Wikipedia.
+Reads src/data/seasons.json for the Bushnell's curated show list, then
+enriches each show with production metadata from Wikidata and Wikipedia.
+
+seasons.json maps each fiscal season to a list of show entries with two fields:
+  "name"        — clean display name used for Wikidata search and shows.json key
+  "league_name" — exact Broadway League string used to match records in data.json
 
 Output: src/data/shows.json
 
@@ -27,9 +30,10 @@ import requests
 from SPARQLWrapper import SPARQLWrapper, JSON
 
 # ── PATHS ─────────────────────────────────────────────────────────────────────
-ROOT       = Path(__file__).resolve().parent.parent
-DATA_IN    = ROOT / "src" / "data" / "data.json"
-DATA_OUT   = ROOT / "src" / "data" / "shows.json"
+ROOT        = Path(__file__).resolve().parent.parent
+DATA_IN     = ROOT / "src" / "data" / "data.json"
+SEASONS_IN  = ROOT / "src" / "data" / "seasons.json"
+DATA_OUT    = ROOT / "src" / "data" / "shows.json"
 
 # ── SEASON LOGIC ──────────────────────────────────────────────────────────────
 def current_season():
@@ -43,23 +47,40 @@ def season_bounds(season_str):
     year = int(season_str.split("-")[0])
     return f"{year}-07-01", f"{year + 1}-06-30"
 
-# ── LOAD SHOWS FROM DATA.JSON ─────────────────────────────────────────────────
+# ── LOAD SHOWS FROM SEASONS.JSON ─────────────────────────────────────────────
 def load_season_shows(season):
+    """
+    Returns a list of dicts with 'name' and 'league_name' for the given season.
+    'name' is the clean display name used for Wikidata search.
+    'league_name' is the exact Broadway League string for matching data.json.
+    Falls back to deriving from data.json if the season isn't in seasons.json.
+    """
+    if SEASONS_IN.exists():
+        with open(SEASONS_IN, encoding="utf-8") as f:
+            seasons = json.load(f)
+        if season in seasons:
+            shows = seasons[season]
+            print(f"Loaded {len(shows)} shows from seasons.json for {season}")
+            return shows
+        print(f"Season {season} not found in seasons.json — falling back to data.json")
+
+    # Fallback: derive from data.json (league_name = name)
     print(f"Reading {DATA_IN} ...")
     with open(DATA_IN, encoding="utf-8") as f:
-        records = json.load(f)
+        raw = json.load(f)
+    records = raw.get("records", raw) if isinstance(raw, dict) else raw
 
     start, end = season_bounds(season)
-    shows = set()
-    for r in records:
-        week = r.get("week_of", "")
-        if start <= week <= end:
-            show = r.get("show", "").strip()
-            if show:
-                shows.add(show)
-
-    print(f"Found {len(shows)} distinct shows in {season}")
-    return sorted(shows)
+    league_names = sorted({
+        r.get("show", "").strip()
+        for r in records
+        if start <= r.get("week_of", "") <= end
+        and r.get("theatre") == "Bushnell"
+        and r.get("show", "").strip()
+    })
+    shows = [{"name": n, "league_name": n} for n in league_names]
+    print(f"Found {len(shows)} distinct Bushnell shows in {season} (from data.json)")
+    return shows
 
 # ── SPARQL HELPERS ────────────────────────────────────────────────────────────
 SPARQL_ENDPOINT = "https://query.wikidata.org/sparql"
@@ -72,15 +93,20 @@ def _sparql_client():
     sparql.setReturnFormat(JSON)
     return sparql
 
-def _run_sparql(sparql, max_retries=3):
-    """Execute a configured SPARQLWrapper query with retries."""
+def _run_sparql(sparql, max_retries=4):
+    """Execute a configured SPARQLWrapper query with retries and 429 backoff."""
     for attempt in range(1, max_retries + 1):
         try:
             return sparql.query().convert()
         except Exception as e:
             if attempt == max_retries:
                 raise
-            wait = 2 ** attempt
+            # Wikidata rate-limit: back off for 60s then retry
+            if "429" in str(e):
+                wait = 60
+                print(f"  Rate limited (429) — waiting {wait}s before retry...")
+            else:
+                wait = 2 ** attempt
             print(f"  SPARQL attempt {attempt} failed ({e}), retrying in {wait}s...")
             time.sleep(wait)
 
@@ -158,6 +184,10 @@ def _search_wikidata(show_name):
             timeout=10,
             headers={"User-Agent": _USER_AGENT},
         )
+        if resp.status_code == 429:
+            print(f"  Rate limited (429) on search — waiting 60s...")
+            time.sleep(60)
+            return None
         if resp.status_code != 200:
             return None
         for result in resp.json().get("search", []):
@@ -223,11 +253,11 @@ def query_wikidata(show_name):
 
     # Fuzzy fallback via wbsearchentities
     print(f"  Exact match failed — trying fuzzy search...")
-    time.sleep(0.5)
+    time.sleep(3)
     wikidata_id = _search_wikidata(show_name)
     if wikidata_id:
         print(f"  Fuzzy match: {wikidata_id}")
-        time.sleep(0.5)
+        time.sleep(3)
         return _fetch_wikidata_item(wikidata_id)
 
     return None
@@ -311,13 +341,19 @@ def query_wikipedia(wikipedia_url, max_retries=3):
 
 
 # ── CORE ENRICHMENT ───────────────────────────────────────────────────────────
-def enrich_show(show, season):
+def enrich_show(show_entry, season):
     """
-    Fetch all metadata for a single show name. Returns a fully-populated record.
+    Fetch all metadata for a show. show_entry is a dict with 'name' and
+    'league_name'. 'name' is used for Wikidata search; 'league_name' is
+    stored so callers can match back to data.json records.
     Exposed at module level so watcher.py can call it directly.
     """
+    name        = show_entry["name"]
+    league_name = show_entry.get("league_name", name)
+
     record = {
-        "show":               show,
+        "name":               name,
+        "league_name":        league_name,
         "season":             season,
         "scraped_on":         date.today().isoformat(),
         "opening_date":       None,
@@ -332,8 +368,8 @@ def enrich_show(show, season):
         "wikidata_id":        None,
     }
 
-    wd = query_wikidata(show)
-    time.sleep(1)
+    wd = query_wikidata(name)
+    time.sleep(3)
 
     if wd:
         record.update({
@@ -351,7 +387,7 @@ def enrich_show(show, season):
         record["tony_nominations"] = noms
         record["tony_wins"]        = wins
         print(f"  Tonys: {wins} wins / {noms} nominations")
-        time.sleep(1)
+        time.sleep(3)
 
         summary = query_wikipedia(wd.get("wikipedia_url"))
         if summary:
@@ -380,16 +416,17 @@ def main():
     existing = {}
     if DATA_OUT.exists():
         with open(DATA_OUT, encoding="utf-8") as f:
-            existing = {s["show"]: s for s in json.load(f)}
+            existing = {s["name"]: s for s in json.load(f)}
         print(f"Loaded {len(existing)} existing records from shows.json")
 
     results = []
 
-    for i, show in enumerate(shows, 1):
-        print(f"\n[{i}/{len(shows)}] {show}")
+    for i, entry in enumerate(shows, 1):
+        name = entry["name"]
+        print(f"\n[{i}/{len(shows)}] {name}  (league: {entry.get('league_name', name)})")
 
-        if show in existing:
-            rec = existing[show]
+        if name in existing:
+            rec = existing[name]
             scraped_on = rec.get("scraped_on", "")
             if scraped_on:
                 age = (date.today() - date.fromisoformat(scraped_on)).days
@@ -398,7 +435,7 @@ def main():
                     results.append(rec)
                     continue
 
-        results.append(enrich_show(show, season))
+        results.append(enrich_show(entry, season))
 
     DATA_OUT.parent.mkdir(parents=True, exist_ok=True)
     with open(DATA_OUT, "w", encoding="utf-8") as f:

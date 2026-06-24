@@ -36,6 +36,7 @@ REPO_FOLDER   = r"C:\Users\rnunley\OneDrive - Bushnell Center for the Performing
 SCRIPT_PATH   = os.path.join(REPO_FOLDER, "scripts", "process_touring.py")
 SCRAPE_PATH   = os.path.join(REPO_FOLDER, "scripts", "scrape_shows.py")
 DATA_JSON     = os.path.join(REPO_FOLDER, "src", "data", "data.json")
+SEASONS_JSON  = os.path.join(REPO_FOLDER, "src", "data", "seasons.json")
 SHOWS_JSON    = os.path.join(REPO_FOLDER, "src", "data", "shows.json")
 LOG_FILE      = os.path.join(os.path.dirname(__file__), "watcher.log")
 
@@ -64,40 +65,60 @@ def _season_bounds(season_str):
 
 def enrich_new_shows():
     """
-    Detect show names in data.json that are missing from shows.json, then
-    call scrape_shows.py to enrich them. Returns True if shows.json was updated.
+    Detect shows in seasons.json that are missing from shows.json, then
+    call scrape_shows.enrich_show() for each. Returns True if shows.json was updated.
+    Prefers seasons.json; falls back to deriving league names from data.json.
     """
-    # Load current data.json show names for the active season
     season = _current_season()
-    start, end = _season_bounds(season)
-    try:
-        with open(DATA_JSON, encoding="utf-8") as f:
-            records = json.load(f)
-    except Exception as e:
-        log.error(f"Could not read data.json: {e}")
-        return False
 
-    data_shows = {
-        r.get("show", "").strip()
-        for r in records
-        if start <= r.get("week_of", "") <= end and r.get("show", "").strip()
-    }
+    # Load show list from seasons.json if available
+    season_entries = []
+    if os.path.isfile(SEASONS_JSON):
+        try:
+            with open(SEASONS_JSON, encoding="utf-8") as f:
+                seasons = json.load(f)
+            season_entries = seasons.get(season, [])
+            if season_entries:
+                log.info(f"Loaded {len(season_entries)} shows from seasons.json for {season}")
+        except Exception as e:
+            log.warning(f"Could not read seasons.json: {e}")
+
+    # Fallback: derive from data.json
+    if not season_entries:
+        start, end = _season_bounds(season)
+        try:
+            with open(DATA_JSON, encoding="utf-8") as f:
+                raw = json.load(f)
+            records = raw.get("records", raw) if isinstance(raw, dict) else raw
+        except Exception as e:
+            log.error(f"Could not read data.json: {e}")
+            return False
+        league_names = sorted({
+            r.get("show", "").strip()
+            for r in records
+            if start <= r.get("week_of", "") <= end
+            and r.get("theatre") == "Bushnell"
+            and r.get("show", "").strip()
+        })
+        season_entries = [{"name": n, "league_name": n} for n in league_names]
+
+    data_shows = {e["name"] for e in season_entries}
 
     # Load existing shows.json
     known_shows = set()
     if os.path.isfile(SHOWS_JSON):
         try:
             with open(SHOWS_JSON, encoding="utf-8") as f:
-                known_shows = {s["show"] for s in json.load(f)}
+                known_shows = {s["name"] for s in json.load(f)}
         except Exception as e:
             log.warning(f"Could not read shows.json: {e}")
 
-    new_shows = data_shows - known_shows
-    if not new_shows:
+    new_entries = [e for e in season_entries if e["name"] not in known_shows]
+    if not new_entries:
         log.info("No new shows to enrich.")
         return False
 
-    log.info(f"Enriching {len(new_shows)} new show(s): {', '.join(sorted(new_shows))}")
+    log.info(f"Enriching {len(new_entries)} new show(s): {', '.join(e['name'] for e in new_entries)}")
 
     # Import scrape_shows at runtime so watcher doesn't require SPARQLWrapper at startup
     try:
@@ -117,15 +138,15 @@ def enrich_new_shows():
     if os.path.isfile(SHOWS_JSON):
         try:
             with open(SHOWS_JSON, encoding="utf-8") as f:
-                existing = {s["show"]: s for s in json.load(f)}
+                existing = {s["name"]: s for s in json.load(f)}
         except Exception:
             pass
 
-    for show in sorted(new_shows):
-        log.info(f"  Scraping: {show}")
+    for entry in new_entries:
+        log.info(f"  Scraping: {entry['name']}  (league: {entry.get('league_name', entry['name'])})")
         try:
-            record = scrape.enrich_show(show, season)
-            existing[show] = record
+            record = scrape.enrich_show(entry, season)
+            existing[entry["name"]] = record
         except Exception as e:
             log.error(f"  Failed to enrich '{show}': {e}")
 
