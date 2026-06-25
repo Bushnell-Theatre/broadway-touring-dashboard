@@ -220,7 +220,28 @@ The Fit Score (0–100) is a directional planning signal, not a guarantee. It re
 
 | # | Issue | Status |
 |---|---|---|
-| 1 | Entra ID SSO lockdown not yet configured | Pending |
+| 1 | Entra ID SSO lockdown — `staticwebapp.config.json` deployed; requires Azure app registration (see below) | Pending activation |
 | 2 | Wikidata SPARQL endpoint under active rate-limiting outage (797a132) — Tony data may be incomplete until resolved | Monitoring |
 | 3 | Weekly automation requires the watcher laptop to be running | Accepted — upgrade path to Azure Function identified |
 | 4 | Canadian ticket prices reported in CAD, GP/GG in USD | Documented — no fix needed |
+
+---
+
+## Activating Entra ID Authentication
+
+`src/staticwebapp.config.json` is deployed and will enforce @bushnell.org login once the app registration is wired up. One-time setup:
+
+1. **Azure Portal → Entra ID → App registrations → New registration**
+   - Name: `Broadway Touring Dashboard`
+   - Supported account types: *Accounts in this organizational directory only (Bushnell)*
+   - Redirect URI: `https://white-pebble-01710020f.7.azurestaticapps.net/.auth/login/aad/callback`
+
+2. **Certificates & secrets → New client secret** — copy the value immediately
+
+3. **Azure Static Web Apps → Configuration → Application settings** — add:
+   - `AZURE_CLIENT_ID` = Application (client) ID from step 1
+   - `AZURE_CLIENT_SECRET` = secret value from step 2
+
+4. Push any change to `main` to trigger a redeploy. Auth will be live immediately after deploy completes.
+
+Users who are not signed in will be redirected to Microsoft login automatically and must authenticate with an `@bushnell.org` account.
