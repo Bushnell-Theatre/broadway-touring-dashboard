@@ -147,6 +147,29 @@ function detailHtml(p){
   h+='</div>';
   h+='<table class="mini-table" style="margin-top:14px"><thead><tr><th>Recent Market</th><th>Week</th><th class="num">Gross</th><th class="num">Cap</th></tr></thead><tbody>'+tableRows+'</tbody></table>';
   h+=ctxHtml;
+  // Production background — from shows.json via BTD.state.showIndex
+  var _meta=p.showMeta||{};
+  var _totalWins=awardWins(_meta);var _totalNoms=awardNoms(_meta);
+  var _hasMeta=_meta.wikipedia_summary||_meta.composer||_meta.opening_date||_totalWins||_totalNoms;
+  if(_hasMeta){
+    h+='<div style="margin-top:14px;border-top:1px solid var(--rule2);padding-top:10px"><div class="card-hd" style="margin-bottom:6px">Production Background</div>';
+    if(_meta.wikipedia_summary)h+='<div class="card-sub" style="margin-bottom:8px">'+escapeHtml(_meta.wikipedia_summary.slice(0,300))+'…</div>';
+    if(_meta.opening_date||_totalWins||_totalNoms||_meta.composer){
+      h+='<div class="metric-row">';
+      if(_meta.opening_date)h+='<div class="metric"><div class="val">'+_meta.opening_date.slice(0,4)+'</div><div class="lbl">Opened</div></div>';
+      if(_totalWins||_totalNoms){h+='<div class="metric"><div class="val">'+(_totalWins||'—')+'</div><div class="lbl">Award Wins</div></div>';h+='<div class="metric"><div class="val">'+(_totalNoms||'—')+'</div><div class="lbl">Nominations</div></div>';}
+      if(_meta.composer)h+='<div class="metric"><div class="val" style="font-size:.72rem">'+escapeHtml(_meta.composer)+'</div><div class="lbl">Composer</div></div>';
+      h+='</div>';
+    }
+    var _psig=p.signals||{};var _pbadges=[];
+    if(_psig.recognition&&_psig.recognition.label&&_psig.recognition.label!=='Unknown')_pbadges.push('Recognition: '+_psig.recognition.label);
+    if(_psig.press&&_psig.press.label&&_psig.press.label!=='Unknown')_pbadges.push('Press: '+_psig.press.label);
+    if(_psig.tour&&_psig.tour.label&&_psig.tour.label!=='Unknown')_pbadges.push('Tour: '+_psig.tour.label);
+    if(_psig.audience&&_psig.audience.label&&_psig.audience.label!=='Unknown')_pbadges.push('Audience: '+_psig.audience.label);
+    if(_pbadges.length)h+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">'+_pbadges.map(function(b){return '<span class="status neutral">'+b+'</span>';}).join('')+'</div>';
+    if(_meta.wikipedia_url)h+='<a href="'+_meta.wikipedia_url+'" target="_blank" rel="noopener" style="font-size:.62rem;color:var(--accent);margin-top:8px;display:inline-block;">View on Wikipedia →</a>';
+    h+='</div>';
+  }
   return h;
 }
 
