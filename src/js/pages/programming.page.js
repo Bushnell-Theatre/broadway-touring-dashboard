@@ -104,8 +104,20 @@ function renderBrief(){const season=seasonShows();const profiles=season.shows.ma
   $('tab-brief').innerHTML=`<div class="section-divider"><h2>Season Overview</h2><div class="section-divider-line"></div><div class="section-divider-meta">${season.name} · programming decision view</div></div><div class="brief"><div class="callout ${klass}"><h3>${status}</h3><p>${msg}</p></div><div class="card"><div class="card-hd">What this page answers</div><div class="card-sub">How current shows are doing, how previous shows performed, and what next season candidates may do for Bushnell.</div><div class="metric-row"><div class="metric"><div class="val">${fmt$(avg(withData.map(p=>p.metrics.gross)))}</div><div class="lbl">Avg Gross</div></div><div class="metric"><div class="val">${pct(avg(withData.map(p=>p.metrics.gg)),0)}</div><div class="lbl">Avg GG%</div></div><div class="metric"><div class="val">${pct(avg(withData.map(p=>p.metrics.cap)),0)}</div><div class="lbl">Tour Capacity</div></div></div></div></div><div class="grid grid-3" style="margin-top:18px"><div class="card"><div class="card-hd">Strongest Signals</div><div class="rank-list">${rankItems(high,p=>p.show.title, p=>`${fmt$(p.metrics.gross)} avg gross · ${pct(p.metrics.gg,0)} GG% · ${pct(p.metrics.cap,0)} cap`, p=>p.score)}</div></div><div class="card"><div class="card-hd">Watchlist</div><div class="rank-list">${watch.length?rankItems(watch,p=>p.show.title,p=>`Fit ${p.score} · ${p.metrics.count} records`,p=>p.score):'<div class="empty">No current watchlist items with available data.</div>'}</div></div><div class="card"><div class="card-hd">Programming Signals</div><div class="insight-list" id="briefInsights"></div></div></div><div class="grid grid-2" style="margin-top:18px"><div class="card"><div class="card-hd">Season Show Fit</div><canvas id="cBriefFit"></canvas></div><div class="card"><div class="card-hd">Capacity: Tour vs Peer</div><canvas id="cBriefCap"></canvas></div><div class="card full" style="border-left:3px solid var(--rule)"><div class="card-hd" style="margin-bottom:10px">How to Use This View</div><div class="grid grid-2"><div class="note"><div class="note-hd">What the Planning Signal measures</div><div class="note-body">Four separate signals: <strong>Demand</strong> (attendance), <strong>Revenue</strong> (monetization efficiency), <strong>Peer</strong> (Bushnell-size venue behavior), and <strong>Confidence</strong> (evidence depth). Scores are calibrated against the <strong>season median</strong> — above median means stronger relative to this season's actual touring market.</div></div><div class="note"><div class="note-hd">What it does not include</div><div class="note-body">Deal terms, guarantees &amp; expense structure &nbsp;·&nbsp; Local Bushnell audience history &nbsp;·&nbsp; Routing and availability &nbsp;·&nbsp; Pre-sale pace &nbsp;·&nbsp; Group or donor strategy &nbsp;·&nbsp; Competing local events &nbsp;·&nbsp; Artistic or mission priority. <strong>Revenue Signal is not Net Profit.</strong> Use the Planning Signal to start the conversation, not end it.</div></div></div></div></div>`;
   $('briefInsights').innerHTML=makeInsights(profiles).map((x,i)=>`<div class="insight"><div class="insight-mark">${i+1}</div><div><strong>${x.title}</strong><span>${x.text}</span></div></div>`).join('');chartFit(profiles,'cBriefFit');chartCap(profiles,'cBriefCap');}
 function makeInsights(profiles){const out=[];const known=profiles.filter(p=>p.metrics.count>0);const best=[...known].sort((a,b)=>b.score-a.score)[0];const soft=[...known].sort((a,b)=>a.score-b.score)[0];const peerWins=known.filter(p=>p.metrics.peerCap!=null&&p.metrics.cap!=null&&p.metrics.peerCap>p.metrics.cap+3).length;if(best){const _bs=planningSignals(best);out.push({title:`${best.show.title} — strongest Planning Signal`,text:`Planning Read: ${_bs.planningRead}. Demand: ${_bs.demand}, Revenue: ${_bs.revenue}. ${pct(best.metrics.cap,1)} avg capacity across matching tour records.`});}if(soft){const _ss=planningSignals(soft);out.push({title:`${soft.show.title} — review before committing`,text:`Planning Read: ${_ss.planningRead}. Demand: ${_ss.demand}, Revenue: ${_ss.revenue}. Compare peer venue behavior and confidence level before treating as a reliable Bushnell fit.`});}out.push({title:'Peer lens is the most useful planning filter',text:`${peerWins} season titles currently look stronger in Bushnell-size venues than in the full national pool.`});return out;}
-function renderSeason(){const season=seasonShows();const profiles=season.shows.map(showProfile).sort((a,b)=>b.score-a.score);CURRENT_PROFILES=profiles;const shows=season.shows.map(s=>s.title);$('tab-season').innerHTML=`<div class="section-divider"><h2>Season Performance</h2><div class="section-divider-line"></div><div class="section-divider-meta">Show scorecards · ${season.name}</div></div><div class="grid grid-4">${profiles.map((p,i)=>showCard(p,i===0,i)).join('')}</div><div class="grid grid-2" style="margin-top:18px"><div class="card"><div class="card-hd">Selected Show Detail</div><div id="currentDetail"></div></div><div class="card"><div class="card-hd">Season Comparison</div><canvas id="cCurrent"></canvas></div></div><div class="section-divider" style="margin-top:28px"><h2>Show Intel</h2><div class="section-divider-line"></div><div class="section-divider-meta">Production history and buzz for ${season.name}</div></div><div class="explainer"><p><strong>Purpose:</strong> this section surfaces Broadway production history, award recognition, public-media awareness, and critical context for current season shows. Use it to normalize fit scoring against show-level factors that raw capacity data cannot capture — a new tour, a major revival, or a Tony sweep all affect demand in ways the feed alone will not explain.</p></div><div class="grid grid-2"><div class="card full"><div class="card-hd">Current Season Show Metadata</div><table class="mini-table"><thead><tr><th>Show</th><th>Opened</th><th class="num">Tony Wins</th><th class="num">Nominations</th><th>Composer</th><th>Notes</th></tr></thead><tbody id="intelTableBody"><tr><td colspan="6" class="empty">Loading show metadata...</td></tr></tbody></table></div><div class="card"><div class="card-hd">Selected Show</div><div id="intelDetail"><div class="empty">Select a show from the table above.</div></div></div><div class="card"><div class="card-hd">Awards Recognition</div><canvas id="cIntelTony" class="small-canvas"></canvas></div></div>`;document.querySelectorAll('.show-card').forEach(c=>c.addEventListener('click',()=>selectCurrent(+c.dataset.idx)));selectCurrent(0);chartFit(profiles,'cCurrent');loadShowIntel(shows);}
-function showCard(p,active,idx){return BTD.components&&BTD.components.programmingShowCard?BTD.components.programmingShowCard(p,active,idx,SCORE_MED):''}
+function renderSeason(){const season=seasonShows();const profiles=season.shows.map(showProfile).sort((a,b)=>b.score-a.score);CURRENT_PROFILES=profiles;$('tab-season').innerHTML=`<div class="section-divider"><h2>Season Performance</h2><div class="section-divider-line"></div><div class="section-divider-meta">Show scorecards · ${season.name}</div></div><div class="grid grid-4">${profiles.map((p,i)=>showCard(p,i===0,i)).join('')}</div><div class="grid grid-2" style="margin-top:18px"><div class="card"><div class="card-hd">Selected Show Detail</div><div id="currentDetail"></div></div><div class="card"><div class="card-hd">Season Comparison</div><canvas id="cCurrent"></canvas></div></div>`;document.querySelectorAll('.show-card').forEach(c=>c.addEventListener('click',()=>selectCurrent(+c.dataset.idx)));selectCurrent(0);chartFit(profiles,'cCurrent');}
+function showCard(p,active,idx){
+  var base=BTD.components&&BTD.components.programmingShowCard?BTD.components.programmingShowCard(p,active,idx,SCORE_MED):'';
+  var _meta=p.showMeta||{};
+  var _wins=awardWins(_meta);var _noms=awardNoms(_meta);
+  var _rec=(p.signals&&p.signals.recognition&&p.signals.recognition.label)||'';
+  var parts=[];
+  if(_wins)parts.push(_wins+' award win'+(_wins!==1?'s':''));
+  else if(_noms)parts.push(_noms+' nomination'+(_noms!==1?'s':''));
+  if(_rec&&_rec!=='Unknown'&&_rec!=='Limited')parts.push(_rec+' recognition');
+  if(!parts.length)return base;
+  var line='<div style="font-size:.58rem;color:var(--ink3);margin-top:4px;border-top:1px solid var(--rule2);padding-top:4px">'+escapeHtml(parts.join(' · '))+'</div>';
+  return base.slice(0,-6)+line+'</div>';
+}
 function selectCurrent(idx){document.querySelectorAll('.show-card').forEach((c,i)=>c.classList.toggle('active',i===idx));const p=CURRENT_PROFILES[idx]||CURRENT_PROFILES[0];$('currentDetail').innerHTML=p?detailHtml(p):'<div class="empty">No current show data.</div>';}
 function detailHtml(p){
   var _sig=planningSignals(p);
@@ -198,111 +210,8 @@ function whyThisRead(p,signals){return BTD.page&&BTD.page.whyThisRead?BTD.page.w
 function short(s,n){return BTD.page&&BTD.page.short?BTD.page.short(s,n):(s&&s.length>n?s.slice(0,n)+'…':s)}function escapeHtml(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 Chart.defaults.font.family = "'Libre Franklin', sans-serif";
 Chart.defaults.font.size = 10;
-function renderIntel() {
-  const season = seasonShows();
-  const shows = season.shows.map(s => s.title);
-  $('tab-intel').innerHTML = `
-    <div class="section-divider">
-      <h2>Show Intel</h2>
-      <div class="section-divider-line"></div>
-      <div class="section-divider-meta">Production history and buzz for ${season.name}</div>
-    </div>
-    <div class="explainer">
-      <p><strong>Purpose:</strong> this tab surfaces Broadway production history, award recognition, public-media awareness, and critical context for current season shows. Use it to normalize fit scoring against show-level factors that raw capacity data cannot capture — a new tour, a major revival, or a Tony sweep all affect demand in ways the feed alone will not explain.</p>
-    </div>
-    <div class="grid grid-2">
-      <div class="card full">
-        <div class="card-hd">Current Season Show Metadata</div>
-        <table class="mini-table">
-          <thead>
-            <tr>
-              <th>Show</th>
-              <th>Opened</th>
-              <th class="num">Award Wins</th>
-              <th class="num">Nominations</th>
-              <th>Composer</th>
-              <th>Notes</th>
-            </tr>
-          </thead>
-          <tbody id="intelTableBody">
-            <tr><td colspan="6" class="empty">Loading show metadata...</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="card">
-        <div class="card-hd">Selected Show</div>
-        <div id="intelDetail"><div class="empty">Select a show from the table above.</div></div>
-      </div>
-      <div class="card">
-        <div class="card-hd">Awards Recognition</div>
-        <canvas id="cIntelTony" class="small-canvas"></canvas>
-      </div>
-    </div>`;
-  loadShowIntel(shows);
-}
-
 function awardWins(rec){return Object.values((rec&&rec.awards)||{}).reduce((a,v)=>a+Number((v&&v.wins)||0),0);}
 function awardNoms(rec){return Object.values((rec&&rec.awards)||{}).reduce((a,v)=>a+Number((v&&v.nominations)||0),0);}
 function recognitionLabel(rec){return rec&&rec.signals&&rec.signals.recognition&&rec.signals.recognition.label || (awardNoms(rec)?'Awarded':'—');}
-
-function loadShowIntel(shows) {
-  const SHOWS_JSON_URLS = [
-    'https://white-pebble-01710020f.7.azurestaticapps.net/data/shows.json',
-    'data/shows.json'
-  ];
-  const tryFetch = async (urls) => {
-    for (const url of urls) {
-      try {
-        const r = await fetch(url);
-        if (r.ok) return await r.json();
-      } catch(e) {}
-    }
-    return null;
-  };
-  tryFetch(SHOWS_JSON_URLS).then(data => {
-    if (!data) {
-      document.getElementById('intelTableBody').innerHTML =
-        '<tr><td colspan="6" class="empty">shows.json not yet available. Run scripts/scrape_shows.py to generate it.</td></tr>';
-      return;
-    }
-    const map = {};
-    data.forEach(s => { map[normalizeName(s.name || s.show || s.title || s.league_name)] = s; });
-    const rows = shows.map(title => {
-      const rec = map[normalizeName(title)] || {};
-      return { title, rec };
-    });
-    document.getElementById('intelTableBody').innerHTML = rows.map((r, i) =>
-      `<tr onclick="intelDetail(${i})" style="cursor:pointer">
-        <td>${r.title}</td>
-        <td>${r.rec.opening_date ? r.rec.opening_date.slice(0,4) : '—'}</td>
-        <td class="num">${awardWins(r.rec) || r.rec.tony_wins || '—'}</td>
-        <td class="num">${awardNoms(r.rec) || r.rec.tony_nominations || '—'}</td>
-        <td>${r.rec.composer || '—'}</td>
-        <td>${r.rec.wikidata_id ? '<span class="status good">Matched</span>' : '<span class="status warn">No Match</span>'}</td>
-      </tr>`
-    ).join('');
-    window._INTEL_ROWS = rows;
-    if (rows[0]) intelDetail(0);
-    chartIntelTony(rows);
-  });
-}
-
-function intelDetail(i) {
-  const r = window._INTEL_ROWS[i];
-  if (!r) return;
-  const rec = r.rec;
-  document.getElementById('intelDetail').innerHTML = `
-    <div class="card-title">${r.title}</div>
-    <div class="card-sub">${rec.wikipedia_summary ? rec.wikipedia_summary.slice(0, 300) + '...' : 'No Wikipedia summary available.'}</div>
-    <div class="metric-row">
-      <div class="metric"><div class="val">${rec.opening_date ? rec.opening_date.slice(0,4) : '—'}</div><div class="lbl">Opened</div></div>
-      <div class="metric"><div class="val">${awardWins(rec) || rec.tony_wins || '—'}</div><div class="lbl">Award Wins</div></div>
-      <div class="metric"><div class="val">${awardNoms(rec) || rec.tony_nominations || '—'}</div><div class="lbl">Nominations</div></div>
-    </div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px"><span class="status neutral">Recognition: ${recognitionLabel(rec)}</span>${rec.signals&&rec.signals.media&&rec.signals.media.press_awareness?`<span class="status neutral">Press: ${rec.signals.media.press_awareness.label}</span>`:''}${rec.signals&&rec.signals.media&&rec.signals.media.tour_viability?`<span class="status neutral">Tour: ${rec.signals.media.tour_viability.label}</span>`:''}</div>
-    ${rec.wikipedia_url ? `<a href="${rec.wikipedia_url}" target="_blank" rel="noopener" style="font-size:.62rem;color:var(--amber);margin-top:12px;display:inline-block;">View on Wikipedia →</a>` : ''}`;
-}
-
-function chartIntelTony(rows) { return BTD.charts && BTD.charts.renderTonyRecognitionChart ? BTD.charts.renderTonyRecognitionChart('cIntelTony', rows) : null; }
 
 loadData();
