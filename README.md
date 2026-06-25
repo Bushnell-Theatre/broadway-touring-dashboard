@@ -220,7 +220,7 @@ The Fit Score (0–100) is a directional planning signal, not a guarantee. It re
 
 | # | Issue | Status |
 |---|---|---|
-| 1 | Entra ID SSO lockdown — `staticwebapp.config.json` deployed; requires Azure app registration (see below) | Pending activation |
+| 1 | Entra ID SSO lockdown — requires Standard SKU upgrade + Azure app registration (see below); auth block removed from config until SKU is upgraded | Pending |
 | 2 | Wikidata SPARQL endpoint under active rate-limiting outage (797a132) — Tony data may be incomplete until resolved | Monitoring |
 | 3 | Weekly automation requires the watcher laptop to be running | Accepted — upgrade path to Azure Function identified |
 | 4 | Canadian ticket prices reported in CAD, GP/GG in USD | Documented — no fix needed |
