@@ -15,6 +15,9 @@
     seasonsUrl: 'data/seasons.json',
     peersUrl: 'data/peers.json',
     showsUrl: 'data/shows.json',
+    awardsUrl: 'data/awards.json',
+    mediaSignalsUrl: 'data/media_signals.json',
+    titleAliasesUrl: 'data/title_aliases.json',
     validationUrl: 'data/validation_report.json'
   }, root.BTD.config || {});
 })(window);

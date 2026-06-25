@@ -8,6 +8,18 @@
   function normalizeName(s) { return String(s || '').toLowerCase().replace(/&/g, 'and').replace(/\([^)]*\)/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
   function titleOf(show) { return typeof show === 'string' ? show : (show && (show.title || show.show || show.name || show.match || show.league_name)) || 'Unknown Title'; }
   function matchOf(show) { return typeof show === 'string' ? show : (show && (show.match || show.league_name || show.title || show.name || show.show)) || titleOf(show); }
+  function canonicalName(value) {
+    var key = normalizeName(value);
+    var aliases = root.BTD.state && root.BTD.state.titleAliases || {};
+    return aliases[key] || key;
+  }
+  function showMetaFor(show) {
+    var state = root.BTD.state || {};
+    var idx = state.showIndex || {};
+    var keys = [titleOf(show), matchOf(show), show && show.name, show && show.league_name].filter(Boolean).map(canonicalName);
+    for (var i = 0; i < keys.length; i++) { if (idx[keys[i]]) return idx[keys[i]]; }
+    return {};
+  }
   function avg(rows, field) { return root.BTD.metrics.avg((rows || []).map(function (r) { return val(r[field]); })); }
   function sum(rows, field) { return root.BTD.metrics.sum((rows || []).map(function (r) { return val(r[field]); })); }
   function uniq(rows, fn) { return root.BTD.metrics.uniqueCount(rows || [], fn); }
@@ -51,6 +63,33 @@
     return 100 * below / pop.length;
   }
   function signal(value, drivers) { return { value: value == null ? null : Math.round(value), label: label(value), drivers: drivers || [] }; }
+  function normalizeSignal(raw, fallbackLabel) {
+    raw = raw || {};
+    var value = raw.value == null ? null : Math.round(+raw.value);
+    return { value: value, label: raw.label || fallbackLabel || label(value), drivers: raw.drivers || [] };
+  }
+  function recognitionFromAwards(awards) {
+    var weights = { tony: [12, 3, 45], olivier: [8, 2, 25], drama_desk: [6, 2, 20], grammy: [6, 2, 15] };
+    var score = 0;
+    var drivers = [];
+    Object.keys(awards || {}).forEach(function (body) {
+      var vals = awards[body] || {};
+      var w = weights[body] || [4, 1, 10];
+      var wins = +vals.wins || 0;
+      var noms = +vals.nominations || 0;
+      score += Math.min(w[2], wins * w[0] + Math.max(0, noms - wins) * w[1]);
+      if (wins || noms) drivers.push(body.replace(/_/g, ' ') + ': ' + wins + ' wins / ' + noms + ' nominations');
+    });
+    score = Math.min(100, Math.round(score));
+    return { value: score, label: score >= 60 ? 'High' : score >= 25 ? 'Moderate' : score > 0 ? 'Limited' : 'Unknown', drivers: drivers };
+  }
+  function mediaSignal(media, key, fallback) {
+    media = media || {};
+    var raw = media[key] || {};
+    if (key === 'tour_viability') return { value: raw.label === 'Confirmed' ? 85 : null, label: raw.label || fallback || 'Unknown', drivers: raw.drivers || [] };
+    if (key === 'audience_fit' || key === 'local_market' || key === 'critical_reception') return { value: raw.value == null ? null : +raw.value, label: raw.label || fallback || 'Unknown', drivers: raw.drivers || raw.tags || [] };
+    return normalizeSignal(raw, fallback || 'Unknown');
+  }
 
   function profileShow(show, records, options) {
     options = options || {};
@@ -124,6 +163,17 @@
     peerDrivers.push('Bushnell-size or selected peer group capacity, revenue behavior, admission, and sample size.');
     confidenceDrivers.push(rows.length + ' active records, ' + venueCount + ' venues, ' + weekCount + ' weeks, ' + peers.length + ' peer records.');
 
+    var showMeta = showMetaFor(show);
+    var awards = showMeta.awards || {};
+    var metaSignals = showMeta.signals || {};
+    var media = metaSignals.media || {};
+    var recognitionSignal = normalizeSignal(metaSignals.recognition || recognitionFromAwards(awards), 'Unknown');
+    var pressSignal = mediaSignal(media, 'press_awareness', 'Unknown');
+    var tourSignal = mediaSignal(media, 'tour_viability', 'Unknown');
+    var riskSignal = mediaSignal(media, 'reputation_risk', 'Unknown');
+    var audienceSignal = mediaSignal(media, 'audience_fit', 'Unknown');
+    var localSignal = mediaSignal(media, 'local_market', 'Unknown');
+
     var isFutureNewTour = !!options.futureNewTour || (String(options.seasonId || '').indexOf('2026') === 0 && rows.length === 0);
     var planningRead = 'Exploratory';
     if (rows.length) {
@@ -146,6 +196,13 @@
     if (avgAdmission != null && percentile(avgAdmission, root.BTD.state.all || all, 'avg_adm') < 40) caution.push('Average admission trails much of the touring dataset.');
     if (peers.length < 4) caution.push('Peer sample is limited; apply local judgment.');
     if (confidenceScore < 45) caution.push('Evidence depth is thin; treat the read as preliminary.');
+    if (recognitionSignal.label === 'High') positive.push('Recognition signal is high based on award history.');
+    else if (recognitionSignal.label === 'Moderate' || recognitionSignal.label === 'Limited') positive.push('Award recognition provides some additional context.');
+    if (pressSignal.label === 'High') positive.push('Public-media awareness appears high based on curated sources.');
+    if (tourSignal.label === 'Confirmed') positive.push('Tour viability is confirmed by curated public sources.');
+    if (riskSignal.label === 'High' || riskSignal.label === 'Moderate') caution.push('Public-source reputation risk should be reviewed.');
+    if (audienceSignal.label && audienceSignal.label !== 'Unknown') positive.push('Audience-fit context: ' + audienceSignal.label + '.');
+    if (localSignal.label === 'Relevant') positive.push('Local-market relevance appears in curated public sources.');
     caution.push('Revenue Signal is revenue quality, not net profit; deal terms and local costs are not included.');
 
     var demandSignal = signal(demandScore, demandDrivers);
@@ -186,7 +243,9 @@
         venueCount: venueCount, venues: venueCount, weekCount: weekCount, weeks: weekCount,
         peerRecordCount: peers.length, peerCount: peers.length
       },
-      signals: { demand: demandSignal, revenue: revenueSignal, peer: peerSignal, confidence: confidenceSignal },
+      signals: { demand: demandSignal, revenue: revenueSignal, peer: peerSignal, recognition: recognitionSignal, press: pressSignal, tour: tourSignal, risk: riskSignal, audience: audienceSignal, local: localSignal, confidence: confidenceSignal },
+      awards: awards,
+      showMeta: showMeta,
       planning: { read: isFutureNewTour ? 'Exploratory' : planningRead, note: note },
       explanation: { positive: positive, caution: caution },
       score: composite,
@@ -204,11 +263,17 @@
   function planningRead(profile) { return profile && profile.planning; }
   function whyRead(profile) { return profile && profile.explanation || { positive: [], caution: [] }; }
   function signalLabels(profile) {
-    if (!profile || !profile.signals) return { demand: 'Exploratory', revenue: 'Exploratory', peer: 'Exploratory', confidence: 'Exploratory', planningRead: 'Exploratory', interpretation: 'No profile available.' };
+    if (!profile || !profile.signals) return { demand: 'Exploratory', revenue: 'Exploratory', peer: 'Exploratory', recognition: 'Unknown', press: 'Unknown', tour: 'Unknown', risk: 'Unknown', audience: 'Unknown', local: 'Unknown', confidence: 'Exploratory', planningRead: 'Exploratory', interpretation: 'No profile available.' };
     return {
       demand: profile.signals.demand.label,
       revenue: profile.signals.revenue.label,
       peer: profile.signals.peer.label,
+      recognition: profile.signals.recognition && profile.signals.recognition.label,
+      press: profile.signals.press && profile.signals.press.label,
+      tour: profile.signals.tour && profile.signals.tour.label,
+      risk: profile.signals.risk && profile.signals.risk.label,
+      audience: profile.signals.audience && profile.signals.audience.label,
+      local: profile.signals.local && profile.signals.local.label,
       confidence: profile.signals.confidence.label,
       planningRead: profile.planning && profile.planning.read,
       interpretation: profile.planning && profile.planning.note
@@ -217,7 +282,7 @@
 
   root.BTD.signals = {
     normalizeName: normalizeName, rowsForShow: rowsForShow, profileShow: profileShow, profileSeason: profileSeason,
-    demand: passthrough('demand'), revenue: passthrough('revenue'), peer: passthrough('peer'), confidence: passthrough('confidence'),
+    demand: passthrough('demand'), revenue: passthrough('revenue'), peer: passthrough('peer'), recognition: passthrough('recognition'), press: passthrough('press'), tour: passthrough('tour'), risk: passthrough('risk'), audience: passthrough('audience'), local: passthrough('local'), confidence: passthrough('confidence'),
     planningRead: planningRead, whyRead: whyRead, signalLabels: signalLabels
   };
 })(window);
