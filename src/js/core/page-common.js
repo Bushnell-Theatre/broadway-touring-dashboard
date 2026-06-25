@@ -200,7 +200,7 @@
     // Fact 2: revenue leaders (GG% >= 80)
     var strong = withData.filter(function(p) { return p.metrics.gg != null && p.metrics.gg >= 80; }).sort(function(a,b){ return (b.metrics.gross||0)-(a.metrics.gross||0); });
     if (strong.length) {
-      parts.push(strong.map(function(p){ return p.show.title; }).join(', ') + (strong.length === 1 ? ' is' : ' are') + ' converting demand to revenue at or above expectations (' + pc(strong[0].metrics.gg, 0) + '% GG%' + (strong.length > 1 ? ' leading' : '') + ').');
+      parts.push(strong.map(function(p){ return p.show.title; }).join(', ') + (strong.length === 1 ? ' is' : ' are') + ' converting demand to revenue at or above expectations (' + pc(strong[0].metrics.gg, 0) + ' GG%' + (strong.length > 1 ? ' leading' : '') + ').');
     }
     // Fact 3: soft revenue signals (GG% < 60 with data)
     var soft = withData.filter(function(p) { return p.metrics.gg != null && p.metrics.gg < 60; }).sort(function(a,b){ return (a.metrics.gg||0)-(b.metrics.gg||0); });
