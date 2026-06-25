@@ -169,6 +169,34 @@
     });
   }
 
+  // ── Season callout helpers (revenue-first) ───────────────────────────────────
+  function seasonCalloutClass(avgGG) {
+    if (avgGG == null) return '';
+    return avgGG >= 80 ? 'good' : avgGG < 60 ? 'warn' : '';
+  }
+  function seasonHeadline(avgGG, avgGross, peer, profiles) {
+    profiles = profiles || [];
+    var newTours = profiles.filter(function(p) { return p.isFutureNewTour; }).length;
+    if (newTours > 0) return 'New-tour season: limited data, but real upside potential.';
+    if (avgGG == null) return 'Season slate is loaded — match data pending.';
+    if (avgGG >= 85) return 'Strong revenue season: demand is converting well.';
+    if (avgGG >= 75) return 'Revenue tracking solidly — demand and yield are aligned.';
+    if (avgGG >= 60) return 'Revenue in range — monitor yield and pricing signals.';
+    if (avgGG >= 45) return 'Revenue below expectations — review pricing and demand signals.';
+    return 'Revenue needs attention — results warrant leadership review.';
+  }
+  function seasonSummaryCopy(profiles, avgGG, avgGross, avgCap, peer) {
+    profiles = profiles || [];
+    var fmt = root.fmt$ || function(v) { return v == null ? '—' : '$' + Math.round(v).toLocaleString(); };
+    var pc = root.pct || function(v, d) { return v == null ? '—' : (d === 0 ? Math.round(v) : (v || 0).toFixed(1)) + '%'; };
+    var known = profiles.filter(function(p) { return p.metrics && p.metrics.count > 0; }).length;
+    var newTours = profiles.filter(function(p) { return p.isFutureNewTour; }).length;
+    if (newTours > 0) {
+      return known + ' of ' + profiles.length + ' planned shows have matching historical tour records. ' + newTours + ' appear to be new-tour opportunities in this feed — treat as uncertainty plus upside, not a negative signal. Revenue averaging ' + pc(avgGG, 0) + ' GG% of gross potential across matched records.';
+    }
+    return known + ' of ' + profiles.length + ' planned shows have matching tour records. Season averaging ' + fmt(avgGross) + ' avg gross and ' + pc(avgGG, 0) + ' GG% of gross potential. Capacity context: ' + pc(avgCap, 0) + ' nationally · ' + pc(peer, 0) + ' across Bushnell-size peer venues. Use the show-level signals below as directional planning inputs, not guarantees.';
+  }
+
   function attachHelpTooltips(tipMap, helpText) {
     if (!root.document) return;
     Object.keys(tipMap || {}).forEach(function (id) {
@@ -222,6 +250,7 @@
     rankItems: rankItems, setFilterValue: setFilterValue, setFilterButton: setFilterButton, hydrateCoreState: hydrateCoreState,
     normalizeDashboardRows: normalizeDashboardRows, normalizeDashboardSeasons: normalizeDashboardSeasons,
     renderDashboardSeasonPills: renderDashboardSeasonPills, attachHelpTooltips: attachHelpTooltips,
-    snapToSunday: snapToSunday, fiscalWeek: fiscalWeek
+    snapToSunday: snapToSunday, fiscalWeek: fiscalWeek,
+    seasonCalloutClass: seasonCalloutClass, seasonHeadline: seasonHeadline, seasonSummaryCopy: seasonSummaryCopy
   };
 })(window);
