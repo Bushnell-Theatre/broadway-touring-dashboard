@@ -186,6 +186,8 @@ function detailHtml(p,mode=seasonMode()){const _psig=planningSignals(p);const re
   _wh+='</div>';
   return _wh;
 })()}${(()=>{
+  // Production background disabled until shows.json wikipedia data is clean (disambiguation pages)
+  return '';
   var _meta=p.showMeta||{};
   var _wins=Object.values((_meta&&_meta.awards)||{}).reduce(function(a,v){return a+Number((v&&v.wins)||0);},0);
   var _noms=Object.values((_meta&&_meta.awards)||{}).reduce(function(a,v){return a+Number((v&&v.nominations)||0);},0);

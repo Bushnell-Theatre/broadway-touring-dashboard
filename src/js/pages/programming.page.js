@@ -106,17 +106,8 @@ function renderBrief(){const season=seasonShows();const profiles=season.shows.ma
 function makeInsights(profiles){const out=[];const known=profiles.filter(p=>p.metrics.count>0);const best=[...known].sort((a,b)=>b.score-a.score)[0];const soft=[...known].sort((a,b)=>a.score-b.score)[0];const peerWins=known.filter(p=>p.metrics.peerCap!=null&&p.metrics.cap!=null&&p.metrics.peerCap>p.metrics.cap+3).length;if(best){const _bs=planningSignals(best);out.push({title:`${best.show.title} — strongest Planning Signal`,text:`Planning Read: ${_bs.planningRead}. Demand: ${_bs.demand}, Revenue: ${_bs.revenue}. ${pct(best.metrics.cap,1)} avg capacity across matching tour records.`});}if(soft){const _ss=planningSignals(soft);out.push({title:`${soft.show.title} — review before committing`,text:`Planning Read: ${_ss.planningRead}. Demand: ${_ss.demand}, Revenue: ${_ss.revenue}. Compare peer venue behavior and confidence level before treating as a reliable Bushnell fit.`});}out.push({title:'Peer lens is the most useful planning filter',text:`${peerWins} season titles currently look stronger in Bushnell-size venues than in the full national pool.`});return out;}
 function renderSeason(){const season=seasonShows();const profiles=season.shows.map(showProfile).sort((a,b)=>b.score-a.score);CURRENT_PROFILES=profiles;$('tab-season').innerHTML=`<div class="section-divider"><h2>Season Performance</h2><div class="section-divider-line"></div><div class="section-divider-meta">Show scorecards · ${season.name}</div></div><div class="grid grid-4">${profiles.map((p,i)=>showCard(p,i===0,i)).join('')}</div><div class="grid grid-2" style="margin-top:18px"><div class="card full"><div class="card-hd">Selected Show Detail</div><div id="currentDetail"></div></div></div><div class="card" style="margin-top:18px"><div class="card-hd">Season Comparison — Fit Score by Show</div><canvas id="cCurrent"></canvas></div>`;document.querySelectorAll('.show-card').forEach(c=>c.addEventListener('click',()=>selectCurrent(+c.dataset.idx)));selectCurrent(0);chartFit(profiles,'cCurrent');}
 function showCard(p,active,idx){
-  var base=BTD.components&&BTD.components.programmingShowCard?BTD.components.programmingShowCard(p,active,idx,SCORE_MED):'';
-  var _meta=p.showMeta||{};
-  var _wins=awardWins(_meta);var _noms=awardNoms(_meta);
-  var _rec=(p.signals&&p.signals.recognition&&p.signals.recognition.label)||'';
-  var parts=[];
-  if(_wins)parts.push(_wins+' award win'+(_wins!==1?'s':''));
-  else if(_noms)parts.push(_noms+' nomination'+(_noms!==1?'s':''));
-  if(_rec&&_rec!=='Unknown'&&_rec!=='Limited')parts.push(_rec+' recognition');
-  if(!parts.length)return base;
-  var line='<div style="font-size:.58rem;color:var(--ink3);margin-top:4px;border-top:1px solid var(--rule2);padding-top:4px">'+escapeHtml(parts.join(' · '))+'</div>';
-  return base.slice(0,-6)+line+'</div>';
+  // Award/recognition hint disabled until shows.json data is clean
+  return BTD.components&&BTD.components.programmingShowCard?BTD.components.programmingShowCard(p,active,idx,SCORE_MED):'';
 }
 function selectCurrent(idx){document.querySelectorAll('.show-card').forEach((c,i)=>c.classList.toggle('active',i===idx));const p=CURRENT_PROFILES[idx]||CURRENT_PROFILES[0];$('currentDetail').innerHTML=p?detailHtml(p):'<div class="empty">No current show data.</div>';}
 function detailHtml(p){
@@ -159,8 +150,8 @@ function detailHtml(p){
   h+='</div>';
   h+='<table class="mini-table" style="margin-top:14px"><thead><tr><th>Recent Market</th><th>Week</th><th class="num">Gross</th><th class="num">Cap</th></tr></thead><tbody>'+tableRows+'</tbody></table>';
   h+=ctxHtml;
-  // Production background — from shows.json via BTD.state.showIndex
-  var _meta=p.showMeta||{};
+  // Production background — disabled until shows.json wikipedia data is clean (disambiguation pages)
+  if(false){var _meta=p.showMeta||{};
   var _totalWins=awardWins(_meta);var _totalNoms=awardNoms(_meta);
   var _hasMeta=_meta.wikipedia_summary||_meta.composer||_meta.opening_date||_totalWins||_totalNoms;
   if(_hasMeta){
@@ -182,6 +173,7 @@ function detailHtml(p){
     if(_meta.wikipedia_url)h+='<a href="'+_meta.wikipedia_url+'" target="_blank" rel="noopener" style="font-size:.62rem;color:var(--accent);margin-top:8px;display:inline-block;">View on Wikipedia →</a>';
     h+='</div>';
   }
+  } // end if(false) — Production background
   return h;
 }
 
