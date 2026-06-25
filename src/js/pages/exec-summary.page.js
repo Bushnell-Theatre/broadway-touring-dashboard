@@ -185,6 +185,30 @@ function detailHtml(p,mode=seasonMode()){const _psig=planningSignals(p);const re
   _wh+=whyThisRead(p,_sig);
   _wh+='</div>';
   return _wh;
+})()}${(()=>{
+  var _meta=p.showMeta||{};
+  var _wins=Object.values((_meta&&_meta.awards)||{}).reduce(function(a,v){return a+Number((v&&v.wins)||0);},0);
+  var _noms=Object.values((_meta&&_meta.awards)||{}).reduce(function(a,v){return a+Number((v&&v.nominations)||0);},0);
+  var _hasMeta=_meta.wikipedia_summary||_meta.composer||_meta.opening_date||_wins||_noms;
+  if(!_hasMeta)return '';
+  var _h='<div style="margin-top:14px;border-top:1px solid var(--rule2);padding-top:10px"><div class="card-hd" style="margin-bottom:6px">Production Background</div>';
+  if(_meta.wikipedia_summary)_h+='<div class="card-sub" style="margin-bottom:8px">'+esc(_meta.wikipedia_summary.slice(0,300))+'…</div>';
+  if(_meta.opening_date||_wins||_noms||_meta.composer){
+    _h+='<div class="metric-row">';
+    if(_meta.opening_date)_h+='<div class="metric"><div class="val">'+_meta.opening_date.slice(0,4)+'</div><div class="lbl">Opened</div></div>';
+    if(_wins||_noms){_h+='<div class="metric"><div class="val">'+(_wins||'—')+'</div><div class="lbl">Award Wins</div></div>';_h+='<div class="metric"><div class="val">'+(_noms||'—')+'</div><div class="lbl">Nominations</div></div>';}
+    if(_meta.composer)_h+='<div class="metric"><div class="val" style="font-size:.72rem">'+esc(_meta.composer)+'</div><div class="lbl">Composer</div></div>';
+    _h+='</div>';
+  }
+  var _esig=p.signals||{};var _ebadges=[];
+  if(_esig.recognition&&_esig.recognition.label&&_esig.recognition.label!=='Unknown')_ebadges.push('Recognition: '+_esig.recognition.label);
+  if(_esig.press&&_esig.press.label&&_esig.press.label!=='Unknown')_ebadges.push('Press: '+_esig.press.label);
+  if(_esig.tour&&_esig.tour.label&&_esig.tour.label!=='Unknown')_ebadges.push('Tour: '+_esig.tour.label);
+  if(_esig.audience&&_esig.audience.label&&_esig.audience.label!=='Unknown')_ebadges.push('Audience: '+_esig.audience.label);
+  if(_ebadges.length)_h+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">'+_ebadges.map(function(b){return '<span class="status neutral">'+b+'</span>';}).join('')+'</div>';
+  if(_meta.wikipedia_url)_h+='<a href="'+_meta.wikipedia_url+'" target="_blank" rel="noopener" style="font-size:.62rem;color:var(--accent);margin-top:8px;display:inline-block;">View on Wikipedia →</a>';
+  _h+='</div>';
+  return _h;
 })()}`}
 function renderHistory(){const q=norm($('showSearch')?.value||'');const pastSeasons=SEASONS.filter(s=>seasonMode(s.id)==='past').sort((a,b)=>String(b.id).localeCompare(String(a.id)));const selected=SEASONS.find(s=>s.id===ACTIVE_SEASON&&seasonMode(s.id)==='past')||pastSeasons[0];const seasonRows=selected?selected.shows.map(profile).filter(p=>!q||norm(p.show.title).includes(q)||norm(p.show.match).includes(q)).sort(bySeasonDate):[];const names=[...new Set(ALL.map(d=>d.show).filter(Boolean))].filter(s=>!q||norm(s).includes(q)).slice(0,80);const library=names.map(s=>profile({title:s,match:s,sub:false})).filter(p=>p.metrics.count>0).sort((a,b)=>b.metrics.weeks-a.metrics.weeks).slice(0,30);const seasonAvgCap=avg(seasonRows.map(p=>p.metrics.cap));const seasonAvgGross=avg(seasonRows.map(p=>p.metrics.gross));const strong=seasonRows.filter(p=>p.score>=SCORE_MED).length;const watch=seasonRows.filter(p=>p.score<SCORE_MED&&p.metrics.count>0).length;$('tab-history').innerHTML=`<div class="section-divider"><h2>Show History</h2><div class="section-divider-line"></div><div class="section-divider-meta">Retrospective read: how did we do?</div></div><div class="explainer"><p><strong>Purpose:</strong> previous seasons are shown as completed performance reviews, not forecasts. The result index uses the same demand, revenue, peer, and sample-depth signals, but the interpretation is retrospective: what worked, what lagged, and what should inform future booking and marketing decisions.</p></div><div class="grid grid-4"><div class="kpi-card"><div class="kpi-label">Reviewed Season</div><div class="kpi-value">${selected?selected.id.slice(2,4)+'-'+selected.id.slice(7,9):'—'}</div><div class="kpi-note">selected season lens</div></div><div class="kpi-card"><div class="kpi-label">Avg Capacity</div><div class="kpi-value">${pct(seasonAvgCap,0)}</div><div class="kpi-note">season slate actuals</div></div><div class="kpi-card"><div class="kpi-label">Avg Gross</div><div class="kpi-value">${fmt$(seasonAvgGross)}</div><div class="kpi-note">matched touring records</div></div><div class="kpi-card"><div class="kpi-label">Strong / Watch</div><div class="kpi-value">${strong} / ${watch}</div><div class="kpi-note">performance result bands</div></div></div><div class="grid grid-2" style="margin-top:18px"><div class="card full"><div class="card-hd">${selected?selected.name:'Previous Season'} Performance Review</div><table class="mini-table"><thead><tr><th>Show</th><th>Pkg</th><th class="num">Result</th><th class="num">GG%</th><th>Revenue</th><th class="num">Cap</th><th>Demand</th><th class="num">Peer Cap</th><th class="num">Avg Gross</th><th>Confidence</th><th>Historical Read</th></tr></thead><tbody>${seasonRows.map(p=>rowHtml(p,'past')).join('')||'<tr><td colspan="8" class="empty">No programmed show records matched this season.</td></tr>'}</tbody></table></div>${bushnellVsMarketTable(seasonRows,selected?selected.id:'')}<div class="card"><div class="card-hd">Selected History</div><div id="historyDetail">${seasonRows[0]?detailHtml(seasonRows[0],'past'):(library[0]?detailHtml(library[0],'past'):'<div class="empty">Search for a show.</div>')}</div></div><div class="card"><div class="card-hd">Broader Historical Show Library</div><div class="card-sub">All matched touring titles, sorted by weeks reported.</div><table class="mini-table"><thead><tr><th>Show</th><th class="num">Weeks</th><th class="num">Cap</th><th class="num">Gross</th></tr></thead><tbody>${library.map(p=>`<tr onclick="historyDetail('${esc(p.show.title)}')" style="cursor:pointer"><td>${p.show.title}</td><td class="num">${p.metrics.weeks}</td><td class="num">${pct(p.metrics.cap)}</td><td class="num">${fmt$(p.metrics.gross)}</td></tr>`).join('')}</tbody></table></div></div>`;}
 function historyDetail(title){const p=profile({title,match:title,sub:false});$('historyDetail').innerHTML=detailHtml(p,'past')}
@@ -195,7 +219,20 @@ function renderMethodology(){$('tab-methodology').innerHTML=`<div class="section
 function rankItems(items,nameFn,detailFn,valFn){return BTD.components&&BTD.components.rankItems?BTD.components.rankItems(items,nameFn,detailFn,valFn):''}
 function destroy(id){if(BTD.charts&&BTD.charts.destroy){BTD.charts.destroy(id);return;} if(CHARTS[id]){CHARTS[id].destroy();delete CHARTS[id];}}
 function chartFit(profiles,id){return BTD.charts&&BTD.charts.renderFitChart?BTD.charts.renderFitChart(id,profiles):null}
-function chartCap(profiles,id){return BTD.charts&&BTD.charts.renderCapacityComparisonChart?BTD.charts.renderCapacityComparisonChart(id,profiles):null}
+function chartCap(profiles,id){
+  if(!BTD.charts||!BTD.charts.renderMultiBar)return null;
+  var pp=(profiles||[]).filter(function(x){return x.metrics&&(x.metrics.cap!=null||x.metrics.peerCap!=null);});
+  if(!pp.length)return null;
+  var shorten=function(s,n){s=String(s||'');return s.length>n?s.slice(0,n)+'…':s;};
+  var el=typeof id==='string'?document.getElementById(id):id;
+  if(el)el.style.height=Math.max(220,pp.length*34+40)+'px';
+  return BTD.charts.renderMultiBar(id,
+    pp.map(function(x){return shorten((x.show&&x.show.title)||'',22);}),
+    [{label:'Tour Cap',data:pp.map(function(x){return x.metrics.cap||0;}),backgroundColor:'#003865',borderRadius:2},
+     {label:'Peer Cap',data:pp.map(function(x){return x.metrics.peerCap||0;}),backgroundColor:'rgba(0,56,101,.35)',borderRadius:2}],
+    {indexAxis:'y',plugins:{legend:{display:true,labels:{color:'#6b6b6b',font:{size:9}}}},scales:{x:{min:0,max:110,ticks:{callback:function(v){return v+'%';}}},y:{grid:{display:false}}}}
+  );
+}
 function chartPeers(arr){return BTD.charts&&BTD.charts.renderPeerChart?BTD.charts.renderPeerChart('cPeers',arr):null}
 function median(arr){return BTD.metrics&&BTD.metrics.median?BTD.metrics.median(arr):65;}
 function bushnellRows(show,seasonId){const s=SEASONS.find(x=>x.id===seasonId);if(!s)return[];const key=norm(show.match||show.title);return ALL.filter(d=>d.theatre==='Bushnell'&&norm(d.show).includes(key)&&d.week_of>=s.start&&d.week_of<=s.end);}
