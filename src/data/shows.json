@@ -20,7 +20,32 @@
       "wikipedia_url": "Wikidata",
       "image_url": "Wikidata",
       "wikidata_id": "Wikidata",
-      "wikipedia_summary": "Wikipedia"
+      "wikipedia_summary": "Wikipedia",
+      "awards": "awards.json"
+    },
+    "awards": {
+      "olivier": {
+        "nominations": 2,
+        "wins": 1,
+        "categories": [
+          "Best Set Design White Light Award for Best Lighting Design Outstanding Achievement in Affiliate Theatre Outstanding Achi"
+        ],
+        "years": [
+          2020
+        ],
+        "drivers": [
+          "Olivier Awards winner"
+        ]
+      }
+    },
+    "signals": {
+      "recognition": {
+        "value": 10,
+        "label": "Limited",
+        "drivers": [
+          "Olivier Awards: 1 wins / 2 nominations"
+        ]
+      }
     }
   },
   {
@@ -147,7 +172,33 @@
       "lyricist": "Wikidata",
       "wikipedia_url": "Wikidata",
       "wikidata_id": "Wikidata",
-      "wikipedia_summary": "Wikipedia"
+      "wikipedia_summary": "Wikipedia",
+      "awards": "awards.json"
+    },
+    "awards": {
+      "olivier": {
+        "nominations": 2,
+        "wins": 0,
+        "categories": [
+          "Olivier Awards",
+          "Best Lighting Design d&b audiotechnik Award for Best Sound Design Best Original Score or New Orchestrations Best Theatre"
+        ],
+        "years": [
+          2022
+        ],
+        "drivers": [
+          "Olivier Awards nominee"
+        ]
+      }
+    },
+    "signals": {
+      "recognition": {
+        "value": 4,
+        "label": "Limited",
+        "drivers": [
+          "Olivier Awards: 2 nominations"
+        ]
+      }
     }
   },
   {
@@ -243,7 +294,32 @@
       "wikidata_id": "Wikidata",
       "tony_nominations": "Wikidata",
       "tony_wins": "Wikidata",
-      "wikipedia_summary": "Wikipedia"
+      "wikipedia_summary": "Wikipedia",
+      "awards": "awards.json"
+    },
+    "awards": {
+      "olivier": {
+        "nominations": 1,
+        "wins": 0,
+        "categories": [
+          "Best Revival Best Actor Best Actress Outstanding Achievement in Affiliate Theatre Best New Opera Production Outstanding "
+        ],
+        "years": [
+          2019
+        ],
+        "drivers": [
+          "Olivier Awards nominee"
+        ]
+      }
+    },
+    "signals": {
+      "recognition": {
+        "value": 2,
+        "label": "Limited",
+        "drivers": [
+          "Olivier Awards: 1 nominations"
+        ]
+      }
     }
   },
   {
@@ -269,7 +345,32 @@
       "wikidata_id": "Wikidata",
       "tony_nominations": "Wikidata",
       "tony_wins": "Wikidata",
-      "wikipedia_summary": "Wikipedia"
+      "wikipedia_summary": "Wikipedia",
+      "awards": "awards.json"
+    },
+    "awards": {
+      "olivier": {
+        "nominations": 1,
+        "wins": 0,
+        "categories": [
+          "Best Theatre Choreographer Best Actress Best Actor Best Actress in a Supporting Role Best Actor in a Musical Best Actres"
+        ],
+        "years": [
+          2020
+        ],
+        "drivers": [
+          "Olivier Awards nominee"
+        ]
+      }
+    },
+    "signals": {
+      "recognition": {
+        "value": 2,
+        "label": "Limited",
+        "drivers": [
+          "Olivier Awards: 1 nominations"
+        ]
+      }
     }
   },
   {
@@ -314,7 +415,32 @@
     "sources": {
       "wikipedia_url": "Wikidata",
       "wikidata_id": "Wikidata",
-      "wikipedia_summary": "Wikipedia"
+      "wikipedia_summary": "Wikipedia",
+      "awards": "awards.json"
+    },
+    "awards": {
+      "olivier": {
+        "nominations": 1,
+        "wins": 0,
+        "categories": [
+          "Best Actress in a Supporting Role in a Musical Best Actress in a Musical Best Actor in a Musical Mastercard Best New Mus"
+        ],
+        "years": [
+          2022
+        ],
+        "drivers": [
+          "Olivier Awards nominee"
+        ]
+      }
+    },
+    "signals": {
+      "recognition": {
+        "value": 2,
+        "label": "Limited",
+        "drivers": [
+          "Olivier Awards: 1 nominations"
+        ]
+      }
     }
   },
   {
@@ -363,7 +489,32 @@
       "wikidata_id": "Wikidata",
       "tony_nominations": "Wikidata",
       "tony_wins": "Wikidata",
-      "wikipedia_summary": "Wikipedia"
+      "wikipedia_summary": "Wikipedia",
+      "awards": "awards.json"
+    },
+    "awards": {
+      "olivier": {
+        "nominations": 1,
+        "wins": 0,
+        "categories": [
+          "Olivier Awards"
+        ],
+        "years": [
+          2024
+        ],
+        "drivers": [
+          "Olivier Awards nominee"
+        ]
+      }
+    },
+    "signals": {
+      "recognition": {
+        "value": 2,
+        "label": "Limited",
+        "drivers": [
+          "Olivier Awards: 1 nominations"
+        ]
+      }
     }
   },
   {
@@ -385,7 +536,32 @@
     "sources": {
       "wikipedia_url": "Wikidata",
       "wikidata_id": "Wikidata",
-      "wikipedia_summary": "Wikipedia"
+      "wikipedia_summary": "Wikipedia",
+      "awards": "awards.json"
+    },
+    "awards": {
+      "olivier": {
+        "nominations": 1,
+        "wins": 0,
+        "categories": [
+          "Best Musical Revival Best Actor in a Supporting Role in a Musical Best Actress in a Supporting Role in a Musical Best Ac"
+        ],
+        "years": [
+          2018
+        ],
+        "drivers": [
+          "Olivier Awards nominee"
+        ]
+      }
+    },
+    "signals": {
+      "recognition": {
+        "value": 2,
+        "label": "Limited",
+        "drivers": [
+          "Olivier Awards: 1 nominations"
+        ]
+      }
     }
   },
   {
@@ -432,7 +608,32 @@
     "sources": {
       "wikipedia_url": "Wikidata",
       "wikidata_id": "Wikidata",
-      "wikipedia_summary": "Wikipedia"
+      "wikipedia_summary": "Wikipedia",
+      "awards": "awards.json"
+    },
+    "awards": {
+      "olivier": {
+        "nominations": 1,
+        "wins": 0,
+        "categories": [
+          "Best Musical Revival White Light Award for Best Lighting Design d&b audiotechnik Award for Best Sound Design Best Actres"
+        ],
+        "years": [
+          2025
+        ],
+        "drivers": [
+          "Olivier Awards nominee"
+        ]
+      }
+    },
+    "signals": {
+      "recognition": {
+        "value": 2,
+        "label": "Limited",
+        "drivers": [
+          "Olivier Awards: 1 nominations"
+        ]
+      }
     }
   },
   {
@@ -576,7 +777,32 @@
       "composer": "Wikidata",
       "wikipedia_url": "Wikidata",
       "wikidata_id": "Wikidata",
-      "wikipedia_summary": "Wikipedia"
+      "wikipedia_summary": "Wikipedia",
+      "awards": "awards.json"
+    },
+    "awards": {
+      "olivier": {
+        "nominations": 1,
+        "wins": 0,
+        "categories": [
+          "Olivier Awards"
+        ],
+        "years": [
+          2025
+        ],
+        "drivers": [
+          "Olivier Awards nominee"
+        ]
+      }
+    },
+    "signals": {
+      "recognition": {
+        "value": 2,
+        "label": "Limited",
+        "drivers": [
+          "Olivier Awards: 1 nominations"
+        ]
+      }
     }
   },
   {
@@ -588,7 +814,7 @@
     "closing_date": null,
     "composer": "Björn Ulvaeus",
     "lyricist": "Björn Ulvaeus",
-    "tony_nominations": 0,
+    "tony_nominations": 11,
     "tony_wins": 0,
     "wikipedia_url": "https://en.wikipedia.org/wiki/Mamma_Mia%21_%28musical%29",
     "wikipedia_summary": "Mamma Mia! is a jukebox musical written by British playwright Catherine Johnson, based on songs recorded by Swedish group ABBA and composed by members Benny Andersson and Björn Ulvaeus. The musical's title is taken from the group's 1975 chart-topper \"Mamma Mia\". Ulvaeus and Andersson were involved in the development of the show from the beginning, while singer Anni-Frid Lyngstad was involved financially in the production and also appeared at many of the premieres around the world.",
@@ -601,7 +827,44 @@
       "wikipedia_url": "Wikidata",
       "image_url": "Wikidata",
       "wikidata_id": "Wikidata",
-      "wikipedia_summary": "Wikipedia"
+      "wikipedia_summary": "Wikipedia",
+      "tony_nominations": "awards.json",
+      "tony_wins": "awards.json",
+      "awards": "awards.json"
+    },
+    "awards": {
+      "tony": {
+        "nominations": 11,
+        "wins": 0,
+        "categories": [
+          "Tony Awards"
+        ],
+        "years": [
+          2026,
+          2025,
+          2024,
+          2023,
+          2022,
+          2021,
+          2020,
+          2019,
+          2018,
+          2017,
+          2016
+        ],
+        "drivers": [
+          "Tony Awards nominee"
+        ]
+      }
+    },
+    "signals": {
+      "recognition": {
+        "value": 33,
+        "label": "Moderate",
+        "drivers": [
+          "Tony Awards: 11 nominations"
+        ]
+      }
     }
   },
   {
@@ -672,7 +935,32 @@
     "sources": {
       "wikipedia_url": "Wikidata",
       "wikidata_id": "Wikidata",
-      "wikipedia_summary": "Wikipedia"
+      "wikipedia_summary": "Wikipedia",
+      "awards": "awards.json"
+    },
+    "awards": {
+      "olivier": {
+        "nominations": 1,
+        "wins": 0,
+        "categories": [
+          "Olivier Awards"
+        ],
+        "years": [
+          2022
+        ],
+        "drivers": [
+          "Olivier Awards nominee"
+        ]
+      }
+    },
+    "signals": {
+      "recognition": {
+        "value": 2,
+        "label": "Limited",
+        "drivers": [
+          "Olivier Awards: 1 nominations"
+        ]
+      }
     }
   },
   {
@@ -722,7 +1010,32 @@
       "wikidata_id": "Wikidata",
       "tony_nominations": "Wikidata",
       "tony_wins": "Wikidata",
-      "wikipedia_summary": "Wikipedia"
+      "wikipedia_summary": "Wikipedia",
+      "awards": "awards.json"
+    },
+    "awards": {
+      "olivier": {
+        "nominations": 2,
+        "wins": 1,
+        "categories": [
+          "Olivier Awards"
+        ],
+        "years": [
+          2023
+        ],
+        "drivers": [
+          "Olivier Awards winner"
+        ]
+      }
+    },
+    "signals": {
+      "recognition": {
+        "value": 10,
+        "label": "Limited",
+        "drivers": [
+          "Olivier Awards: 1 wins / 2 nominations"
+        ]
+      }
     }
   },
   {
@@ -744,7 +1057,32 @@
     "sources": {
       "wikipedia_url": "Wikidata",
       "wikidata_id": "Wikidata",
-      "wikipedia_summary": "Wikipedia"
+      "wikipedia_summary": "Wikipedia",
+      "awards": "awards.json"
+    },
+    "awards": {
+      "olivier": {
+        "nominations": 1,
+        "wins": 0,
+        "categories": [
+          "Olivier Awards"
+        ],
+        "years": [
+          2026
+        ],
+        "drivers": [
+          "Olivier Awards nominee"
+        ]
+      }
+    },
+    "signals": {
+      "recognition": {
+        "value": 2,
+        "label": "Limited",
+        "drivers": [
+          "Olivier Awards: 1 nominations"
+        ]
+      }
     }
   },
   {
@@ -763,7 +1101,33 @@
     "image_url": null,
     "wikidata_id": null,
     "ibdb_url": null,
-    "sources": {}
+    "sources": {
+      "awards": "awards.json"
+    },
+    "awards": {
+      "olivier": {
+        "nominations": 1,
+        "wins": 0,
+        "categories": [
+          "Olivier Awards"
+        ],
+        "years": [
+          2024
+        ],
+        "drivers": [
+          "Olivier Awards nominee"
+        ]
+      }
+    },
+    "signals": {
+      "recognition": {
+        "value": 2,
+        "label": "Limited",
+        "drivers": [
+          "Olivier Awards: 1 nominations"
+        ]
+      }
+    }
   },
   {
     "name": "Pretty Woman: The Musical",
@@ -829,7 +1193,32 @@
     "sources": {
       "wikipedia_url": "Wikidata",
       "wikidata_id": "Wikidata",
-      "wikipedia_summary": "Wikipedia"
+      "wikipedia_summary": "Wikipedia",
+      "awards": "awards.json"
+    },
+    "awards": {
+      "olivier": {
+        "nominations": 1,
+        "wins": 0,
+        "categories": [
+          "Olivier Awards"
+        ],
+        "years": [
+          2026
+        ],
+        "drivers": [
+          "Olivier Awards nominee"
+        ]
+      }
+    },
+    "signals": {
+      "recognition": {
+        "value": 2,
+        "label": "Limited",
+        "drivers": [
+          "Olivier Awards: 1 nominations"
+        ]
+      }
     }
   },
   {
@@ -853,7 +1242,32 @@
       "lyricist": "Wikidata",
       "wikipedia_url": "Wikidata",
       "wikidata_id": "Wikidata",
-      "wikipedia_summary": "Wikipedia"
+      "wikipedia_summary": "Wikipedia",
+      "awards": "awards.json"
+    },
+    "awards": {
+      "olivier": {
+        "nominations": 1,
+        "wins": 0,
+        "categories": [
+          "Best Actor in a Supporting Role in a Musical Best Actress in a Supporting Role in a Musical Best Actor in a Musical Best"
+        ],
+        "years": [
+          2019
+        ],
+        "drivers": [
+          "Olivier Awards nominee"
+        ]
+      }
+    },
+    "signals": {
+      "recognition": {
+        "value": 2,
+        "label": "Limited",
+        "drivers": [
+          "Olivier Awards: 1 nominations"
+        ]
+      }
     }
   },
   {
@@ -969,7 +1383,32 @@
     "sources": {
       "wikipedia_url": "Wikidata",
       "wikidata_id": "Wikidata",
-      "wikipedia_summary": "Wikipedia"
+      "wikipedia_summary": "Wikipedia",
+      "awards": "awards.json"
+    },
+    "awards": {
+      "olivier": {
+        "nominations": 2,
+        "wins": 1,
+        "categories": [
+          "Olivier Awards"
+        ],
+        "years": [
+          2023
+        ],
+        "drivers": [
+          "Olivier Awards winner"
+        ]
+      }
+    },
+    "signals": {
+      "recognition": {
+        "value": 10,
+        "label": "Limited",
+        "drivers": [
+          "Olivier Awards: 1 wins / 2 nominations"
+        ]
+      }
     }
   },
   {
@@ -1169,7 +1608,34 @@
     "image_url": null,
     "wikidata_id": null,
     "ibdb_url": null,
-    "sources": {}
+    "sources": {
+      "awards": "awards.json"
+    },
+    "awards": {
+      "olivier": {
+        "nominations": 2,
+        "wins": 0,
+        "categories": [
+          "Best Actress in a Supporting Role in a Musical Winner Patti LuPone Company Gielgud Theatre Ruthie Ann Miles The King And",
+          "Olivier Awards"
+        ],
+        "years": [
+          2019
+        ],
+        "drivers": [
+          "Olivier Awards nominee"
+        ]
+      }
+    },
+    "signals": {
+      "recognition": {
+        "value": 4,
+        "label": "Limited",
+        "drivers": [
+          "Olivier Awards: 2 nominations"
+        ]
+      }
+    }
   },
   {
     "name": "To Kill a Mockingbird",
@@ -1191,7 +1657,32 @@
       "wikipedia_url": "Wikidata",
       "image_url": "Wikidata",
       "wikidata_id": "Wikidata",
-      "wikipedia_summary": "Wikipedia"
+      "wikipedia_summary": "Wikipedia",
+      "awards": "awards.json"
+    },
+    "awards": {
+      "olivier": {
+        "nominations": 1,
+        "wins": 0,
+        "categories": [
+          "Olivier Awards"
+        ],
+        "years": [
+          2023
+        ],
+        "drivers": [
+          "Olivier Awards nominee"
+        ]
+      }
+    },
+    "signals": {
+      "recognition": {
+        "value": 2,
+        "label": "Limited",
+        "drivers": [
+          "Olivier Awards: 1 nominations"
+        ]
+      }
     }
   },
   {
@@ -1241,7 +1732,32 @@
       "wikidata_id": "Wikidata",
       "tony_nominations": "Wikidata",
       "tony_wins": "Wikidata",
-      "wikipedia_summary": "Wikipedia"
+      "wikipedia_summary": "Wikipedia",
+      "awards": "awards.json"
+    },
+    "awards": {
+      "olivier": {
+        "nominations": 1,
+        "wins": 0,
+        "categories": [
+          "Best Actress in a Supporting Role in a Musical Lucy Anderson Dear Evan Hansen No"
+        ],
+        "years": [
+          2020
+        ],
+        "drivers": [
+          "Olivier Awards nominee"
+        ]
+      }
+    },
+    "signals": {
+      "recognition": {
+        "value": 2,
+        "label": "Limited",
+        "drivers": [
+          "Olivier Awards: 1 nominations"
+        ]
+      }
     }
   },
   {
