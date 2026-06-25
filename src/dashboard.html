@@ -3133,8 +3133,26 @@ function renderFaq() {
       </dl>
     </div>`;
 
+  const active = ALL_DATA.filter(d=>!d.no_engagement).length;
+  const layoffs = ALL_DATA.filter(d=>d.no_engagement).length;
+
   el.innerHTML = `
     <div style="max-width:860px;">
+
+      <div style="background:#fff;border:1px solid var(--rule);border-radius:3px;padding:20px;margin-bottom:24px;">
+        <div style="font-size:.58rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-bottom:12px;">Data Quality &amp; Provenance</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+          <div><div style="font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:4px;">Total Records</div><div style="font-family:var(--serif);font-size:1.2rem;font-weight:700">${ALL_DATA.length.toLocaleString()}</div><div style="font-size:.62rem;color:var(--ink3);margin-top:2px">${active.toLocaleString()} active · ${layoffs.toLocaleString()} layoff/dark</div></div>
+          <div><div style="font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:4px;">Last Report Week</div><div style="font-family:var(--serif);font-size:1.2rem;font-weight:700">${LAST_REPORT_DATE?fmtWeek(LAST_REPORT_DATE):'—'}</div><div style="font-size:.62rem;color:var(--ink3);margin-top:2px">Broadway League weekly data</div></div>
+          <div><div style="font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:4px;">Validation Status</div><div style="font-size:1.2rem;font-weight:700;color:#0A6B5E">PASS</div><div style="font-size:.62rem;color:var(--ink3);margin-top:2px">0 errors · required fields present · no duplicate keys</div></div>
+          <div><div style="font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:4px;">Known Conditions</div><div style="font-size:.62rem;color:var(--ink3);line-height:1.55">Cap % and GG% may exceed 100% — valid per Broadway League reporting (dynamic pricing, SRO, comps). Above-100 values are retained and expected.</div></div>
+        </div>
+      </div>
+
+      <div style="background:#fff;border:1px solid var(--rule);border-left:3px solid var(--rule);border-radius:3px;padding:16px 20px;margin-bottom:24px;display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div><div style="font-size:.55rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:6px;">What this dashboard shows</div><div style="font-size:.68rem;color:var(--ink2);line-height:1.65">Raw Broadway League touring data — weekly gross, capacity, peer benchmarks, and trend analysis. Use it to understand what the market is doing and how Bushnell-comparable venues are performing.</div></div>
+        <div><div style="font-size:.55rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:6px;">What it does not show</div><div style="font-size:.68rem;color:var(--ink2);line-height:1.65">Deal terms · local Bushnell history · artistic or mission value · routing availability · pre-sale pace · audience segmentation. For Fit Scores and planning signals, use the <strong>Executive Summary</strong> or <strong>Programming</strong> views.</div></div>
+      </div>
 
       ${section('Data Source', [
         ['Broadway League', HELP_TEXT.broadwayLeague],

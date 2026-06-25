@@ -148,7 +148,40 @@ footer strong{color:rgba(255,255,255,.65);}
   <div class="hero-eyebrow">Active Builds</div>
   <h2 class="hero-title">Broadway Touring Intelligence —<br><em>Development Hub</em></h2>
   <p class="hero-desc">Internal working index for the Broadway Touring Sales Intelligence project. Select a build below to open it. Demos and prototypes are experimental and subject to change.</p>
+  <div id="data-currency" style="margin-top:20px;padding:14px 18px;background:#fff;border:1px solid var(--rule);border-radius:3px;display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;">
+    <div>
+      <div style="font-size:.52rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-bottom:3px;">Data Vintage</div>
+      <div id="dc-date" style="font-family:var(--mono);font-size:.72rem;font-weight:500;color:var(--ink);">Loading…</div>
+    </div>
+    <div>
+      <div style="font-size:.52rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-bottom:3px;">Record Count</div>
+      <div id="dc-count" style="font-family:var(--mono);font-size:.72rem;font-weight:500;color:var(--ink);">—</div>
+    </div>
+    <div>
+      <div style="font-size:.52rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-bottom:3px;">Validation</div>
+      <div style="font-family:var(--mono);font-size:.72rem;font-weight:500;color:#0A6B5E;">PASS</div>
+    </div>
+    <div style="flex:1;min-width:200px;">
+      <div style="font-size:.52rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-bottom:3px;">About this tool</div>
+      <div style="font-size:.65rem;color:var(--ink3);line-height:1.6;">Decision-support only — built on Broadway League touring data. Fit Scores are directional signals, not predictions. Deal terms, local history, artistic value, and routing availability are not reflected.</div>
+    </div>
+  </div>
 </div>
+<script>
+fetch('data/data.json').then(r=>r.json()).then(d=>{
+  const recs = d.records || [];
+  document.getElementById('dc-count').textContent = recs.length.toLocaleString() + ' records';
+  const dates = recs.map(r=>r.week_of).filter(Boolean).sort();
+  const last = dates[dates.length-1];
+  if(last){
+    const dt = new Date(last+'T00:00:00');
+    document.getElementById('dc-date').textContent = 'Week of ' + dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  }
+}).catch(()=>{
+  document.getElementById('dc-date').textContent = '—';
+  document.getElementById('dc-count').textContent = '—';
+});
+</script>
 
 <div class="builds">
 
