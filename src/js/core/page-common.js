@@ -169,32 +169,49 @@
     });
   }
 
-  // ── Season callout helpers (revenue-first) ───────────────────────────────────
+  // ── Season callout helpers (revenue-first, data-driven) ──────────────────────
   function seasonCalloutClass(avgGG) {
     if (avgGG == null) return '';
     return avgGG >= 80 ? 'good' : avgGG < 60 ? 'warn' : '';
   }
   function seasonHeadline(avgGG, avgGross, peer, profiles) {
     profiles = profiles || [];
-    var newTours = profiles.filter(function(p) { return p.isFutureNewTour; }).length;
-    if (newTours > 0) return 'New-tour season: limited data, but real upside potential.';
-    if (avgGG == null) return 'Season slate is loaded — match data pending.';
-    if (avgGG >= 85) return 'Strong revenue season: demand is converting well.';
-    if (avgGG >= 75) return 'Revenue tracking solidly — demand and yield are aligned.';
-    if (avgGG >= 60) return 'Revenue in range — monitor yield and pricing signals.';
-    if (avgGG >= 45) return 'Revenue below expectations — review pricing and demand signals.';
-    return 'Revenue needs attention — results warrant leadership review.';
+    var fmt = root.fmt$ || function(v) { return v == null ? '—' : '$' + Math.round(v / 1000) + 'k'; };
+    var pc = root.pct || function(v, d) { return v == null ? '—' : Math.round(v) + '%'; };
+    var withData = profiles.filter(function(p) { return p.metrics && p.metrics.count > 0 && !p.isFutureNewTour; });
+    if (!withData.length) {
+      var newTours = profiles.filter(function(p) { return p.isFutureNewTour; }).length;
+      return newTours > 0 ? newTours + ' new-tour title' + (newTours > 1 ? 's' : '') + ' on the slate — no feed history yet.' : 'Season slate loaded — awaiting tour data.';
+    }
+    var byGross = withData.slice().sort(function(a, b) { return (b.metrics.gross || 0) - (a.metrics.gross || 0); });
+    var top = byGross[0];
+    return top.show.title + ' leads at ' + fmt(top.metrics.gross) + ' avg gross · season at ' + pc(avgGG, 0) + ' GG% across ' + withData.length + ' matched show' + (withData.length > 1 ? 's' : '') + '.';
   }
   function seasonSummaryCopy(profiles, avgGG, avgGross, avgCap, peer) {
     profiles = profiles || [];
     var fmt = root.fmt$ || function(v) { return v == null ? '—' : '$' + Math.round(v).toLocaleString(); };
-    var pc = root.pct || function(v, d) { return v == null ? '—' : (d === 0 ? Math.round(v) : (v || 0).toFixed(1)) + '%'; };
-    var known = profiles.filter(function(p) { return p.metrics && p.metrics.count > 0; }).length;
+    var pc = root.pct || function(v, d) { return v == null ? '—' : Math.round(v) + '%'; };
+    var withData = profiles.filter(function(p) { return p.metrics && p.metrics.count > 0 && !p.isFutureNewTour; });
     var newTours = profiles.filter(function(p) { return p.isFutureNewTour; }).length;
-    if (newTours > 0) {
-      return known + ' of ' + profiles.length + ' planned shows have matching historical tour records. ' + newTours + ' appear to be new-tour opportunities in this feed — treat as uncertainty plus upside, not a negative signal. Revenue averaging ' + pc(avgGG, 0) + ' GG% of gross potential across matched records.';
+    var known = withData.length;
+    var parts = [];
+    // Fact 1: coverage
+    parts.push(known + ' of ' + profiles.length + ' planned shows have matched tour records' + (newTours > 0 ? '; ' + newTours + ' are new-tour titles without feed history yet' : '') + '.');
+    // Fact 2: revenue leaders (GG% >= 80)
+    var strong = withData.filter(function(p) { return p.metrics.gg != null && p.metrics.gg >= 80; }).sort(function(a,b){ return (b.metrics.gross||0)-(a.metrics.gross||0); });
+    if (strong.length) {
+      parts.push(strong.map(function(p){ return p.show.title; }).join(', ') + (strong.length === 1 ? ' is' : ' are') + ' converting demand to revenue at or above expectations (' + pc(strong[0].metrics.gg, 0) + '% GG%' + (strong.length > 1 ? ' leading' : '') + ').');
     }
-    return known + ' of ' + profiles.length + ' planned shows have matching tour records. Season averaging ' + fmt(avgGross) + ' avg gross and ' + pc(avgGG, 0) + ' GG% of gross potential. Capacity context: ' + pc(avgCap, 0) + ' nationally · ' + pc(peer, 0) + ' across Bushnell-size peer venues. Use the show-level signals below as directional planning inputs, not guarantees.';
+    // Fact 3: soft revenue signals (GG% < 60 with data)
+    var soft = withData.filter(function(p) { return p.metrics.gg != null && p.metrics.gg < 60; }).sort(function(a,b){ return (a.metrics.gg||0)-(b.metrics.gg||0); });
+    if (soft.length) {
+      parts.push(soft.map(function(p){ return p.show.title; }).join(', ') + (soft.length === 1 ? ' shows' : ' show') + ' the softest revenue signal — review pricing and demand depth before committing.');
+    }
+    // Fact 4: capacity as context only
+    if (avgCap != null || peer != null) {
+      parts.push('Capacity context: ' + pc(avgCap, 0) + ' nationally · ' + pc(peer, 0) + ' across Bushnell-size peer venues.');
+    }
+    return parts.join(' ');
   }
 
   function attachHelpTooltips(tipMap, helpText) {
