@@ -1,167 +1,99 @@
 /**
- * utils.js — shared utilities for Broadway Touring Dashboard
+ * utils.js — compatibility bridge for shared Broadway Touring Dashboard helpers.
  *
- * Canonical versions of all functions duplicated across
- * dashboard.html, exec_summary.html, and programming.html.
- *
- * Pages should include this file BEFORE their own <script> block
- * and remove the local copies of anything defined here.
- *
- * STATUS: DRAFT — under consolidation, not yet wired to any page
+ * New shared logic lives under window.BTD.* in src/js/core/*.js.
+ * This file preserves the legacy global helper names used by the existing pages
+ * so the refactor can be staged without breaking inline page scripts.
  */
+(function (root) {
+  'use strict';
+  root.BTD = root.BTD || {};
 
-// ── DATA URLs ─────────────────────────────────────────────────────────────────
-// Pages declare their own DATA_URLS / DATA_JSON_URL before this file runs.
-// initData() reads window.DATA_URLS if set; falls back to local data.json.
-// Do NOT declare DATA_URLS here — it would collide with page-level const declarations.
+  // Minimal fallback definitions when this file is loaded without core/*.js.
+  root.BTD.config = root.BTD.config || {
+    defaultSeason: '2025-2026',
+    dataUrls: ['data/data.json', 'https://white-pebble-01710020f.7.azurestaticapps.net/data/data.json'],
+    peersUrl: 'data/peers.json',
+    seasonsUrl: 'data/seasons.json',
+    contextUrls: ['data/context.json', 'https://white-pebble-01710020f.7.azurestaticapps.net/data/context.json']
+  };
+  root.BTD.state = root.BTD.state || { all: [], filtered: [], peerMeta: {}, context: {}, seasons: [], charts: {}, active: { season: root.BTD.config.defaultSeason } };
 
-const PEERS_URL = './peers.json';
+  function fallbackCurrency(v) {
+    if (v == null || Number.isNaN(Number(v))) return '—';
+    v = Number(v);
+    return Math.abs(v) >= 1e9 ? '$' + (v / 1e9).toFixed(2) + 'B'
+      : Math.abs(v) >= 1e6 ? '$' + (v / 1e6).toFixed(2) + 'M'
+      : Math.abs(v) >= 1e3 ? '$' + (v / 1e3).toFixed(0) + 'K'
+      : '$' + Math.round(v).toLocaleString();
+  }
+  function fallbackPercent(v, d) { d = d == null ? 1 : d; return v == null || Number.isNaN(Number(v)) ? '—' : Number(v).toFixed(d) + '%'; }
+  function fallbackNumber(v, d) { d = d == null ? 1 : d; return v == null || Number.isNaN(Number(v)) ? '—' : Number(v).toFixed(d); }
+  function fallbackAvg(arr) { arr = (arr || []).map(Number).filter(function (v) { return !Number.isNaN(v); }); return arr.length ? arr.reduce(function (a, b) { return a + b; }, 0) / arr.length : null; }
+  function fallbackFiscalYear(dateStr) { if (!dateStr) return null; var y = +String(dateStr).slice(0, 4), mo = +String(dateStr).slice(5, 7); return mo >= 7 ? y + '-' + (y + 1) : (y - 1) + '-' + y; }
+  function fallbackWeek(s) { if (!s) return ''; var p = String(s).split('-'); var m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return m[parseInt(p[1], 10) - 1] + ' ' + parseInt(p[2], 10) + ', ' + p[0]; }
+  function fallbackDate(s) { if (!s) return '—'; var p = String(s).split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
 
-// ── GLOBAL STATE ──────────────────────────────────────────────────────────────
-// Pages read/write these after initData() resolves.
+  var fmt = root.BTD.format || {};
+  var metrics = root.BTD.metrics || {};
 
-window.ALL        = [];   // raw records from data.json
-window.FILTERED   = [];   // post-filter slice
-window.PEER_META  = {};   // keyed by "theatre|city"
+  root.fmt$ = root.fmt$ || fmt.currency || fallbackCurrency;
+  root.pct = root.pct || fmt.percent || fallbackPercent;
+  root.fmtN = root.fmtN || fmt.number || fallbackNumber;
+  root.avg = root.avg || metrics.avg || fallbackAvg;
+  root.fmtDate = root.fmtDate || fmt.date || fallbackDate;
+  root.fmtWeek = root.fmtWeek || fmt.week || fallbackWeek;
+  root.fiscalYear = root.fiscalYear || fmt.fiscalYear || fallbackFiscalYear;
+  root.getFiscalYear = root.getFiscalYear || root.fiscalYear;
 
-// ── FORMATTERS ────────────────────────────────────────────────────────────────
-// Canonical source: programming.html (most complete)
+  root.ALL = root.ALL || root.BTD.state.all;
+  root.FILTERED = root.FILTERED || root.BTD.state.filtered;
+  root.PEER_META = root.PEER_META || root.BTD.state.peerMeta;
 
-/** Currency: $1.23B / $456.78M / $789K / $123 */
-window.fmt$ = v =>
-  v == null ? '—'
-  : v >= 1e9 ? '$' + (v / 1e9).toFixed(2) + 'B'
-  : v >= 1e6 ? '$' + (v / 1e6).toFixed(2) + 'M'
-  : v >= 1e3 ? '$' + (v / 1e3).toFixed(0) + 'K'
-  : '$' + Math.round(v).toLocaleString();
+  root.isPeerType = root.isPeerType || function isPeerType(d, type) {
+    if (root.BTD.peers && root.BTD.peers.isPeerType) return root.BTD.peers.isPeerType(d, type);
+    if (!type) return true;
+    var meta = (root.PEER_META || {})[(d.theatre || '') + '|' + (d.city || '')];
+    if (!meta || !meta.peer_types) return false;
+    if (type === 'any') return meta.peer_types.length > 0;
+    return meta.peer_types.indexOf(type) >= 0;
+  };
 
-/** Percentage with NaN guard */
-window.pct = (v, d = 1) =>
-  v == null || Number.isNaN(v) ? '—' : Number(v).toFixed(d) + '%';
+  root.applyStandardFilters = function applyStandardFilters(rows, opts) {
+    if (root.BTD.filters && root.BTD.filters.apply) return root.BTD.filters.apply(rows, opts);
+    opts = opts || {};
+    return (rows || []).filter(function (d) {
+      if (opts.tier && d.tier !== opts.tier) return false;
+      if (opts.sub === 'sub' && !d.on_sub) return false;
+      if (opts.sub === 'nonsub' && d.on_sub) return false;
+      if (opts.peer && !root.isPeerType(d, opts.peer)) return false;
+      if (opts.equity === 'equity' && d.non_equity) return false;
+      if (opts.equity === 'nonequity' && !d.non_equity) return false;
+      if (opts.engage === 'performed' && d.no_engagement) return false;
+      if (opts.engage === 'no' && !d.no_engagement) return false;
+      if (opts.season && root.fiscalYear(d.week_of) !== opts.season) return false;
+      return true;
+    });
+  };
 
-/** General number with decimal places */
-window.fmtN = (v, d = 1) =>
-  v == null || Number.isNaN(v) ? '—' : Number(v).toFixed(d);
+  // Do not overwrite page-specific applyFilters() implementations. Existing
+  // pages use applyFilters() as a UI render trigger, not only as a pure filter.
+  if (!root.applyFilters) root.applyFilters = root.applyStandardFilters;
 
-/** Average of an array */
-window.avg = arr =>
-  arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
-
-/** "Jun 8, 2025" from "2025-06-08"; returns "—" for null/empty */
-window.fmtDate = s => {
-  if (!s) return '—';
-  const [y, m, d] = s.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-};
-
-/** "YYYY-MM-DD" → "YYYY-YYYY" fiscal year label (July start) */
-window.fiscalYear = dateStr => {
-  if (!dateStr) return null;
-  const y = +dateStr.slice(0, 4), mo = +dateStr.slice(5, 7);
-  return mo >= 7 ? `${y}-${y + 1}` : `${y - 1}-${y}`;
-};
-
-/** Alias used by dashboard.html */
-window.getFiscalYear = window.fiscalYear;
-
-/** "2025-06-08" → "Jun 8, 2025" week label */
-window.fmtWeek = s => {
-  if (!s) return '';
-  const parts = s.split('-');
-  const y = parts[0], m = parseInt(parts[1]), d = parseInt(parts[2]);
-  return `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1]} ${d}, ${y}`;
-};
-
-// ── PEER HELPERS ──────────────────────────────────────────────────────────────
-
-/**
- * Returns true if record d belongs to peer group `type`.
- * type: 'size' | 'size_extended' | 'proximity' | 'market' | 'any' | null/''
- */
-window.isPeerType = function isPeerType(d, type) {
-  if (!type) return true;
-  const meta = window.PEER_META[d.theatre + '|' + d.city];
-  if (!meta || !meta.peer_types) return false;
-  if (type === 'any') return meta.peer_types.length > 0;
-  return meta.peer_types.includes(type);
-};
-
-// ── FILTER LOGIC ──────────────────────────────────────────────────────────────
-
-/**
- * Filter ALL records by the standard set of sidebar controls.
- * Pass an options object matching whichever filters the page uses.
- *
- * @param {object} opts
- * @param {string}  opts.tier       — 'Primary' | 'Secondary' | '' (all)
- * @param {string}  opts.sub        — 'sub' | 'nonsub' | '' (all)
- * @param {string}  opts.peer       — 'size' | 'size_extended' | 'proximity' | 'market' | 'any' | '' (all)
- * @param {string}  opts.equity     — 'equity' | 'nonequity' | '' (all)
- * @param {string}  opts.engage     — 'performed' | 'no' | '' (all)
- * @param {string}  opts.season     — fiscal year string e.g. '2024-2025' | '' (all)
- * @returns {Array} filtered records
- */
-window.applyFilters = function applyFilters(rows, opts = {}) {
-  const { tier = '', sub = '', peer = '', equity = '', engage = '', season = '' } = opts;
-  return rows.filter(d => {
-    if (tier   && d.tier !== tier)                                    return false;
-    if (sub === 'sub'    && !d.on_sub)                                return false;
-    if (sub === 'nonsub' && d.on_sub)                                 return false;
-    if (peer   && !window.isPeerType(d, peer))                        return false;
-    if (equity === 'equity'    && d.non_equity)                       return false;
-    if (equity === 'nonequity' && !d.non_equity)                      return false;
-    if (engage === 'performed' && d.no_engagement)                    return false;
-    if (engage === 'no'        && !d.no_engagement)                   return false;
-    if (season && window.fiscalYear(d.week_of) !== season)            return false;
-    return true;
-  });
-};
-
-// ── DATA LOADING ──────────────────────────────────────────────────────────────
-// Sequential fallback strategy from programming.html (most resilient).
-
-/**
- * Load data.json and peers.json, populate ALL and PEER_META.
- * Calls onReady() when complete.
- *
- * @param {Function} onReady — called with no args when data is loaded
- * @param {Function} [onError] — called with error message on failure
- */
-window.initData = async function initData(onReady, onError) {
-  // Use page-declared DATA_URLS if available, otherwise fall back to local
-  const urls = window.DATA_URLS || ['./data.json'];
-  // Try each data URL in order until one succeeds
-  let rawData = null;
-  for (const url of urls) {
+  root.initSharedData = async function initSharedData(onReady, onError, options) {
     try {
-      const r = await fetch(url, { cache: 'no-store' });
-      if (r.ok) { rawData = await r.json(); break; }
-    } catch (e) { /* try next */ }
-  }
-
-  if (!rawData) {
-    const msg = 'Could not load data.json from any source.';
-    if (onError) onError(msg);
-    else console.error(msg);
-    return;
-  }
-
-  window.ALL = rawData.records || rawData;
-
-  // Load peers (optional — pages degrade gracefully without it)
-  try {
-    const r = await fetch(PEERS_URL);
-    if (r.ok) {
-      const peersData = await r.json();
-      const venues = peersData.venues || peersData;
-      window.PEER_META = {};
-      venues.forEach(v => {
-        window.PEER_META[v.theatre + '|' + v.city] = v;
-      });
+      if (root.BTD.data && root.BTD.data.loadCore) await root.BTD.data.loadCore(options || {});
+      else throw new Error('BTD.data.loadCore is unavailable.');
+      root.ALL = root.BTD.state.all;
+      root.FILTERED = root.BTD.state.filtered;
+      root.PEER_META = root.BTD.state.peerMeta;
+      if (typeof onReady === 'function') onReady();
+    } catch (e) {
+      if (typeof onError === 'function') onError(e.message || String(e));
+      else console.error(e);
     }
-  } catch (e) {
-    console.warn('peers.json not loaded:', e.message);
-  }
+  };
 
-  if (onReady) onReady();
-};
+  // Legacy name retained for pages that explicitly opt in later.
+  root.initDataShared = root.initSharedData;
+})(window);
