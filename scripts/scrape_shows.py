@@ -26,8 +26,15 @@ from datetime import date
 from pathlib import Path
 from urllib.parse import quote
 
+import os
 import requests
-from SPARQLWrapper import SPARQLWrapper, JSON
+
+try:
+    from SPARQLWrapper import SPARQLWrapper, JSON
+except ModuleNotFoundError:
+    SPARQLWrapper = None
+    JSON = None
+
 
 # ── PATHS ─────────────────────────────────────────────────────────────────────
 ROOT        = Path(__file__).resolve().parent.parent
@@ -89,28 +96,72 @@ DBPEDIA_ENDPOINT = "https://dbpedia.org/sparql"
 WIKIDATA_API    = "https://www.wikidata.org/w/api.php"
 _USER_AGENT = "BushnellDashboard/1.0 (broadway-touring-dashboard; contact: broadway@bushnell.org)"
 
+class _RequestsSparqlClient:
+    """Small SPARQL client fallback so this script does not require SPARQLWrapper."""
+
+    def __init__(self, endpoint):
+        self.endpoint = endpoint
+        self.query_text = None
+        self.headers = {"User-Agent": _USER_AGENT, "Accept": "application/sparql-results+json"}
+
+    def addCustomHttpHeader(self, key, value):
+        self.headers[key] = value
+
+    def setReturnFormat(self, fmt):
+        return None
+
+    def setQuery(self, query):
+        self.query_text = query
+
+    def query(self):
+        return self
+
+    def convert(self):
+        if not self.query_text:
+            raise RuntimeError("SPARQL query text was not set")
+        resp = requests.get(
+            self.endpoint,
+            params={"query": self.query_text, "format": "json"},
+            headers=self.headers,
+            timeout=int(os.getenv("BWAY_SPARQL_TIMEOUT", "30")),
+        )
+        if resp.status_code != 200:
+            raise RuntimeError(f"SPARQL HTTP {resp.status_code}: {resp.text[:300]}")
+        return resp.json()
+
+
 def _sparql_client(endpoint=SPARQL_ENDPOINT):
+    if SPARQLWrapper is None:
+        return _RequestsSparqlClient(endpoint)
     sparql = SPARQLWrapper(endpoint)
     sparql.addCustomHttpHeader("User-Agent", _USER_AGENT)
     sparql.setReturnFormat(JSON)
     return sparql
 
+
+def _sleep(seconds):
+    """Sleep with a scale factor so tests can set BWAY_SCRAPE_SLEEP_SCALE=0."""
+    scale = float(os.getenv("BWAY_SCRAPE_SLEEP_SCALE", "1"))
+    if scale <= 0:
+        return
+    time.sleep(seconds * scale)
+
+
 def _run_sparql(sparql, max_retries=4):
-    """Execute a configured SPARQLWrapper query with retries and 429 backoff."""
+    """Execute a configured SPARQL query with retries and 429 backoff."""
     for attempt in range(1, max_retries + 1):
         try:
             return sparql.query().convert()
         except Exception as e:
             if attempt == max_retries:
                 raise
-            # Wikidata rate-limit: back off for 60s then retry
             if "429" in str(e):
-                wait = 60
-                print(f"  Rate limited (429) — waiting {wait}s before retry...")
+                wait = int(os.getenv("BWAY_SPARQL_429_WAIT", "60"))
+                print(f"  Rate limited (429) - waiting {wait}s before retry...")
             else:
                 wait = 2 ** attempt
             print(f"  SPARQL attempt {attempt} failed ({e}), retrying in {wait}s...")
-            time.sleep(wait)
+            _sleep(wait)
 
 def _escape_sparql_string(s):
     """Escape a string for safe embedding in a SPARQL string literal."""
@@ -160,7 +211,7 @@ def _fetch_wikidata_item(wikidata_id):
     except Exception as e:
         if "429" in str(e):
             print(f"  SPARQL rate-limited — falling back to REST API for {wikidata_id}...")
-            time.sleep(2)
+            _sleep(2)
             return _fetch_wikidata_item_rest(wikidata_id)
         print(f"  Item fetch error for {wikidata_id}: {e}")
         return None
@@ -313,7 +364,7 @@ def _search_wikidata(show_name):
             )
             if resp.status_code == 429:
                 print(f"  Rate limited (429) on search — waiting 60s...")
-                time.sleep(60)
+                _sleep(60)
                 return None
             if resp.status_code != 200:
                 continue
@@ -387,13 +438,13 @@ def query_wikidata(show_name):
     # Fuzzy Wikidata search as final fallback
     if not wikidata_id:
         print(f"  Trying Wikidata fuzzy search...")
-        time.sleep(2)
+        _sleep(2)
         wikidata_id = _search_wikidata(show_name)
         if wikidata_id:
             print(f"  Fuzzy match: {wikidata_id}")
 
     if wikidata_id:
-        time.sleep(2)
+        _sleep(2)
         return _fetch_wikidata_item(wikidata_id)
 
     return None
@@ -701,14 +752,14 @@ def query_wikipedia(wikipedia_url, max_retries=3):
             if attempt < max_retries:
                 wait = 2 ** attempt
                 print(f"  Wikipedia HTTP {resp.status_code}, retrying in {wait}s...")
-                time.sleep(wait)
+                _sleep(wait)
         except Exception as e:
             if attempt == max_retries:
                 print(f"  Wikipedia error for '{title}': {e}")
                 return None
             wait = 2 ** attempt
             print(f"  Wikipedia attempt {attempt} failed ({e}), retrying in {wait}s...")
-            time.sleep(wait)
+            _sleep(wait)
 
     return None
 
@@ -745,7 +796,7 @@ def enrich_show(show_entry, season):
 
     # ── Wikidata ──────────────────────────────────────────────────────────────
     wd = query_wikidata(name)
-    time.sleep(3)
+    _sleep(3)
 
     if wd:
         wd_source = "Wikidata"
@@ -763,18 +814,18 @@ def enrich_show(show_entry, season):
             record["sources"]["tony_nominations"] = wd_source
             record["sources"]["tony_wins"]        = wd_source
         print(f"  Tonys (Wikidata): {wins} wins / {noms} nominations")
-        time.sleep(3)
+        _sleep(3)
 
         summary = query_wikipedia(wd.get("wikipedia_url"))
         if summary:
             record["wikipedia_summary"] = summary
             record["sources"]["wikipedia_summary"] = "Wikipedia"
             print(f"  Wikipedia: {summary[:80]}...")
-        time.sleep(1)
+        _sleep(1)
     else:
         print(f"  No Wikidata match — trying DBpedia...")
         db = query_dbpedia(name)
-        time.sleep(2)
+        _sleep(2)
         if db:
             for field in ("composer", "lyricist", "opening_date", "image_url"):
                 if db.get(field) and not record[field]:
@@ -791,7 +842,7 @@ def enrich_show(show_entry, season):
 
     # ── IBDB ─────────────────────────────────────────────────────────────────
     ibdb = scrape_ibdb(name)
-    time.sleep(2)
+    _sleep(2)
 
     if ibdb:
         if ibdb.get("ibdb_url"):
@@ -827,7 +878,23 @@ def all_seasons():
 
 
 def main():
-    # --season X  → single season; default → all seasons in seasons.json
+    # --season X -> single season; default -> all seasons in seasons.json
+    # --force    -> refresh even if cached recently
+    # --stale-days N -> refresh records older than N days, default 30
+    # --show NAME -> scrape a single show by display name for debugging
+    force = "--force" in sys.argv
+    stale_days = 30
+    if "--stale-days" in sys.argv:
+        idx = sys.argv.index("--stale-days")
+        if idx + 1 < len(sys.argv):
+            stale_days = int(sys.argv[idx + 1])
+
+    only_show = None
+    if "--show" in sys.argv:
+        idx = sys.argv.index("--show")
+        if idx + 1 < len(sys.argv):
+            only_show = sys.argv[idx + 1].strip().lower()
+
     if "--season" in sys.argv:
         idx = sys.argv.index("--season")
         seasons_to_scrape = [sys.argv[idx + 1]] if idx + 1 < len(sys.argv) else [current_season()]
@@ -853,9 +920,16 @@ def main():
                 seen_names[name] = (entry, season)
 
     all_entries = list(seen_names.values())
+    if only_show:
+        all_entries = [(entry, season) for entry, season in all_entries if entry.get("name", "").strip().lower() == only_show]
     print(f"Total unique shows across all seasons: {len(all_entries)}")
+    if only_show and not all_entries:
+        print(f"No matching show found for --show '{only_show}'")
+        return
 
-    results = []
+    # Preserve existing records that are outside the current scrape target.
+    # This prevents --season or --show debug runs from accidentally shrinking shows.json.
+    results_by_name = dict(existing)
     for i, (entry, season) in enumerate(all_entries, 1):
         name = entry["name"]
         print(f"\n[{i}/{len(all_entries)}] {name}  (season: {season}, league: {entry.get('league_name', name)})")
@@ -863,14 +937,19 @@ def main():
         if name in existing:
             rec = existing[name]
             scraped_on = rec.get("scraped_on", "")
-            if scraped_on:
-                age = (date.today() - date.fromisoformat(scraped_on)).days
-                if age < 30:
-                    print(f"  Skipping — cached {age} days ago")
-                    results.append(rec)
+            if scraped_on and not force:
+                try:
+                    age = (date.today() - date.fromisoformat(scraped_on)).days
+                except ValueError:
+                    age = stale_days + 1
+                if age < stale_days:
+                    print(f"  Skipping - cached {age} days ago")
+                    results_by_name[name] = rec
                     continue
 
-        results.append(enrich_show(entry, season))
+        results_by_name[name] = enrich_show(entry, season)
+
+    results = [results_by_name[k] for k in sorted(results_by_name)]
 
     DATA_OUT.parent.mkdir(parents=True, exist_ok=True)
     with open(DATA_OUT, "w", encoding="utf-8") as f:
