@@ -213,39 +213,74 @@ function detailHtml(p,mode=seasonMode()){const _psig=planningSignals(p);const re
   return _h;
 })()}${mode==='past'?planningVsActualHtml(p,HISTORY_SEASON||seasonProfiles().season):''}`}
 function profileAtDate(show,maxDate){const rows=matchRows(show).filter(r=>r.week_of&&r.week_of<maxDate);const p=(window.BTD&&BTD.signals)?BTD.signals.profileShow(show,rows,{peerType:'size'}):null;if(p){p.show=show;return p;}const active=rows.filter(isUsableRecord);return{show,rows,metrics:{count:rows.length,cap:avg(active.map(d=>d.cap_paid)),gg:avg(active.map(d=>d.gg_pct_gp)),peerCap:avg(active.filter(d=>isPeerType(d,'size')).map(d=>d.cap_paid)),venues:new Set(active.map(d=>d.theatre+'|'+d.city)).size},score:0};}
-function profileInRange(show,start,end){const rows=matchRows(show).filter(r=>r.week_of&&r.week_of>=start&&r.week_of<=end);const p=(window.BTD&&BTD.signals)?BTD.signals.profileShow(show,rows,{peerType:'size'}):null;if(p){p.show=show;return p;}const active=rows.filter(isUsableRecord);return{show,rows,metrics:{count:rows.length,cap:avg(active.map(d=>d.cap_paid)),gg:avg(active.map(d=>d.gg_pct_gp)),peerCap:avg(active.filter(d=>isPeerType(d,'size')).map(d=>d.cap_paid)),venues:new Set(active.map(d=>d.theatre+'|'+d.city)).size},score:0};}
+function profileInRange(show,start,end,excl){const isBhn=r=>/bushnell|mortensen/i.test(String(r.theatre||''));let rows=matchRows(show).filter(r=>r.week_of&&r.week_of>=start&&r.week_of<=end);if(excl==='bushnell')rows=rows.filter(r=>!isBhn(r));const p=(window.BTD&&BTD.signals)?BTD.signals.profileShow(show,rows,{peerType:'size'}):null;if(p){p.show=show;return p;}const active=rows.filter(isUsableRecord);return{show,rows,metrics:{count:rows.length,cap:avg(active.map(d=>d.cap_paid)),gg:avg(active.map(d=>d.gg_pct_gp)),peerCap:avg(active.filter(d=>isPeerType(d,'size')).map(d=>d.cap_paid)),venues:new Set(active.map(d=>d.theatre+'|'+d.city)).size},score:0};}
 function planningVsActualHtml(p,season){
   if(!season||!season.start||!season.end)return '';
+  const hasDates=p.show.open&&p.show.close;
+  // 1. Pre-season: national data before season started (booking basis)
   const pre=profileAtDate(p.show,season.start);
-  const act=profileInRange(p.show,season.start,season.end);
-  if(pre.metrics.count===0&&act.metrics.count===0)return '';
-  const d=(a,b)=>a==null||b==null?null:Math.round((a-b)*10)/10;
+  // 2. National tour during season, split around Bushnell run (excluding Bushnell records)
+  const beforeBhn=profileInRange(p.show,season.start,hasDates?p.show.open:season.end,'bushnell');
+  const afterBhn=hasDates&&p.show.close<season.end?profileInRange(p.show,p.show.close,season.end,'bushnell'):null;
+  // 3. Bushnell actuals
+  const bhnRows=(typeof bushnellRows==='function')?bushnellRows(p.show,season.id):[];
+  const bhnCaps=bhnRows.map(r=>r.cap_paid).filter(v=>v!=null);
+  const bhnGGs=bhnRows.map(r=>r.gg_pct_gp).filter(v=>v!=null);
+  const bhnGross=bhnRows.map(r=>r.gross_gross).filter(v=>v!=null);
+  const bhn={count:bhnRows.length,cap:bhnCaps.length?avg(bhnCaps):null,gg:bhnGGs.length?avg(bhnGGs):null,gross:bhnGross.length?avg(bhnGross):null};
+  if(pre.metrics.count===0&&beforeBhn.metrics.count===0&&bhn.count===0)return '';
+  const diff=(a,b)=>a==null||b==null?null:Math.round((a-b)*10)/10;
   const fmtD=(v,unit)=>v==null?'—':(v>=0?'+':'')+v+(unit||'');
-  const capD=d(act.metrics.cap,pre.metrics.cap);
-  const ggD=d(act.metrics.gg,pre.metrics.gg);
-  const peerD=d(act.metrics.peerCap,pre.metrics.peerCap);
-  const scoreD=(pre.metrics.count>=2&&act.metrics.count>=2)?d(act.score,pre.score):null;
-  const dCls=scoreD==null?'neutral':scoreD>=5?'good':scoreD<=-5?'warn':'neutral';
-  const narrative=scoreD==null?'':scoreD>=5?'Outperformed the pre-season read — national touring came in stronger than projected.':scoreD<=-5?'Underperformed the pre-season read — national touring was softer than projected.':'Performed in line with the pre-season read.';
+  const dCls=v=>v==null?'neutral':v>=3?'good':v<=-3?'warn':'neutral';
+  const panel=(label,sub,count,metrics,color)=>{
+    let h=`<div style="background:var(--bg);border:1px solid var(--rule2);border-left:3px solid ${color};border-radius:3px;padding:10px">`;
+    h+=`<div class="card-hd" style="margin-bottom:3px">${label}</div>`;
+    h+=`<div class="card-sub" style="margin-bottom:8px">${sub} · ${count} records</div>`;
+    if(count>=2){
+      h+='<div class="metric-row">';
+      if(metrics.cap!=null)h+=`<div class="metric"><div class="val">${pct(metrics.cap,0)}</div><div class="lbl">Tour Cap</div></div>`;
+      if(metrics.gg!=null)h+=`<div class="metric"><div class="val">${pct(metrics.gg,0)}</div><div class="lbl">GG%</div></div>`;
+      if(metrics.peerCap!=null)h+=`<div class="metric"><div class="val">${pct(metrics.peerCap,0)}</div><div class="lbl">Peer Cap</div></div>`;
+      h+='</div>';
+    }else{h+=`<div class="card-sub" style="color:var(--ink3);font-style:italic">${count===0?'No records in this window.':'Limited — '+count+' record(s).'}</div>`;}
+    h+='</div>';
+    return h;
+  };
   let h='<div style="margin-top:14px;border-top:1px solid var(--rule2);padding-top:12px">';
-  h+='<div class="card-hd" style="margin-bottom:6px">Planning vs. Actual</div>';
-  h+='<div class="card-sub" style="margin-bottom:10px">Pre-season: national touring data before the season started — the basis for the booking decision. In-season: touring data during the season window. Same Broadway League feed, two time windows.</div>';
-  h+='<div class="grid grid-2" style="gap:8px;margin-bottom:10px">';
-  h+='<div style="background:var(--bg);border:1px solid var(--rule2);border-left:3px solid var(--amber);border-radius:3px;padding:10px">';
-  h+='<div class="card-hd" style="margin-bottom:4px">Pre-Season Read</div>';
-  h+='<div class="card-sub" style="margin-bottom:8px">Through '+fmtDate(season.start)+' · '+pre.metrics.count+' records</div>';
-  if(pre.metrics.count>=2){const _ps=planningSignals(pre);h+='<div class="metric-row"><div class="metric"><div class="val">'+(pre.score||'—')+'</div><div class="lbl">Fit Score</div></div><div class="metric"><div class="val">'+pct(pre.metrics.cap,1)+'</div><div class="lbl">Tour Cap</div></div><div class="metric"><div class="val">'+pct(pre.metrics.peerCap,1)+'</div><div class="lbl">Peer Cap</div></div></div>';h+='<div style="font-size:.52rem;color:var(--ink3);margin-top:6px">Read: <strong>'+_ps.planningRead+'</strong> · Demand: '+_ps.demand+' · Confidence: '+_ps.confidence+'</div>';}
-  else{h+='<div class="card-sub" style="color:var(--ink3);font-style:italic">Insufficient pre-season touring data for this title.</div>';}
+  h+='<div class="card-hd" style="margin-bottom:4px">Booking Context: Planning vs. Actual</div>';
+  h+='<div class="card-sub" style="margin-bottom:10px">Three lenses on the same Broadway League feed: what informed the booking decision, how the tour performed in other markets before and after the Bushnell run, and the Bushnell result itself.</div>';
+  // National context panels
+  if(hasDates){
+    h+=`<div class="grid grid-3" style="gap:8px;margin-bottom:8px">`;
+    h+=panel('Pre-Season Read','Through '+fmtDate(season.start),pre.metrics.count,pre.metrics,'var(--amber)');
+    h+=panel('Tour — Before Bushnell',fmtDate(season.start)+' – '+fmtDate(p.show.open),beforeBhn.metrics.count,beforeBhn.metrics,'var(--teal)');
+    if(afterBhn)h+=panel('Tour — After Bushnell',fmtDate(p.show.close)+' – '+fmtDate(season.end),afterBhn.metrics.count,afterBhn.metrics,'var(--teal)');
+    else h+=`<div style="background:var(--bg);border:1px solid var(--rule2);border-left:3px solid var(--teal);border-radius:3px;padding:10px;opacity:.5"><div class="card-hd" style="margin-bottom:3px">Tour — After Bushnell</div><div class="card-sub">Season ended before or near Bushnell close — no post-run window.</div></div>`;
+    h+='</div>';
+  }else{
+    h+=`<div class="grid grid-2" style="gap:8px;margin-bottom:8px">`;
+    h+=panel('Pre-Season Read','Through '+fmtDate(season.start),pre.metrics.count,pre.metrics,'var(--amber)');
+    h+=panel('In-Season National',fmtDate(season.start)+' – '+fmtDate(season.end),beforeBhn.metrics.count,beforeBhn.metrics,'var(--teal)');
+    h+='</div>';
+  }
+  // Bushnell actuals panel — full width, navy accent
+  h+='<div style="background:var(--bg);border:1px solid var(--rule2);border-left:3px solid var(--accent);border-radius:3px;padding:10px;margin-bottom:8px">';
+  h+='<div class="card-hd" style="margin-bottom:3px">Bushnell Actuals</div>';
+  if(bhn.count>0){
+    h+=`<div class="card-sub" style="margin-bottom:8px">${hasDates?fmtDate(p.show.open)+' – '+fmtDate(p.show.close):season.id} · ${bhn.count} week${bhn.count!==1?'s':''} in the feed</div>`;
+    h+='<div class="metric-row">';
+    if(bhn.cap!=null)h+=`<div class="metric"><div class="val">${pct(bhn.cap,0)}</div><div class="lbl">Bushnell Cap</div></div>`;
+    if(bhn.gg!=null)h+=`<div class="metric"><div class="val">${pct(bhn.gg,0)}</div><div class="lbl">GG%</div></div>`;
+    if(bhn.gross!=null)h+=`<div class="metric"><div class="val">${fmt$(bhn.gross)}</div><div class="lbl">Avg Gross/Wk</div></div>`;
+    const vsPreCap=diff(bhn.cap,pre.metrics.cap);
+    const vsTourCap=diff(bhn.cap,beforeBhn.metrics.cap);
+    if(vsPreCap!=null)h+=`<div class="metric"><div class="val ${dCls(vsPreCap)}">${fmtD(vsPreCap,'%')}</div><div class="lbl">vs Pre-Season</div></div>`;
+    if(vsTourCap!=null)h+=`<div class="metric"><div class="val ${dCls(vsTourCap)}">${fmtD(vsTourCap,'%')}</div><div class="lbl">vs Tour Avg</div></div>`;
+    h+='</div>';
+    const capDelta=diff(bhn.cap,pre.metrics.cap);
+    if(capDelta!=null){const narr=capDelta>=5?'Bushnell outperformed the pre-season national read — the engagement came in above what the touring picture projected.':capDelta<=-5?'Bushnell trailed the pre-season national read — the engagement ran softer than the national picture projected.':'Bushnell performed in line with the pre-season national read.';h+=`<div class="card-sub" style="margin-top:8px;font-style:italic">${narr}</div>`;}
+  }else{h+='<div class="card-sub" style="color:var(--ink3);font-style:italic">No Bushnell records found in the feed for this season window. The Bushnell engagement may not have been captured in this reporting period.</div>';}
   h+='</div>';
-  h+='<div style="background:var(--bg);border:1px solid var(--rule2);border-left:3px solid var(--teal);border-radius:3px;padding:10px">';
-  h+='<div class="card-hd" style="margin-bottom:4px">In-Season Actuals</div>';
-  h+='<div class="card-sub" style="margin-bottom:8px">'+fmtDate(season.start)+' – '+fmtDate(season.end)+' · '+act.metrics.count+' records</div>';
-  if(act.metrics.count>=2){const _as=planningSignals(act);h+='<div class="metric-row"><div class="metric"><div class="val">'+(act.score||'—')+'</div><div class="lbl">Fit Score</div></div><div class="metric"><div class="val">'+pct(act.metrics.cap,1)+'</div><div class="lbl">Tour Cap</div></div><div class="metric"><div class="val">'+pct(act.metrics.peerCap,1)+'</div><div class="lbl">Peer Cap</div></div></div>';h+='<div style="font-size:.52rem;color:var(--ink3);margin-top:6px">Read: <strong>'+_as.planningRead+'</strong> · Demand: '+_as.demand+' · Confidence: '+_as.confidence+'</div>';}
-  else{h+='<div class="card-sub" style="color:var(--ink3);font-style:italic">'+(act.metrics.count===0?'No matching touring records during this season window.':'Limited in-season data — '+act.metrics.count+' record(s).')+'</div>';}
-  h+='</div>';
-  h+='</div>';
-  if(capD!=null||ggD!=null||scoreD!=null){h+='<div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--rule2)">';if(scoreD!=null)h+='<div class="metric"><div class="val '+dCls+'">'+fmtD(scoreD)+'</div><div class="lbl">Score Δ</div></div>';h+='<div class="metric"><div class="val">'+fmtD(capD,'%')+'</div><div class="lbl">Cap Δ</div></div><div class="metric"><div class="val">'+fmtD(ggD,'%')+'</div><div class="lbl">GG% Δ</div></div><div class="metric"><div class="val">'+fmtD(peerD,'%')+'</div><div class="lbl">Peer Δ</div></div>';h+='</div>';}
-  if(narrative)h+='<div class="card-sub" style="font-style:italic">'+narrative+'</div>';
   h+='</div>';
   return h;
 }
