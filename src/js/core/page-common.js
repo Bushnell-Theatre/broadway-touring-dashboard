@@ -214,6 +214,46 @@
     return parts.join(' ');
   }
 
+  // ── Planning vs. Actual profiling helpers ────────────────────────────────────
+  // These use raw BTD.state.all (no page-level UI filters) so the pre-season,
+  // before-Bushnell, and after-Bushnell windows always reflect true national data.
+  function isBushnellRow(r) { return /bushnell|mortensen/i.test(String(r.theatre || '')); }
+
+  function profileAtDate(show, maxDate, opts) {
+    var all = root.BTD.state && root.BTD.state.all || [];
+    var rows = root.BTD.signals.rowsForShow(show, all).filter(function (r) { return r.week_of && r.week_of < maxDate; });
+    var p = root.BTD.signals.profileShow(show, rows, Object.assign({ peerType: 'size' }, opts || {}));
+    if (p) { p.show = (typeof show === 'object') ? show : p.show; return p; }
+    var avgFn = function (arr) { return root.BTD.metrics && root.BTD.metrics.avg ? root.BTD.metrics.avg(arr) : null; };
+    var caps = rows.filter(function (r) { return r.cap_paid != null; }).map(function (r) { return r.cap_paid; });
+    var ggs = rows.filter(function (r) { return r.gg_pct_gp != null; }).map(function (r) { return r.gg_pct_gp; });
+    return { show: (typeof show === 'object') ? show : { title: show, match: show }, rows: rows, metrics: { count: rows.length, cap: avgFn(caps), gg: avgFn(ggs), peerCap: null }, score: 0 };
+  }
+
+  function profileInRange(show, start, end, opts) {
+    opts = opts || {};
+    var all = root.BTD.state && root.BTD.state.all || [];
+    var rows = root.BTD.signals.rowsForShow(show, all).filter(function (r) { return r.week_of && r.week_of >= start && r.week_of <= end; });
+    if (opts.excludeBushnell) rows = rows.filter(function (r) { return !isBushnellRow(r); });
+    var p = root.BTD.signals.profileShow(show, rows, Object.assign({ peerType: 'size' }, opts));
+    if (p) { p.show = (typeof show === 'object') ? show : p.show; return p; }
+    var avgFn = function (arr) { return root.BTD.metrics && root.BTD.metrics.avg ? root.BTD.metrics.avg(arr) : null; };
+    var caps = rows.filter(function (r) { return r.cap_paid != null; }).map(function (r) { return r.cap_paid; });
+    var ggs = rows.filter(function (r) { return r.gg_pct_gp != null; }).map(function (r) { return r.gg_pct_gp; });
+    return { show: (typeof show === 'object') ? show : { title: show, match: show }, rows: rows, metrics: { count: rows.length, cap: avgFn(caps), gg: avgFn(ggs), peerCap: null }, score: 0 };
+  }
+
+  function bushnellRowsForSeason(show, season) {
+    if (!season || !season.start || !season.end) return [];
+    var all = root.BTD.state && root.BTD.state.all || [];
+    var key = root.BTD.signals.normalizeName(show && (show.match || show.title) || show);
+    return all.filter(function (r) {
+      return isBushnellRow(r)
+        && root.BTD.signals.normalizeName(r.show || '').indexOf(key) >= 0
+        && r.week_of >= season.start && r.week_of <= season.end;
+    });
+  }
+
   function attachHelpTooltips(tipMap, helpText) {
     if (!root.document) return;
     Object.keys(tipMap || {}).forEach(function (id) {
@@ -263,6 +303,7 @@
     planningSignals: planningSignals, signalBadge: signalBadge, signalRow: signalRow, whyThisRead: whyThisRead,
     confidenceLabel: confidenceLabel, confidenceText: confidenceText,
     matchRows: matchRows, activeFilters: activeFilters, applyStandardFilters: applyStandardFilters, profileShow: profileShow,
+    profileAtDate: profileAtDate, profileInRange: profileInRange, bushnellRowsForSeason: bushnellRowsForSeason,
     contextForWeek: contextForWeek, contextForDate: contextForDate, contextBadge: contextBadge, contextTooltip: contextTooltip, preShowWindow: preShowWindow,
     rankItems: rankItems, setFilterValue: setFilterValue, setFilterButton: setFilterButton, hydrateCoreState: hydrateCoreState,
     normalizeDashboardRows: normalizeDashboardRows, normalizeDashboardSeasons: normalizeDashboardSeasons,

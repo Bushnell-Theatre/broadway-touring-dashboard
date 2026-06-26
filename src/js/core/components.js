@@ -231,9 +231,96 @@
   }
 
 
+  function fmtDate(v) { return root.BTD.format && root.BTD.format.date ? root.BTD.format.date(v) : String(v || ''); }
+  function avg(arr) { return root.BTD.metrics && root.BTD.metrics.avg ? root.BTD.metrics.avg(arr) : null; }
+
+  function planningVsActualHtml(p, season) {
+    if (!p || !season || !season.start || !season.end) return '';
+    var show = p.show;
+    var hasDates = show && show.open && show.close;
+    var pg = root.BTD.page;
+    if (!pg) return '';
+    // 1. Pre-season: national data before season started (the booking basis)
+    var pre = pg.profileAtDate(show, season.start);
+    // 2. National tour during season, split around Bushnell run, excluding Bushnell records
+    var beforeBhn = pg.profileInRange(show, season.start, hasDates ? show.open : season.end, { excludeBushnell: true });
+    var afterBhn = hasDates && show.close < season.end ? pg.profileInRange(show, show.close, season.end, { excludeBushnell: true }) : null;
+    // 3. Bushnell actuals
+    var bhnRows = pg.bushnellRowsForSeason(show, season);
+    var bhnCaps = bhnRows.map(function (r) { return r.cap_paid; }).filter(function (v) { return v != null; });
+    var bhnGGs  = bhnRows.map(function (r) { return r.gg_pct_gp; }).filter(function (v) { return v != null; });
+    var bhnGross = bhnRows.map(function (r) { return r.gross_gross; }).filter(function (v) { return v != null; });
+    var bhn = { count: bhnRows.length, cap: avg(bhnCaps), gg: avg(bhnGGs), gross: avg(bhnGross) };
+    if (pre.metrics.count === 0 && beforeBhn.metrics.count === 0 && bhn.count === 0) return '';
+    var diff = function (a, b) { return a == null || b == null ? null : Math.round((a - b) * 10) / 10; };
+    var fmtD = function (v, unit) { return v == null ? '—' : (v >= 0 ? '+' : '') + v + (unit || ''); };
+    var dCls = function (v) { return v == null ? 'neutral' : v >= 3 ? 'good' : v <= -3 ? 'warn' : 'neutral'; };
+    function panel(label, sub, count, metrics, color) {
+      var h = '<div style="background:var(--bg);border:1px solid var(--rule2);border-left:3px solid ' + color + ';border-radius:3px;padding:10px">';
+      h += '<div class="card-hd" style="margin-bottom:3px">' + esc(label) + '</div>';
+      h += '<div class="card-sub" style="margin-bottom:8px">' + esc(sub) + ' · ' + count + ' records</div>';
+      if (count >= 2) {
+        h += '<div class="metric-row">';
+        if (metrics.cap  != null) h += '<div class="metric"><div class="val">' + fmtPct(metrics.cap, 0) + '</div><div class="lbl">Tour Cap</div></div>';
+        if (metrics.gg   != null) h += '<div class="metric"><div class="val">' + fmtPct(metrics.gg,  0) + '</div><div class="lbl">GG%</div></div>';
+        if (metrics.peerCap != null) h += '<div class="metric"><div class="val">' + fmtPct(metrics.peerCap, 0) + '</div><div class="lbl">Peer Cap</div></div>';
+        h += '</div>';
+      } else {
+        h += '<div class="card-sub" style="color:var(--ink3);font-style:italic">' + (count === 0 ? 'No records in this window.' : 'Limited — ' + count + ' record(s).') + '</div>';
+      }
+      h += '</div>';
+      return h;
+    }
+    var h = '<div style="margin-top:14px;border-top:1px solid var(--rule2);padding-top:12px">';
+    h += '<div class="card-hd" style="margin-bottom:4px">Booking Context: Planning vs. Actual</div>';
+    h += '<div class="card-sub" style="margin-bottom:10px">Three lenses on the same Broadway League feed: what informed the booking decision, how the tour performed in other markets before and after the Bushnell run, and the Bushnell result itself.</div>';
+    if (hasDates) {
+      h += '<div class="grid grid-3" style="gap:8px;margin-bottom:8px">';
+      h += panel('Pre-Season Read', 'Through ' + fmtDate(season.start), pre.metrics.count, pre.metrics, 'var(--amber)');
+      h += panel('Tour — Before Bushnell', fmtDate(season.start) + ' – ' + fmtDate(show.open), beforeBhn.metrics.count, beforeBhn.metrics, 'var(--teal)');
+      if (afterBhn) {
+        h += panel('Tour — After Bushnell', fmtDate(show.close) + ' – ' + fmtDate(season.end), afterBhn.metrics.count, afterBhn.metrics, 'var(--teal)');
+      } else {
+        h += '<div style="background:var(--bg);border:1px solid var(--rule2);border-left:3px solid var(--teal);border-radius:3px;padding:10px;opacity:.5"><div class="card-hd" style="margin-bottom:3px">Tour — After Bushnell</div><div class="card-sub">Season ended at or before Bushnell close — no post-run window.</div></div>';
+      }
+      h += '</div>';
+    } else {
+      h += '<div class="grid grid-2" style="gap:8px;margin-bottom:8px">';
+      h += panel('Pre-Season Read', 'Through ' + fmtDate(season.start), pre.metrics.count, pre.metrics, 'var(--amber)');
+      h += panel('In-Season National', fmtDate(season.start) + ' – ' + fmtDate(season.end), beforeBhn.metrics.count, beforeBhn.metrics, 'var(--teal)');
+      h += '</div>';
+    }
+    // Bushnell actuals panel
+    h += '<div style="background:var(--bg);border:1px solid var(--rule2);border-left:3px solid var(--accent);border-radius:3px;padding:10px;margin-bottom:8px">';
+    h += '<div class="card-hd" style="margin-bottom:3px">Bushnell Actuals</div>';
+    if (bhn.count > 0) {
+      h += '<div class="card-sub" style="margin-bottom:8px">' + esc(hasDates ? fmtDate(show.open) + ' – ' + fmtDate(show.close) : season.id) + ' · ' + bhn.count + ' week' + (bhn.count !== 1 ? 's' : '') + ' in the feed</div>';
+      h += '<div class="metric-row">';
+      if (bhn.cap   != null) h += '<div class="metric"><div class="val">' + fmtPct(bhn.cap, 0) + '</div><div class="lbl">Bushnell Cap</div></div>';
+      if (bhn.gg    != null) h += '<div class="metric"><div class="val">' + fmtPct(bhn.gg,  0) + '</div><div class="lbl">GG%</div></div>';
+      if (bhn.gross != null) h += '<div class="metric"><div class="val">' + fmt$(bhn.gross) + '</div><div class="lbl">Avg Gross/Wk</div></div>';
+      var vsPreCap  = diff(bhn.cap, pre.metrics.cap);
+      var vsTourCap = diff(bhn.cap, beforeBhn.metrics.cap);
+      if (vsPreCap  != null) h += '<div class="metric"><div class="val ' + dCls(vsPreCap)  + '">' + fmtD(vsPreCap,  '%') + '</div><div class="lbl">vs Pre-Season</div></div>';
+      if (vsTourCap != null) h += '<div class="metric"><div class="val ' + dCls(vsTourCap) + '">' + fmtD(vsTourCap, '%') + '</div><div class="lbl">vs Tour Avg</div></div>';
+      h += '</div>';
+      var capDelta = diff(bhn.cap, pre.metrics.cap);
+      if (capDelta != null) {
+        var narr = capDelta >= 5 ? 'Bushnell outperformed the pre-season national read — the engagement came in above what the touring picture projected.'
+          : capDelta <= -5 ? 'Bushnell trailed the pre-season national read — the engagement ran softer than the national picture projected.'
+          : 'Bushnell performed in line with the pre-season national read.';
+        h += '<div class="card-sub" style="margin-top:8px;font-style:italic">' + narr + '</div>';
+      }
+    } else {
+      h += '<div class="card-sub" style="color:var(--ink3);font-style:italic">No Bushnell records found in the feed for this season window.</div>';
+    }
+    h += '</div></div>';
+    return h;
+  }
+
   function methodologySummary() {
     return '<div class="method-card"><h3>Planning Signal</h3><p>The Planning Signal is built from separate Demand, Revenue, Peer, and Confidence signals. Demand measures audience pull. Revenue measures revenue quality. Peer measures relevance to Bushnell-like venues. Confidence measures evidence depth.</p></div>';
   }
 
-  root.BTD.components = { kpiCard: kpiCard, signalBadge: signalBadge, confidenceBadge: confidenceBadge, caveatBlock: caveatBlock, decisionCard: decisionCard, whyRead: whyRead, methodologySummary: methodologySummary, dataQualitySummary: dataQualitySummary, signalStatus: signalStatus, signalRow: signalRow, rankItems: rankItems, programmingShowCard: programmingShowCard, metricTile: metricTile, externalConditionsCard: externalConditionsCard, dashboardRankList: dashboardRankList, dashboardWowTable: dashboardWowTable, dashboardSizeGrid: dashboardSizeGrid, dashboardTableRows: dashboardTableRows, dashboardTableCount: dashboardTableCount };
+  root.BTD.components = { kpiCard: kpiCard, signalBadge: signalBadge, confidenceBadge: confidenceBadge, caveatBlock: caveatBlock, decisionCard: decisionCard, whyRead: whyRead, methodologySummary: methodologySummary, dataQualitySummary: dataQualitySummary, signalStatus: signalStatus, signalRow: signalRow, rankItems: rankItems, programmingShowCard: programmingShowCard, metricTile: metricTile, externalConditionsCard: externalConditionsCard, dashboardRankList: dashboardRankList, dashboardWowTable: dashboardWowTable, dashboardSizeGrid: dashboardSizeGrid, dashboardTableRows: dashboardTableRows, dashboardTableCount: dashboardTableCount, planningVsActualHtml: planningVsActualHtml };
 })(window);

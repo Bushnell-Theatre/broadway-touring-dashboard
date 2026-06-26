@@ -639,8 +639,8 @@ tbody td:last-child{border-right:none;}
   [id^="peer-detail-"] { display: none !important; }
 
   /* Section breaks */
-  #tab-rankings { page-break-before: always; }
-  #tab-analytics { page-break-before: always; }
+  #tab-shows { page-break-before: always; }
+  #tab-markets { page-break-before: always; }
   #tab-seasons { page-break-before: always; }
   #tab-peers { page-break-before: always; }
 
@@ -933,11 +933,10 @@ tbody td:last-child{border-right:none;}
   <div class="main-pane">
 
     <nav class="nav-tabs" aria-label="Dashboard sections">
-      <div class="nav-tab active" onclick="showTab('charts')">Charts</div>
-      <div class="nav-tab" onclick="showTab('rankings')">Rankings</div>
-      <div class="nav-tab" onclick="showTab('analytics')">Analytics</div>
-      <div class="nav-tab" onclick="showTab('seasons')">Seasons</div>
+      <div class="nav-tab active" onclick="showTab('shows')">Shows</div>
+      <div class="nav-tab" onclick="showTab('markets')">Markets &amp; Trends</div>
       <div class="nav-tab" onclick="showTab('peers')">Peer Venues</div>
+      <div class="nav-tab" onclick="showTab('seasons')">Seasons</div>
       <div class="nav-tab tab-right" onclick="showTab('table')">Data Table</div>
       <div class="nav-tab tab-right" onclick="showTab('faq')">Help &amp; FAQ</div>
     </nav>
@@ -972,10 +971,10 @@ tbody td:last-child{border-right:none;}
       </div>
     </div>
 
-    <!-- CHARTS PANEL -->
-    <div class="panel active" id="tab-charts">
+    <!-- SHOWS PANEL -->
+    <div class="panel active" id="tab-shows">
       <div class="section-divider">
-        <h2>Performance Charts</h2>
+        <h2>Shows</h2>
         <div class="section-divider-line"></div>
         <div class="section-divider-meta">Based on filtered data</div>
       </div>
@@ -983,19 +982,19 @@ tbody td:last-child{border-right:none;}
         <div class="chart-card">
           <!-- ═══════════════════════════════════════════════════
                CHART: Top 12 Shows by Total Gross
-               Tab: Charts | Canvas ID: cShowGross
+               Tab: Shows | Canvas ID: cShowGross
                Type: Horizontal bar
                Shows: Cumulative gross revenue per show across all filtered weeks, top 12
                Rendered by: renderCharts() — look for dc('sg')
                ═══════════════════════════════════════════════════ -->
           <div class="chart-hd">Top 12 Shows</div>
           <div class="chart-sub">Total gross — all filtered weeks</div>
-          <canvas id="cShowGross" ></canvas>
+          <canvas id="cShowGross"></canvas>
         </div>
         <div class="chart-card">
           <!-- ═══════════════════════════════════════════════════
                CHART: Avg GG% of Gross Potential by Show
-               Tab: Charts | Canvas ID: cGgPct
+               Tab: Shows | Canvas ID: cGgPct
                Type: Horizontal bar
                Shows: Average gross-as-percent-of-potential per show, top 12
                Teal bar = at or above 100% potential | Navy bar = below potential
@@ -1003,41 +1002,12 @@ tbody td:last-child{border-right:none;}
                ═══════════════════════════════════════════════════ -->
           <div class="chart-hd">Avg GG% of Potential</div>
           <div class="chart-sub">By show — color indicates over/under potential</div>
-          <canvas id="cGgPct" ></canvas>
-        </div>
-        <div class="chart-card full">
-          <!-- ═══════════════════════════════════════════════════
-               CHART: Weekly Gross Trend
-               Tab: Charts | Canvas ID: cWeekly
-               Type: Line (two datasets)
-               Shows: Total gross per report week (bars) + 8-week moving average (line)
-               Default view: last 2 years of actual report dates, no gap weeks
-               With date range extending before 2022: full spine shown including COVID gap
-               NOTE: Phantom zero weeks issue identified — confirmed 11 genuinely missing
-               Broadway League report weeks, not a data error
-               Rendered by: renderCharts() — look for dc('wk')
-               ═══════════════════════════════════════════════════ -->
-          <div class="chart-hd">Weekly Gross Trend</div>
-          <div class="chart-sub">Total gross by report week · <span id="weeklyChartNote" style="color:var(--amber)">Default view: last 2 years — use Date Range filter for full history</span></div>
-          <canvas id="cWeekly" ></canvas>
-        </div>
-        <div class="chart-card">
-          <!-- ═══════════════════════════════════════════════════
-               CHART: % Capacity Paid by Market (City)
-               Tab: Charts | Canvas ID: cMarketCap
-               Type: Vertical bar
-               Shows: Average paid capacity utilization per city, top 20
-               Color: Green ≥ 90% | Amber 60–89% | Red < 60%
-               Rendered by: renderCharts() — look for dc('mc')
-               ═══════════════════════════════════════════════════ -->
-          <div class="chart-hd">% Capacity Paid by Market</div>
-          <div class="chart-sub">Top 20 markets — green ≥ 90%, amber 60–89%, red &lt; 60%</div>
-          <canvas id="cMarketCap" ></canvas>
+          <canvas id="cGgPct"></canvas>
         </div>
         <div class="chart-card">
           <!-- ═══════════════════════════════════════════════════
                CHART: Subscription vs Non-Subscription Comparison
-               Tab: Charts | Canvas ID: cSubComp
+               Tab: Shows | Canvas ID: cSubComp
                Type: Grouped vertical bar (dual Y-axis)
                Shows: Avg gross (left axis) and avg % capacity paid (right axis)
                split between subscribed and non-subscribed engagements
@@ -1045,28 +1015,19 @@ tbody td:last-child{border-right:none;}
                ═══════════════════════════════════════════════════ -->
           <div class="chart-hd">Subscription vs Non-Subscription</div>
           <div class="chart-sub">Average gross and capacity comparison</div>
-          <canvas id="cSubComp" ></canvas>
+          <canvas id="cSubComp"></canvas>
         </div>
       </div>
-    </div>
-
-    <!-- RANKINGS PANEL -->
-    <div class="panel" id="tab-rankings">
-      <div class="section-divider">
-        <h2>Rankings &amp; Intelligence</h2>
-        <div class="section-divider-line"></div>
-        <div class="section-divider-meta">Filtered data</div>
-      </div>
-      <div class="rank-grid">
+      <div class="rank-grid" style="margin-top:18px;">
         <div class="rank-card">
           <div class="rank-hd">Top Grossing Shows</div>
           <div class="rank-sub">Cumulative gross across all filtered weeks</div>
-        <!-- ═══════════════════════════════════════════════════
-             LIST: Top Grossing Shows
-             Tab: Rankings | Element ID: rShowGross
-             Shows: Top 10 shows by cumulative gross, expandable venue breakdown
-             Rendered by: renderRankings()
-             ═══════════════════════════════════════════════════ -->
+          <!-- ═══════════════════════════════════════════════════
+               LIST: Top Grossing Shows
+               Tab: Shows | Element ID: rShowGross
+               Shows: Top 10 shows by cumulative gross, expandable venue breakdown
+               Rendered by: renderRankings()
+               ═══════════════════════════════════════════════════ -->
           <div id="rShowGross"></div>
         </div>
         <div class="rank-card">
@@ -1074,7 +1035,7 @@ tbody td:last-child{border-right:none;}
           <div class="rank-sub">Cumulative gross across all filtered weeks</div>
           <!-- ═══════════════════════════════════════════════════
                LIST: Bottom Grossing Shows
-               Tab: Rankings | Element ID: rShowGrossBottom
+               Tab: Shows | Element ID: rShowGrossBottom
                Shows: Bottom 10 shows by cumulative gross, expandable venue breakdown
                Rendered by: renderRankings()
                ═══════════════════════════════════════════════════ -->
@@ -1085,19 +1046,163 @@ tbody td:last-child{border-right:none;}
           <div class="rank-sub">All shows — sorted by WoW % change · <span id="wowWeekLabel" style="color:var(--amber)"></span></div>
           <!-- ═══════════════════════════════════════════════════
                TABLE: Week-over-Week Change by Show
-               Tab: Rankings | Element ID: rShowWow
+               Tab: Shows | Element ID: rShowWow
                Shows: All shows sorted by WoW % gross change, most recent 2 weeks
                Expandable per-show rows show individual venue breakdown
                Requires 2+ weeks in filter | Rendered by: renderRankings()
                ═══════════════════════════════════════════════════ -->
           <div id="rShowWow"></div>
         </div>
+      </div>
+      <div class="chart-grid" style="margin-top:18px;">
+        <div class="chart-card">
+          <!-- ═══════════════════════════════════════════════════
+               CHART: Show Longevity
+               Tab: Shows | Canvas ID: cLongevity
+               Type: Horizontal bar
+               Shows: Number of report weeks each show appeared in, top 20
+               Rendered by: renderAnalytics() — look for dc('lo')
+               ═══════════════════════════════════════════════════ -->
+          <div class="chart-hd">Show Longevity</div>
+          <div class="chart-sub">Number of weeks each show ran — top 20</div>
+          <canvas id="cLongevity" role="img" aria-label="Show longevity number of weeks per show"></canvas>
+        </div>
+        <div class="chart-card">
+          <!-- ═══════════════════════════════════════════════════
+               CHART: Top Shows by % Capacity Paid
+               Tab: Shows | Canvas ID: cCapRank
+               Type: Horizontal bar
+               Shows: Avg % capacity paid per show, top 15, minimum 3 weeks of data
+               Teal = at or above 90% capacity | Amber = below 90%
+               Rendered by: renderAnalytics() — look for dc('cr')
+               ═══════════════════════════════════════════════════ -->
+          <div class="chart-hd">Top Shows by % Capacity</div>
+          <div class="chart-sub">Avg % capacity paid — ranked, min 3 weeks</div>
+          <canvas id="cCapRank" role="img" aria-label="Top shows by percent capacity"></canvas>
+        </div>
+        <div class="chart-card">
+          <!-- ═══════════════════════════════════════════════════
+               CHART: Most Consistent Shows (Gross Variance)
+               Tab: Shows | Canvas ID: cConsistency
+               Type: Horizontal bar
+               Shows: Coefficient of variation (CV) in weekly gross per show, top 15
+               Lower CV = more consistent week-to-week revenue
+               Minimum 5 weeks of data required to appear
+               Tooltip shows: CV%, avg gross, number of weeks
+               Rendered by: renderAnalytics() — look for dc('co')
+               ═══════════════════════════════════════════════════ -->
+          <div class="chart-hd">Most Consistent Shows</div>
+          <div class="chart-sub">Lowest std deviation in weekly gross — min 5 weeks</div>
+          <canvas id="cConsistency" role="img" aria-label="Most consistent shows by gross variance"></canvas>
+        </div>
+        <div class="chart-card">
+          <!-- ═══════════════════════════════════════════════════
+               CHART: No Performance (Dark Week) Rate by Show
+               Tab: Shows | Canvas ID: cNoEng
+               Type: Horizontal bar
+               Shows: % of a show's total appearances that were dark (no engagement) weeks
+               Only shows with BOTH active and dark weeks qualify | Minimum 3 active weeks
+               Tooltip shows: dark week %, dark count, active count, total appearances
+               Rendered by: renderAnalytics() — look for dc('ne')
+               ═══════════════════════════════════════════════════ -->
+          <div class="chart-hd">No Performance Rate</div>
+          <div class="chart-sub">Shows with both active and dark weeks — dark week % of total appearances, min 3 active weeks</div>
+          <canvas id="cNoEng" role="img" aria-label="No engagement rate by show"></canvas>
+        </div>
+      </div>
+      <!-- Internal Sales Placeholder -->
+      <div style="margin-top:24px;border:2px dashed var(--rule);border-radius:3px;padding:24px;background:var(--bg2);">
+        <div class="chart-hd" style="color:var(--ink3);margin-bottom:8px;">Internal Sales Data</div>
+        <p style="font-size:0.68rem;color:var(--ink3);line-height:1.6;">Daily and weekly Bushnell sales data will appear here when POS integration is complete. This section will show pace tracking, inventory by price tier, and subscription vs. walk-up trends against League benchmarks.</p>
+      </div>
+    </div>
+
+    <!-- MARKETS & TRENDS PANEL -->
+    <div class="panel" id="tab-markets">
+      <div class="section-divider">
+        <h2>Markets &amp; Trends</h2>
+        <div class="section-divider-line"></div>
+        <div class="section-divider-meta">Based on filtered data</div>
+      </div>
+      <div class="chart-grid">
+        <div class="chart-card full">
+          <!-- ═══════════════════════════════════════════════════
+               CHART: Weekly Gross Trend
+               Tab: Markets & Trends | Canvas ID: cWeekly
+               Type: Line (two datasets)
+               Shows: Total gross per report week (bars) + 8-week moving average (line)
+               Default view: last 2 years of actual report dates, no gap weeks
+               With date range extending before 2022: full spine shown including COVID gap
+               NOTE: Phantom zero weeks issue identified — confirmed 11 genuinely missing
+               Broadway League report weeks, not a data error
+               Rendered by: renderCharts() — look for dc('wk')
+               ═══════════════════════════════════════════════════ -->
+          <div class="chart-hd">Weekly Gross Trend</div>
+          <div class="chart-sub">Total gross by report week · <span id="weeklyChartNote" style="color:var(--amber)">Default view: last 2 years — use Date Range filter for full history</span></div>
+          <canvas id="cWeekly"></canvas>
+        </div>
+        <div class="chart-card full">
+          <!-- ═══════════════════════════════════════════════════
+               CHART: Seasonality — Avg Gross by Fiscal Period
+               Tab: Markets & Trends | Canvas ID: cSeasonality
+               Type: Vertical bar (two modes toggled by buttons)
+               Weekly mode: avg gross per fiscal week (Wk 1 = first Sunday on/after July 1)
+               Monthly mode: avg gross per fiscal month (Jul–Jun)
+               X-axis labels show fiscal quarter starts: Jul, Oct, Jan, Apr
+               Toggle buttons: btnSeasonWeek / btnSeasonMonth → setSeasonMode()
+               Rendered by: renderAnalytics() — look for dc('sa')
+               ═══════════════════════════════════════════════════ -->
+          <div class="chart-hd">Seasonality
+            <span style="float:right;display:flex;gap:4px;">
+              <button class="pill active" id="btnSeasonWeek" onclick="setSeasonMode('week')" aria-label="Show seasonality by ISO week">Weekly</button>
+              <button class="pill" id="btnSeasonMonth" onclick="setSeasonMode('month')" aria-label="Show seasonality by month">Monthly</button>
+            </span>
+          </div>
+          <div class="chart-sub">Avg gross by fiscal period (Jul–Jun) · <span style="color:var(--amber)">Weekly = fiscal week (Wk 1 = first Sunday on or after July 1)</span></div>
+          <canvas id="cSeasonality" role="img" aria-label="Seasonality chart average gross by week of year"></canvas>
+        </div>
+        <div class="chart-card full">
+          <!-- ═══════════════════════════════════════════════════
+               CHART: Year-over-Year Gross Comparison
+               Tab: Markets & Trends | Canvas ID: cYoY
+               Type: Multi-line (one line per fiscal year)
+               Weekly mode: each fiscal year's gross by fiscal week, overlaid
+               Monthly mode: each fiscal year's gross by fiscal month, overlaid
+               Fiscal year = July 1 – June 30 | Labels in 2024-25 format
+               Toggle buttons: btnYoYWeek / btnYoYMonth → setYoYMode()
+               NOTE: When only 1 year selected, label should read MoM not YoY — pending fix
+               Rendered by: renderAnalytics() — look for dc('yy')
+               ═══════════════════════════════════════════════════ -->
+          <div class="chart-hd">Year over Year Comparison
+            <span style="float:right;display:flex;gap:4px;">
+              <button class="pill active" id="btnYoYWeek" onclick="setYoYMode('week')" aria-label="Show year over year by ISO week">Weekly</button>
+              <button class="pill" id="btnYoYMonth" onclick="setYoYMode('month')" aria-label="Show year over year by month">Monthly</button>
+            </span>
+          </div>
+          <div class="chart-sub">Gross by fiscal year (Jul–Jun) overlaid for comparison · <span style="color:var(--amber)">Fiscal week starts July 1 · Labels show 2024-25 format</span></div>
+          <canvas id="cYoY" role="img" aria-label="Year over year gross comparison"></canvas>
+        </div>
+        <div class="chart-card">
+          <!-- ═══════════════════════════════════════════════════
+               CHART: % Capacity Paid by Market (City)
+               Tab: Markets & Trends | Canvas ID: cMarketCap
+               Type: Vertical bar
+               Shows: Average paid capacity utilization per city, top 20
+               Color: Green ≥ 90% | Amber 60–89% | Red < 60%
+               Rendered by: renderCharts() — look for dc('mc')
+               ═══════════════════════════════════════════════════ -->
+          <div class="chart-hd">% Capacity Paid by Market</div>
+          <div class="chart-sub">Top 20 markets — green ≥ 90%, amber 60–89%, red &lt; 60%</div>
+          <canvas id="cMarketCap"></canvas>
+        </div>
+      </div>
+      <div class="rank-grid" style="margin-top:18px;">
         <div class="rank-card">
           <div class="rank-hd">Top Markets by Total Gross</div>
           <div class="rank-sub">Cumulative gross revenue by city</div>
           <!-- ═══════════════════════════════════════════════════
                LIST: Top Markets by Total Gross
-               Tab: Rankings | Element ID: rMarketGross
+               Tab: Markets & Trends | Element ID: rMarketGross
                Shows: Top 10 cities by cumulative gross revenue
                Rendered by: renderRankings()
                ═══════════════════════════════════════════════════ -->
@@ -1108,7 +1213,7 @@ tbody td:last-child{border-right:none;}
           <div class="rank-sub">Average % capacity paid across engagements</div>
           <!-- ═══════════════════════════════════════════════════
                LIST: Markets by Avg % Capacity Paid
-               Tab: Rankings | Element ID: rMarketCap
+               Tab: Markets & Trends | Element ID: rMarketCap
                Shows: Top 10 cities by average % capacity paid
                Rendered by: renderRankings()
                ═══════════════════════════════════════════════════ -->
@@ -1117,21 +1222,20 @@ tbody td:last-child{border-right:none;}
         <div class="rank-card full">
           <div class="rank-hd">Capacity Utilization by Theatre Size</div>
           <div class="rank-sub">Seat capacity brackets — average % paid and gross</div>
-        <!-- ═══════════════════════════════════════════════════
-             CHART: Capacity Utilization by Theatre Size
-             Tab: Rankings | Canvas ID: cTheatreSize
-             Type: Grouped vertical bar (dual Y-axis)
-             Shows: Avg % capacity paid (left axis) and avg gross (right axis)
-             grouped into 5 seat-count brackets: <5K, 5–10K, 10–15K, 15–20K, 20K+
-             Summary grid above chart (id: rTheatreSize) shows same data as numbers
-             Rendered by: renderRankings() — look for dc('ts')
-             ═══════════════════════════════════════════════════ -->
+          <!-- ═══════════════════════════════════════════════════
+               CHART: Capacity Utilization by Theatre Size
+               Tab: Markets & Trends | Canvas ID: cTheatreSize
+               Type: Grouped vertical bar (dual Y-axis)
+               Shows: Avg % capacity paid (left axis) and avg gross (right axis)
+               grouped into 5 seat-count brackets: <5K, 5–10K, 10–15K, 15–20K, 20K+
+               Summary grid above chart (id: rTheatreSize) shows same data as numbers
+               Rendered by: renderRankings() — look for dc('ts')
+               ═══════════════════════════════════════════════════ -->
           <div class="size-grid" id="rTheatreSize"></div>
-          <canvas id="cTheatreSize" ></canvas>
+          <canvas id="cTheatreSize"></canvas>
         </div>
       </div>
     </div>
-
 
     <!-- PEERS PANEL -->
     <div class="panel" id="tab-peers">
@@ -1140,9 +1244,24 @@ tbody td:last-child{border-right:none;}
         <div class="section-divider-line"></div>
         <div class="section-divider-meta">Venues flagged as similar capacity to Bushnell · <span id="peersNote" style="color:var(--amber)">Sorted by reporting weeks</span></div>
       </div>
+      <div class="chart-grid" style="margin-bottom:18px;">
+        <div class="chart-card full">
+          <!-- ═══════════════════════════════════════════════════
+               CHART: Bushnell vs Peer Gap — Weekly Avg % Capacity
+               Tab: Peer Venues | Canvas ID: cPeerGap
+               Type: Multi-line
+               Shows: Weekly avg % capacity paid — Bushnell-size peer venues (blue)
+               vs all non-peer venues (red), over time
+               Peer venues = similar_bushnell flag set to true in data
+               Rendered by: renderAnalytics() — look for dc('pg')
+               ═══════════════════════════════════════════════════ -->
+          <div class="chart-hd">Bushnell vs Peer Gap</div>
+          <div class="chart-sub">Weekly avg % capacity — Bushnell-size venues vs all others</div>
+          <canvas id="cPeerGap" role="img" aria-label="Bushnell versus peer venue capacity gap"></canvas>
+        </div>
+      </div>
       <div id="peersContent"></div>
     </div>
-
 
     <!-- FAQ PANEL -->
     <div class="panel" id="tab-faq">
@@ -1153,135 +1272,6 @@ tbody td:last-child{border-right:none;}
       </div>
       <div id="faqContent"></div>
     </div>
-
-    <!-- ANALYTICS PANEL -->
-<div class="panel" id="tab-analytics">
-  <div class="section-divider">
-    <h2>Analytics &amp; Insights</h2>
-    <div class="section-divider-line"></div>
-    <div class="section-divider-meta">Future expansions</div>
-  </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
-
-    <div class="chart-card" style="grid-column:1/-1;">
-      <div class="chart-hd">Seasonality
-        <span style="float:right;display:flex;gap:4px;">
-          <button class="pill active" id="btnSeasonWeek" onclick="setSeasonMode('week')" aria-label="Show seasonality by ISO week">Weekly</button>
-          <button class="pill" id="btnSeasonMonth" onclick="setSeasonMode('month')" aria-label="Show seasonality by month">Monthly</button>
-        </span>
-      </div>
-      <div class="chart-sub">Avg gross by fiscal period (Jul–Jun) · <span style="color:var(--amber)">Weekly = fiscal week (Wk 1 = first Sunday on or after July 1)</span></div>
-    <!-- ═══════════════════════════════════════════════════
-         CHART: Seasonality — Avg Gross by Fiscal Period
-         Tab: Analytics | Canvas ID: cSeasonality
-         Type: Vertical bar (two modes toggled by buttons)
-         Weekly mode: avg gross per fiscal week (Wk 1 = first Sunday on/after July 1)
-         Monthly mode: avg gross per fiscal month (Jul–Jun)
-         X-axis labels show fiscal quarter starts: Jul, Oct, Jan, Apr
-         Toggle buttons: btnSeasonWeek / btnSeasonMonth → setSeasonMode()
-         Rendered by: renderAnalytics() — look for dc('sa')
-         ═══════════════════════════════════════════════════ -->
-      <canvas id="cSeasonality" role="img" aria-label="Seasonality chart average gross by week of year"></canvas>
-    </div>
-
-    <div class="chart-card" style="grid-column:1/-1;">
-      <div class="chart-hd">Year over Year Comparison
-        <span style="float:right;display:flex;gap:4px;">
-          <button class="pill active" id="btnYoYWeek" onclick="setYoYMode('week')" aria-label="Show year over year by ISO week">Weekly</button>
-          <button class="pill" id="btnYoYMonth" onclick="setYoYMode('month')" aria-label="Show year over year by month">Monthly</button>
-        </span>
-      </div>
-      <div class="chart-sub">Gross by fiscal year (Jul–Jun) overlaid for comparison · <span style="color:var(--amber)">Fiscal week starts July 1 · Labels show 2024-25 format</span></div>
-    <!-- ═══════════════════════════════════════════════════
-         CHART: Year-over-Year Gross Comparison
-         Tab: Analytics | Canvas ID: cYoY
-         Type: Multi-line (one line per fiscal year)
-         Weekly mode: each fiscal year's gross by fiscal week, overlaid
-         Monthly mode: each fiscal year's gross by fiscal month, overlaid
-         Fiscal year = July 1 – June 30 | Labels in 2024-25 format
-         Toggle buttons: btnYoYWeek / btnYoYMonth → setYoYMode()
-         NOTE: When only 1 year selected, label should read MoM not YoY — pending fix
-         Rendered by: renderAnalytics() — look for dc('yy')
-         ═══════════════════════════════════════════════════ -->
-      <canvas id="cYoY" role="img" aria-label="Year over year gross comparison"></canvas>
-    </div>
-
-    <div class="chart-card">
-      <div class="chart-hd">Show Longevity</div>
-      <div class="chart-sub">Number of weeks each show ran — top 20</div>
-    <!-- ═══════════════════════════════════════════════════
-         CHART: Show Longevity
-         Tab: Analytics | Canvas ID: cLongevity
-         Type: Horizontal bar
-         Shows: Number of report weeks each show appeared in, top 20
-         Rendered by: renderAnalytics() — look for dc('lo')
-         ═══════════════════════════════════════════════════ -->
-      <canvas id="cLongevity" role="img" aria-label="Show longevity number of weeks per show"></canvas>
-    </div>
-
-    <div class="chart-card">
-      <div class="chart-hd">Top Shows by % Capacity</div>
-      <div class="chart-sub">Avg % capacity paid — ranked, min 3 weeks</div>
-    <!-- ═══════════════════════════════════════════════════
-         CHART: Top Shows by % Capacity Paid
-         Tab: Analytics | Canvas ID: cCapRank
-         Type: Horizontal bar
-         Shows: Avg % capacity paid per show, top 15, minimum 3 weeks of data
-         Teal = at or above 90% capacity | Amber = below 90%
-         Rendered by: renderAnalytics() — look for dc('cr')
-         ═══════════════════════════════════════════════════ -->
-      <canvas id="cCapRank" role="img" aria-label="Top shows by percent capacity"></canvas>
-    </div>
-
-    <div class="chart-card">
-      <div class="chart-hd">Most Consistent Shows</div>
-      <div class="chart-sub">Lowest std deviation in weekly gross — min 5 weeks</div>
-    <!-- ═══════════════════════════════════════════════════
-         CHART: Most Consistent Shows (Gross Variance)
-         Tab: Analytics | Canvas ID: cConsistency
-         Type: Horizontal bar
-         Shows: Coefficient of variation (CV) in weekly gross per show, top 15
-         Lower CV = more consistent week-to-week revenue
-         Minimum 5 weeks of data required to appear
-         Tooltip shows: CV%, avg gross, number of weeks
-         Rendered by: renderAnalytics() — look for dc('co')
-         ═══════════════════════════════════════════════════ -->
-      <canvas id="cConsistency" role="img" aria-label="Most consistent shows by gross variance"></canvas>
-    </div>
-
-    <div class="chart-card">
-      <div class="chart-hd">No Performance Rate</div>
-      <div class="chart-sub">Shows with both active and dark weeks — dark week % of total appearances, min 3 active weeks</div>
-    <!-- ═══════════════════════════════════════════════════
-         CHART: No Performance (Dark Week) Rate by Show
-         Tab: Analytics | Canvas ID: cNoEng
-         Type: Horizontal bar
-         Shows: % of a show's total appearances that were dark (no engagement) weeks
-         Only shows with BOTH active and dark weeks qualify | Minimum 3 active weeks
-         Tooltip shows: dark week %, dark count, active count, total appearances
-         Rendered by: renderAnalytics() — look for dc('ne')
-         ═══════════════════════════════════════════════════ -->
-      <canvas id="cNoEng" role="img" aria-label="No engagement rate by show"></canvas>
-    </div>
-
-    <div class="chart-card" style="grid-column:1/-1;">
-      <div class="chart-hd">Bushnell vs Peer Gap</div>
-      <div class="chart-sub">Weekly avg % capacity — Bushnell-size venues vs all others</div>
-    <!-- ═══════════════════════════════════════════════════
-         CHART: Bushnell vs Peer Gap — Weekly Avg % Capacity
-         Tab: Analytics | Canvas ID: cPeerGap
-         Type: Multi-line
-         Shows: Weekly avg % capacity paid — Bushnell-size peer venues (blue)
-         vs all non-peer venues (red), over time
-         Peer venues = similar_bushnell flag set to true in data
-         Rendered by: renderAnalytics() — look for dc('pg')
-         ═══════════════════════════════════════════════════ -->
-      <canvas id="cPeerGap" role="img" aria-label="Bushnell versus peer venue capacity gap"></canvas>
-    </div>
-
-  </div>
-</div>
-
 
     <!-- SEASONS PANEL -->
     <div class="panel" id="tab-seasons">
@@ -1304,7 +1294,7 @@ tbody td:last-child{border-right:none;}
     Unauthorized distribution or reproduction is strictly prohibited.
   </div>
   <div class="footer-right">
-    Broadway Touring Sales Intelligence · <strong>v6.0</strong><br>
+    Broadway Touring Sales Intelligence · <strong>v6.1</strong><br>
     Build date: June 24, 2026
   </div>
 </footer>

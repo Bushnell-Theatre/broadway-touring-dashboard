@@ -60,24 +60,24 @@
 </head>
 <body>
 <header class="masthead">
-  <div class="masthead-brand"><div class="brand-icon">B</div><div class="brand-text"><h1>Broadway Touring</h1><div class="sub">Programming Intelligence</div></div></div>
+  <div class="masthead-brand"><div class="brand-icon">B</div><div class="brand-text"><h1>Broadway Touring</h1><div class="sub">Market Intelligence · Show Pressure Test</div></div></div>
   <div class="masthead-status"><div class="dot"></div><span id="dataStatus"><strong>–</strong> records · <strong>–</strong> weeks total</span><br><span id="filteredStatus" style="font-size:0.58rem;color:rgba(255,255,255,0.45);">Filtered: — records</span></div>
   <div class="masthead-actions"><a class="btn btn-outline" href="index.html">⌂ Hub</a><a class="btn btn-outline" href="dashboard.html">Dashboard</a><a class="btn btn-outline" href="exec_summary.html">Exec Summary</a><button class="btn btn-outline" onclick="resetAll()">↺ Reset</button><button class="btn btn-outline" onclick="window.print()">⎙ Print</button></div>
 </header>
 <div class="kpi-strip">
-  <div class="kpi-cell"><div class="kpi-label">Season Focus</div><div class="kpi-value" id="kSeason">—</div><div class="kpi-sub">Bushnell schedule</div></div>
+  <div class="kpi-cell"><div class="kpi-label">Season Focus</div><div class="kpi-value" id="kSeason">—</div><div class="kpi-sub">selected season</div></div>
   <div class="kpi-cell"><div class="kpi-label">Scheduled Shows</div><div class="kpi-value" id="kScheduled">—</div><div class="kpi-sub">in selected season</div></div>
   <div class="kpi-cell"><div class="kpi-label">Avg Gross</div><div class="kpi-value" id="kGross">—</div><div class="kpi-sub">per active record</div></div>
   <div class="kpi-cell"><div class="kpi-label">Avg GG%</div><div class="kpi-value" id="kGG">—</div><div class="kpi-sub">revenue vs potential</div></div>
-  <div class="kpi-cell"><div class="kpi-label">Avg Tour Capacity</div><div class="kpi-value" id="kTourCap">—</div><div class="kpi-sub">demand signal</div></div>
-  <div class="kpi-cell"><div class="kpi-label">Strong Signal</div><div class="kpi-value" id="kHighFit">—</div><div class="kpi-sub">above median planning signal</div></div>
-  <div class="kpi-cell"><div class="kpi-label">Watchlist</div><div class="kpi-value" id="kWatch">—</div><div class="kpi-sub">soft signals</div></div>
+  <div class="kpi-cell"><div class="kpi-label">Avg Tour Capacity</div><div class="kpi-value" id="kTourCap">—</div><div class="kpi-sub">national tour avg</div></div>
+  <div class="kpi-cell"><div class="kpi-label">Strong Signals</div><div class="kpi-value" id="kHighFit">—</div><div class="kpi-sub">above median planning signal</div></div>
+  <div class="kpi-cell"><div class="kpi-label">Watchlist</div><div class="kpi-value" id="kWatch">—</div><div class="kpi-sub">below median signal</div></div>
   
 </div>
 <div class="workspace">
   <aside class="sidebar">
     <div class="sidebar-section"><span class="sidebar-label">Season Lens <span class="tip-icon" data-tip="season" tabindex="0">?</span></span><div class="pill-row" id="seasonPills"></div></div>
-    <div class="sidebar-section"><span class="sidebar-label">Decision View</span><div class="pill-row"><button class="pill active" data-tab="brief" onclick="showTab('brief')">Brief</button><button class="pill" data-tab="current" onclick="showTab('current')">Current</button><button class="pill" data-tab="history" onclick="showTab('history')">History</button><button class="pill" data-tab="future" onclick="showTab('future')">Future</button></div></div>
+    <div class="sidebar-section"><span class="sidebar-label">View</span><div class="pill-row"><button class="pill active" data-tab="brief" onclick="showTab('brief')">Brief</button><button class="pill" data-tab="current" onclick="showTab('current')">Current</button><button class="pill" data-tab="history" onclick="showTab('history')">History</button><button class="pill" data-tab="future" onclick="showTab('future')">Future</button></div></div>
     <div class="sidebar-section"><span class="sidebar-label">Show Search</span><input id="showSearch" type="text" placeholder="Search all shows..." oninput="renderShowHistory()"></div>
     <div class="sidebar-section">
       <span class="sidebar-label">Tier <span class="tip-icon" tabindex="0" data-tip="tier">?</span></span>
@@ -122,15 +122,17 @@
         <button class="pill" data-engage="yes" onclick="setEngage(this,'yes')">No Performance</button>
       </div>
     </div>
-    <div class="sidebar-section"><span class="sidebar-label">Core Idea</span><div class="card-sub" style="margin:0">Organized by programming questions: how current shows are doing, how previous shows performed, and what may fit next season.</div></div>
+    <div class="sidebar-section"><span class="sidebar-label">Local Sales Data</span><div class="card-sub" style="margin-bottom:8px;">Bushnell daily sales data will appear here when POS integration is complete. Local pace and inventory will show alongside national League data.</div><span class="status neutral">Coming Soon</span></div>
+    <div class="sidebar-section"><span class="sidebar-label">How To Use This</span><div class="card-sub" style="margin:0">Search or browse shows to see national touring performance, peer venue results, and Bushnell booking history. Use this to pressure-test a show you are already considering — the data either supports the instinct or flags a conversation.</div></div>
+    <div class="sidebar-section"><span class="sidebar-label">Booking History</span><div class="card-sub" style="margin:0">Shows Bushnell has booked appear with a season count and last-booked indicator. Hamilton and Six are confirmed multi-season shows in the current dataset.</div></div>
   </aside>
   <div class="main-pane">
     <nav class="nav-tabs" aria-label="Programming sections">
-      <div class="nav-tab active" data-tab="brief" onclick="showTab('brief')">Season Overview</div>
-      <div class="nav-tab" data-tab="season" onclick="showTab('season')">Season</div>
-      <div class="nav-tab" data-tab="history" onclick="showTab('history')">History</div>
-      <div class="nav-tab" data-tab="planning" onclick="showTab('planning')">Planning</div>
-      <div class="nav-tab" data-tab="peers" onclick="showTab('peers')">Peers</div>
+      <div class="nav-tab active" data-tab="brief" onclick="showTab('brief')">Season Brief</div>
+      <div class="nav-tab" data-tab="season" onclick="showTab('season')">Current Season</div>
+      <div class="nav-tab" data-tab="history" onclick="showTab('history')">Show History</div>
+      <div class="nav-tab" data-tab="planning" onclick="showTab('planning')">Next Season</div>
+      <div class="nav-tab" data-tab="peers" onclick="showTab('peers')">Peer Markets</div>
       <div class="nav-tab" data-tab="reference" onclick="showTab('reference')">Reference</div>
     </nav>
     <section class="panel active" id="tab-brief"></section>
@@ -141,7 +143,7 @@
     <section class="panel" id="tab-reference"><div style="padding:24px 32px;" id="faqContent"></div></section>
   </div>
 </div>
-<footer class="footer"><div><strong>CONFIDENTIAL</strong> — For internal use only. The Bushnell Center for the Performing Arts.</div><div>Broadway Touring Programming Intelligence · <strong>v6.0</strong> · Build date: June 25, 2026</div></footer>
+<footer class="footer"><div><strong>CONFIDENTIAL</strong> — For internal use only. The Bushnell Center for the Performing Arts.</div><div>Broadway Touring Programming Intelligence · <strong>v6.1</strong> · Build date: June 25, 2026</div></footer>
 <script src="js/pages/programming.page.js"></script>
 </body>
 </html>

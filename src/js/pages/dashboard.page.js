@@ -1292,17 +1292,16 @@ function renderFaq() {
 }
 
 function showTab(name) {
-  const names=['charts','rankings','analytics','seasons','peers','table','faq'];
+  const names=['shows','markets','peers','seasons','table','faq'];
   document.querySelectorAll('.nav-tab').forEach((t,i)=>{t.classList.toggle('active',names[i]===name);});
   document.querySelectorAll('.panel').forEach(p=>{
     p.classList.toggle('active',p.id==='tab-'+name);
     p.style.display = p.id==='tab-'+name ? 'block' : 'none';
   });
-  if(name==='charts') renderCharts();
-  if(name==='rankings') renderRankings();
-  if(name==='analytics') renderAnalytics();
-  if(name==='seasons') renderSeasons();
+  if(name==='shows') { renderCharts(); renderRankings(); renderAnalytics(); }
+  if(name==='markets') { renderCharts(); renderRankings(); renderAnalytics(); }
   if(name==='peers') renderPeers();
+  if(name==='seasons') renderSeasons();
   if(name==='faq') renderFaq();
 }
 
