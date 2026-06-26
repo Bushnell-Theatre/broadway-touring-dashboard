@@ -211,7 +211,7 @@ function planningSignals(p){return BTD.page.planningSignals(p);}
 function signalBadge(label){return BTD.page.signalBadge(label);}
 function signalRow(signals){return BTD.page.signalRow(signals);}
 function whyThisRead(p){return BTD.page.whyThisRead(p);}
-function short(s,n){return BTD.page&&BTD.page.short?BTD.page.short(s,n):(s&&s.length>n?s.slice(0,n)+'…':s)}function escapeHtml(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function short(s,n){return BTD.page&&BTD.page.short?BTD.page.short(s,n):(s&&s.length>n?s.slice(0,n)+'…':s)}function escapeHtml(s){return BTD.format&&BTD.format.escapeHtml?BTD.format.escapeHtml(s):String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 Chart.defaults.font.family = "'Libre Franklin', sans-serif";
 Chart.defaults.font.size = 10;
 function awardWins(rec){return Object.values((rec&&rec.awards)||{}).reduce((a,v)=>a+Number((v&&v.wins)||0),0);}
