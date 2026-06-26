@@ -3979,5 +3979,18 @@
       "confidence_trend": "stable",
       "source_month": "2026-06"
     }
+  },
+  "2026-06-21": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 49.8,
+      "ct_unemployment": 5.0,
+      "confidence_trend": "stable",
+      "source_month": "2026-06"
+    }
   }
 }

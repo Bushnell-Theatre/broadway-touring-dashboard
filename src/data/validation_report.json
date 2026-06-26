@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-06-25T20:09:36.203098+00:00",
+  "generated_at": "2026-06-26T13:44:58.264129+00:00",
   "source": "C:\\Users\\rnunley\\OneDrive - Bushnell Center for the Performing Arts\\Documents\\GitHub\\broadway-touring-dashboard\\src\\data\\data.json",
   "summary": {
-    "record_count": 10798,
-    "unique_canonical_keys": 10798,
+    "record_count": 10833,
+    "unique_canonical_keys": 10833,
     "duplicate_canonical_key_count": 0,
     "unique_shows": 175,
     "unique_theatre_city_pairs": 557,
@@ -14,7 +14,7 @@
       "2022-2023": 2081,
       "2023-2024": 1975,
       "2024-2025": 1724,
-      "2025-2026": 2138
+      "2025-2026": 2173
     }
   },
   "missing_by_field": {
@@ -23,17 +23,17 @@
     "show": 0,
     "theatre": 0,
     "city": 0,
-    "gross_gross": 4778,
-    "gross_potential": 4779,
-    "gg_pct_gp": 4779,
-    "paid_tix": 4778,
-    "total_tix": 4778,
-    "capacity": 4778,
-    "cap_paid": 4778,
-    "cap_total": 4778,
+    "gross_gross": 4789,
+    "gross_potential": 4790,
+    "gg_pct_gp": 4790,
+    "paid_tix": 4789,
+    "total_tix": 4789,
+    "capacity": 4789,
+    "cap_paid": 4789,
+    "cap_total": 4789,
     "on_sub": 0,
-    "avg_adm": 4778,
-    "venue_sellable": 4778,
+    "avg_adm": 4789,
+    "venue_sellable": 4789,
     "similar_bushnell": 0,
     "non_equity": 0,
     "no_engagement": 0,
@@ -43,9 +43,9 @@
     "invalid_date_count": 0,
     "cap_paid_over_100_count": 143,
     "cap_total_over_100_count": 202,
-    "gg_pct_gp_over_100_count": 1145,
-    "gross_over_potential_count": 1153,
-    "no_engagement_count": 4778
+    "gg_pct_gp_over_100_count": 1148,
+    "gross_over_potential_count": 1156,
+    "no_engagement_count": 4789
   },
   "samples": {
     "duplicate_canonical_keys": [],
