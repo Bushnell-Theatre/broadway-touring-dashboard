@@ -294,9 +294,9 @@ function applyFilters() {
   const activePanel = document.querySelector('.panel.active');
   if (activePanel) {
     const id = activePanel.id;
-    if (id === 'tab-charts') renderCharts();
-    else if (id === 'tab-rankings') renderRankings();
-    else if (id === 'tab-analytics') renderAnalytics();
+    if (id === 'tab-shows' || id === 'tab-markets') { renderCharts(); renderRankings(); renderAnalytics(); }
+    
+    
     else if (id === 'tab-seasons') renderSeasons();
     else if (id === 'tab-peers') renderPeers();
   }
