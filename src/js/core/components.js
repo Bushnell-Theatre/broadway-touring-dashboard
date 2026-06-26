@@ -2,7 +2,7 @@
   'use strict';
   root.BTD = root.BTD || {};
   function esc(v) { return root.BTD.format && root.BTD.format.escapeHtml ? root.BTD.format.escapeHtml(v) : String(v == null ? '' : v); }
-  function fmtPct(v) { return root.BTD.format && root.BTD.format.percent ? root.BTD.format.percent(v) : (v == null ? '—' : Number(v).toFixed(1) + '%'); }
+  function fmtPct(v, d) { return root.BTD.format && root.BTD.format.percent ? root.BTD.format.percent(v, d) : (v == null ? '—' : Number(v).toFixed(d != null ? d : 1) + '%'); }
   function fmt$(v) { return root.BTD.format && root.BTD.format.currency ? root.BTD.format.currency(v) : (v == null ? '—' : '$' + Math.round(v).toLocaleString()); }
 
   function kpiCard(label, value, note) {
@@ -83,14 +83,30 @@
     }).join('');
     return rows || '<div class="empty">No matching records.</div>';
   }
-  function programmingShowCard(profile, active, idx, median) {
+  function programmingShowCard(profile, active, idx, median, opts) {
     if (!profile) return '';
     var p = profile;
+    var o = opts || {};
     var sig = root.BTD.signals && root.BTD.signals.signalLabels ? root.BTD.signals.signalLabels(p) : {};
-    var k = p.score >= median ? 'good' : 'warn';
+    var scoreCls = p.isFutureNewTour ? 'neutral' : (p.score >= median ? 'good' : 'warn');
+    var scoreText = p.isFutureNewTour ? 'NEW' : (p.score == null ? '—' : String(p.score));
     var cap = p.metrics && (p.metrics.cap != null ? p.metrics.cap : p.metrics.paidCapacity);
     var gg = p.metrics && (p.metrics.gg != null ? p.metrics.gg : p.metrics.ggPctGp);
-    return '<div class="show-card ' + (active ? 'active' : '') + '" data-idx="' + esc(idx) + '"><div class="show-name">' + esc(p.show && p.show.title || p.title) + '</div><div style="font-size:.6rem;color:var(--ink3);margin:4px 0"><strong>Planning Read:</strong> ' + esc(sig.planningRead || 'Exploratory') + '</div>' + signalRow(sig) + '<div class="metric-row" style="margin-top:8px"><div class="metric"><div class="val">' + fmtPct(cap, 0) + '</div><div class="lbl">Demand Cap</div></div><div class="metric"><div class="val">' + fmtPct(gg, 0) + '</div><div class="lbl">Revenue GG%</div></div><div class="metric"><div class="val ' + esc(k) + '">' + esc(p.score == null ? '—' : p.score) + '</div><div class="lbl">Fit Score</div></div></div></div>';
+    var dateHtml = o.dateStr ? '<div class="card-sub" style="margin:4px 0 8px">' + o.dateStr + '</div>' : '';
+    var footerHtml = o.footerStr ? '<div class="card-sub" style="margin-top:6px;margin-bottom:0;border-top:1px solid var(--rule2);padding-top:6px">' + o.footerStr + '</div>' : '';
+    var onclickAttr = o.onclick ? ' onclick="' + o.onclick + '"' : '';
+    return '<div class="show-card ' + (active ? 'active' : '') + '" data-idx="' + esc(idx) + '"' + onclickAttr + '>'
+      + '<div class="show-name">' + esc(p.show && p.show.title || p.title) + '</div>'
+      + dateHtml
+      + '<div class="metric-row" style="margin-top:8px">'
+      + '<div class="metric"><div class="val ' + scoreCls + '">' + scoreText + '</div><div class="lbl">Fit Score</div></div>'
+      + '<div class="metric"><div class="val">' + fmtPct(gg, 0) + '</div><div class="lbl">Revenue GG%</div></div>'
+      + '<div class="metric"><div class="val">' + fmtPct(cap, 0) + '</div><div class="lbl">Demand Cap</div></div>'
+      + '</div>'
+      + '<div style="font-size:.52rem;color:var(--ink3);margin-top:6px">Planning Read: <strong>' + esc(sig.planningRead || 'Exploratory') + '</strong></div>'
+      + signalRow(sig)
+      + footerHtml
+      + '</div>';
   }
   function metricTile(label, value, note, statusClass) {
     return '<div class="note"><div class="note-hd">' + esc(label) + '</div><div class="val ' + esc(statusClass || '') + '" style="font-family:var(--serif,Georgia);font-size:1.2rem;font-weight:700">' + esc(value) + '</div><div class="note-body">' + esc(note || '') + '</div></div>';
