@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
 <meta name="googlebot" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
-<title>Broadway Touring Intelligence v5.0</title>
+<title>Broadway Touring Intelligence v5.1</title>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Libre+Franklin:ital,wght@0,300;0,400;0,600;0,700;0,900;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="js/utils.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -126,7 +126,7 @@
     <section class="panel" id="tab-reference"><div style="padding:24px 32px;" id="faqContent"></div></section>
   </div>
 </div>
-<footer class="footer"><div><strong>CONFIDENTIAL</strong> — For internal use only. The Bushnell Center for the Performing Arts.</div><div>Broadway Touring Programming Intelligence · <strong>v5.0</strong> · Build date: June 24, 2026</div></footer>
+<footer class="footer"><div><strong>CONFIDENTIAL</strong> — For internal use only. The Bushnell Center for the Performing Arts.</div><div>Broadway Touring Programming Intelligence · <strong>v5.1</strong> · Build date: June 24, 2026</div></footer>
 <script>
 const DATA_URLS = ['data/data.json', 'https://white-pebble-01710020f.7.azurestaticapps.net/data.json'];
 const HELP_TEXT = {
@@ -165,6 +165,7 @@ const HELP_TEXT = {
   mktCapChart: 'Average paid capacity utilization by city.'
 };
 let SEASONS = [];
+let _factsheets = {};
 
 function _buildSeasons(raw) {
   SEASONS = Object.entries(raw).map(([id, data]) => {
@@ -670,6 +671,13 @@ async function loadData() {
       if (cx2.ok) CONTEXT = await cx2.json();
     } catch (e2) {}
   }
+  try {
+    const fsr = await fetch('data/factsheets.json');
+    if (fsr.ok) {
+      const fsj = await fsr.json();
+      _factsheets = (fsj && fsj.shows) ? fsj.shows : {};
+    }
+  } catch (e) {}
   ALL = (Array.isArray(data) ? data : (data.records || [])).map(d => ({
     ...d,
     week_of: d.week_of ? d.week_of.slice(0, 10) : null,
@@ -777,7 +785,26 @@ function renderAll() {
   $('kIndex').textContent = num(avg(active.map(p => p.metrics.index)), 0);
   $('kHighFit').textContent = profiles.filter(p => p.score >= SCORE_MED).length;
   $('kWatch').textContent = profiles.filter(p => p.score < SCORE_MED && p.metrics.count > 0).length;
+  if (STATE.season === '2026-2027') updateFactsheetKPIs();
   renderActive();
+}
+
+function updateFactsheetKPIs() {
+  const season = SEASONS.find(s => s.id === '2026-2027');
+  if (!season) return;
+  let totalPotential = 0;
+  (season.shows || []).forEach(show => {
+    const fs = _factsheets[show.title];
+    if (fs && fs.grossPotentialExclRest) totalPotential += fs.grossPotentialExclRest;
+  });
+  const kEl = $('kIndex');
+  if (kEl && totalPotential > 0) {
+    kEl.textContent = '$' + Math.round(totalPotential / 1000000 * 10) / 10 + 'M';
+    const lblEl = kEl.previousElementSibling;
+    if (lblEl) lblEl.textContent = 'Season Potential';
+    const subEl = kEl.nextElementSibling;
+    if (subEl) subEl.textContent = 'gross potential excl. restoration';
+  }
 }
 
 function renderActive() {
@@ -931,6 +958,17 @@ function detailHtml(p) {
   var h = '';
   h += '<div class="card-title">' + p.show.title + '</div>';
   h += '<div class="card-sub">Matched on "' + p.show.match + '" · ' + (p.show.sub ? 'subscription' : 'non-subscription') + ' · ' + p.metrics.count + ' records</div>';
+  // Fact sheet callout — 2026-27 only
+  var _fsDH = _factsheets[p.show.title];
+  if (STATE.season === '2026-2027' && _fsDH) {
+    h += '<div style="margin:8px 0;padding:8px 12px;background:rgba(217,148,0,0.08);border-left:3px solid #d99400;border-radius:4px">';
+    h += '<div class="card-hd" style="margin-bottom:4px;color:#d99400">Bushnell Fact Sheet — 2026-27</div>';
+    h += '<div class="grid grid-3" style="margin:0">';
+    h += '<div class="note"><div class="note-hd">Split Point</div><div class="note-body"><strong>$' + Math.round((_fsDH.splitPointGross||0)/1000) + 'K</strong><br><em style="font-size:.6rem">Contractual gross target</em></div></div>';
+    h += '<div class="note"><div class="note-hd">Gross Potential</div><div class="note-body"><strong>$' + Math.round((_fsDH.grossPotentialExclRest||0)/1000) + 'K</strong> excl. rest<br><strong>$' + Math.round((_fsDH.grossPotentialWithRest||0)/1000) + 'K</strong> incl. rest</div></div>';
+    h += '<div class="note"><div class="note-hd">Engagement</div><div class="note-body">' + (_fsDH.subType||'—') + '<br>' + (_fsDH.contractedSellablePerPerf ? _fsDH.contractedSellablePerPerf + ' sellable/perf' : '') + '</div></div>';
+    h += '</div></div>';
+  }
   h += '<div style="font-size:.6rem;color:var(--ink3);margin:6px 0"><strong>Planning Read:</strong> ' + _sig.planningRead + ' — ' + _sig.interpretation + '</div>';
   h += signalRow(_sig);
   h += '<div class="metric-row" style="margin-top:10px">';
@@ -990,8 +1028,9 @@ function renderPlanning() {
   })).filter(p => p.metrics.count >= 5);
   const hidden = allShows.filter(p => p.metrics.peerCap && p.metrics.cap && p.metrics.peerCap > p.metrics.cap + 8).sort((a, b) => (b.metrics.peerCap - b.metrics.cap) - (a.metrics.peerCap - a.metrics.cap)).slice(0, 10);
   const risky = allShows.filter(p => p.metrics.peerCap && p.metrics.cap && p.metrics.peerCap < p.metrics.cap - 8).sort((a, b) => (a.metrics.peerCap - a.metrics.cap) - (b.metrics.peerCap - b.metrics.cap)).slice(0, 10);
-  $('tab-planning').innerHTML = `<div class="section-divider"><h2>Future Planning</h2><div class="section-divider-line"></div><div class="section-divider-meta">${future.name} candidate read</div></div><div class="grid grid-3"><div class="card full"><div class="card-hd">Candidate Fit Scores</div><table class="mini-table"><thead><tr><th>Candidate</th><th>Sub</th><th class="num">Fit</th><th class="num">Cap</th><th>Demand</th><th class="num">GG%</th><th>Revenue</th><th class="num">Peer Cap</th><th>Confidence</th><th>Planning Read</th></tr></thead><tbody>${profiles.map(p=>{const med=SCORE_MED;const k=p.score>=med?'good':'warn';return ((_ps=planningSignals(p))=>`<tr><td>${p.show.title}</td><td>${p.show.sub?'Sub':'Add-on'}</td><td class="num">${scoreBadge(p)}</td><td class="num">${pct(p.metrics.cap)}</td><td>${signalBadge(_ps.demand)}</td><td class="num">${pct(p.metrics.gg)}</td><td>${signalBadge(_ps.revenue)}</td><td class="num">${pct(p.metrics.peerCap)}</td><td>${signalBadge(_ps.confidence)}</td><td>${_ps.planningRead}</td></tr>`)()}).join('')}</tbody></table></div><div class="card"><div class="card-hd">High Confidence</div><div class="rank-list">${rankItems(profiles.filter(p=>p.metrics.count>=5).slice(0,5),p=>p.show.title,p=>`${p.metrics.count} records · ${pct(p.metrics.cap,0)} cap`,p=>p.score)}</div></div><div class="card"><div class="card-hd">Needs More Data</div><div class="rank-list">${profiles.filter(p=>p.metrics.count<3).map((p,i)=>`<div class="rank-item"><div class="rank-n">${i+1}</div><div class="rank-body"><div class="rank-name">${p.show.title}</div><div class="rank-detail">${p.metrics.count} matching records</div></div></div>`).join('')||'<div class="empty">All candidates have at least 3 matching records.</div>'}</div></div><div class="card"><div class="card-hd">Fit Distribution</div><canvas id="cFuture" class="small-canvas"></canvas></div></div><div class="section-divider" style="margin-top:28px"><h2>Opportunity Engine</h2><div class="section-divider-line"></div><div class="section-divider-meta">Find hidden gems and caution signs</div></div><div class="grid grid-2"><div class="card"><div class="card-hd">Peer-Strong Hidden Gems</div><div class="card-sub">Shows that perform meaningfully better in Bushnell-size venues than nationally.</div><table class="mini-table"><thead><tr><th>Show</th><th class="num">National</th><th class="num">Peer</th><th class="num">Gap</th></tr></thead><tbody>${hidden.map(p=>`<tr><td>${p.show.title}</td><td class="num">${pct(p.metrics.cap)}</td><td class="num">${pct(p.metrics.peerCap)}</td><td class="num">+${pct(p.metrics.peerCap-p.metrics.cap)}</td></tr>`).join('')}</tbody></table></div><div class="card"><div class="card-hd">Caution List</div><div class="card-sub">Shows where the peer venue lens trails the full national average.</div><table class="mini-table"><thead><tr><th>Show</th><th class="num">National</th><th class="num">Peer</th><th class="num">Gap</th></tr></thead><tbody>${risky.map(p=>`<tr><td>${p.show.title} ${contextWeekCount(p.rows)}</td><td class="num">${pct(p.metrics.cap)}</td><td class="num">${pct(p.metrics.peerCap)}</td><td class="num">${pct(p.metrics.peerCap-p.metrics.cap)}</td></tr>`).join('')}</tbody></table></div></div>`;
+  $('tab-planning').innerHTML = `<div class="section-divider"><h2>Future Planning</h2><div class="section-divider-line"></div><div class="section-divider-meta">${future.name} candidate read</div></div><div class="grid grid-3"><div class="card full"><div class="card-hd">Candidate Fit Scores</div><table class="mini-table"><thead><tr><th>Candidate</th><th>Engagement</th><th class="num">Fit</th><th class="num">Cap</th><th>Demand</th><th class="num">GG%</th><th>Revenue</th><th class="num">Peer Cap</th><th>Confidence</th><th>Planning Read</th></tr></thead><tbody>${profiles.map(p=>{const med=SCORE_MED;const k=p.score>=med?'good':'warn';return ((_ps=planningSignals(p))=>`<tr><td>${p.show.title}</td><td>${(()=>{const _fsPl=_factsheets[p.show.title];const _spPl=_fsPl&&_fsPl.splitPointGross?'<br><span style="color:#d99400;font-size:.6rem">$'+Math.round(_fsPl.splitPointGross/1000)+'K target</span>':'';return(p.show.sub?'Sub':'Add-on')+_spPl;})()}</td><td class="num">${scoreBadge(p)}</td><td class="num">${pct(p.metrics.cap)}</td><td>${signalBadge(_ps.demand)}</td><td class="num">${pct(p.metrics.gg)}</td><td>${signalBadge(_ps.revenue)}</td><td class="num">${pct(p.metrics.peerCap)}</td><td>${signalBadge(_ps.confidence)}</td><td>${_ps.planningRead}</td></tr>`)()}).join('')}</tbody></table></div><div class="card"><div class="card-hd">High Confidence</div><div class="rank-list">${rankItems(profiles.filter(p=>p.metrics.count>=5).slice(0,5),p=>p.show.title,p=>`${p.metrics.count} records · ${pct(p.metrics.cap,0)} cap`,p=>p.score)}</div></div><div class="card"><div class="card-hd">Needs More Data</div><div class="rank-list">${profiles.filter(p=>p.metrics.count<3).map((p,i)=>`<div class="rank-item"><div class="rank-n">${i+1}</div><div class="rank-body"><div class="rank-name">${p.show.title}</div><div class="rank-detail">${p.metrics.count} matching records</div></div></div>`).join('')||'<div class="empty">All candidates have at least 3 matching records.</div>'}</div></div><div class="card"><div class="card-hd">Fit Distribution</div><canvas id="cFuture" class="small-canvas"></canvas></div></div><div class="section-divider" style="margin-top:28px"><h2>Opportunity Engine</h2><div class="section-divider-line"></div><div class="section-divider-meta">Find hidden gems and caution signs</div></div><div class="grid grid-2"><div class="card"><div class="card-hd">Peer-Strong Hidden Gems</div><div class="card-sub">Shows that perform meaningfully better in Bushnell-size venues than nationally.</div><table class="mini-table"><thead><tr><th>Show</th><th class="num">National</th><th class="num">Peer</th><th class="num">Gap</th></tr></thead><tbody>${hidden.map(p=>`<tr><td>${p.show.title}</td><td class="num">${pct(p.metrics.cap)}</td><td class="num">${pct(p.metrics.peerCap)}</td><td class="num">+${pct(p.metrics.peerCap-p.metrics.cap)}</td></tr>`).join('')}</tbody></table></div><div class="card"><div class="card-hd">Caution List</div><div class="card-sub">Shows where the peer venue lens trails the full national average.</div><table class="mini-table"><thead><tr><th>Show</th><th class="num">National</th><th class="num">Peer</th><th class="num">Gap</th></tr></thead><tbody>${risky.map(p=>`<tr><td>${p.show.title} ${contextWeekCount(p.rows)}</td><td class="num">${pct(p.metrics.cap)}</td><td class="num">${pct(p.metrics.peerCap)}</td><td class="num">${pct(p.metrics.peerCap-p.metrics.cap)}</td></tr>`).join('')}</tbody></table></div></div>`;
   chartFit(profiles, 'cFuture');
+  if (STATE.season === '2026-2027') updateFactsheetKPIs();
 }
 
 function planningRead(p) {

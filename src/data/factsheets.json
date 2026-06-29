@@ -214,110 +214,6 @@
         }
       }
     },
-    "Boop!": {
-      "hall": "Mortensen Hall",
-      "season": "2026-2027",
-      "subType": "core",
-      "splitPointGross": 1009672,
-      "grossPotentialWithRest": 1810763,
-      "grossPotentialExclRest": 1724235,
-      "sellableCapacityRunTotal": 21632,
-      "contractedSellablePerPerf": 2704,
-      "holds": {
-        "house": 0,
-        "presenter": 50,
-        "troubleBO": 10,
-        "troubleFOH": 10,
-        "other": 0,
-        "notes": "Presenter: 50 house seats per performance for purchase, 20 comps per performance. House holds per Boop! contract differ \u2014 no standard show holds listed; Pit is NOT for sale (0 seats)."
-      },
-      "performances": [
-        {
-          "date": "2026-11-10",
-          "time": "7:30 PM",
-          "tier": "C"
-        },
-        {
-          "date": "2026-11-11",
-          "time": "7:30 PM",
-          "tier": "C"
-        },
-        {
-          "date": "2026-11-12",
-          "time": "7:30 PM",
-          "tier": "B"
-        },
-        {
-          "date": "2026-11-13",
-          "time": "7:30 PM",
-          "tier": "A"
-        },
-        {
-          "date": "2026-11-14",
-          "time": "2:00 PM",
-          "tier": "A"
-        },
-        {
-          "date": "2026-11-14",
-          "time": "7:30 PM",
-          "tier": "A"
-        },
-        {
-          "date": "2026-11-15",
-          "time": "1:00 PM",
-          "tier": "A"
-        },
-        {
-          "date": "2026-11-15",
-          "time": "6:30 PM",
-          "tier": "C"
-        }
-      ],
-      "pricing": {
-        "A": {
-          "Broadway Circle": 139.0,
-          "Mezzanine \u2013 Prime": 139.0,
-          "Orchestra Prime": 129.0,
-          "Mezzanine \u2013 Front": 115.0,
-          "Orchestra Perimeter \u2013 Side": 65.0,
-          "Mezzanine \u2013 Middle": 65.0,
-          "Balcony \u2013 Prime": 65.0,
-          "Balcony Front": 41.0,
-          "Mezzanine \u2013 Economy": 41.0,
-          "Balcony \u2013 Middle": 32.0,
-          "Balcony \u2013 Economy": 32.0,
-          "ADA / Accessible": 32.0
-        },
-        "B": {
-          "Broadway Circle": 125.0,
-          "Mezzanine \u2013 Prime": 125.0,
-          "Orchestra Prime": 115.0,
-          "Mezzanine \u2013 Front": 94.0,
-          "Orchestra Perimeter \u2013 Side": 65.0,
-          "Mezzanine \u2013 Middle": 65.0,
-          "Balcony \u2013 Prime": 65.0,
-          "Balcony Front": 41.0,
-          "Mezzanine \u2013 Economy": 41.0,
-          "Balcony \u2013 Middle": 32.0,
-          "Balcony \u2013 Economy": 32.0,
-          "ADA / Accessible": 32.0
-        },
-        "C": {
-          "Broadway Circle": 115.0,
-          "Mezzanine \u2013 Prime": 115.0,
-          "Orchestra Prime": 105.0,
-          "Mezzanine \u2013 Front": 85.0,
-          "Orchestra Perimeter \u2013 Side": 64.0,
-          "Mezzanine \u2013 Middle": 64.0,
-          "Balcony \u2013 Prime": 64.0,
-          "Balcony Front": 41.0,
-          "Mezzanine \u2013 Economy": 41.0,
-          "Balcony \u2013 Middle": 32.0,
-          "Balcony \u2013 Economy": 32.0,
-          "ADA / Accessible": 32.0
-        }
-      }
-    },
     "Hell's Kitchen": {
       "hall": "Mortensen Hall",
       "season": "2026-2027",
@@ -734,110 +630,6 @@
         }
       }
     },
-    "Operation Mincemeat": {
-      "hall": "Mortensen Hall",
-      "season": "2026-2027",
-      "subType": "core",
-      "splitPointGross": 955795,
-      "grossPotentialWithRest": 1890073,
-      "grossPotentialExclRest": 1801081,
-      "sellableCapacityRunTotal": 22248,
-      "contractedSellablePerPerf": 2781,
-      "holds": {
-        "house": 40,
-        "presenter": 40,
-        "troubleBO": 10,
-        "troubleFOH": 10,
-        "other": 0,
-        "notes": "House varies by day: 40 seats on Fri Eve/Sat Mat/Sat Eve/Sun Mat; 20 seats on Tue/Wed/Thu Eve/Sun Eve. Presenter same pattern. Using 40 as conservative default \u2014 Brandon may override per performance."
-      },
-      "performances": [
-        {
-          "date": "2027-05-04",
-          "time": "7:30 PM",
-          "tier": "B"
-        },
-        {
-          "date": "2027-05-05",
-          "time": "7:30 PM",
-          "tier": "B"
-        },
-        {
-          "date": "2027-05-06",
-          "time": "7:30 PM",
-          "tier": "B"
-        },
-        {
-          "date": "2027-05-07",
-          "time": "7:30 PM",
-          "tier": "A"
-        },
-        {
-          "date": "2027-05-08",
-          "time": "2:00 PM",
-          "tier": "A"
-        },
-        {
-          "date": "2027-05-08",
-          "time": "7:30 PM",
-          "tier": "A"
-        },
-        {
-          "date": "2027-05-09",
-          "time": "1:00 PM",
-          "tier": "A"
-        },
-        {
-          "date": "2027-05-09",
-          "time": "6:30 PM",
-          "tier": "C"
-        }
-      ],
-      "pricing": {
-        "A": {
-          "Broadway Circle": 139.0,
-          "Mezzanine \u2013 Prime": 139.0,
-          "Orchestra Prime": 129.0,
-          "Mezzanine \u2013 Front": 115.0,
-          "Orchestra Perimeter \u2013 Side": 65.0,
-          "Mezzanine \u2013 Middle": 65.0,
-          "Balcony \u2013 Prime": 65.0,
-          "Balcony Front": 41.0,
-          "Mezzanine \u2013 Economy": 41.0,
-          "Balcony \u2013 Middle": 32.0,
-          "Balcony \u2013 Economy": 32.0,
-          "ADA / Accessible": 32.0
-        },
-        "B": {
-          "Broadway Circle": 125.0,
-          "Mezzanine \u2013 Prime": 125.0,
-          "Orchestra Prime": 115.0,
-          "Mezzanine \u2013 Front": 94.0,
-          "Orchestra Perimeter \u2013 Side": 65.0,
-          "Mezzanine \u2013 Middle": 65.0,
-          "Balcony \u2013 Prime": 65.0,
-          "Balcony Front": 41.0,
-          "Mezzanine \u2013 Economy": 41.0,
-          "Balcony \u2013 Middle": 32.0,
-          "Balcony \u2013 Economy": 32.0,
-          "ADA / Accessible": 32.0
-        },
-        "C": {
-          "Broadway Circle": 115.0,
-          "Mezzanine \u2013 Prime": 115.0,
-          "Orchestra Prime": 105.0,
-          "Mezzanine \u2013 Front": 85.0,
-          "Orchestra Perimeter \u2013 Side": 64.0,
-          "Mezzanine \u2013 Middle": 64.0,
-          "Balcony \u2013 Prime": 64.0,
-          "Balcony Front": 41.0,
-          "Mezzanine \u2013 Economy": 41.0,
-          "Balcony \u2013 Middle": 32.0,
-          "Balcony \u2013 Economy": 32.0,
-          "ADA / Accessible": 32.0
-        }
-      }
-    },
     "The Outsiders": {
       "hall": "Mortensen Hall",
       "season": "2026-2027",
@@ -1016,6 +808,214 @@
         "C": {}
       },
       "_notes": "Single-tier show \u2014 all performances use Tier A pricing. Tier B and C left empty intentionally. Belding Theater sections differ from Mortensen. No subscriber pricing configured for Belding."
+    },
+    "BOOP! The Betty Boop Musical": {
+      "hall": "Mortensen Hall",
+      "season": "2026-2027",
+      "subType": "core",
+      "splitPointGross": 1009672,
+      "grossPotentialWithRest": 1810763,
+      "grossPotentialExclRest": 1724235,
+      "sellableCapacityRunTotal": 21632,
+      "contractedSellablePerPerf": 2704,
+      "holds": {
+        "house": 0,
+        "presenter": 50,
+        "troubleBO": 10,
+        "troubleFOH": 10,
+        "other": 0,
+        "notes": "Presenter: 50 house seats per performance for purchase, 20 comps per performance. House holds per Boop! contract differ \u2014 no standard show holds listed; Pit is NOT for sale (0 seats)."
+      },
+      "performances": [
+        {
+          "date": "2026-11-10",
+          "time": "7:30 PM",
+          "tier": "C"
+        },
+        {
+          "date": "2026-11-11",
+          "time": "7:30 PM",
+          "tier": "C"
+        },
+        {
+          "date": "2026-11-12",
+          "time": "7:30 PM",
+          "tier": "B"
+        },
+        {
+          "date": "2026-11-13",
+          "time": "7:30 PM",
+          "tier": "A"
+        },
+        {
+          "date": "2026-11-14",
+          "time": "2:00 PM",
+          "tier": "A"
+        },
+        {
+          "date": "2026-11-14",
+          "time": "7:30 PM",
+          "tier": "A"
+        },
+        {
+          "date": "2026-11-15",
+          "time": "1:00 PM",
+          "tier": "A"
+        },
+        {
+          "date": "2026-11-15",
+          "time": "6:30 PM",
+          "tier": "C"
+        }
+      ],
+      "pricing": {
+        "A": {
+          "Broadway Circle": 139.0,
+          "Mezzanine \u2013 Prime": 139.0,
+          "Orchestra Prime": 129.0,
+          "Mezzanine \u2013 Front": 115.0,
+          "Orchestra Perimeter \u2013 Side": 65.0,
+          "Mezzanine \u2013 Middle": 65.0,
+          "Balcony \u2013 Prime": 65.0,
+          "Balcony Front": 41.0,
+          "Mezzanine \u2013 Economy": 41.0,
+          "Balcony \u2013 Middle": 32.0,
+          "Balcony \u2013 Economy": 32.0,
+          "ADA / Accessible": 32.0
+        },
+        "B": {
+          "Broadway Circle": 125.0,
+          "Mezzanine \u2013 Prime": 125.0,
+          "Orchestra Prime": 115.0,
+          "Mezzanine \u2013 Front": 94.0,
+          "Orchestra Perimeter \u2013 Side": 65.0,
+          "Mezzanine \u2013 Middle": 65.0,
+          "Balcony \u2013 Prime": 65.0,
+          "Balcony Front": 41.0,
+          "Mezzanine \u2013 Economy": 41.0,
+          "Balcony \u2013 Middle": 32.0,
+          "Balcony \u2013 Economy": 32.0,
+          "ADA / Accessible": 32.0
+        },
+        "C": {
+          "Broadway Circle": 115.0,
+          "Mezzanine \u2013 Prime": 115.0,
+          "Orchestra Prime": 105.0,
+          "Mezzanine \u2013 Front": 85.0,
+          "Orchestra Perimeter \u2013 Side": 64.0,
+          "Mezzanine \u2013 Middle": 64.0,
+          "Balcony \u2013 Prime": 64.0,
+          "Balcony Front": 41.0,
+          "Mezzanine \u2013 Economy": 41.0,
+          "Balcony \u2013 Middle": 32.0,
+          "Balcony \u2013 Economy": 32.0,
+          "ADA / Accessible": 32.0
+        }
+      }
+    },
+    "Operation Mincemeat: A New Musical": {
+      "hall": "Mortensen Hall",
+      "season": "2026-2027",
+      "subType": "core",
+      "splitPointGross": 955795,
+      "grossPotentialWithRest": 1890073,
+      "grossPotentialExclRest": 1801081,
+      "sellableCapacityRunTotal": 22248,
+      "contractedSellablePerPerf": 2781,
+      "holds": {
+        "house": 40,
+        "presenter": 40,
+        "troubleBO": 10,
+        "troubleFOH": 10,
+        "other": 0,
+        "notes": "House varies by day: 40 seats on Fri Eve/Sat Mat/Sat Eve/Sun Mat; 20 seats on Tue/Wed/Thu Eve/Sun Eve. Presenter same pattern. Using 40 as conservative default \u2014 Brandon may override per performance."
+      },
+      "performances": [
+        {
+          "date": "2027-05-04",
+          "time": "7:30 PM",
+          "tier": "B"
+        },
+        {
+          "date": "2027-05-05",
+          "time": "7:30 PM",
+          "tier": "B"
+        },
+        {
+          "date": "2027-05-06",
+          "time": "7:30 PM",
+          "tier": "B"
+        },
+        {
+          "date": "2027-05-07",
+          "time": "7:30 PM",
+          "tier": "A"
+        },
+        {
+          "date": "2027-05-08",
+          "time": "2:00 PM",
+          "tier": "A"
+        },
+        {
+          "date": "2027-05-08",
+          "time": "7:30 PM",
+          "tier": "A"
+        },
+        {
+          "date": "2027-05-09",
+          "time": "1:00 PM",
+          "tier": "A"
+        },
+        {
+          "date": "2027-05-09",
+          "time": "6:30 PM",
+          "tier": "C"
+        }
+      ],
+      "pricing": {
+        "A": {
+          "Broadway Circle": 139.0,
+          "Mezzanine \u2013 Prime": 139.0,
+          "Orchestra Prime": 129.0,
+          "Mezzanine \u2013 Front": 115.0,
+          "Orchestra Perimeter \u2013 Side": 65.0,
+          "Mezzanine \u2013 Middle": 65.0,
+          "Balcony \u2013 Prime": 65.0,
+          "Balcony Front": 41.0,
+          "Mezzanine \u2013 Economy": 41.0,
+          "Balcony \u2013 Middle": 32.0,
+          "Balcony \u2013 Economy": 32.0,
+          "ADA / Accessible": 32.0
+        },
+        "B": {
+          "Broadway Circle": 125.0,
+          "Mezzanine \u2013 Prime": 125.0,
+          "Orchestra Prime": 115.0,
+          "Mezzanine \u2013 Front": 94.0,
+          "Orchestra Perimeter \u2013 Side": 65.0,
+          "Mezzanine \u2013 Middle": 65.0,
+          "Balcony \u2013 Prime": 65.0,
+          "Balcony Front": 41.0,
+          "Mezzanine \u2013 Economy": 41.0,
+          "Balcony \u2013 Middle": 32.0,
+          "Balcony \u2013 Economy": 32.0,
+          "ADA / Accessible": 32.0
+        },
+        "C": {
+          "Broadway Circle": 115.0,
+          "Mezzanine \u2013 Prime": 115.0,
+          "Orchestra Prime": 105.0,
+          "Mezzanine \u2013 Front": 85.0,
+          "Orchestra Perimeter \u2013 Side": 64.0,
+          "Mezzanine \u2013 Middle": 64.0,
+          "Balcony \u2013 Prime": 64.0,
+          "Balcony Front": 41.0,
+          "Mezzanine \u2013 Economy": 41.0,
+          "Balcony \u2013 Middle": 32.0,
+          "Balcony \u2013 Economy": 32.0,
+          "ADA / Accessible": 32.0
+        }
+      }
     }
   }
 }
