@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+<meta name="googlebot" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Broadway Touring · Box Office Manager v1.0</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Libre+Franklin:ital,wght@0,300;0,400;0,600;0,700;0,900;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="js/utils.js"></script>
+<style>
+:root{
+  --ink:#141414;--ink2:#3a3a3a;--ink3:#595959;--rule:#d8d4ce;--rule2:#ece9e4;
+  --bg:#fdf8f4;--bg2:#f3f1ee;--bg3:#edeae6;--amber:#003865;--amber-lt:#e4ecf8;
+  --amber-md:#6798b9;--teal:#0A6B5E;--teal-lt:#e2f2f0;--rose:#B0303A;--rose-lt:#fde8e9;
+  --cobalt:#1A4E8A;--cobalt-lt:#e4ecf8;--gold:#ff9e1b;
+  --serif:'Libre Baskerville',Georgia,serif;--sans:'Libre Franklin',system-ui,sans-serif;--mono:'IBM Plex Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:13px;min-height:100vh}.masthead{background:var(--ink);color:#fff;padding:0 32px;display:flex;align-items:stretch;border-bottom:3px solid var(--gold);position:sticky;top:0;z-index:50;box-shadow:0 2px 12px rgba(0,0,0,.18)}.masthead-brand{display:flex;align-items:center;gap:16px;padding:14px 0;border-right:1px solid rgba(255,255,255,.12);padding-right:24px;margin-right:24px}.brand-icon{width:36px;height:36px;background:#003865;border-radius:2px;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:1.1rem;font-weight:700;color:#fff;flex-shrink:0}.brand-text h1{font-family:var(--serif);font-size:1.1rem;font-weight:700;color:#fff;letter-spacing:-.01em;line-height:1.1}.brand-text .sub{font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-top:3px}.masthead-status{display:flex;align-items:center;gap:6px;font-size:.62rem;color:rgba(255,255,255,.45);letter-spacing:.05em}.masthead-status .dot{width:6px;height:6px;border-radius:50%;background:#5dbf8a;flex-shrink:0;box-shadow:0 0 0 3px rgba(93,191,138,.2)}.masthead-status strong{color:rgba(255,255,255,.8)}.masthead-actions{margin-left:auto;display:flex;align-items:center;gap:8px}.btn{font-family:var(--sans);font-size:.62rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:8px 14px;border-radius:2px;cursor:pointer;transition:all .15s;white-space:nowrap;border:none}.btn-primary{background:var(--amber);color:#fff}.btn-primary:hover{background:#002a4b}.btn-outline{background:transparent;color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.2)}.btn-outline:hover{border-color:rgba(255,255,255,.5);color:#fff}.btn-ghost{background:transparent;color:var(--ink3);border:1px solid var(--rule);font-family:var(--sans)}.btn-ghost:hover{border-color:var(--amber);color:var(--amber)}.kpi-strip{display:grid;grid-template-columns:repeat(8,1fr);border-bottom:1px solid var(--rule);background:#fff}.kpi-cell{padding:18px 22px;border-right:1px solid var(--rule);position:relative}.kpi-cell:last-child{border-right:none}.kpi-cell:after{content:'';position:absolute;bottom:0;left:22px;right:22px;height:2px;background:transparent;transition:background .2s}.kpi-cell:hover:after{background:var(--amber)}.kpi-label{font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-bottom:6px;font-weight:500}.kpi-value{font-family:var(--serif);font-size:1.55rem;font-weight:700;color:var(--ink);line-height:1;letter-spacing:-.02em}.kpi-sub{font-size:.58rem;color:var(--ink3);margin-top:4px}.workspace{display:flex;min-height:calc(100vh - 108px);max-width:3840px;margin-left:auto;margin-right:auto}.sidebar{width:240px;flex-shrink:0;background:#fff;border-right:1px solid var(--rule);display:flex;flex-direction:column;overflow-y:auto}.sidebar-section{padding:14px 16px;border-bottom:1px solid var(--rule2)}.sidebar-label{display:block;font-size:.56rem;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:9px}.pill-row{display:flex;gap:5px;flex-wrap:wrap}.pill{font-family:var(--sans);font-size:.58rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:20px;cursor:pointer;transition:all .15s;border:1px solid var(--rule);background:var(--bg);color:var(--ink3)}.pill.active{border-color:var(--amber);color:var(--amber);background:var(--amber-lt)}.pill:hover:not(.active){border-color:var(--ink3);color:var(--ink2)}select,input[type=text],input[type=number]{width:100%;background:var(--bg);border:1px solid var(--rule);color:var(--ink);font-family:var(--sans);font-size:.72rem;padding:7px 10px;border-radius:2px;outline:none}select:focus,input[type=text]:focus,input[type=number]:focus,.pill:focus,.btn:focus{outline:2px solid var(--amber);outline-offset:2px}.main-pane{flex:1;overflow:hidden;display:flex;flex-direction:column;min-width:0}.nav-tabs{display:flex;background:#fff;border-bottom:1px solid var(--rule);padding:0 28px;flex-shrink:0}.nav-tab{font-family:var(--sans);font-size:.62rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:10px 16px;cursor:pointer;color:var(--ink3);border-bottom:3px solid transparent;margin-bottom:-1px;border-radius:3px 3px 0 0;transition:all .15s;user-select:none}.nav-tab:hover{color:var(--ink);background:rgba(0,56,101,.06)}.nav-tab.active{color:var(--bg);background:var(--ink);border-bottom-color:var(--ink)}.nav-tab.tab-right{margin-left:auto}.nav-tab.tab-right ~ .nav-tab.tab-right{margin-left:0}.panel{display:none;padding:24px 28px;overflow-y:auto;flex:1}.panel.active{display:block}.section-divider{display:flex;align-items:center;gap:12px;margin-bottom:16px}.section-divider h2{font-family:var(--serif);font-size:.95rem;color:var(--ink);white-space:nowrap}.section-divider-line{flex:1;height:1px;background:var(--rule2)}.section-divider-meta{font-size:.58rem;color:var(--ink3)}.grid{display:grid;gap:18px}.grid-2{grid-template-columns:1fr 1fr}.grid-3{grid-template-columns:repeat(3,1fr)}.grid-4{grid-template-columns:repeat(4,1fr)}.card{background:#fff;border:1px solid var(--rule);border-radius:3px;padding:20px}.card.full{grid-column:1/-1}.card-hd{font-size:.58rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-bottom:4px}.card-title{font-family:var(--serif);font-size:1rem;color:var(--ink);margin-bottom:5px}.card-sub{font-size:.62rem;color:var(--ink3);line-height:1.55;margin-bottom:14px}.callout{background:#fff;border:1px solid var(--rule);border-left:4px solid var(--amber);padding:22px;border-radius:3px}.callout.good{border-left-color:var(--teal)}.callout.warn{border-left-color:var(--rose)}.callout h3{font-family:var(--serif);font-size:1.25rem;margin-bottom:8px;color:var(--ink)}.callout p{font-size:.72rem;color:var(--ink2);line-height:1.7}.mini-table{width:100%;border-collapse:collapse;font-size:.68rem}.mini-table th{font-size:.55rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);background:var(--bg2);text-align:left;padding:9px;border-bottom:2px solid var(--rule)}.mini-table td{padding:9px;border-bottom:1px solid var(--rule2);color:var(--ink2);vertical-align:middle}.mini-table td.num{text-align:right;font-family:var(--mono);color:var(--ink)}.status{font-size:.5rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:20px;display:inline-flex}.status.good{background:var(--teal-lt);color:var(--teal);border:1px solid rgba(10,107,94,.25)}.status.warn{background:var(--rose-lt);color:var(--rose);border:1px solid rgba(176,48,58,.25)}.status.neutral{background:var(--amber-lt);color:var(--amber);border:1px solid rgba(0,56,101,.2)}.bar-track{height:4px;background:var(--rule2);border-radius:4px;margin-top:6px;overflow:hidden}.bar-fill{height:100%;background:var(--amber);border-radius:4px}.footer{background:var(--ink);color:rgba(255,255,255,.45);padding:10px 32px;display:flex;align-items:center;justify-content:space-between;font-size:.58rem;letter-spacing:.06em;border-top:1px solid rgba(255,255,255,.1);flex-shrink:0}.footer strong{color:rgba(255,255,255,.7)}.empty{padding:24px;color:var(--ink3);font-size:.72rem;text-align:center;background:var(--bg);border:1px dashed var(--rule)}
+/* ── SHOW LIST ── */
+.show-item{font-size:.68rem;padding:8px 10px;border-radius:3px;cursor:pointer;border:1px solid var(--rule2);background:var(--bg);color:var(--ink2);transition:all .15s;line-height:1.25;display:flex;flex-direction:column;gap:3px}
+.show-item:hover{border-color:var(--amber-md);color:var(--ink);background:var(--amber-lt)}
+.show-item.active{border-color:var(--amber);background:var(--amber-lt);color:var(--amber);font-weight:600}
+.show-item-name{font-size:.7rem;font-weight:600;color:inherit}
+.show-item-meta{font-size:.55rem;letter-spacing:.04em;color:var(--ink3);display:flex;gap:6px;align-items:center}
+.show-item.active .show-item-meta{color:var(--amber-md)}
+.show-tag{font-size:.5rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:1px 5px;border-radius:8px;background:var(--bg2);border:1px solid var(--rule);color:var(--ink3)}
+.show-tag.sub{background:var(--amber-lt);border-color:rgba(0,56,101,.2);color:var(--amber)}
+/* ── PEER BADGES ── */
+.peer-badge{display:inline-block;font-size:10px;padding:1px 6px;border-radius:10px;margin-left:4px;font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+.peer-badge-size{background:#003865;color:#fff}.peer-badge-size_extended{background:#5a7fa8;color:#fff}.peer-badge-proximity{background:#c8a84b;color:#003865}.peer-badge-market{background:#e8f0f8;color:#003865;border:1px solid #b0c4d8}
+/* ── CONTEXT BADGES ── */
+.ctx-badge{display:inline-block;font-size:.58rem;padding:1px 5px;border-radius:8px;font-weight:600;margin-left:3px;vertical-align:middle}
+.ctx-weather{background:#fff3cd;color:#856404;border:1px solid #ffc107}.ctx-econ{background:#f8d7da;color:#842029;border:1px solid #f5c2c7}
+/* ── PLACEHOLDER SECTION ── */
+.placeholder-section{border:1px dashed var(--rule);border-radius:3px;background:var(--bg2);padding:20px;text-align:center;color:var(--ink3)}
+.placeholder-section .ph-label{font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600;margin-bottom:6px}
+.placeholder-section .ph-sub{font-size:.65rem;line-height:1.55}
+/* ── JUSTIFICATION ── */
+.justify-section{padding:14px 0;border-bottom:1px solid var(--rule2)}
+.justify-section:last-child{border-bottom:none}
+.justify-label{font-size:.56rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);font-weight:600;margin-bottom:4px;display:block}
+.justify-value{font-size:.78rem;color:var(--ink);line-height:1.55}
+/* ── SCENARIO INPUTS ── */
+.input-section-label{font-size:.56rem;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);font-weight:700;margin:18px 0 10px;display:block}
+.input-group{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.input-group label{font-size:.6rem;font-weight:600;color:var(--ink3);letter-spacing:.05em;text-transform:uppercase;display:block;margin-bottom:4px}
+.input-group input{font-family:var(--mono);font-size:.8rem}
+.input-group input:focus{outline:2px solid var(--amber);outline-offset:2px}
+/* ── SCENARIO OUTPUT ── */
+.scenario-output{background:var(--bg2);border:1px solid var(--rule);border-radius:3px;padding:20px;margin-top:18px}
+.out-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.out-cell .out-label{font-size:.55rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-bottom:5px}
+.out-cell .out-val{font-family:var(--serif);font-size:1.45rem;font-weight:700;color:var(--ink);line-height:1}
+.out-cell .out-val.positive{color:var(--teal)}.out-cell .out-val.negative{color:var(--rose)}
+/* ── SEATING CONFIG MODAL ── */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px}
+.modal{background:#fff;border-radius:3px;width:100%;max-width:720px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.22)}
+.modal-head{padding:18px 24px;border-bottom:1px solid var(--rule);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-head h2{font-family:var(--serif);font-size:1rem;color:var(--ink)}
+.modal-close{background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--ink3);padding:4px 8px;border-radius:2px}.modal-close:hover{color:var(--ink);background:var(--bg2)}
+.modal-body{padding:20px 24px;overflow-y:auto;flex:1}
+.modal-foot{padding:14px 24px;border-top:1px solid var(--rule);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:10px}
+.config-table{width:100%;border-collapse:collapse;font-size:.72rem}
+.config-table th{font-size:.55rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);background:var(--bg2);text-align:left;padding:8px 10px;border-bottom:2px solid var(--rule)}
+.config-table th.num{text-align:right}
+.config-table td{padding:6px 10px;border-bottom:1px solid var(--rule2);vertical-align:middle}
+.config-table td.section-name{font-weight:600;color:var(--ink);width:180px}
+.config-table td.sub-price{font-family:var(--mono);font-size:.65rem;color:var(--ink3);text-align:right}
+.config-table input[type=number]{width:90px;padding:5px 8px;text-align:right;font-family:var(--mono)}
+.config-total{display:flex;align-items:center;justify-content:space-between;padding:10px 10px 0;font-size:.68rem;color:var(--ink2)}
+.config-total strong{font-family:var(--serif);font-size:1rem;color:var(--ink)}
+.config-status{font-size:.62rem;padding:4px 10px;border-radius:20px;font-weight:600;letter-spacing:.06em}
+.config-status.loaded{background:var(--teal-lt);color:var(--teal);border:1px solid rgba(10,107,94,.25)}
+.config-status.empty{background:var(--bg2);color:var(--ink3);border:1px solid var(--rule)}
+/* ── SECTION PRICE INPUTS IN SCENARIO TAB ── */
+.section-price-table{width:100%;border-collapse:collapse;font-size:.72rem;margin-top:6px}
+.section-price-table th{font-size:.52rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);background:var(--bg2);padding:7px 10px;border-bottom:2px solid var(--rule)}
+.section-price-table th.num{text-align:right}
+.section-price-table td{padding:5px 10px;border-bottom:1px solid var(--rule2);vertical-align:middle}
+.section-price-table td.sname{font-size:.68rem;font-weight:600;color:var(--ink)}
+.section-price-table td.sseats{font-family:var(--mono);font-size:.65rem;color:var(--ink3);text-align:right}
+.section-price-table input{width:82px;padding:4px 7px;text-align:right;font-family:var(--mono);font-size:.72rem}
+.weighted-avg-bar{background:var(--bg2);border:1px solid var(--rule);border-radius:3px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;margin-top:10px;font-size:.65rem;color:var(--ink2)}
+.weighted-avg-bar strong{font-family:var(--serif);font-size:1.1rem;color:var(--ink)}
+@media(max-width:1100px){.kpi-strip{grid-template-columns:repeat(4,1fr)}.sidebar{width:210px}.grid-4,.grid-3,.grid-2{grid-template-columns:1fr}.panel{padding:16px}.out-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:700px){.masthead{padding:0 16px}.masthead-status{display:none}.kpi-strip{grid-template-columns:repeat(2,1fr)}.workspace{display:block}.sidebar{width:100%;border-right:none;border-bottom:1px solid var(--rule)}.nav-tabs{overflow-x:auto;padding:0 12px}.nav-tab{white-space:nowrap}}
+</style>
+</head>
+<body>
+
+<!-- ══ MASTHEAD ══ -->
+<header class="masthead">
+  <div class="masthead-brand">
+    <div class="brand-icon">B</div>
+    <div class="brand-text">
+      <h1>Broadway Touring</h1>
+      <div class="sub">Box Office Manager · Demand Monitor</div>
+    </div>
+  </div>
+  <div class="masthead-status">
+    <div class="dot"></div>
+    <span id="dataStatus"><strong>–</strong> shows · <strong>–</strong> weeks data</span>
+  </div>
+  <div class="masthead-actions">
+    <a class="btn btn-outline" href="index.html">⌂ Hub</a>
+    <a class="btn btn-outline" href="dashboard.html">Dashboard</a>
+    <a class="btn btn-outline" href="programming.html">Programming</a>
+    <a class="btn btn-outline" href="exec_summary.html">Exec Summary</a>
+    <button class="btn btn-outline" onclick="openConfigModal()" id="configBtn">⚙ Seating Config <span id="configBadge" class="config-status empty" style="margin-left:6px;">Not Set</span></button>
+    <button class="btn btn-outline" onclick="resetAll()">↺ Reset</button>
+    <button class="btn btn-outline" onclick="window.print()">⎙ Print</button>
+  </div>
+</header>
+
+<!-- ══ KPI STRIP ══ -->
+<div class="kpi-strip">
+  <div class="kpi-cell">
+    <div class="kpi-label">Show</div>
+    <div class="kpi-value" id="kShow">—</div>
+    <div class="kpi-sub">selected show</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-label">Preceding Markets</div>
+    <div class="kpi-value" id="kMarkets">—</div>
+    <div class="kpi-sub">weeks of data</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-label">Prec. Avg Cap</div>
+    <div class="kpi-value" id="kPrecCap">—</div>
+    <div class="kpi-sub">preceding venues</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-label">Prec. Avg Gross</div>
+    <div class="kpi-value" id="kPrecGross">—</div>
+    <div class="kpi-sub">per week avg</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-label">National Avg Cap</div>
+    <div class="kpi-value" id="kNatCap">—</div>
+    <div class="kpi-sub">all touring venues</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-label">Days Out</div>
+    <div class="kpi-value" id="kDays">—</div>
+    <div class="kpi-sub">to opening night</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-label">Projected Revenue</div>
+    <div class="kpi-value" id="kProjected">—</div>
+    <div class="kpi-sub">scenario model</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-label">vs. Baseline</div>
+    <div class="kpi-value" id="kVariance">—</div>
+    <div class="kpi-sub">pricing adjustment delta</div>
+  </div>
+</div>
+
+<!-- ══ WORKSPACE ══ -->
+<div class="workspace">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+
+    <!-- Season -->
+    <div class="sidebar-section">
+      <span class="sidebar-label">Season</span>
+      <div class="pill-row" id="seasonPills">
+        <span class="pill" style="font-size:.52rem;opacity:.5;cursor:default;">Loading…</span>
+      </div>
+    </div>
+
+    <!-- Show list for selected season -->
+    <div class="sidebar-section" style="flex:1;padding-bottom:18px;">
+      <span class="sidebar-label">Show</span>
+      <div id="showList" style="display:grid;gap:5px;">
+        <div class="empty" style="font-size:.62rem;padding:14px;">Loading shows…</div>
+      </div>
+    </div>
+
+    <!-- Peer Venues -->
+    <div class="sidebar-section">
+      <span class="sidebar-label">Peer Venues</span>
+      <div class="pill-row">
+        <span class="pill active" data-peer="size" onclick="setPeer(this,'size')">Size Match</span>
+        <span class="pill" data-peer="extended" onclick="setPeer(this,'extended')">Extended</span>
+        <span class="pill" data-peer="all" onclick="setPeer(this,'all')">All</span>
+      </div>
+    </div>
+
+    <!-- Tour Type -->
+    <div class="sidebar-section">
+      <span class="sidebar-label">Tour Type</span>
+      <div class="pill-row">
+        <span class="pill active" data-equity="all" onclick="setEquity(this,'all')">All</span>
+        <span class="pill" data-equity="equity" onclick="setEquity(this,'equity')">Equity</span>
+        <span class="pill" data-equity="non-equity" onclick="setEquity(this,'non-equity')">Non-Equity</span>
+      </div>
+    </div>
+
+    <!-- How To Use This -->
+    <div class="sidebar-section">
+      <span class="sidebar-label">How To Use This</span>
+      <div class="card-sub" style="margin:0">Select a season, then click a show to load its national touring data. Use the Scenario Model tab to adjust pricing and project gross revenue. Export the Justification tab as a decision record for internal review.</div>
+    </div>
+
+    <!-- Local Sales Data -->
+    <div class="sidebar-section">
+      <span class="sidebar-label">Local Sales Data</span>
+      <div class="card-sub" style="margin-bottom:8px;">Bushnell daily sales and inventory will appear here when POS integration is complete.</div>
+      <span class="status neutral">Coming Soon</span>
+    </div>
+
+  </aside>
+
+  <!-- ── MAIN PANE ── -->
+  <div class="main-pane">
+    <div class="nav-tabs">
+      <div class="nav-tab active" data-tab="markets" onclick="showTab('markets')">Preceding Markets</div>
+      <div class="nav-tab" data-tab="scenario" onclick="showTab('scenario')">Scenario Model</div>
+      <div class="nav-tab" data-tab="justify" onclick="showTab('justify')">Justification</div>
+      <div class="nav-tab tab-right" data-tab="reference" onclick="showTab('reference')">Reference</div>
+    </div>
+
+    <!-- ── TAB: Preceding Markets ── -->
+    <div class="panel active" id="tab-markets">
+
+      <div class="section-divider">
+        <h2>Preceding Market Performance</h2>
+        <div class="section-divider-line"></div>
+        <div class="section-divider-meta" id="precMeta">Select a show to load data</div>
+      </div>
+
+      <div id="precEmptyState" class="empty" style="margin-bottom:18px;">
+        Select a season and show in the sidebar to load preceding market detail.
+      </div>
+
+      <div id="precTableWrap" style="display:none;overflow-x:auto;margin-bottom:24px;">
+        <table class="mini-table" id="precTable">
+          <thead>
+            <tr>
+              <th>Venue</th>
+              <th>City</th>
+              <th>Week Of</th>
+              <th class="num">Gross</th>
+              <th class="num">% Cap Paid</th>
+              <th class="num">Top Price</th>
+            </tr>
+          </thead>
+          <tbody id="precTableBody"></tbody>
+        </table>
+      </div>
+
+      <div class="grid grid-2" id="precSummaryCards" style="display:none;margin-bottom:18px;">
+        <div class="card">
+          <div class="card-hd">Capacity Range</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px;">
+            <div><div class="kpi-label">High</div><div style="font-family:var(--serif);font-size:1.2rem;font-weight:700;" id="sumCapHigh">—</div></div>
+            <div><div class="kpi-label">Avg</div><div style="font-family:var(--serif);font-size:1.2rem;font-weight:700;" id="sumCapAvg">—</div></div>
+            <div><div class="kpi-label">Low</div><div style="font-family:var(--serif);font-size:1.2rem;font-weight:700;" id="sumCapLow">—</div></div>
+          </div>
+          <div class="bar-track" style="margin-top:12px;"><div class="bar-fill" id="sumCapBar" style="width:0%;"></div></div>
+          <div style="font-size:.55rem;color:var(--ink3);margin-top:4px;">avg vs. national avg</div>
+        </div>
+        <div class="card">
+          <div class="card-hd">Gross Range</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px;">
+            <div><div class="kpi-label">High</div><div style="font-family:var(--serif);font-size:1.2rem;font-weight:700;" id="sumGrossHigh">—</div></div>
+            <div><div class="kpi-label">Avg</div><div style="font-family:var(--serif);font-size:1.2rem;font-weight:700;" id="sumGrossAvg">—</div></div>
+            <div><div class="kpi-label">Low</div><div style="font-family:var(--serif);font-size:1.2rem;font-weight:700;" id="sumGrossLow">—</div></div>
+          </div>
+          <div style="font-size:.55rem;color:var(--ink3);margin-top:16px;" id="sumGrossSub">—</div>
+        </div>
+      </div>
+
+    </div><!-- /tab-markets -->
+
+    <!-- ── TAB: Scenario Model ── -->
+    <div class="panel" id="tab-scenario">
+
+      <div class="section-divider">
+        <h2>Scenario Model</h2>
+        <div class="section-divider-line"></div>
+        <div class="section-divider-meta">Adjust pricing and capacity assumptions to project revenue</div>
+      </div>
+
+      <div class="grid grid-2">
+
+        <!-- Inputs -->
+        <div class="card">
+          <div class="card-hd">Show Parameters</div>
+          <div class="card-sub">Enter current on-sale data. Prices are Tue/Wed evening face value — weekly blended rate is applied automatically.</div>
+
+          <span class="input-section-label">Venue &amp; Pacing</span>
+          <div class="input-group">
+            <div>
+              <label for="inpCapacity">Seats per Perf</label>
+              <input type="number" id="inpCapacity" placeholder="2704" min="0" value="2704">
+            </div>
+            <div>
+              <label for="inpNumPerf">Performances</label>
+              <input type="number" id="inpNumPerf" placeholder="8" min="1" max="20" value="8">
+            </div>
+          </div>
+          <div class="input-group">
+            <div>
+              <label for="inpCurrentSold">Tickets Sold (total)</label>
+              <input type="number" id="inpCurrentSold" placeholder="0" min="0">
+            </div>
+            <div>
+              <label for="inpDaysOut">Days to Opening</label>
+              <input type="number" id="inpDaysOut" placeholder="45" min="0">
+            </div>
+          </div>
+
+          <!-- Section-based pricing (shown when seating config is loaded) -->
+          <div id="priceSectionMode" style="display:none;">
+            <span class="input-section-label">Prices by Section — Tue/Wed Reference</span>
+            <table class="section-price-table">
+              <thead>
+                <tr>
+                  <th>Section</th>
+                  <th class="num">Seats</th>
+                  <th class="num">Current ($)</th>
+                  <th class="num">Adjusted ($)</th>
+                </tr>
+              </thead>
+              <tbody id="sectionPriceBody"></tbody>
+            </table>
+            <div class="weighted-avg-bar">
+              <span>Seat-weighted avg (current → adjusted, Tue/Wed ref)</span>
+              <div style="display:flex;gap:18px;align-items:center;">
+                <span>Current: <strong id="wAvgCurrent">—</strong></span>
+                <span>Adjusted: <strong id="wAvgAdj">—</strong></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Simple tier inputs (fallback when no seating config) -->
+          <div id="priceSimpleMode">
+            <span class="input-section-label">Current Prices — Tue/Wed Reference</span>
+            <div class="input-group">
+              <div>
+                <label for="inpTopPrice">Top Tier ($)</label>
+                <input type="number" id="inpTopPrice" placeholder="199" min="0" step="0.01">
+              </div>
+              <div>
+                <label for="inpMidPrice">Mid Tier ($)</label>
+                <input type="number" id="inpMidPrice" placeholder="129" min="0" step="0.01">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="inpBasePrice">Base Tier ($)</label>
+                <input type="number" id="inpBasePrice" placeholder="79" min="0" step="0.01">
+              </div>
+              <div></div>
+            </div>
+            <span class="input-section-label">Adjusted Prices — Tue/Wed Reference</span>
+            <div class="input-group">
+              <div>
+                <label for="inpAdjTop">Adj. Top ($)</label>
+                <input type="number" id="inpAdjTop" placeholder="219" min="0" step="0.01">
+              </div>
+              <div>
+                <label for="inpAdjMid">Adj. Mid ($)</label>
+                <input type="number" id="inpAdjMid" placeholder="139" min="0" step="0.01">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label for="inpAdjBase">Adj. Base ($)</label>
+                <input type="number" id="inpAdjBase" placeholder="89" min="0" step="0.01">
+              </div>
+              <div></div>
+            </div>
+            <div style="font-size:.6rem;color:var(--ink3);margin-bottom:8px;">
+              <a href="#" style="color:var(--amber);text-decoration:none;" onclick="openConfigModal();return false;">⚙ Add seating configuration</a> for a seat-weighted price calculation.
+            </div>
+          </div>
+
+          <button class="btn btn-primary" style="width:100%;margin-top:8px;padding:11px;" onclick="runScenario()">Run Scenario →</button>
+        </div>
+
+        <!-- Notes -->
+        <div class="card">
+          <div class="card-hd">Model Notes</div>
+          <div class="card-sub" style="margin-bottom:18px;">How the projection is calculated</div>
+          <div style="display:grid;gap:14px;">
+            <div class="callout" style="padding:14px;">
+              <div class="card-hd" style="margin-bottom:4px;">Day-of-Week Blending</div>
+              <div style="font-size:.68rem;color:var(--ink2);line-height:1.6;">
+                Standard Bushnell week: Tue–Fri (1 eve each) + Sat &amp; Sun (mat + eve) = 8 perfs.<br>
+                Day multipliers from subscriber pricing (relative to Tue/Wed):<br>
+                Tue/Wed ×1.00 · Thu/Fri ×1.09 · Sat Mat ×1.22 · Sat Eve ×1.09 · Sun Mat ×1.22 · Sun Eve ×1.00<br>
+                <strong>Standard week blended: ×1.089.</strong> Enter prices at Tue/Wed rate; the model applies 1.089× to get the weekly blended average. For a non-standard week, change the performance count — the blended multiplier stays at the standard schedule ratio.
+              </div>
+            </div>
+            <div class="callout" style="padding:14px;">
+              <div class="card-hd" style="margin-bottom:4px;">Fill Rate &amp; Revenue</div>
+              <div style="font-size:.68rem;color:var(--ink2);line-height:1.6;">Fill rate = tickets sold ÷ (seats × perfs). Projected fill = current rate × days-remaining multiplier (60+ days: ×1.20 · 31–60: ×1.15 · 15–30: ×1.08 · ≤14: ×1.03), capped at 100%.<br><br>Projected gross = seats × perfs × proj. fill rate × (blended adj. avg price).</div>
+            </div>
+            <div class="callout" style="padding:14px;">
+              <div class="card-hd" style="margin-bottom:4px;">Variance</div>
+              <div style="font-size:.68rem;color:var(--ink2);line-height:1.6;">Projected gross minus baseline gross. Positive means the adjusted pricing structure yields additional revenue at the projected fill rate.</div>
+            </div>
+            <div id="scenarioBenchmark" class="placeholder-section" style="display:none;">
+              <div class="ph-label">Preceding Market Benchmark</div>
+              <div class="ph-sub" id="benchmarkText">—</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Output -->
+      <div class="scenario-output" id="scenarioOutput" style="display:none;margin-top:18px;">
+        <div class="card-hd" style="margin-bottom:14px;">Scenario Results</div>
+        <div class="out-grid" style="grid-template-columns:repeat(7,1fr);">
+          <div class="out-cell"><div class="out-label">Baseline Gross</div><div class="out-val" id="outCurrentRev">—</div></div>
+          <div class="out-cell"><div class="out-label">Projected Gross</div><div class="out-val" id="outProjRev">—</div></div>
+          <div class="out-cell"><div class="out-label">Delta ($)</div><div class="out-val" id="outDelta">—</div></div>
+          <div class="out-cell"><div class="out-label">Delta (%)</div><div class="out-val" id="outPct">—</div></div>
+          <div class="out-cell"><div class="out-label">Proj. Fill Rate</div><div class="out-val" id="outFillRate">—</div></div>
+          <div class="out-cell"><div class="out-label">Blended Avg Price</div><div class="out-val" id="outBlendedPrice">—</div></div>
+          <div class="out-cell"><div class="out-label">Total Capacity</div><div class="out-val" id="outTotalCap">—</div></div>
+        </div>
+      </div>
+
+    </div><!-- /tab-scenario -->
+
+    <!-- ── TAB: Justification ── -->
+    <div class="panel" id="tab-justify">
+
+      <div class="section-divider">
+        <h2>Justification Export</h2>
+        <div class="section-divider-line"></div>
+        <div class="section-divider-meta">Decision record for internal pricing review</div>
+      </div>
+
+      <div class="grid grid-2">
+
+        <div class="card">
+          <div class="card-hd" style="margin-bottom:14px;">Pricing Decision Record</div>
+          <div class="justify-section">
+            <span class="justify-label">Show</span>
+            <div class="justify-value" id="justifyTitle">—</div>
+          </div>
+          <div class="justify-section">
+            <span class="justify-label">Season</span>
+            <div class="justify-value" id="justifySeason">—</div>
+          </div>
+          <div class="justify-section">
+            <span class="justify-label">Baseline</span>
+            <div class="justify-value" id="justifyBaseline">Run the Scenario Model to populate.</div>
+          </div>
+          <div class="justify-section">
+            <span class="justify-label">Scenario</span>
+            <div class="justify-value" id="justifyScenario">—</div>
+          </div>
+          <div class="justify-section">
+            <span class="justify-label">Rationale</span>
+            <div class="justify-value" id="justifyRationale">—</div>
+          </div>
+          <div class="justify-section">
+            <span class="justify-label">Market Context</span>
+            <div class="justify-value" id="justifyContext">Based on <strong id="justifyPrecCount">—</strong> preceding market weeks. National tour avg capacity: <strong id="justifyNatCap">—</strong>. Preceding avg capacity: <strong id="justifyPrecAvgCap">—</strong>.</div>
+          </div>
+          <div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--rule2);">
+            <div style="font-size:.58rem;color:var(--ink3);line-height:1.55;">CONFIDENTIAL — For internal use only. This projection is based on League of American Theatres and Producers touring data and Bushnell internal models. Not for external distribution.</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-hd" style="margin-bottom:14px;">Export</div>
+          <div class="card-sub">Use print to save this page as a PDF for internal records. The Preceding Markets table and scenario results will be included.</div>
+          <button class="btn btn-primary" style="width:100%;margin-bottom:10px;" onclick="window.print()">⎙ Print / Save PDF</button>
+          <div class="placeholder-section">
+            <div class="ph-label">Export to Shared Drive</div>
+            <div class="ph-sub">Direct export to OneDrive will be available when the integration is complete.</div>
+          </div>
+        </div>
+
+      </div>
+
+    </div><!-- /tab-justify -->
+
+    <!-- ── TAB: Reference ── -->
+    <div class="panel" id="tab-reference">
+
+      <div class="section-divider">
+        <h2>Reference</h2>
+        <div class="section-divider-line"></div>
+        <div class="section-divider-meta">Field definitions and data methodology</div>
+      </div>
+
+      <div class="grid grid-2">
+
+        <div class="card">
+          <div class="card-hd" style="margin-bottom:12px;">Field Definitions</div>
+          <table class="mini-table">
+            <thead><tr><th>Field</th><th>Definition</th></tr></thead>
+            <tbody>
+              <tr><td><strong>% Cap Paid</strong></td><td>Paid tickets ÷ house capacity. Comps excluded.</td></tr>
+              <tr><td><strong>Prec. Avg Cap</strong></td><td>Mean paid capacity % across all weeks in the preceding market window.</td></tr>
+              <tr><td><strong>Prec. Avg Gross</strong></td><td>Mean weekly gross across all preceding market weeks for the selected show.</td></tr>
+              <tr><td><strong>National Avg Cap</strong></td><td>Mean paid capacity % across all touring venues in the current dataset.</td></tr>
+              <tr><td><strong>Proj. Fill Rate</strong></td><td>Current fill rate × days-remaining multiplier, capped at 100%.</td></tr>
+              <tr><td><strong>Baseline Revenue</strong></td><td>Tickets sold × average of current top/mid/base price tiers.</td></tr>
+              <tr><td><strong>Projected Revenue</strong></td><td>House capacity × projected fill rate × average of adjusted price tiers.</td></tr>
+              <tr><td><strong>Variance</strong></td><td>Projected revenue minus baseline revenue.</td></tr>
+              <tr><td><strong>Sub</strong></td><td>Subscription show — part of the Bushnell season package.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-hd" style="margin-bottom:12px;">Data Source &amp; Methodology</div>
+          <div style="font-size:.68rem;color:var(--ink2);line-height:1.7;display:grid;gap:12px;">
+            <p>Touring performance data is sourced from the League of American Theatres and Producers weekly grosses report. Data covers multiple touring seasons and includes Broadway-equivalent tours at venues comparable in size to the Bushnell.</p>
+            <p>Peer venues are classified by house capacity: <span class="peer-badge peer-badge-size">Size Match</span> venues are within ±15% of Bushnell capacity (~2,200–3,000 seats). <span class="peer-badge peer-badge-size_extended">Extended</span> includes ±30%.</p>
+            <p>The days-remaining multiplier reflects historical touring sales curves: shows typically accelerate sales as opening approaches. The multiplier is conservative and does not account for exceptional demand, blockbusters, or adverse external conditions.</p>
+            <p>All revenue figures are gross (before fees, commissions, or deductions). Top/Mid/Base tier prices should reflect the actual on-sale price points for the Bushnell engagement.</p>
+          </div>
+        </div>
+
+      </div>
+
+    </div><!-- /tab-reference -->
+
+  </div><!-- /main-pane -->
+</div><!-- /workspace -->
+
+<!-- ══ SEATING CONFIG MODAL ══ -->
+<div class="modal-backdrop" id="configModal" style="display:none;" onclick="if(event.target===this)closeConfigModal()">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Seating Configuration</h2>
+      <button class="modal-close" onclick="closeConfigModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:.65rem;color:var(--ink2);line-height:1.6;margin-bottom:16px;">
+        Enter seat counts for each section once — they're saved and reused across sessions. Subscriber prices per show are shown for reference (package ÷ 8 sub shows). Single-ticket prices are entered in the Scenario Model tab each time you run a projection.
+      </div>
+      <table class="config-table" id="configTable">
+        <thead>
+          <tr>
+            <th>Section</th>
+            <th class="num">Seat Count</th>
+            <th class="num">Sub Price/Show<br><span style="font-weight:400;letter-spacing:0;text-transform:none;font-size:.6rem;">(Thu/Fri · pkg ÷ 8)</span></th>
+          </tr>
+        </thead>
+        <tbody id="configTableBody"></tbody>
+      </table>
+      <div class="config-total">
+        <span>Total Seats</span>
+        <strong id="configTotalSeats">0</strong>
+      </div>
+      <div style="font-size:.6rem;color:var(--ink3);margin-top:8px;padding-top:8px;border-top:1px solid var(--rule2);">
+        * Broadway Circle requires a $750/seat annual donation. Sub prices shown are per-show effective rates (2026-27 package ÷ 8 sub shows).
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="clearSeatConfig()">Clear Config</button>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-ghost" onclick="closeConfigModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveSeatConfig()">Save Configuration</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FOOTER ══ -->
+<footer class="footer">
+  <div><strong>BROADWAY TOURING · BOX OFFICE MANAGER</strong> — CONFIDENTIAL · For internal use only</div>
+  <div>v1.0 · June 29, 2026 · Bushnell Center for the Performing Arts</div>
+</footer>
+
+<!-- ══ INLINE SCRIPT ══ -->
+<script>
+(function () {
+  'use strict';
+
+  /* ── State ── */
+  var _records = [];       // all data.json records
+  var _seasons = {};       // seasons.json keyed by season label
+  var _activeSeason = '2025-2026';
+  var _selectedShow = null;   // { leagueName, displayName, sub, open, close }
+  var _peer = 'size';
+  var _equity = 'all';
+  var _scenarioRan = false;
+  var _natCapAvg = null;
+
+  /* ── Season label ordering (newest first in sidebar) ── */
+  var SEASON_ORDER = ['2026-2027','2025-2026','2024-2025','2023-2024','2022-2023','2021-2022','2019-2020'];
+
+  /* ── Tab switching ── */
+  window.showTab = function (tab) {
+    document.querySelectorAll('.panel').forEach(function (p) { p.classList.remove('active'); });
+    var el = document.getElementById('tab-' + tab);
+    if (el) el.classList.add('active');
+    document.querySelectorAll('[data-tab]').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.tab === tab);
+    });
+  };
+
+  /* ── Boot ── */
+  window.loadData = function () {
+    var seasonsP = fetch('data/seasons.json').then(function (r) { return r.json(); });
+    var dataP    = fetch('data/data.json').then(function (r) { return r.json(); });
+
+    Promise.all([seasonsP, dataP]).then(function (results) {
+      _seasons = results[0] || {};
+      var raw = results[1] || {};
+      _records = Array.isArray(raw) ? raw : (raw.records || raw.rows || raw.data || []);
+      init();
+    }).catch(function (e) {
+      console.warn('[box_office] data load failed', e);
+      _records = [];
+      _seasons = {};
+      init();
+    });
+  };
+
+  /* ── Init: build season pills, show list, global KPIs ── */
+  function init() {
+    /* Global national avg cap */
+    var capVals = _records.map(function (r) { return +r.cap_paid || 0; }).filter(Boolean);
+    if (capVals.length) {
+      _natCapAvg = capVals.reduce(function (a, b) { return a + b; }, 0) / capVals.length;
+      var pct = (_natCapAvg < 2 ? _natCapAvg * 100 : _natCapAvg).toFixed(1) + '%';
+      document.getElementById('kNatCap').textContent = pct;
+      document.getElementById('justifyNatCap').textContent = pct;
+    }
+
+    /* Status line */
+    var showNames = Object.keys(
+      _records.reduce(function (acc, r) { if (r.show) acc[r.show] = 1; return acc; }, {})
+    );
+    document.getElementById('dataStatus').innerHTML =
+      '<strong>' + showNames.length + '</strong> shows · <strong>' + _records.length + '</strong> weeks data';
+
+    /* Season pills */
+    var availableSeasons = SEASON_ORDER.filter(function (s) { return _seasons[s]; });
+    var pillContainer = document.getElementById('seasonPills');
+    pillContainer.innerHTML = '';
+    availableSeasons.forEach(function (s) {
+      var sp = document.createElement('span');
+      sp.className = 'pill' + (s === _activeSeason ? ' active' : '');
+      sp.dataset.season = s;
+      sp.textContent = s;
+      sp.onclick = function () { setSeasonFilter(this, s); };
+      pillContainer.appendChild(sp);
+    });
+
+    renderShowList(_activeSeason);
+  }
+
+  /* ── Show list for a season ── */
+  function renderShowList(season) {
+    var container = document.getElementById('showList');
+    var seasonData = _seasons[season];
+
+    if (!seasonData || !seasonData.shows || !seasonData.shows.length) {
+      container.innerHTML = '<div class="empty" style="font-size:.62rem;padding:14px;">No shows found for ' + season + '</div>';
+      return;
+    }
+
+    container.innerHTML = '';
+    seasonData.shows.forEach(function (sh) {
+      /* seasons.json shows may be objects or (in some parsers) stringified */
+      var show = typeof sh === 'string' ? parseShowString(sh) : sh;
+      if (!show) return;
+
+      var isActive = _selectedShow && _selectedShow.leagueName === show.league_name;
+      var openDate = show.open ? formatDate(show.open) : '';
+      var isSub = show.sub === true || show.sub === 'True';
+
+      var item = document.createElement('div');
+      item.className = 'show-item' + (isActive ? ' active' : '');
+      item.innerHTML =
+        '<div class="show-item-name">' + (show.name || show.league_name) + '</div>' +
+        '<div class="show-item-meta">' +
+          (openDate ? '<span>' + openDate + '</span>' : '') +
+          '<span class="show-tag' + (isSub ? ' sub' : '') + '">' + (isSub ? 'Sub' : 'Non-Sub') + '</span>' +
+        '</div>';
+      item.onclick = function () { selectShow(show, season); };
+      container.appendChild(item);
+    });
+  }
+
+  /* Parse a PowerShell-stringified show object (@{key=val; key=val}) */
+  function parseShowString(str) {
+    if (typeof str !== 'string') return str;
+    var obj = {};
+    var inner = str.replace(/^@\{/, '').replace(/\}$/, '');
+    inner.split('; ').forEach(function (pair) {
+      var idx = pair.indexOf('=');
+      if (idx < 0) return;
+      var k = pair.slice(0, idx).trim();
+      var v = pair.slice(idx + 1).trim();
+      obj[k] = v === 'True' ? true : v === 'False' ? false : v;
+    });
+    return obj;
+  }
+
+  function formatDate(iso) {
+    if (!iso) return '';
+    var parts = iso.split('-');
+    if (parts.length < 3) return iso;
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return months[parseInt(parts[1], 10) - 1] + ' ' + parseInt(parts[2], 10);
+  }
+
+  /* ── Select a show ── */
+  window.selectShow = function (show, season) {
+    _selectedShow = {
+      leagueName: show.league_name,
+      displayName: show.name || show.league_name,
+      sub: show.sub === true || show.sub === 'True',
+      open: show.open || '',
+      close: show.close || ''
+    };
+
+    /* Highlight in show list */
+    document.querySelectorAll('.show-item').forEach(function (el) { el.classList.remove('active'); });
+    event && event.currentTarget && event.currentTarget.classList.add('active');
+
+    /* Update KPI show label */
+    var label = _selectedShow.displayName;
+    document.getElementById('kShow').textContent = label.length > 12 ? label.slice(0, 11) + '…' : label;
+
+    /* Justification season */
+    document.getElementById('justifySeason').textContent = (season || _activeSeason);
+    document.getElementById('justifyTitle').textContent = _selectedShow.displayName;
+
+    renderAll();
+  };
+
+  /* ── Filters ── */
+  window.setSeasonFilter = function (btn, val) {
+    _activeSeason = val;
+    _selectedShow = null;
+    document.getElementById('kShow').textContent = '—';
+    document.querySelectorAll('[data-season]').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.season === val);
+    });
+    renderShowList(val);
+    resetMainPanel();
+    resetKPIs();
+  };
+
+  window.setPeer = function (btn, val) {
+    _peer = val;
+    document.querySelectorAll('[data-peer]').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.peer === val);
+    });
+    renderAll();
+  };
+
+  window.setEquity = function (btn, val) {
+    _equity = val;
+    document.querySelectorAll('[data-equity]').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.equity === val);
+    });
+    renderAll();
+  };
+
+  window.resetAll = function () {
+    _selectedShow = null;
+    _peer = 'size';
+    _equity = 'all';
+    _activeSeason = '2025-2026';
+    _scenarioRan = false;
+    document.querySelectorAll('[data-peer]').forEach(function (b) { b.classList.toggle('active', b.dataset.peer === 'size'); });
+    document.querySelectorAll('[data-equity]').forEach(function (b) { b.classList.toggle('active', b.dataset.equity === 'all'); });
+    document.querySelectorAll('[data-season]').forEach(function (b) { b.classList.toggle('active', b.dataset.season === '2025-2026'); });
+    renderShowList('2025-2026');
+    resetMainPanel();
+    resetKPIs();
+  };
+
+  function resetMainPanel() {
+    document.getElementById('precEmptyState').style.display = '';
+    document.getElementById('precEmptyState').textContent = 'Select a show to load preceding market detail.';
+    document.getElementById('precTableWrap').style.display = 'none';
+    document.getElementById('precSummaryCards').style.display = 'none';
+    document.getElementById('precMeta').textContent = 'Select a show to load data';
+    document.getElementById('precTableBody').innerHTML = '';
+  }
+
+  function resetKPIs() {
+    ['kShow','kMarkets','kPrecCap','kPrecGross','kDays','kProjected','kVariance'].forEach(function (id) {
+      var el = document.getElementById(id);
+      el.textContent = '—';
+      el.style.color = '';
+    });
+  }
+
+  /* ── Render dispatcher ── */
+  window.renderAll = function () {
+    renderMarkets();
+    updateKPIs();
+  };
+
+  /* ── Get rows for selected show ── */
+  function getShowRows() {
+    if (!_selectedShow) return [];
+    var lname = _selectedShow.leagueName.toLowerCase();
+    return _records.filter(function (r) {
+      if (!r.show) return false;
+      if (r.show.toLowerCase() !== lname) return false;
+      if (_equity !== 'all') {
+        var eq = r.non_equity ? 'non-equity' : 'equity';
+        if (eq !== _equity) return false;
+      }
+      return true;
+    });
+  }
+
+  /* ── Render preceding markets table ── */
+  window.renderMarkets = function () {
+    var rows = getShowRows();
+    var emptyEl = document.getElementById('precEmptyState');
+    var tableWrap = document.getElementById('precTableWrap');
+    var cards = document.getElementById('precSummaryCards');
+    var metaEl = document.getElementById('precMeta');
+
+    if (!_selectedShow) {
+      emptyEl.style.display = '';
+      tableWrap.style.display = 'none';
+      cards.style.display = 'none';
+      metaEl.textContent = 'Select a show to load data';
+      return;
+    }
+
+    if (!rows.length) {
+      emptyEl.style.display = '';
+      emptyEl.textContent = 'No national touring data found for "' + _selectedShow.displayName + '"';
+      tableWrap.style.display = 'none';
+      cards.style.display = 'none';
+      metaEl.textContent = 'No data';
+      return;
+    }
+
+    emptyEl.style.display = 'none';
+    tableWrap.style.display = '';
+    cards.style.display = '';
+
+    var venueCount = Object.keys(rows.reduce(function (acc, r) { if (r.theatre) acc[r.theatre] = 1; return acc; }, {})).length;
+    metaEl.textContent = rows.length + ' weeks · ' + venueCount + ' venues';
+
+    /* Table */
+    var tbody = document.getElementById('precTableBody');
+    tbody.innerHTML = rows.map(function (r) {
+      var gross = r.gross_gross ? '$' + Math.round(+r.gross_gross).toLocaleString() : '—';
+      var rawCap = +r.cap_paid || 0;
+      var capFmt = rawCap ? (rawCap < 2 ? (rawCap * 100).toFixed(1) : rawCap.toFixed(1)) + '%' : '—';
+      var topFmt = r.top_price ? '$' + (+r.top_price).toFixed(0) : '—';
+      return '<tr>' +
+        '<td>' + (r.theatre || '—') + '</td>' +
+        '<td>' + (r.city || '—') + '</td>' +
+        '<td>' + (r.week_of || '—') + '</td>' +
+        '<td class="num">' + gross + '</td>' +
+        '<td class="num">' + capFmt + '</td>' +
+        '<td class="num">' + topFmt + '</td>' +
+        '</tr>';
+    }).join('');
+
+    /* Summary cards */
+    var capVals = rows.map(function (r) { return +r.cap_paid || 0; }).filter(Boolean)
+      .map(function (v) { return v < 2 ? v * 100 : v; });
+    var grossVals = rows.map(function (r) { return +r.gross_gross || 0; }).filter(Boolean);
+
+    if (capVals.length) {
+      var capAvg = capVals.reduce(function (a, b) { return a + b; }, 0) / capVals.length;
+      document.getElementById('sumCapHigh').textContent = Math.max.apply(null, capVals).toFixed(1) + '%';
+      document.getElementById('sumCapAvg').textContent = capAvg.toFixed(1) + '%';
+      document.getElementById('sumCapLow').textContent = Math.min.apply(null, capVals).toFixed(1) + '%';
+      /* Bar: avg cap vs national avg */
+      var natPct = _natCapAvg ? (_natCapAvg < 2 ? _natCapAvg * 100 : _natCapAvg) : 70;
+      var barW = Math.min(100, Math.round((capAvg / natPct) * 100));
+      document.getElementById('sumCapBar').style.width = barW + '%';
+    }
+    if (grossVals.length) {
+      var grossAvg = grossVals.reduce(function (a, b) { return a + b; }, 0) / grossVals.length;
+      document.getElementById('sumGrossHigh').textContent = '$' + Math.round(Math.max.apply(null, grossVals) / 1000) + 'K';
+      document.getElementById('sumGrossAvg').textContent = '$' + Math.round(grossAvg / 1000) + 'K';
+      document.getElementById('sumGrossLow').textContent = '$' + Math.round(Math.min.apply(null, grossVals) / 1000) + 'K';
+      document.getElementById('sumGrossSub').textContent = rows.length + ' weeks of national touring data';
+    }
+
+    /* Populate scenario benchmark */
+    if (capVals.length) {
+      var avgC = capVals.reduce(function (a, b) { return a + b; }, 0) / capVals.length;
+      var bText = document.getElementById('benchmarkText');
+      bText.textContent = _selectedShow.displayName + ' averaged ' + avgC.toFixed(1) +
+        '% capacity across ' + rows.length + ' preceding market weeks. Use this as a fill rate reference when building the scenario.';
+      document.getElementById('scenarioBenchmark').style.display = '';
+    }
+  };
+
+  /* ── Update KPIs from selected show data ── */
+  window.updateKPIs = function () {
+    var rows = getShowRows();
+    document.getElementById('kMarkets').textContent = rows.length || '—';
+
+    if (rows.length) {
+      var capVals = rows.map(function (r) { return +r.cap_paid || 0; }).filter(Boolean)
+        .map(function (v) { return v < 2 ? v * 100 : v; });
+      if (capVals.length) {
+        document.getElementById('kPrecCap').textContent =
+          (capVals.reduce(function (a, b) { return a + b; }, 0) / capVals.length).toFixed(1) + '%';
+        document.getElementById('justifyPrecAvgCap').textContent =
+          (capVals.reduce(function (a, b) { return a + b; }, 0) / capVals.length).toFixed(1) + '%';
+      }
+      var grossVals = rows.map(function (r) { return +r.gross_gross || 0; }).filter(Boolean);
+      if (grossVals.length) {
+        document.getElementById('kPrecGross').textContent =
+          '$' + Math.round(grossVals.reduce(function (a, b) { return a + b; }, 0) / grossVals.length / 1000) + 'K';
+      }
+    }
+
+    if (_selectedShow && _selectedShow.open) {
+      var today = new Date('2026-06-29');
+      var openDate = new Date(_selectedShow.open);
+      var diff = Math.round((openDate - today) / 86400000);
+      document.getElementById('kDays').textContent = diff > 0 ? diff : '—';
+    }
+  };
+
+  /* ── Seating sections (from 2026-27 subscriber pricing PDF)
+       subThurFri = package price ÷ 8 sub shows, Thu/Fri rate ── */
+  var SECTIONS = [
+    { name: 'Broadway Circle',      subThurFri: 137.75, note: '* requires $750/seat donation' },
+    { name: 'Prime Orchestra / Box',subThurFri: 137.75 },
+    { name: 'Far Side Orchestra',   subThurFri:  80.00 },
+    { name: 'Prime Mezzanine',      subThurFri: 147.75 },
+    { name: 'Front Mezzanine',      subThurFri: 120.63 },
+    { name: 'Mid Mezzanine',        subThurFri:  80.00 },
+    { name: 'Rear Mezzanine',       subThurFri:  56.00 },
+    { name: 'Prime Balcony',        subThurFri:  80.00 },
+    { name: 'Front Balcony',        subThurFri:  56.00 },
+    { name: 'Mid / Rear Balcony',   subThurFri:  46.38 }
+  ];
+  var STORAGE_KEY = 'btd_seat_config';
+  var _seatConfig = null;  // null = not set; array of {name, seats} when set
+
+  /* ── Config modal ── */
+  window.openConfigModal = function () {
+    var saved = _seatConfig || [];
+    var savedMap = {};
+    saved.forEach(function (s) { savedMap[s.name] = s.seats; });
+
+    var tbody = document.getElementById('configTableBody');
+    tbody.innerHTML = SECTIONS.map(function (sec, i) {
+      var seats = savedMap[sec.name] || '';
+      return '<tr>' +
+        '<td class="section-name">' + sec.name + (sec.note ? '<br><span style="font-size:.55rem;color:var(--ink3);font-weight:400;">' + sec.note + '</span>' : '') + '</td>' +
+        '<td style="text-align:right;"><input type="number" class="cfg-seats" data-idx="' + i + '" min="0" max="1000" value="' + seats + '" placeholder="0" oninput="updateConfigTotal()"></td>' +
+        '<td class="sub-price">$' + sec.subThurFri.toFixed(2) + '</td>' +
+        '</tr>';
+    }).join('');
+
+    updateConfigTotal();
+    document.getElementById('configModal').style.display = 'flex';
+  };
+
+  window.closeConfigModal = function () {
+    document.getElementById('configModal').style.display = 'none';
+  };
+
+  window.updateConfigTotal = function () {
+    var total = 0;
+    document.querySelectorAll('.cfg-seats').forEach(function (inp) {
+      total += +inp.value || 0;
+    });
+    document.getElementById('configTotalSeats').textContent = total.toLocaleString();
+  };
+
+  window.saveSeatConfig = function () {
+    var config = [];
+    document.querySelectorAll('.cfg-seats').forEach(function (inp, i) {
+      var seats = +inp.value || 0;
+      config.push({ name: SECTIONS[i].name, seats: seats });
+    });
+    var totalSeats = config.reduce(function (a, b) { return a + b.seats; }, 0);
+    if (!totalSeats) {
+      alert('Enter at least one seat count before saving.');
+      return;
+    }
+    _seatConfig = config;
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(config)); } catch (e) {}
+    applyConfigToScenario();
+    closeConfigModal();
+  };
+
+  window.clearSeatConfig = function () {
+    if (!confirm('Clear seating configuration?')) return;
+    _seatConfig = null;
+    try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+    applyConfigToScenario();
+    closeConfigModal();
+  };
+
+  function loadSeatConfig () {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) _seatConfig = JSON.parse(raw);
+    } catch (e) {}
+    applyConfigToScenario();
+  }
+
+  /* ── Switch scenario tab between section mode and simple mode ── */
+  function applyConfigToScenario () {
+    var badge = document.getElementById('configBadge');
+    if (_seatConfig && _seatConfig.reduce(function (a, b) { return a + b.seats; }, 0) > 0) {
+      badge.textContent = 'Configured';
+      badge.className = 'config-status loaded';
+      document.getElementById('priceSectionMode').style.display = '';
+      document.getElementById('priceSimpleMode').style.display = 'none';
+      buildSectionPriceTable();
+    } else {
+      badge.textContent = 'Not Set';
+      badge.className = 'config-status empty';
+      document.getElementById('priceSectionMode').style.display = 'none';
+      document.getElementById('priceSimpleMode').style.display = '';
+    }
+  }
+
+  function buildSectionPriceTable () {
+    if (!_seatConfig) return;
+    var tbody = document.getElementById('sectionPriceBody');
+    tbody.innerHTML = _seatConfig.map(function (sec, i) {
+      if (!sec.seats) return '';
+      return '<tr>' +
+        '<td class="sname">' + sec.name + '</td>' +
+        '<td class="sseats">' + sec.seats.toLocaleString() + '</td>' +
+        '<td style="text-align:right;"><input type="number" class="sec-cur" data-idx="' + i + '" min="0" step="0.01" placeholder="0.00" oninput="updateWeightedAvg()"></td>' +
+        '<td style="text-align:right;"><input type="number" class="sec-adj" data-idx="' + i + '" min="0" step="0.01" placeholder="0.00" oninput="updateWeightedAvg()"></td>' +
+        '</tr>';
+    }).filter(Boolean).join('');
+    updateWeightedAvg();
+  }
+
+  window.updateWeightedAvg = function () {
+    if (!_seatConfig) return;
+    var totalSeats = 0, curSum = 0, adjSum = 0;
+    document.querySelectorAll('#sectionPriceBody tr').forEach(function (row) {
+      var idx = +row.querySelector('.sec-cur').dataset.idx;
+      var seats = _seatConfig[idx] ? _seatConfig[idx].seats : 0;
+      var cur = +row.querySelector('.sec-cur').value || 0;
+      var adj = +row.querySelector('.sec-adj').value || 0;
+      if (seats && cur) { curSum += seats * cur; totalSeats += seats; }
+      if (seats && adj) adjSum += seats * adj;
+    });
+    var wCur = totalSeats ? curSum / totalSeats : 0;
+    var wAdj = totalSeats ? adjSum / totalSeats : 0;
+    document.getElementById('wAvgCurrent').textContent = wCur ? '$' + wCur.toFixed(2) : '—';
+    document.getElementById('wAvgAdj').textContent = wAdj ? '$' + wAdj.toFixed(2) : '—';
+  };
+
+  function getSectionWeightedAvgs () {
+    var totalSeats = 0, curSum = 0, adjSum = 0, hasCur = false, hasAdj = false;
+    document.querySelectorAll('#sectionPriceBody tr').forEach(function (row) {
+      var idx = +row.querySelector('.sec-cur').dataset.idx;
+      var seats = _seatConfig[idx] ? _seatConfig[idx].seats : 0;
+      var cur = +row.querySelector('.sec-cur').value || 0;
+      var adj = +row.querySelector('.sec-adj').value || 0;
+      if (seats && cur) { curSum += seats * cur; hasCur = true; }
+      if (seats && adj) { adjSum += seats * adj; hasAdj = true; }
+      if (seats && (cur || adj)) totalSeats += seats;
+    });
+    return {
+      cur: hasCur && totalSeats ? curSum / totalSeats : null,
+      adj: hasAdj && totalSeats ? adjSum / totalSeats : null
+    };
+  }
+
+  /* ── Day-of-week blended multiplier (standard Bushnell 8-perf week)
+       Tue eve ×1.00, Wed eve ×1.00, Thu eve ×1.09, Fri eve ×1.09,
+       Sat mat ×1.22, Sat eve ×1.09, Sun mat ×1.22, Sun eve ×1.00
+       Sum = 8.71 / 8 perfs = 1.08875 ── */
+  var STD_BLEND = 8.71 / 8;   // 1.08875
+
+  /* ── Scenario Model ── */
+  window.runScenario = function () {
+    var seatsPerPerf = +document.getElementById('inpCapacity').value || 2704;
+    var numPerf  = +document.getElementById('inpNumPerf').value || 8;
+    var sold     = +document.getElementById('inpCurrentSold').value || 0;
+    var daysOut  = +document.getElementById('inpDaysOut').value || 0;
+
+    var totalCap = seatsPerPerf * numPerf;
+    var blendMult = STD_BLEND;
+
+    /* Determine reference avg prices — section-weighted when config loaded, simple tiers otherwise */
+    var refAvg, adjRefAvg, usingConfig = false;
+
+    var useConfig = _seatConfig && _seatConfig.reduce(function (a, b) { return a + b.seats; }, 0) > 0;
+    if (useConfig) {
+      var avgs = getSectionWeightedAvgs();
+      if (!avgs.cur && !avgs.adj) {
+        alert('Enter at least one section price to run the scenario.');
+        return;
+      }
+      refAvg    = avgs.cur || avgs.adj;
+      adjRefAvg = avgs.adj || avgs.cur;
+      usingConfig = true;
+    } else {
+      var top    = +document.getElementById('inpTopPrice').value || 0;
+      var mid    = +document.getElementById('inpMidPrice').value || 0;
+      var base   = +document.getElementById('inpBasePrice').value || 0;
+      var adjTop = +document.getElementById('inpAdjTop').value || top;
+      var adjMid = +document.getElementById('inpAdjMid').value || mid;
+      var adjBase= +document.getElementById('inpAdjBase').value || base;
+      if (!top) { alert('Enter at least a top price to run the scenario.'); return; }
+      var tierCount    = 1 + (mid > 0 ? 1 : 0) + (base > 0 ? 1 : 0);
+      var adjTierCount = 1 + (adjMid > 0 ? 1 : 0) + (adjBase > 0 ? 1 : 0);
+      refAvg    = (top + mid + base) / tierCount;
+      adjRefAvg = (adjTop + adjMid + adjBase) / adjTierCount;
+    }
+
+    var blendedAvg = refAvg * blendMult;
+    var adjBlended = adjRefAvg * blendMult;
+
+    var fillRate     = totalCap > 0 ? sold / totalCap : 0;
+    var daysMult     = daysOut > 60 ? 1.20 : daysOut > 30 ? 1.15 : daysOut > 14 ? 1.08 : 1.03;
+    var projFillRate = Math.min(fillRate * daysMult, 1.0);
+
+    var baselineGross   = sold * blendedAvg;
+    var projectedGross  = totalCap * projFillRate * adjBlended;
+    var delta = projectedGross - baselineGross;
+    var pct   = baselineGross > 0 ? (delta / baselineGross) * 100 : 0;
+
+    /* Output cells */
+    document.getElementById('outCurrentRev').textContent = '$' + Math.round(baselineGross).toLocaleString();
+    document.getElementById('outProjRev').textContent = '$' + Math.round(projectedGross).toLocaleString();
+    var dEl = document.getElementById('outDelta');
+    dEl.textContent = (delta >= 0 ? '+$' : '-$') + Math.round(Math.abs(delta)).toLocaleString();
+    dEl.className = 'out-val ' + (delta >= 0 ? 'positive' : 'negative');
+    var pEl = document.getElementById('outPct');
+    pEl.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%';
+    pEl.className = 'out-val ' + (pct >= 0 ? 'positive' : 'negative');
+    document.getElementById('outFillRate').textContent = (projFillRate * 100).toFixed(1) + '%';
+    document.getElementById('outBlendedPrice').textContent = '$' + adjBlended.toFixed(2);
+    document.getElementById('outTotalCap').textContent = totalCap.toLocaleString();
+    document.getElementById('scenarioOutput').style.display = '';
+
+    /* KPI strip */
+    document.getElementById('kDays').textContent = daysOut || '—';
+    document.getElementById('kProjected').textContent = '$' + Math.round(projectedGross / 1000) + 'K';
+    var varEl = document.getElementById('kVariance');
+    varEl.textContent = (delta >= 0 ? '+$' : '-$') + Math.round(Math.abs(delta) / 1000) + 'K';
+    varEl.style.color = delta >= 0 ? 'var(--teal)' : 'var(--rose)';
+
+    /* Justification */
+    var showName = _selectedShow ? _selectedShow.displayName : '(no show selected)';
+    document.getElementById('justifyTitle').textContent = showName;
+    document.getElementById('justifyBaseline').textContent =
+      '$' + Math.round(baselineGross).toLocaleString() +
+      ' (' + (fillRate * 100).toFixed(1) + '% of ' + totalCap.toLocaleString() + ' total tickets, ' + daysOut + ' days out)';
+    document.getElementById('justifyScenario').textContent =
+      '$' + Math.round(projectedGross).toLocaleString() +
+      ' (' + (projFillRate * 100).toFixed(1) + '% projected fill · blended avg $' + adjBlended.toFixed(2) + ')';
+
+    var topChange = adjTop - top;
+    var rationale =
+      'Based on a ' + numPerf + '-performance week at ' + seatsPerPerf.toLocaleString() +
+      ' seats per performance (' + totalCap.toLocaleString() + ' total tickets). ' +
+      'At ' + (fillRate * 100).toFixed(1) + '% with ' + daysOut +
+      ' days remaining, the model projects ' + (projFillRate * 100).toFixed(1) + '% fill. ';
+    if (topChange !== 0) {
+      rationale += 'The proposed top-tier adjustment of ' + (topChange > 0 ? '+' : '') + '$' +
+        topChange.toFixed(0) + ' (Tue/Wed reference) yields a weekly blended price of $' +
+        adjBlended.toFixed(2) + '. ';
+    }
+    rationale += 'Projected gross: $' + Math.round(projectedGross).toLocaleString() +
+      ', ' + (delta >= 0 ? 'an increase' : 'a reduction') + ' of $' +
+      Math.abs(Math.round(delta)).toLocaleString() + ' vs. baseline.';
+    document.getElementById('justifyRationale').textContent = rationale;
+
+    var precCount = document.querySelectorAll('#precTableBody tr').length;
+    document.getElementById('justifyPrecCount').textContent = precCount || '—';
+
+    _scenarioRan = true;
+  };
+
+  /* ── Bootstrap ── */
+  document.addEventListener('DOMContentLoaded', function () {
+    loadSeatConfig();
+    loadData();
+  });
+
+}());
+</script>
+
+</body>
+</html>
