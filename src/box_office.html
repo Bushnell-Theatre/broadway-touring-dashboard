@@ -84,6 +84,20 @@
 .section-price-table input{width:82px;padding:4px 7px;text-align:right;font-family:var(--mono);font-size:.72rem}
 .weighted-avg-bar{background:var(--bg2);border:1px solid var(--rule);border-radius:3px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;margin-top:10px;font-size:.65rem;color:var(--ink2)}
 .weighted-avg-bar strong{font-family:var(--serif);font-size:1.1rem;color:var(--ink)}
+/* ── PER-PERFORMANCE TABLE ── */
+.perf-table{width:100%;border-collapse:collapse;font-size:.68rem}
+.perf-table th{font-size:.52rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);background:var(--bg2);padding:8px 10px;border-bottom:2px solid var(--rule);white-space:nowrap}
+.perf-table th.num{text-align:right}
+.perf-table td{padding:5px 8px;border-bottom:1px solid var(--rule2);vertical-align:middle}
+.perf-table td.perf-label{font-size:.68rem;font-weight:600;color:var(--ink);white-space:nowrap}
+.perf-table td.day-type{font-size:.55rem;color:var(--ink3);letter-spacing:.04em}
+.perf-table td.auto-val{font-family:var(--mono);font-size:.65rem;color:var(--ink2);text-align:right}
+.perf-table td.auto-val.proj-rev{color:var(--ink);font-weight:600}
+.perf-table tr.totals-row td{background:var(--bg2);font-weight:700;border-top:2px solid var(--rule);border-bottom:none}
+.perf-table tr.totals-row td.auto-val{color:var(--ink)}
+.perf-table input[type=number]{width:76px;padding:4px 7px;text-align:right;font-family:var(--mono);font-size:.7rem}
+.global-inputs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px}
+.global-inputs label{font-size:.58rem;font-weight:600;color:var(--ink3);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:4px}
 @media(max-width:1100px){.kpi-strip{grid-template-columns:repeat(4,1fr)}.sidebar{width:210px}.grid-4,.grid-3,.grid-2{grid-template-columns:1fr}.panel{padding:16px}.out-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:700px){.masthead{padding:0 16px}.masthead-status{display:none}.kpi-strip{grid-template-columns:repeat(2,1fr)}.workspace{display:block}.sidebar{width:100%;border-right:none;border-bottom:1px solid var(--rule)}.nav-tabs{overflow-x:auto;padding:0 12px}.nav-tab{white-space:nowrap}}
 </style>
 </head>
@@ -107,6 +121,10 @@
     <a class="btn btn-outline" href="dashboard.html">Dashboard</a>
     <a class="btn btn-outline" href="programming.html">Programming</a>
     <a class="btn btn-outline" href="exec_summary.html">Exec Summary</a>
+    <select id="hallSelect" onchange="switchHall(this.value)" style="width:auto;background:transparent;border:1px solid rgba(255,255,255,.2);color:#fff;font-size:.62rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:7px 12px;border-radius:2px;cursor:pointer;">
+      <option value="mortensen" style="background:#141414;">Mortensen Hall</option>
+      <option value="belding" style="background:#141414;">Belding Theater</option>
+    </select>
     <button class="btn btn-outline" onclick="openConfigModal()" id="configBtn">⚙ Seating Config <span id="configBadge" class="config-status empty" style="margin-left:6px;">Not Set</span></button>
     <button class="btn btn-outline" onclick="resetAll()">↺ Reset</button>
     <button class="btn btn-outline" onclick="window.print()">⎙ Print</button>
@@ -217,14 +235,14 @@
   <!-- ── MAIN PANE ── -->
   <div class="main-pane">
     <div class="nav-tabs">
-      <div class="nav-tab active" data-tab="markets" onclick="showTab('markets')">Preceding Markets</div>
-      <div class="nav-tab" data-tab="scenario" onclick="showTab('scenario')">Scenario Model</div>
+      <div class="nav-tab active" data-tab="scenario" onclick="showTab('scenario')">Scenario Model</div>
       <div class="nav-tab" data-tab="justify" onclick="showTab('justify')">Justification</div>
+      <div class="nav-tab" data-tab="markets" onclick="showTab('markets')">Preceding Markets</div>
       <div class="nav-tab tab-right" data-tab="reference" onclick="showTab('reference')">Reference</div>
     </div>
 
     <!-- ── TAB: Preceding Markets ── -->
-    <div class="panel active" id="tab-markets">
+    <div class="panel" id="tab-markets">
 
       <div class="section-divider">
         <h2>Preceding Market Performance</h2>
@@ -277,7 +295,7 @@
     </div><!-- /tab-markets -->
 
     <!-- ── TAB: Scenario Model ── -->
-    <div class="panel" id="tab-scenario">
+    <div class="panel active" id="tab-scenario">
 
       <div class="section-divider">
         <h2>Scenario Model</h2>
@@ -285,133 +303,92 @@
         <div class="section-divider-meta">Adjust pricing and capacity assumptions to project revenue</div>
       </div>
 
+      <!-- Global inputs -->
+      <div class="card" style="margin-bottom:18px;">
+        <div class="card-hd" style="margin-bottom:12px;">Show Parameters</div>
+        <div class="global-inputs">
+          <div>
+            <label for="inpCapacity">Seats per Performance</label>
+            <input type="number" id="inpCapacity" placeholder="2704" min="0" value="2704" oninput="liveCalcPerfs()" style="width:100%;">
+          </div>
+          <div>
+            <label for="inpDaysOut">Days to Opening</label>
+            <input type="number" id="inpDaysOut" placeholder="45" min="0" oninput="liveCalcPerfs()" style="width:100%;">
+          </div>
+          <div style="display:flex;align-items:flex-end;">
+            <button class="btn btn-primary" style="width:100%;padding:9px;" onclick="runScenario()">Run Scenario →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Per-performance table -->
+      <div class="card" style="margin-bottom:18px;overflow-x:auto;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div class="card-hd">Performance-by-Performance Pricing</div>
+          <div style="font-size:.6rem;color:var(--ink3);">Enter prices as face value for each performance · projected revenue updates live</div>
+        </div>
+        <table class="perf-table" id="perfTable">
+          <thead>
+            <tr>
+              <th>Performance</th>
+              <th>Day Type</th>
+              <th class="num">Sold</th>
+              <th class="num">Cur. Fill</th>
+              <th class="num">Cur. Price ($)</th>
+              <th class="num">Adj. Price ($)</th>
+              <th class="num">Proj. Fill</th>
+              <th class="num">Proj. Revenue</th>
+            </tr>
+          </thead>
+          <tbody id="perfTableBody"></tbody>
+          <tfoot>
+            <tr class="totals-row">
+              <td colspan="2" class="perf-label">Totals</td>
+              <td class="auto-val" id="totSold">—</td>
+              <td class="auto-val" id="totCurFill">—</td>
+              <td class="auto-val" id="totCurPrice">—</td>
+              <td class="auto-val" id="totAdjPrice">—</td>
+              <td class="auto-val" id="totProjFill">—</td>
+              <td class="auto-val proj-rev" id="totProjRev">—</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- Notes -->
       <div class="grid grid-2">
-
-        <!-- Inputs -->
         <div class="card">
-          <div class="card-hd">Show Parameters</div>
-          <div class="card-sub">Enter current on-sale data. Prices are Tue/Wed evening face value — weekly blended rate is applied automatically.</div>
-
-          <span class="input-section-label">Venue &amp; Pacing</span>
-          <div class="input-group">
-            <div>
-              <label for="inpCapacity">Seats per Perf</label>
-              <input type="number" id="inpCapacity" placeholder="2704" min="0" value="2704">
+          <div class="card-hd" style="margin-bottom:10px;">Model Notes</div>
+          <div style="display:grid;gap:10px;">
+            <div class="callout" style="padding:12px;">
+              <div class="card-hd" style="margin-bottom:3px;">Fill Rate Projection</div>
+              <div style="font-size:.65rem;color:var(--ink2);line-height:1.55;">Per-performance fill = sold ÷ house capacity. Projected fill = current rate × days-remaining multiplier (60+ days ×1.20 · 31–60 ×1.15 · 15–30 ×1.08 · ≤14 ×1.03), capped at 100%.</div>
             </div>
-            <div>
-              <label for="inpNumPerf">Performances</label>
-              <input type="number" id="inpNumPerf" placeholder="8" min="1" max="20" value="8">
-            </div>
-          </div>
-          <div class="input-group">
-            <div>
-              <label for="inpCurrentSold">Tickets Sold (total)</label>
-              <input type="number" id="inpCurrentSold" placeholder="0" min="0">
-            </div>
-            <div>
-              <label for="inpDaysOut">Days to Opening</label>
-              <input type="number" id="inpDaysOut" placeholder="45" min="0">
-            </div>
-          </div>
-
-          <!-- Section-based pricing (shown when seating config is loaded) -->
-          <div id="priceSectionMode" style="display:none;">
-            <span class="input-section-label">Prices by Section — Tue/Wed Reference</span>
-            <table class="section-price-table">
-              <thead>
-                <tr>
-                  <th>Section</th>
-                  <th class="num">Seats</th>
-                  <th class="num">Current ($)</th>
-                  <th class="num">Adjusted ($)</th>
-                </tr>
-              </thead>
-              <tbody id="sectionPriceBody"></tbody>
-            </table>
-            <div class="weighted-avg-bar">
-              <span>Seat-weighted avg (current → adjusted, Tue/Wed ref)</span>
-              <div style="display:flex;gap:18px;align-items:center;">
-                <span>Current: <strong id="wAvgCurrent">—</strong></span>
-                <span>Adjusted: <strong id="wAvgAdj">—</strong></span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Simple tier inputs (fallback when no seating config) -->
-          <div id="priceSimpleMode">
-            <span class="input-section-label">Current Prices — Tue/Wed Reference</span>
-            <div class="input-group">
-              <div>
-                <label for="inpTopPrice">Top Tier ($)</label>
-                <input type="number" id="inpTopPrice" placeholder="199" min="0" step="0.01">
-              </div>
-              <div>
-                <label for="inpMidPrice">Mid Tier ($)</label>
-                <input type="number" id="inpMidPrice" placeholder="129" min="0" step="0.01">
-              </div>
-            </div>
-            <div class="input-group">
-              <div>
-                <label for="inpBasePrice">Base Tier ($)</label>
-                <input type="number" id="inpBasePrice" placeholder="79" min="0" step="0.01">
-              </div>
-              <div></div>
-            </div>
-            <span class="input-section-label">Adjusted Prices — Tue/Wed Reference</span>
-            <div class="input-group">
-              <div>
-                <label for="inpAdjTop">Adj. Top ($)</label>
-                <input type="number" id="inpAdjTop" placeholder="219" min="0" step="0.01">
-              </div>
-              <div>
-                <label for="inpAdjMid">Adj. Mid ($)</label>
-                <input type="number" id="inpAdjMid" placeholder="139" min="0" step="0.01">
-              </div>
-            </div>
-            <div class="input-group">
-              <div>
-                <label for="inpAdjBase">Adj. Base ($)</label>
-                <input type="number" id="inpAdjBase" placeholder="89" min="0" step="0.01">
-              </div>
-              <div></div>
-            </div>
-            <div style="font-size:.6rem;color:var(--ink3);margin-bottom:8px;">
-              <a href="#" style="color:var(--amber);text-decoration:none;" onclick="openConfigModal();return false;">⚙ Add seating configuration</a> for a seat-weighted price calculation.
-            </div>
-          </div>
-
-          <button class="btn btn-primary" style="width:100%;margin-top:8px;padding:11px;" onclick="runScenario()">Run Scenario →</button>
-        </div>
-
-        <!-- Notes -->
-        <div class="card">
-          <div class="card-hd">Model Notes</div>
-          <div class="card-sub" style="margin-bottom:18px;">How the projection is calculated</div>
-          <div style="display:grid;gap:14px;">
-            <div class="callout" style="padding:14px;">
-              <div class="card-hd" style="margin-bottom:4px;">Day-of-Week Blending</div>
-              <div style="font-size:.68rem;color:var(--ink2);line-height:1.6;">
-                Standard Bushnell week: Tue–Fri (1 eve each) + Sat &amp; Sun (mat + eve) = 8 perfs.<br>
-                Day multipliers from subscriber pricing (relative to Tue/Wed):<br>
-                Tue/Wed ×1.00 · Thu/Fri ×1.09 · Sat Mat ×1.22 · Sat Eve ×1.09 · Sun Mat ×1.22 · Sun Eve ×1.00<br>
-                <strong>Standard week blended: ×1.089.</strong> Enter prices at Tue/Wed rate; the model applies 1.089× to get the weekly blended average. For a non-standard week, change the performance count — the blended multiplier stays at the standard schedule ratio.
-              </div>
-            </div>
-            <div class="callout" style="padding:14px;">
-              <div class="card-hd" style="margin-bottom:4px;">Fill Rate &amp; Revenue</div>
-              <div style="font-size:.68rem;color:var(--ink2);line-height:1.6;">Fill rate = tickets sold ÷ (seats × perfs). Projected fill = current rate × days-remaining multiplier (60+ days: ×1.20 · 31–60: ×1.15 · 15–30: ×1.08 · ≤14: ×1.03), capped at 100%.<br><br>Projected gross = seats × perfs × proj. fill rate × (blended adj. avg price).</div>
-            </div>
-            <div class="callout" style="padding:14px;">
-              <div class="card-hd" style="margin-bottom:4px;">Variance</div>
-              <div style="font-size:.68rem;color:var(--ink2);line-height:1.6;">Projected gross minus baseline gross. Positive means the adjusted pricing structure yields additional revenue at the projected fill rate.</div>
-            </div>
-            <div id="scenarioBenchmark" class="placeholder-section" style="display:none;">
-              <div class="ph-label">Preceding Market Benchmark</div>
-              <div class="ph-sub" id="benchmarkText">—</div>
+            <div class="callout" style="padding:12px;">
+              <div class="card-hd" style="margin-bottom:3px;">Per-Performance Revenue</div>
+              <div style="font-size:.65rem;color:var(--ink2);line-height:1.55;">Each row: capacity × proj. fill × adj. price. Total projected gross = sum of all active performances. Baseline = sold × current price per performance.</div>
             </div>
           </div>
         </div>
-
+        <div class="card">
+          <div class="card-hd" style="margin-bottom:10px;">Day Type Reference</div>
+          <table class="mini-table">
+            <thead><tr><th>Performance</th><th>Day Type</th><th class="num">Sub Multiplier</th></tr></thead>
+            <tbody>
+              <tr><td>Tue / Wed Eve</td><td>Tue/Wed</td><td class="num">1.00×</td></tr>
+              <tr><td>Thu / Fri Eve</td><td>Thu/Fri</td><td class="num">1.09×</td></tr>
+              <tr><td>Sat Matinee</td><td>Sat Mat</td><td class="num">1.22×</td></tr>
+              <tr><td>Sat Evening</td><td>Sat Eve</td><td class="num">1.09×</td></tr>
+              <tr><td>Sun Matinee</td><td>Sun Mat</td><td class="num">1.22×</td></tr>
+              <tr><td>Sun Evening</td><td>Sun Eve</td><td class="num">1.00×</td></tr>
+            </tbody>
+          </table>
+          <div style="font-size:.58rem;color:var(--ink3);margin-top:8px;line-height:1.5;">Multipliers from 2026-27 subscriber pricing PDF relative to Tue/Wed rate. Shown for reference — enter actual face value prices per performance above.</div>
+          <div id="scenarioBenchmark" class="placeholder-section" style="display:none;margin-top:10px;">
+            <div class="ph-label">Preceding Market Benchmark</div>
+            <div class="ph-sub" id="benchmarkText">—</div>
+          </div>
+        </div>
       </div>
 
       <!-- Output -->
@@ -536,29 +513,26 @@
 <div class="modal-backdrop" id="configModal" style="display:none;" onclick="if(event.target===this)closeConfigModal()">
   <div class="modal">
     <div class="modal-head">
-      <h2>Seating Configuration</h2>
+      <h2 id="configModalTitle">Seating Configuration</h2>
       <button class="modal-close" onclick="closeConfigModal()">✕</button>
     </div>
     <div class="modal-body">
-      <div style="font-size:.65rem;color:var(--ink2);line-height:1.6;margin-bottom:16px;">
-        Enter seat counts for each section once — they're saved and reused across sessions. Subscriber prices per show are shown for reference (package ÷ 8 sub shows). Single-ticket prices are entered in the Scenario Model tab each time you run a projection.
+      <div id="configModalDesc" style="font-size:.65rem;color:var(--ink2);line-height:1.6;margin-bottom:16px;">
+        Enter seat counts for each section. Saved separately per hall. Prices are entered per-performance in the Scenario Model.
       </div>
       <table class="config-table" id="configTable">
         <thead>
           <tr>
             <th>Section</th>
-            <th class="num">Seat Count</th>
-            <th class="num">Sub Price/Show<br><span style="font-weight:400;letter-spacing:0;text-transform:none;font-size:.6rem;">(Thu/Fri · pkg ÷ 8)</span></th>
+            <th class="num">House Seats<br><span style="font-weight:400;letter-spacing:0;text-transform:none;font-size:.6rem;">(fact sheet)</span></th>
+            <th class="num">Sellable Seats<br><span style="font-weight:400;letter-spacing:0;text-transform:none;font-size:.6rem;">(override if needed)</span></th>
           </tr>
         </thead>
         <tbody id="configTableBody"></tbody>
       </table>
       <div class="config-total">
-        <span>Total Seats</span>
+        <span>Total Sellable Seats</span>
         <strong id="configTotalSeats">0</strong>
-      </div>
-      <div style="font-size:.6rem;color:var(--ink3);margin-top:8px;padding-top:8px;border-top:1px solid var(--rule2);">
-        * Broadway Circle requires a $750/seat annual donation. Sub prices shown are per-show effective rates (2026-27 package ÷ 8 sub shows).
       </div>
     </div>
     <div class="modal-foot">
@@ -930,36 +904,85 @@
     }
   };
 
-  /* ── Seating sections (from 2026-27 subscriber pricing PDF)
-       subThurFri = package price ÷ 8 sub shows, Thu/Fri rate ── */
-  var SECTIONS = [
-    { name: 'Broadway Circle',      subThurFri: 137.75, note: '* requires $750/seat donation' },
-    { name: 'Prime Orchestra / Box',subThurFri: 137.75 },
-    { name: 'Far Side Orchestra',   subThurFri:  80.00 },
-    { name: 'Prime Mezzanine',      subThurFri: 147.75 },
-    { name: 'Front Mezzanine',      subThurFri: 120.63 },
-    { name: 'Mid Mezzanine',        subThurFri:  80.00 },
-    { name: 'Rear Mezzanine',       subThurFri:  56.00 },
-    { name: 'Prime Balcony',        subThurFri:  80.00 },
-    { name: 'Front Balcony',        subThurFri:  56.00 },
-    { name: 'Mid / Rear Balcony',   subThurFri:  46.38 }
-  ];
-  var STORAGE_KEY = 'btd_seat_config';
-  var _seatConfig = null;  // null = not set; array of {name, seats} when set
+  /* ── Hall definitions (zones from event fact sheets) ── */
+  var HALLS = {
+    mortensen: {
+      name: 'Mortensen Hall',
+      defaultCap: 2704,
+      storageKey: 'btd_seat_config_mortensen',
+      sections: [
+        { name: 'Broadway Circle',            seats: 244 },
+        { name: 'Mezzanine – Prime',          seats: 156 },
+        { name: 'Orchestra Prime',            seats: 684 },
+        { name: 'Mezzanine – Front',          seats: 238 },
+        { name: 'Orchestra Perimeter – Side', seats:  88 },
+        { name: 'Mezzanine – Middle',         seats: 314 },
+        { name: 'Balcony – Prime',            seats:  83 },
+        { name: 'Balcony Front',              seats: 195 },
+        { name: 'Mezzanine – Economy',        seats: 280 },
+        { name: 'Balcony – Middle',           seats: 276 },
+        { name: 'Balcony – Economy',          seats:  98 },
+        { name: 'ADA / Accessible',           seats:  48 }
+      ]
+    },
+    belding: {
+      name: 'Belding Theater',
+      defaultCap: 908,
+      storageKey: 'btd_seat_config_belding',
+      sections: [
+        { name: 'Gold Circle',            seats: 205 },
+        { name: 'Mezz Prime',             seats:  21 },
+        { name: 'Pit',                    seats:  51 },
+        { name: 'Front Orchestra Sides',  seats: 115 },
+        { name: 'Mezz Front',             seats:  36 },
+        { name: 'Rear Center Orchestra',  seats: 172 },
+        { name: 'Boxes',                  seats:  12 },
+        { name: 'Rear Orchestra Sides',   seats:  92 },
+        { name: 'Mezz Middle',            seats:  55 },
+        { name: 'Orchestra ADA',          seats:  16 },
+        { name: 'Rear Mezz and Sides',    seats: 101 },
+        { name: 'Mezz Perimeter Sides',   seats:  24 },
+        { name: 'Mezz Accessible',        seats:   8 }
+      ]
+    }
+  };
+
+  var _activeHall = 'mortensen';
+  var _seatConfig = null;  // array of {name, seats} for active hall, or null
+
+  function activeHall () { return HALLS[_activeHall]; }
+
+  /* ── Switch hall — updates capacity default, reloads saved config ── */
+  window.switchHall = function (hallKey) {
+    _activeHall = hallKey;
+    _seatConfig = null;
+    loadSeatConfig();
+    var cap = activeHall().defaultCap;
+    var capInp = document.getElementById('inpCapacity');
+    if (capInp) capInp.value = cap;
+    liveCalcPerfs();
+  };
 
   /* ── Config modal ── */
   window.openConfigModal = function () {
+    var hall = activeHall();
+    document.getElementById('configModalTitle').textContent = hall.name + ' · Seating Configuration';
+    document.getElementById('configModalDesc').textContent =
+      'Enter seat counts for each section in ' + hall.name + '. Saved separately per hall. ' +
+      'Seat counts are reference only — prices are entered per-performance in the Scenario Model.';
+
     var saved = _seatConfig || [];
     var savedMap = {};
     saved.forEach(function (s) { savedMap[s.name] = s.seats; });
 
     var tbody = document.getElementById('configTableBody');
-    tbody.innerHTML = SECTIONS.map(function (sec, i) {
-      var seats = savedMap[sec.name] || '';
+    tbody.innerHTML = hall.sections.map(function (sec, i) {
+      var savedSeats = savedMap[sec.name];
+      var seats = savedSeats !== undefined ? savedSeats : sec.seats;
       return '<tr>' +
-        '<td class="section-name">' + sec.name + (sec.note ? '<br><span style="font-size:.55rem;color:var(--ink3);font-weight:400;">' + sec.note + '</span>' : '') + '</td>' +
-        '<td style="text-align:right;"><input type="number" class="cfg-seats" data-idx="' + i + '" min="0" max="1000" value="' + seats + '" placeholder="0" oninput="updateConfigTotal()"></td>' +
-        '<td class="sub-price">$' + sec.subThurFri.toFixed(2) + '</td>' +
+        '<td class="section-name">' + sec.name + '</td>' +
+        '<td style="text-align:right;font-family:var(--mono);font-size:.68rem;color:var(--ink3);">' + sec.seats.toLocaleString() + '</td>' +
+        '<td style="text-align:right;"><input type="number" class="cfg-seats" data-idx="' + i + '" min="0" max="5000" value="' + seats + '" placeholder="0" oninput="updateConfigTotal()"></td>' +
         '</tr>';
     }).join('');
 
@@ -980,52 +1003,43 @@
   };
 
   window.saveSeatConfig = function () {
+    var hall = activeHall();
     var config = [];
     document.querySelectorAll('.cfg-seats').forEach(function (inp, i) {
-      var seats = +inp.value || 0;
-      config.push({ name: SECTIONS[i].name, seats: seats });
+      config.push({ name: hall.sections[i].name, seats: +inp.value || 0 });
     });
-    var totalSeats = config.reduce(function (a, b) { return a + b.seats; }, 0);
-    if (!totalSeats) {
-      alert('Enter at least one seat count before saving.');
-      return;
-    }
     _seatConfig = config;
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(config)); } catch (e) {}
+    try { localStorage.setItem(hall.storageKey, JSON.stringify(config)); } catch (e) {}
     applyConfigToScenario();
     closeConfigModal();
   };
 
   window.clearSeatConfig = function () {
-    if (!confirm('Clear seating configuration?')) return;
+    if (!confirm('Clear seating configuration for ' + activeHall().name + '?')) return;
     _seatConfig = null;
-    try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+    try { localStorage.removeItem(activeHall().storageKey); } catch (e) {}
     applyConfigToScenario();
     closeConfigModal();
   };
 
   function loadSeatConfig () {
     try {
-      var raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) _seatConfig = JSON.parse(raw);
-    } catch (e) {}
+      var raw = localStorage.getItem(activeHall().storageKey);
+      _seatConfig = raw ? JSON.parse(raw) : null;
+    } catch (e) { _seatConfig = null; }
     applyConfigToScenario();
   }
 
-  /* ── Switch scenario tab between section mode and simple mode ── */
+  /* ── Update config badge after seat config load/save ── */
   function applyConfigToScenario () {
     var badge = document.getElementById('configBadge');
+    if (!badge) return;
     if (_seatConfig && _seatConfig.reduce(function (a, b) { return a + b.seats; }, 0) > 0) {
       badge.textContent = 'Configured';
       badge.className = 'config-status loaded';
-      document.getElementById('priceSectionMode').style.display = '';
-      document.getElementById('priceSimpleMode').style.display = 'none';
-      buildSectionPriceTable();
     } else {
       badge.textContent = 'Not Set';
       badge.className = 'config-status empty';
-      document.getElementById('priceSectionMode').style.display = 'none';
-      document.getElementById('priceSimpleMode').style.display = '';
     }
   }
 
@@ -1078,78 +1092,114 @@
     };
   }
 
-  /* ── Day-of-week blended multiplier (standard Bushnell 8-perf week)
-       Tue eve ×1.00, Wed eve ×1.00, Thu eve ×1.09, Fri eve ×1.09,
-       Sat mat ×1.22, Sat eve ×1.09, Sun mat ×1.22, Sun eve ×1.00
-       Sum = 8.71 / 8 perfs = 1.08875 ── */
-  var STD_BLEND = 8.71 / 8;   // 1.08875
+  /* ── Standard 8-performance week definition ── */
+  var PERFS = [
+    { label: 'Tuesday Eve',   dayType: 'Tue/Wed' },
+    { label: 'Wednesday Eve', dayType: 'Tue/Wed' },
+    { label: 'Thursday Eve',  dayType: 'Thu/Fri' },
+    { label: 'Friday Eve',    dayType: 'Thu/Fri' },
+    { label: 'Saturday Mat',  dayType: 'Sat Mat' },
+    { label: 'Saturday Eve',  dayType: 'Sat Eve' },
+    { label: 'Sunday Mat',    dayType: 'Sun Mat' },
+    { label: 'Sunday Eve',    dayType: 'Sun Eve' }
+  ];
 
-  /* ── Scenario Model ── */
+  /* ── Build per-performance table rows ── */
+  function buildPerfTable () {
+    var tbody = document.getElementById('perfTableBody');
+    tbody.innerHTML = PERFS.map(function (p, i) {
+      return '<tr data-idx="' + i + '">' +
+        '<td class="perf-label">' + p.label + '</td>' +
+        '<td class="day-type">' + p.dayType + '</td>' +
+        '<td style="text-align:right;"><input type="number" class="p-sold" min="0" placeholder="0" oninput="liveCalcPerfs()"></td>' +
+        '<td class="auto-val p-curfill">—</td>' +
+        '<td style="text-align:right;"><input type="number" class="p-cur" min="0" step="0.01" placeholder="0.00" oninput="liveCalcPerfs()"></td>' +
+        '<td style="text-align:right;"><input type="number" class="p-adj" min="0" step="0.01" placeholder="0.00" oninput="liveCalcPerfs()"></td>' +
+        '<td class="auto-val p-projfill">—</td>' +
+        '<td class="auto-val proj-rev p-projrev">—</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  /* ── Live calculation — updates on any input change ── */
+  window.liveCalcPerfs = function () {
+    var cap = +document.getElementById('inpCapacity').value || activeHall().defaultCap;
+    var daysOut = +document.getElementById('inpDaysOut').value || 0;
+    var daysMult = daysOut > 60 ? 1.20 : daysOut > 30 ? 1.15 : daysOut > 14 ? 1.08 : 1.03;
+
+    var totSold = 0, totBaseline = 0, totProj = 0;
+    var soldSeats = 0, totalProjSeats = 0;
+    var curPriceSum = 0, adjPriceSum = 0, priceCount = 0;
+
+    document.querySelectorAll('#perfTableBody tr').forEach(function (row) {
+      var sold    = +row.querySelector('.p-sold').value || 0;
+      var curPrice= +row.querySelector('.p-cur').value || 0;
+      var adjPrice= +row.querySelector('.p-adj').value || 0;
+
+      var fillRate  = cap > 0 ? sold / cap : 0;
+      var projFill  = Math.min(fillRate * daysMult, 1.0);
+      var projRev   = cap * projFill * adjPrice;
+      var baseRev   = sold * curPrice;
+
+      row.querySelector('.p-curfill').textContent  = curPrice  ? (fillRate * 100).toFixed(1) + '%' : '—';
+      row.querySelector('.p-projfill').textContent = adjPrice  ? (projFill * 100).toFixed(1) + '%'  : '—';
+      row.querySelector('.p-projrev').textContent  = adjPrice  ? '$' + Math.round(projRev).toLocaleString() : '—';
+
+      totSold     += sold;
+      totBaseline += baseRev;
+      totProj     += projRev;
+      soldSeats   += sold;
+      if (adjPrice) { totalProjSeats += cap; }
+      if (curPrice) { curPriceSum += curPrice; priceCount++; }
+      if (adjPrice) { adjPriceSum += adjPrice; }
+    });
+
+    var totalCap = cap * PERFS.length;
+    var overallFill = totalCap > 0 ? soldSeats / totalCap : 0;
+    var overallProjFill = totalProjSeats > 0 ? totProj / (totalProjSeats * (adjPriceSum / priceCount || 1)) : 0;
+
+    document.getElementById('totSold').textContent     = totSold ? totSold.toLocaleString() : '—';
+    document.getElementById('totCurFill').textContent  = priceCount ? (overallFill * 100).toFixed(1) + '%' : '—';
+    document.getElementById('totCurPrice').textContent = priceCount ? '$' + (curPriceSum / priceCount).toFixed(2) : '—';
+    document.getElementById('totAdjPrice').textContent = priceCount ? '$' + (adjPriceSum / priceCount).toFixed(2) : '—';
+    document.getElementById('totProjFill').textContent = totProj ? '—' : '—';
+    document.getElementById('totProjRev').textContent  = totProj ? '$' + Math.round(totProj).toLocaleString() : '—';
+
+    return { totBaseline: totBaseline, totProj: totProj, totalCap: totalCap, overallFill: overallFill, priceCount: priceCount };
+  };
+
+  /* ── Run Scenario — finalizes KPIs, output strip, justification ── */
   window.runScenario = function () {
-    var seatsPerPerf = +document.getElementById('inpCapacity').value || 2704;
-    var numPerf  = +document.getElementById('inpNumPerf').value || 8;
-    var sold     = +document.getElementById('inpCurrentSold').value || 0;
-    var daysOut  = +document.getElementById('inpDaysOut').value || 0;
+    var cap = +document.getElementById('inpCapacity').value || activeHall().defaultCap;
+    var daysOut = +document.getElementById('inpDaysOut').value || 0;
 
-    var totalCap = seatsPerPerf * numPerf;
-    var blendMult = STD_BLEND;
+    var result = liveCalcPerfs();
+    if (!result.priceCount) { alert('Enter prices for at least one performance to run the scenario.'); return; }
 
-    /* Determine reference avg prices — section-weighted when config loaded, simple tiers otherwise */
-    var refAvg, adjRefAvg, usingConfig = false;
+    var totBaseline = result.totBaseline;
+    var totProj     = result.totProj;
+    var totalCap    = result.totalCap;
+    var overallFill = result.overallFill;
+    var delta = totProj - totBaseline;
+    var pct   = totBaseline > 0 ? (delta / totBaseline) * 100 : 0;
 
-    var useConfig = _seatConfig && _seatConfig.reduce(function (a, b) { return a + b.seats; }, 0) > 0;
-    if (useConfig) {
-      var avgs = getSectionWeightedAvgs();
-      if (!avgs.cur && !avgs.adj) {
-        alert('Enter at least one section price to run the scenario.');
-        return;
-      }
-      refAvg    = avgs.cur || avgs.adj;
-      adjRefAvg = avgs.adj || avgs.cur;
-      usingConfig = true;
-    } else {
-      var top    = +document.getElementById('inpTopPrice').value || 0;
-      var mid    = +document.getElementById('inpMidPrice').value || 0;
-      var base   = +document.getElementById('inpBasePrice').value || 0;
-      var adjTop = +document.getElementById('inpAdjTop').value || top;
-      var adjMid = +document.getElementById('inpAdjMid').value || mid;
-      var adjBase= +document.getElementById('inpAdjBase').value || base;
-      if (!top) { alert('Enter at least a top price to run the scenario.'); return; }
-      var tierCount    = 1 + (mid > 0 ? 1 : 0) + (base > 0 ? 1 : 0);
-      var adjTierCount = 1 + (adjMid > 0 ? 1 : 0) + (adjBase > 0 ? 1 : 0);
-      refAvg    = (top + mid + base) / tierCount;
-      adjRefAvg = (adjTop + adjMid + adjBase) / adjTierCount;
-    }
-
-    var blendedAvg = refAvg * blendMult;
-    var adjBlended = adjRefAvg * blendMult;
-
-    var fillRate     = totalCap > 0 ? sold / totalCap : 0;
-    var daysMult     = daysOut > 60 ? 1.20 : daysOut > 30 ? 1.15 : daysOut > 14 ? 1.08 : 1.03;
-    var projFillRate = Math.min(fillRate * daysMult, 1.0);
-
-    var baselineGross   = sold * blendedAvg;
-    var projectedGross  = totalCap * projFillRate * adjBlended;
-    var delta = projectedGross - baselineGross;
-    var pct   = baselineGross > 0 ? (delta / baselineGross) * 100 : 0;
-
-    /* Output cells */
-    document.getElementById('outCurrentRev').textContent = '$' + Math.round(baselineGross).toLocaleString();
-    document.getElementById('outProjRev').textContent = '$' + Math.round(projectedGross).toLocaleString();
+    /* Output strip */
+    document.getElementById('outCurrentRev').textContent = '$' + Math.round(totBaseline).toLocaleString();
+    document.getElementById('outProjRev').textContent = '$' + Math.round(totProj).toLocaleString();
     var dEl = document.getElementById('outDelta');
     dEl.textContent = (delta >= 0 ? '+$' : '-$') + Math.round(Math.abs(delta)).toLocaleString();
     dEl.className = 'out-val ' + (delta >= 0 ? 'positive' : 'negative');
     var pEl = document.getElementById('outPct');
     pEl.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%';
     pEl.className = 'out-val ' + (pct >= 0 ? 'positive' : 'negative');
-    document.getElementById('outFillRate').textContent = (projFillRate * 100).toFixed(1) + '%';
-    document.getElementById('outBlendedPrice').textContent = '$' + adjBlended.toFixed(2);
+    document.getElementById('outFillRate').textContent = (overallFill * 100).toFixed(1) + '%';
+    document.getElementById('outBlendedPrice').textContent = document.getElementById('totAdjPrice').textContent;
     document.getElementById('outTotalCap').textContent = totalCap.toLocaleString();
     document.getElementById('scenarioOutput').style.display = '';
 
     /* KPI strip */
     document.getElementById('kDays').textContent = daysOut || '—';
-    document.getElementById('kProjected').textContent = '$' + Math.round(projectedGross / 1000) + 'K';
+    document.getElementById('kProjected').textContent = '$' + Math.round(totProj / 1000) + 'K';
     var varEl = document.getElementById('kVariance');
     varEl.textContent = (delta >= 0 ? '+$' : '-$') + Math.round(Math.abs(delta) / 1000) + 'K';
     varEl.style.color = delta >= 0 ? 'var(--teal)' : 'var(--rose)';
@@ -1158,39 +1208,29 @@
     var showName = _selectedShow ? _selectedShow.displayName : '(no show selected)';
     document.getElementById('justifyTitle').textContent = showName;
     document.getElementById('justifyBaseline').textContent =
-      '$' + Math.round(baselineGross).toLocaleString() +
-      ' (' + (fillRate * 100).toFixed(1) + '% of ' + totalCap.toLocaleString() + ' total tickets, ' + daysOut + ' days out)';
+      '$' + Math.round(totBaseline).toLocaleString() +
+      ' (' + (overallFill * 100).toFixed(1) + '% of ' + totalCap.toLocaleString() + ' total tickets, ' + daysOut + ' days out)';
     document.getElementById('justifyScenario').textContent =
-      '$' + Math.round(projectedGross).toLocaleString() +
-      ' (' + (projFillRate * 100).toFixed(1) + '% projected fill · blended avg $' + adjBlended.toFixed(2) + ')';
+      '$' + Math.round(totProj).toLocaleString() + ' projected across ' + PERFS.length + ' performances';
 
-    var topChange = adjTop - top;
-    var rationale =
-      'Based on a ' + numPerf + '-performance week at ' + seatsPerPerf.toLocaleString() +
-      ' seats per performance (' + totalCap.toLocaleString() + ' total tickets). ' +
-      'At ' + (fillRate * 100).toFixed(1) + '% with ' + daysOut +
-      ' days remaining, the model projects ' + (projFillRate * 100).toFixed(1) + '% fill. ';
-    if (topChange !== 0) {
-      rationale += 'The proposed top-tier adjustment of ' + (topChange > 0 ? '+' : '') + '$' +
-        topChange.toFixed(0) + ' (Tue/Wed reference) yields a weekly blended price of $' +
-        adjBlended.toFixed(2) + '. ';
-    }
-    rationale += 'Projected gross: $' + Math.round(projectedGross).toLocaleString() +
-      ', ' + (delta >= 0 ? 'an increase' : 'a reduction') + ' of $' +
-      Math.abs(Math.round(delta)).toLocaleString() + ' vs. baseline.';
+    var rationale = 'Modeled across ' + PERFS.length + ' performances at ' + cap.toLocaleString() +
+      ' seats each (' + totalCap.toLocaleString() + ' total tickets). ' +
+      'Current pace: ' + (overallFill * 100).toFixed(1) + '% with ' + daysOut + ' days remaining. ' +
+      'Projected gross ' + (delta >= 0 ? 'increases' : 'decreases') + ' by $' +
+      Math.abs(Math.round(delta)).toLocaleString() + ' (' + (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%) ' +
+      'under the adjusted per-performance pricing.';
     document.getElementById('justifyRationale').textContent = rationale;
 
     var precCount = document.querySelectorAll('#precTableBody tr').length;
     document.getElementById('justifyPrecCount').textContent = precCount || '—';
-
     _scenarioRan = true;
   };
 
   /* ── Bootstrap ── */
-  document.addEventListener('DOMContentLoaded', function () {
-    loadSeatConfig();
-    loadData();
-  });
+  loadSeatConfig();
+  buildPerfTable();
+  document.getElementById('inpCapacity').value = activeHall().defaultCap;
+  loadData();
 
 }());
 </script>
