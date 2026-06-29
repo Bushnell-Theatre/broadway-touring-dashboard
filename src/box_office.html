@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
 <meta name="googlebot" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
-<title>Broadway Touring · Box Office Manager v1.1</title>
+<title>Broadway Touring · Box Office Manager v1.2</title>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Libre+Franklin:ital,wght@0,300;0,400;0,600;0,700;0,900;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="js/utils.js"></script>
 <style>
@@ -84,7 +84,7 @@
 .section-price-table input{width:82px;padding:4px 7px;text-align:right;font-family:var(--mono);font-size:.72rem}
 .weighted-avg-bar{background:var(--bg2);border:1px solid var(--rule);border-radius:3px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;margin-top:10px;font-size:.65rem;color:var(--ink2)}
 .weighted-avg-bar strong{font-family:var(--serif);font-size:1.1rem;color:var(--ink)}
-/* ── SCENARIO MODEL v1.1 ── */
+/* ── SCENARIO MODEL v1.2 ── */
 .mode-badge{font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 12px;border-radius:20px;white-space:nowrap}
 .mode-presale{background:var(--amber-lt);color:var(--amber);border:1px solid rgba(0,56,101,.2)}
 .mode-live{background:var(--teal-lt);color:var(--teal);border:1px solid rgba(10,107,94,.25)}
@@ -344,6 +344,42 @@
             Net Sellable: <strong id="netSellableDisplay" style="font-family:var(--mono);">—</strong> seats per performance (contracted minus holds; overridable per-performance below)
           </div>
         </div>
+        <!-- Subscriber Sales -->
+        <div id="subSalesSection" style="margin-bottom:16px;">
+          <div style="font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);margin-bottom:10px;">
+            Subscriber Sales <span style="font-weight:400;color:var(--ink3);letter-spacing:0;text-transform:none;">— pre-allocated seats and estimated revenue</span>
+          </div>
+          <div id="subBeldingNote" style="display:none;padding:10px 14px;background:var(--bg2);border:1px dashed var(--rule);border-radius:3px;font-size:.62rem;color:var(--ink3);">
+            Subscriber pricing not configured for Belding Theater.
+          </div>
+          <div id="subMortensenFields">
+            <div class="holds-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:12px;">
+              <div>
+                <label class="inp-label">Show Type</label>
+                <select id="subShowType" onchange="toggleSubType(); calcScenario();" style="font-size:.68rem;">
+                  <option value="core">Core Subscription Show</option>
+                  <option value="addon">Add-On Show</option>
+                </select>
+              </div>
+              <div id="subSeasonCountWrap">
+                <label class="inp-label">Season Show Count</label>
+                <input type="number" id="subSeasonCount" min="1" max="20" value="8" oninput="calcScenario()" style="font-family:var(--mono);">
+              </div>
+              <div id="subAddonPriceWrap" style="display:none;">
+                <label class="inp-label">Add-On Price / Seat</label>
+                <input type="number" id="subAddonPrice" min="0" step="0.01" placeholder="0.00" oninput="calcScenario()" style="font-family:var(--mono);">
+              </div>
+              <div>
+                <label class="inp-label">Sub Seats / Perf (est.)</label>
+                <input type="number" id="subSeatsGlobal" min="0" placeholder="0" oninput="calcScenario()" style="font-family:var(--mono);">
+              </div>
+            </div>
+            <div style="font-size:.59rem;color:var(--ink3);line-height:1.55;margin-bottom:4px;">
+              Subscriber seats are estimated pre-Paciolan. These will be replaced by live counts when the POS integration is complete.
+            </div>
+          </div>
+        </div>
+
         <!-- POS Placeholder -->
         <div style="border:1px dashed var(--rule);border-radius:3px;background:var(--bg2);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:16px;">
           <div>
@@ -371,6 +407,7 @@
                 <th>Time</th>
                 <th>Tier</th>
                 <th class="num">Sellable Override</th>
+                <th class="num">Sub Seats Override</th>
                 <th class="num live-col" style="display:none;">Sold</th>
                 <th style="width:36px;"></th>
               </tr>
@@ -405,14 +442,19 @@
                 <th class="left">Date / Time</th>
                 <th class="left">Tier</th>
                 <th class="num">Net Sellable</th>
+                <th class="num" style="color:var(--amber);">Sub Seats</th>
+                <th class="num">ST Sellable</th>
+                <th class="num" style="color:var(--amber);">Sub Rev <span style="font-weight:400;font-size:.52rem;">(incl. fees)</span></th>
                 <th class="num live-col" style="display:none;">Sold</th>
                 <th class="num live-col" style="display:none;">Fill %</th>
                 <th class="num live-col" style="display:none;">Captured Rev</th>
-                <th class="num">Baseline Gross</th>
-                <th class="num">Adjusted Gross</th>
+                <th class="num">ST Baseline</th>
+                <th class="num">ST Adjusted</th>
+                <th class="num" style="font-weight:700;">Total Baseline</th>
+                <th class="num" style="font-weight:700;">Total Adjusted</th>
                 <th class="num">Delta ($)</th>
                 <th class="num">Delta (%)</th>
-                <th class="num">Incl. Rest.</th>
+                <th class="num">ST+Rest.</th>
               </tr>
             </thead>
             <tbody id="resultsBody"></tbody>
@@ -423,12 +465,18 @@
       <!-- Run Total Strip -->
       <div class="scenario-output" id="scenarioOutput" style="display:none;margin-top:0;margin-bottom:18px;">
         <div class="card-hd" style="margin-bottom:14px;">Run Total</div>
-        <div class="out-grid" style="grid-template-columns:repeat(7,1fr);">
+        <div class="out-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:10px;">
           <div class="out-cell"><div class="out-label">Total Net Sellable</div><div class="out-val" id="outTotalCap">—</div></div>
+          <div class="out-cell" style="border-left:2px solid var(--amber);"><div class="out-label" style="color:var(--amber);">Total Sub Seats</div><div class="out-val" id="outTotalSubSeats">—</div></div>
+          <div class="out-cell" style="border-left:1px solid var(--amber);"><div class="out-label" style="color:var(--amber);">Sub Revenue</div><div class="out-val" id="outSubRev">—</div><div class="out-sub">incl. fees (package pricing)</div></div>
           <div class="out-cell live-col" style="display:none;"><div class="out-label">Total Sold</div><div class="out-val" id="outTotalSold">—</div><div class="out-sub" id="outFillRate"></div></div>
           <div class="out-cell live-col" style="display:none;"><div class="out-label">Captured Revenue</div><div class="out-val" id="outCaptured">—</div></div>
-          <div class="out-cell"><div class="out-label">Baseline Gross</div><div class="out-val" id="outCurrentRev">—</div><div class="out-sub" id="outBaseRest"></div></div>
-          <div class="out-cell"><div class="out-label">Adjusted Gross</div><div class="out-val" id="outProjRev">—</div><div class="out-sub" id="outAdjRest"></div></div>
+          <div class="out-cell"><div class="out-label">ST Baseline</div><div class="out-val" id="outCurrentRev">—</div><div class="out-sub" id="outBaseRest"></div></div>
+          <div class="out-cell"><div class="out-label">ST Adjusted</div><div class="out-val" id="outProjRev">—</div><div class="out-sub" id="outAdjRest"></div></div>
+        </div>
+        <div class="out-grid" style="grid-template-columns:repeat(4,1fr);border-top:1px solid var(--rule);padding-top:10px;">
+          <div class="out-cell" style="border-left:3px solid var(--ink);"><div class="out-label" style="font-weight:700;">Combined Baseline</div><div class="out-val" id="outCombBaseline">—</div><div class="out-sub">sub + single ticket</div></div>
+          <div class="out-cell" style="border-left:3px solid var(--teal);"><div class="out-label" style="font-weight:700;color:var(--teal);">Combined Adjusted</div><div class="out-val" id="outCombAdj">—</div><div class="out-sub">sub + single ticket</div></div>
           <div class="out-cell"><div class="out-label">Delta ($)</div><div class="out-val" id="outDelta">—</div></div>
           <div class="out-cell"><div class="out-label">Delta (%)</div><div class="out-val" id="outPct">—</div></div>
         </div>
@@ -583,7 +631,7 @@
 <!-- ══ FOOTER ══ -->
 <footer class="footer">
   <div><strong>BROADWAY TOURING · BOX OFFICE MANAGER</strong> — CONFIDENTIAL · For internal use only</div>
-  <div>v1.1 · June 29, 2026 · Bushnell Center for the Performing Arts</div>
+  <div>v1.2 · June 29, 2026 · Bushnell Center for the Performing Arts</div>
 </footer>
 
 <!-- ══ INLINE SCRIPT ══ -->
@@ -995,6 +1043,12 @@
     var cap = activeHall().defaultCap;
     var capInp = document.getElementById('inpCapacity');
     if (capInp) capInp.value = cap;
+    /* Subscriber pricing is Mortensen-only */
+    var isMort = hallKey === 'mortensen';
+    var bNote  = document.getElementById('subBeldingNote');
+    var bFields= document.getElementById('subMortensenFields');
+    if (bNote)   bNote.style.display   = isMort ? 'none' : '';
+    if (bFields) bFields.style.display = isMort ? ''     : 'none';
     buildPricingGrid();
     calcScenario();
   };
@@ -1132,7 +1186,7 @@
     };
   }
 
-  /* ── Scenario Model v1.1 ── */
+  /* ── Scenario Model v1.2 ── */
 
   var STD_WEEK = [
     { label: 'Tuesday Eve',   time: '7:30 PM', tier: 'B' },
@@ -1144,6 +1198,34 @@
     { label: 'Sunday Mat',    time: '1:00 PM', tier: 'A' },
     { label: 'Sunday Eve',    time: '6:30 PM', tier: 'C' }
   ];
+
+  /* ── Subscriber pricing constants ── */
+  var SUB_PRICING_2627 = {
+    'Broadway Circle':    { 'Tue/Wed': 1090, 'Thu/Fri': 1182, 'Sat/Sun Mat': 1312, 'Sat Eve': 1182, 'Sun Eve': 1090 },
+    'Prime Orchestra/Box':{ 'Tue/Wed': 1010, 'Thu/Fri': 1102, 'Sat/Sun Mat': 1232, 'Sat Eve': 1102, 'Sun Eve': 1010 },
+    'Far Side Orchestra': { 'Tue/Wed':  632, 'Thu/Fri':  640, 'Sat/Sun Mat':  652, 'Sat Eve':  640, 'Sun Eve':  632 },
+    'Prime Mezzanine':    { 'Tue/Wed': 1090, 'Thu/Fri': 1182, 'Sat/Sun Mat': 1312, 'Sat Eve': 1182, 'Sun Eve': 1090 },
+    'Front Mezzanine':    { 'Tue/Wed':  862, 'Thu/Fri':  965, 'Sat/Sun Mat': 1110, 'Sat Eve':  965, 'Sun Eve':  862 },
+    'Mid Mezzanine':      { 'Tue/Wed':  632, 'Thu/Fri':  640, 'Sat/Sun Mat':  652, 'Sat Eve':  640, 'Sun Eve':  632 },
+    'Rear Mezzanine':     { 'Tue/Wed':  448, 'Thu/Fri':  448, 'Sat/Sun Mat':  448, 'Sat Eve':  448, 'Sun Eve':  448 },
+    'Prime Balcony':      { 'Tue/Wed':  632, 'Thu/Fri':  640, 'Sat/Sun Mat':  652, 'Sat Eve':  640, 'Sun Eve':  632 },
+    'Front Balcony':      { 'Tue/Wed':  448, 'Thu/Fri':  448, 'Sat/Sun Mat':  448, 'Sat Eve':  441, 'Sun Eve':  448 },
+    'Mid/Rear Balcony':   { 'Tue/Wed':  371, 'Thu/Fri':  371, 'Sat/Sun Mat':  371, 'Sat Eve':  371, 'Sun Eve':  371 }
+  };
+
+  /* Maps subscriber section labels → hall section names in HALLS.mortensen.sections */
+  var SUB_SECTION_MAP_MORTENSEN = {
+    'Broadway Circle':     'Broadway Circle',
+    'Prime Orchestra/Box': 'Orchestra Prime',
+    'Far Side Orchestra':  'Orchestra Perimeter – Side',
+    'Prime Mezzanine':     'Mezzanine – Prime',
+    'Front Mezzanine':     'Mezzanine – Front',
+    'Mid Mezzanine':       'Mezzanine – Middle',
+    'Rear Mezzanine':      'Mezzanine – Economy',
+    'Prime Balcony':       'Balcony – Prime',
+    'Front Balcony':       'Balcony Front',
+    'Mid/Rear Balcony':    'Balcony – Middle'
+  };
 
   /* ── Performance row management ── */
   window.addStandardWeek = function () {
@@ -1175,7 +1257,8 @@
         '<option value="B"' + (opts.tier === 'B' ? ' selected' : '') + '>B</option>' +
         '<option value="C"' + (opts.tier === 'C' ? ' selected' : '') + '>C</option>' +
       '</select></td>' +
-      '<td><input type="number" class="rp-override" min="0" placeholder="—" oninput="calcScenario()" style="width:90px;text-align:right;font-family:var(--mono);"></td>' +
+      '<td><input type="number" class="rp-override" min="0" placeholder="—" oninput="calcScenario()" style="width:86px;text-align:right;font-family:var(--mono);"></td>' +
+      '<td><input type="number" class="rp-suboverride" min="0" placeholder="—" oninput="calcScenario()" style="width:86px;text-align:right;font-family:var(--mono);color:var(--amber);"></td>' +
       '<td class="live-col" style="display:none;"><input type="number" class="rp-sold" min="0" placeholder="0" oninput="calcScenario()" style="width:78px;text-align:right;font-family:var(--mono);"></td>' +
       '<td><button class="btn btn-ghost" style="font-size:.6rem;padding:3px 8px;border:none;color:var(--ink3);" onclick="removePerfRow(this)">✕</button></td>';
     return tr;
@@ -1266,6 +1349,61 @@
     document.querySelectorAll('.live-col').forEach(function (el) { el.style.display = isLive ? '' : 'none'; });
   }
 
+  /* ── Subscriber helpers ── */
+  window.toggleSubType = function () {
+    var isAddon = document.getElementById('subShowType').value === 'addon';
+    document.getElementById('subSeasonCountWrap').style.display = isAddon ? 'none' : '';
+    document.getElementById('subAddonPriceWrap').style.display  = isAddon ? ''     : 'none';
+  };
+
+  function getSubDayGroup (dateStr, timeStr) {
+    if (!dateStr) return null;
+    var d   = new Date(dateStr + 'T12:00:00');
+    var day = d.getDay();
+    var isMat = timeStr && (timeStr.indexOf('1:00') !== -1 || timeStr.indexOf('2:00') !== -1);
+    if (day === 2 || day === 3) return 'Tue/Wed';
+    if (day === 4 || day === 5) return 'Thu/Fri';
+    if (day === 6 && isMat)     return 'Sat/Sun Mat';
+    if (day === 6 && !isMat)    return 'Sat Eve';
+    if (day === 0 && isMat)     return 'Sat/Sun Mat';
+    if (day === 0 && !isMat)    return 'Sun Eve';
+    return null;
+  }
+
+  function calcSubRevForPerf (dateStr, timeStr, subSeats) {
+    if (!subSeats || subSeats <= 0) return 0;
+    var dayGroup = getSubDayGroup(dateStr, timeStr);
+    if (!dayGroup) return 0;
+
+    var isAddon        = document.getElementById('subShowType').value === 'addon';
+    var seasonCount    = +document.getElementById('subSeasonCount').value || 8;
+    var addonPrice     = +document.getElementById('subAddonPrice').value || 0;
+
+    /* Build a seat-count map of hall sections using current config */
+    var sections = getSections();
+    var hallSeatMap = {};
+    sections.forEach(function (s) { hallSeatMap[s.name] = s.seats; });
+
+    /* Sum total mapped seats so we can proportion sub seats by section weight */
+    var totalMappedSeats = 0;
+    Object.keys(SUB_SECTION_MAP_MORTENSEN).forEach(function (subSec) {
+      var hallSec = SUB_SECTION_MAP_MORTENSEN[subSec];
+      totalMappedSeats += hallSeatMap[hallSec] || 0;
+    });
+    if (totalMappedSeats === 0) return 0;
+
+    var totalSubRev = 0;
+    Object.keys(SUB_PRICING_2627).forEach(function (subSec) {
+      var hallSec    = SUB_SECTION_MAP_MORTENSEN[subSec];
+      var secSeats   = hallSeatMap[hallSec] || 0;
+      var secSubSeats = subSeats * (secSeats / totalMappedSeats);
+      var pkgPrice   = SUB_PRICING_2627[subSec][dayGroup] || 0;
+      var perShowPrice = isAddon ? addonPrice : (pkgPrice / seasonCount);
+      totalSubRev   += secSubSeats * perShowPrice;
+    });
+    return totalSubRev;
+  }
+
   /* ── Main live calculation ── */
   window.calcScenario = function () {
     var contracted = +document.getElementById('inpCapacity').value || activeHall().defaultCap;
@@ -1277,6 +1415,10 @@
     var netBase       = Math.max(0, contracted - totalHolds);
     var nsEl = document.getElementById('netSellableDisplay');
     if (nsEl) nsEl.textContent = netBase.toLocaleString();
+
+    /* Subscriber globals */
+    var isMort         = _activeHall === 'mortensen';
+    var subGlobal      = isMort ? (+document.getElementById('subSeatsGlobal').value || 0) : 0;
 
     var sections = getSections();
     var grid     = readPricingGrid();
@@ -1310,17 +1452,22 @@
     }
 
     var totNetSell = 0, totSold = 0, totCaptured = 0, totBaseline = 0, totAdj = 0;
+    var totSubSeats = 0, totSubRev = 0;
     var resultsData = [];
 
     perfRows.forEach(function (row) {
-      var dateVal     = row.querySelector('.rp-date').value;
-      var timeVal     = row.querySelector('.rp-time').value;
-      var tier        = row.querySelector('.rp-tier').value;
-      var overrideRaw = row.querySelector('.rp-override').value;
-      var soldVal     = +row.querySelector('.rp-sold').value || 0;
-      var netSell     = overrideRaw !== '' ? Math.max(0, +overrideRaw) : netBase;
+      var dateVal        = row.querySelector('.rp-date').value;
+      var timeVal        = row.querySelector('.rp-time').value;
+      var tier           = row.querySelector('.rp-tier').value;
+      var overrideRaw    = row.querySelector('.rp-override').value;
+      var subOvRaw       = row.querySelector('.rp-suboverride').value;
+      var soldVal        = +row.querySelector('.rp-sold').value || 0;
+      var netSell        = overrideRaw !== '' ? Math.max(0, +overrideRaw) : netBase;
+      var subSeats       = subOvRaw !== '' ? Math.max(0, +subOvRaw) : subGlobal;
+      var stSellable     = Math.max(0, netSell - subSeats);
+      var subRev         = isMort ? calcSubRevForPerf(dateVal, timeVal, subSeats) : 0;
 
-      /* Section-weighted totals for this tier */
+      /* Section-weighted single-ticket totals for this tier */
       var sectionSeats = 0, perfContracted = 0, perfAdj = 0;
       sections.forEach(function (sec, i) {
         var g = (grid[i] && grid[i][tier]) || {};
@@ -1330,76 +1477,97 @@
       });
       var hasPrices = sectionSeats > 0;
 
-      var baseline = 0, adjusted = 0, captured = 0;
-      var fillPct = netSell > 0 ? soldVal / netSell : 0;
+      var stBaseline = 0, stAdj = 0, captured = 0;
+      var fillPct = stSellable > 0 ? soldVal / stSellable : 0;
 
       if (hasPrices) {
-        var scale = sectionSeats > 0 ? netSell / sectionSeats : 1;
+        var scale = sectionSeats > 0 ? stSellable / sectionSeats : 1;
         if (isLive && soldVal > 0) {
           var wtdC = perfContracted / sectionSeats;
           var wtdA = perfAdj / sectionSeats;
-          var remaining = Math.max(0, netSell - soldVal);
-          captured  = soldVal * wtdC;
-          baseline  = captured + remaining * wtdC;
-          adjusted  = captured + remaining * wtdA;
+          var remaining = Math.max(0, stSellable - soldVal);
+          captured   = soldVal * wtdC;
+          stBaseline = captured + remaining * wtdC;
+          stAdj      = captured + remaining * wtdA;
         } else {
-          baseline = perfContracted * scale;
-          adjusted = perfAdj * scale;
+          stBaseline = perfContracted * scale;
+          stAdj      = perfAdj * scale;
         }
       }
 
-      var delta     = adjusted - baseline;
-      var deltaPct  = baseline > 0 ? (delta / baseline) * 100 : 0;
-      var adjWithRest = adjusted + (netSell * 4.00);
+      var totalBaseline  = stBaseline + subRev;
+      var totalAdj       = stAdj      + subRev;
+      var delta          = totalAdj   - totalBaseline;
+      var deltaPct       = totalBaseline > 0 ? (delta / totalBaseline) * 100 : 0;
+      /* Restoration on single-ticket seats only */
+      var stAdjWithRest  = stAdj + (stSellable * 4.00);
 
       totNetSell  += netSell;
       totSold     += soldVal;
       totCaptured += captured;
-      totBaseline += baseline;
-      totAdj      += adjusted;
+      totBaseline += stBaseline;
+      totAdj      += stAdj;
+      totSubSeats += subSeats;
+      totSubRev   += subRev;
 
       resultsData.push({
         label: (dateVal || '—') + (timeVal ? '  ' + timeVal : ''),
-        tier: tier, netSell: netSell, sold: soldVal, fillPct: fillPct,
-        captured: captured, baseline: baseline, adjusted: adjusted,
-        delta: delta, deltaPct: deltaPct, adjWithRest: adjWithRest, hasPrices: hasPrices
+        tier: tier, netSell: netSell, subSeats: subSeats, stSellable: stSellable,
+        subRev: subRev, sold: soldVal, fillPct: fillPct, captured: captured,
+        stBaseline: stBaseline, stAdj: stAdj,
+        totalBaseline: totalBaseline, totalAdj: totalAdj,
+        delta: delta, deltaPct: deltaPct, stAdjWithRest: stAdjWithRest,
+        hasPrices: hasPrices
       });
     });
 
     /* Render per-performance results table */
     var resultsCard = document.getElementById('resultsCard');
     var resBody     = document.getElementById('resultsBody');
-    if (totBaseline > 0 || totAdj > 0) {
+    var hasSubs     = totSubSeats > 0;
+    if (totBaseline > 0 || totAdj > 0 || totSubRev > 0) {
       resBody.innerHTML = resultsData.map(function (r) {
         var dColor = r.delta >= 0 ? 'var(--teal)' : 'var(--rose)';
+        var m = 'font-family:var(--mono);font-size:.65rem;';
+        var ms = m + 'font-size:.62rem;';
         return '<tr>' +
           '<td style="white-space:nowrap;font-size:.65rem;">' + r.label + '</td>' +
           '<td style="text-align:center;"><span class="status neutral" style="font-size:.48rem;">Tier ' + r.tier + '</span></td>' +
-          '<td style="text-align:right;font-family:var(--mono);font-size:.65rem;">' + r.netSell.toLocaleString() + '</td>' +
-          '<td class="live-col" style="display:none;text-align:right;font-family:var(--mono);font-size:.65rem;">' + (r.sold > 0 ? r.sold.toLocaleString() : '—') + '</td>' +
-          '<td class="live-col" style="display:none;text-align:right;font-family:var(--mono);font-size:.65rem;">' + (r.sold > 0 ? (r.fillPct*100).toFixed(1) + '%' : '—') + '</td>' +
-          '<td class="live-col" style="display:none;text-align:right;font-family:var(--mono);font-size:.65rem;">' + (r.captured > 0 ? '$' + Math.round(r.captured).toLocaleString() : '—') + '</td>' +
-          '<td style="text-align:right;font-family:var(--mono);font-size:.65rem;">' + (r.hasPrices ? '$' + Math.round(r.baseline).toLocaleString() : '—') + '</td>' +
-          '<td style="text-align:right;font-family:var(--mono);font-size:.65rem;font-weight:600;">' + (r.hasPrices ? '$' + Math.round(r.adjusted).toLocaleString() : '—') + '</td>' +
-          '<td style="text-align:right;font-family:var(--mono);font-size:.65rem;color:' + dColor + ';">' + (r.hasPrices ? (r.delta >= 0 ? '+$' : '-$') + Math.round(Math.abs(r.delta)).toLocaleString() : '—') + '</td>' +
-          '<td style="text-align:right;font-family:var(--mono);font-size:.65rem;color:' + dColor + ';">' + (r.hasPrices ? (r.deltaPct >= 0 ? '+' : '') + r.deltaPct.toFixed(1) + '%' : '—') + '</td>' +
-          '<td style="text-align:right;font-family:var(--mono);font-size:.62rem;color:var(--ink3);">' + (r.hasPrices ? '$' + Math.round(r.adjWithRest).toLocaleString() : '—') + '</td>' +
+          '<td style="text-align:right;' + m + '">' + r.netSell.toLocaleString() + '</td>' +
+          '<td style="text-align:right;' + m + 'color:var(--amber);">' + (r.subSeats > 0 ? r.subSeats.toLocaleString() : '—') + '</td>' +
+          '<td style="text-align:right;' + m + '">' + r.stSellable.toLocaleString() + '</td>' +
+          '<td style="text-align:right;' + m + 'color:var(--amber);">' + (r.subRev > 0 ? '$' + Math.round(r.subRev).toLocaleString() : '—') + '</td>' +
+          '<td class="live-col" style="display:none;text-align:right;' + m + '">' + (r.sold > 0 ? r.sold.toLocaleString() : '—') + '</td>' +
+          '<td class="live-col" style="display:none;text-align:right;' + m + '">' + (r.sold > 0 ? (r.fillPct*100).toFixed(1) + '%' : '—') + '</td>' +
+          '<td class="live-col" style="display:none;text-align:right;' + m + '">' + (r.captured > 0 ? '$' + Math.round(r.captured).toLocaleString() : '—') + '</td>' +
+          '<td style="text-align:right;' + m + '">' + (r.hasPrices ? '$' + Math.round(r.stBaseline).toLocaleString() : '—') + '</td>' +
+          '<td style="text-align:right;' + m + '">' + (r.hasPrices ? '$' + Math.round(r.stAdj).toLocaleString() : '—') + '</td>' +
+          '<td style="text-align:right;' + m + 'font-weight:600;">' + (r.hasPrices || r.subRev > 0 ? '$' + Math.round(r.totalBaseline).toLocaleString() : '—') + '</td>' +
+          '<td style="text-align:right;' + m + 'font-weight:600;color:var(--teal);">' + (r.hasPrices || r.subRev > 0 ? '$' + Math.round(r.totalAdj).toLocaleString() : '—') + '</td>' +
+          '<td style="text-align:right;' + m + 'color:' + dColor + ';">' + (r.hasPrices ? (r.delta >= 0 ? '+$' : '-$') + Math.round(Math.abs(r.delta)).toLocaleString() : '—') + '</td>' +
+          '<td style="text-align:right;' + m + 'color:' + dColor + ';">' + (r.hasPrices ? (r.deltaPct >= 0 ? '+' : '') + r.deltaPct.toFixed(1) + '%' : '—') + '</td>' +
+          '<td style="text-align:right;' + ms + 'color:var(--ink3);">' + (r.hasPrices ? '$' + Math.round(r.stAdjWithRest).toLocaleString() : '—') + '</td>' +
           '</tr>';
       }).join('');
       applyMode(mode);
       resultsCard.style.display = '';
 
       /* Run total strip */
-      var totalDelta        = totAdj - totBaseline;
-      var totalDeltaPct     = totBaseline > 0 ? (totalDelta / totBaseline) * 100 : 0;
-      var totalBaseWithRest = totBaseline + (totNetSell * 4.00);
-      var totalAdjWithRest  = totAdj     + (totNetSell * 4.00);
+      var combBaseline    = totBaseline + totSubRev;
+      var combAdj         = totAdj      + totSubRev;
+      var totalDelta      = combAdj - combBaseline;
+      var totalDeltaPct   = combBaseline > 0 ? (totalDelta / combBaseline) * 100 : 0;
+      var totalSTWithRest = totAdj + (totNetSell * 4.00);
 
-      document.getElementById('outTotalCap').textContent    = totNetSell.toLocaleString();
-      document.getElementById('outCurrentRev').textContent  = '$' + Math.round(totBaseline).toLocaleString();
-      document.getElementById('outBaseRest').textContent    = 'incl. rest: $' + Math.round(totalBaseWithRest).toLocaleString();
-      document.getElementById('outProjRev').textContent     = '$' + Math.round(totAdj).toLocaleString();
-      document.getElementById('outAdjRest').textContent     = 'incl. rest: $' + Math.round(totalAdjWithRest).toLocaleString();
+      document.getElementById('outTotalCap').textContent     = totNetSell.toLocaleString();
+      document.getElementById('outTotalSubSeats').textContent = hasSubs ? totSubSeats.toLocaleString() : '—';
+      document.getElementById('outSubRev').textContent        = hasSubs ? '$' + Math.round(totSubRev).toLocaleString() : '—';
+      document.getElementById('outCurrentRev').textContent    = '$' + Math.round(totBaseline).toLocaleString();
+      document.getElementById('outBaseRest').textContent      = 'ST face value excl. rest.';
+      document.getElementById('outProjRev').textContent       = '$' + Math.round(totAdj).toLocaleString();
+      document.getElementById('outAdjRest').textContent       = 'incl. rest: $' + Math.round(totalSTWithRest).toLocaleString();
+      document.getElementById('outCombBaseline').textContent  = '$' + Math.round(combBaseline).toLocaleString();
+      document.getElementById('outCombAdj').textContent       = '$' + Math.round(combAdj).toLocaleString();
 
       var dEl = document.getElementById('outDelta');
       dEl.textContent = (totalDelta >= 0 ? '+$' : '-$') + Math.round(Math.abs(totalDelta)).toLocaleString();
@@ -1416,8 +1584,8 @@
       }
 
       document.getElementById('scenarioOutput').style.display = '';
-      updateKPIs(totAdj, totalDelta);
-      updateJustification(totBaseline, totAdj, totalDelta, totalDeltaPct, totNetSell, totSold, isLive, resultsData.length);
+      updateKPIs(combAdj, totalDelta);
+      updateJustification(totBaseline, totAdj, totalDelta, totalDeltaPct, totNetSell, totSold, isLive, resultsData.length, totSubSeats, totSubRev, combBaseline, combAdj);
     } else {
       resultsCard.style.display = 'none';
       document.getElementById('scenarioOutput').style.display = 'none';
@@ -1434,28 +1602,43 @@
     } else { varEl.textContent = '—'; varEl.style.color = ''; }
   }
 
-  function updateJustification (baseline, adjusted, delta, deltaPct, netSell, sold, isLive, perfCount) {
+  function updateJustification (stBaseline, stAdj, delta, deltaPct, netSell, sold, isLive, perfCount, subSeats, subRev, combBaseline, combAdj) {
     var showName = _selectedShow ? _selectedShow.displayName : (document.getElementById('inpShowName').value || '(no show selected)');
     var jTitle = document.getElementById('justifyTitle');
     if (jTitle) jTitle.textContent = showName;
+
+    var hasSubs = subSeats > 0;
     var baseDesc = isLive
-      ? '$' + Math.round(baseline).toLocaleString() + ' (' + sold.toLocaleString() + ' sold + projected remaining at contracted pricing)'
-      : '$' + Math.round(baseline).toLocaleString() + ' (pre-sale, contracted pricing · ' + netSell.toLocaleString() + ' net sellable)';
+      ? '$' + Math.round(combBaseline).toLocaleString() + ' combined baseline (' +
+          sold.toLocaleString() + ' ST sold + projected remaining at contracted; ' +
+          (hasSubs ? 'sub revenue est. $' + Math.round(subRev).toLocaleString() + ' incl. fees' : 'no subscriber data') + ')'
+      : '$' + Math.round(combBaseline).toLocaleString() + ' combined baseline · ' +
+          '$' + Math.round(stBaseline).toLocaleString() + ' ST (pre-sale) + ' +
+          (hasSubs ? '$' + Math.round(subRev).toLocaleString() + ' sub (incl. fees, est. pre-Paciolan)' : 'no subscriber data');
     var jBase = document.getElementById('justifyBaseline');
     if (jBase) jBase.textContent = baseDesc;
-    var adjDesc = '$' + Math.round(adjusted).toLocaleString() +
-      ' (' + (delta >= 0 ? '+' : '') + '$' + Math.round(Math.abs(delta)).toLocaleString() +
-      ' / ' + (deltaPct >= 0 ? '+' : '') + deltaPct.toFixed(1) + '% vs. baseline)';
+
+    var adjDesc = '$' + Math.round(combAdj).toLocaleString() + ' combined adjusted · ' +
+      '$' + Math.round(stAdj).toLocaleString() + ' ST adjusted + ' +
+      (hasSubs ? '$' + Math.round(subRev).toLocaleString() + ' sub (unchanged) · ' : '') +
+      (delta >= 0 ? '+' : '') + '$' + Math.round(Math.abs(delta)).toLocaleString() +
+      ' / ' + (deltaPct >= 0 ? '+' : '') + deltaPct.toFixed(1) + '% vs. combined baseline';
     var jScen = document.getElementById('justifyScenario');
     if (jScen) jScen.textContent = adjDesc;
+
     var rationale = (isLive ? 'Live mode' : 'Pre-sale mode') + ': ' +
       perfCount + ' performance' + (perfCount !== 1 ? 's' : '') + ' · ' +
-      netSell.toLocaleString() + ' total net sellable. ' +
-      'Adjusted gross ' + (delta >= 0 ? 'increases' : 'decreases') + ' by $' +
-      Math.abs(Math.round(delta)).toLocaleString() + ' (' + (deltaPct >= 0 ? '+' : '') + deltaPct.toFixed(1) + '%). ' +
-      'Face value excl. $4.00 restoration — League-compliant.';
+      netSell.toLocaleString() + ' total net sellable. ';
+    if (hasSubs) {
+      rationale += 'Estimated ' + subSeats.toLocaleString() + ' subscriber seats/perf (pre-Paciolan) generating $' +
+        Math.round(subRev).toLocaleString() + ' total sub revenue (incl. fees, package pricing). ';
+    }
+    rationale += 'Single-ticket adjusted gross ' + (delta >= 0 ? 'increases' : 'decreases') + ' combined total by $' +
+      Math.abs(Math.round(delta)).toLocaleString() + ' (' + (deltaPct >= 0 ? '+' : '') + deltaPct.toFixed(1) + '% vs. combined baseline). ' +
+      'ST face value excl. $4.00 restoration — League-compliant. Subscriber revenue incl. fees — not mixed with face value.';
     var jRat = document.getElementById('justifyRationale');
     if (jRat) jRat.textContent = rationale;
+
     var precCount = document.querySelectorAll('#precTableBody tr').length;
     var jPrec = document.getElementById('justifyPrecCount');
     if (jPrec) jPrec.textContent = precCount || '—';
