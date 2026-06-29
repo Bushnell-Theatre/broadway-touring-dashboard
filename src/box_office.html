@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
 <meta name="googlebot" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
-<title>Broadway Touring · Box Office Manager v1.2</title>
+<title>Broadway Touring · Box Office Manager v1.3</title>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Libre+Franklin:ital,wght@0,300;0,400;0,600;0,700;0,900;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="js/utils.js"></script>
 <style>
@@ -84,7 +84,7 @@
 .section-price-table input{width:82px;padding:4px 7px;text-align:right;font-family:var(--mono);font-size:.72rem}
 .weighted-avg-bar{background:var(--bg2);border:1px solid var(--rule);border-radius:3px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;margin-top:10px;font-size:.65rem;color:var(--ink2)}
 .weighted-avg-bar strong{font-family:var(--serif);font-size:1.1rem;color:var(--ink)}
-/* ── SCENARIO MODEL v1.2 ── */
+/* ── SCENARIO MODEL v1.3 ── */
 .mode-badge{font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 12px;border-radius:20px;white-space:nowrap}
 .mode-presale{background:var(--amber-lt);color:var(--amber);border:1px solid rgba(0,56,101,.2)}
 .mode-live{background:var(--teal-lt);color:var(--teal);border:1px solid rgba(10,107,94,.25)}
@@ -324,10 +324,17 @@
           <div>
             <label class="inp-label">Show Name</label>
             <input type="text" id="inpShowName" placeholder="Auto-fills from sidebar selection">
+            <div id="fsLoadWrap" style="display:none;margin-top:8px;">
+              <button class="btn btn-primary" style="width:100%;padding:9px;" onclick="loadFactSheet()">↓ Load Fact Sheet Data</button>
+              <div style="font-size:.58rem;color:var(--ink3);margin-top:5px;" id="fsLoadNote"></div>
+            </div>
           </div>
           <div>
             <label class="inp-label">Contracted Sellable Seats</label>
             <input type="number" id="inpCapacity" min="0" value="2704" oninput="calcScenario()" style="font-family:var(--mono);">
+            <div id="grossPotentialRef" style="display:none;font-size:.58rem;color:var(--ink3);margin-top:5px;">
+              Fact sheet gross potential: <strong id="gpExcl">—</strong> excl. restoration · <strong id="gpIncl">—</strong> incl. restoration
+            </div>
           </div>
         </div>
         <div style="margin-bottom:16px;">
@@ -342,6 +349,10 @@
           </div>
           <div style="font-size:.62rem;color:var(--ink3);margin-top:10px;">
             Net Sellable: <strong id="netSellableDisplay" style="font-family:var(--mono);">—</strong> seats per performance (contracted minus holds; overridable per-performance below)
+          </div>
+          <div id="holdsNoteWrap" style="display:none;margin-top:8px;padding:8px 12px;background:var(--bg2);border:1px solid var(--rule);border-radius:3px;font-size:.58rem;color:var(--ink3);line-height:1.55;">
+            <strong style="display:block;margin-bottom:3px;">Holds Note (from fact sheet)</strong>
+            <span id="holdsNoteText"></span>
           </div>
         </div>
         <!-- Subscriber Sales -->
@@ -631,7 +642,7 @@
 <!-- ══ FOOTER ══ -->
 <footer class="footer">
   <div><strong>BROADWAY TOURING · BOX OFFICE MANAGER</strong> — CONFIDENTIAL · For internal use only</div>
-  <div>v1.2 · June 29, 2026 · Bushnell Center for the Performing Arts</div>
+  <div>v1.3 · June 29, 2026 · Bushnell Center for the Performing Arts</div>
 </footer>
 
 <!-- ══ INLINE SCRIPT ══ -->
@@ -642,6 +653,7 @@
   /* ── State ── */
   var _records = [];       // all data.json records
   var _seasons = {};       // seasons.json keyed by season label
+  var _factsheets = {};    // factsheets.json keyed by show display name
   var _activeSeason = '2025-2026';
   var _selectedShow = null;   // { leagueName, displayName, sub, open, close }
   var _peer = 'size';
@@ -666,16 +678,19 @@
   window.loadData = function () {
     var seasonsP = fetch('data/seasons.json').then(function (r) { return r.json(); });
     var dataP    = fetch('data/data.json').then(function (r) { return r.json(); });
+    var fsP      = fetch('data/factsheets.json').then(function (r) { return r.json(); }).catch(function () { return {}; });
 
-    Promise.all([seasonsP, dataP]).then(function (results) {
-      _seasons = results[0] || {};
-      var raw = results[1] || {};
-      _records = Array.isArray(raw) ? raw : (raw.records || raw.rows || raw.data || []);
+    Promise.all([seasonsP, dataP, fsP]).then(function (results) {
+      _seasons    = results[0] || {};
+      var raw     = results[1] || {};
+      _factsheets = (results[2] && results[2].shows) ? results[2].shows : {};
+      _records    = Array.isArray(raw) ? raw : (raw.records || raw.rows || raw.data || []);
       init();
     }).catch(function (e) {
       console.warn('[box_office] data load failed', e);
-      _records = [];
-      _seasons = {};
+      _records    = [];
+      _seasons    = {};
+      _factsheets = {};
       init();
     });
   };
@@ -792,6 +807,7 @@
     document.getElementById('justifySeason').textContent = (season || _activeSeason);
     document.getElementById('justifyTitle').textContent = _selectedShow.displayName;
 
+    syncFactSheetButton();
     renderAll();
   };
 
@@ -806,6 +822,7 @@
     renderShowList(val);
     resetMainPanel();
     resetKPIs();
+    syncFactSheetButton();
   };
 
   window.setPeer = function (btn, val) {
@@ -836,6 +853,11 @@
     renderShowList('2025-2026');
     resetMainPanel();
     resetKPIs();
+    syncFactSheetButton();
+    var gpEl = document.getElementById('grossPotentialRef');
+    if (gpEl) gpEl.style.display = 'none';
+    var hnw = document.getElementById('holdsNoteWrap');
+    if (hnw) hnw.style.display = 'none';
   };
 
   function resetMainPanel() {
@@ -1186,7 +1208,7 @@
     };
   }
 
-  /* ── Scenario Model v1.2 ── */
+  /* ── Scenario Model v1.3 ── */
 
   var STD_WEEK = [
     { label: 'Tuesday Eve',   time: '7:30 PM', tier: 'B' },
@@ -1644,6 +1666,113 @@
     if (jPrec) jPrec.textContent = precCount || '—';
     _scenarioRan = true;
   }
+
+  /* ── Fact Sheet helpers ── */
+  function findFactSheet (displayName) {
+    if (!displayName) return null;
+    if (_factsheets[displayName]) return _factsheets[displayName];
+    var lower = displayName.toLowerCase();
+    var keys  = Object.keys(_factsheets);
+    for (var i = 0; i < keys.length; i++) {
+      if (keys[i].toLowerCase() === lower) return _factsheets[keys[i]];
+    }
+    return null;
+  }
+
+  function syncFactSheetButton () {
+    var wrap = document.getElementById('fsLoadWrap');
+    var note = document.getElementById('fsLoadNote');
+    if (!wrap) return;
+    var fs = _selectedShow ? findFactSheet(_selectedShow.displayName) : null;
+    wrap.style.display = fs ? '' : 'none';
+    if (fs && note) {
+      note.textContent = fs.performances.length + ' performances · ' +
+        fs.contractedSellablePerPerf.toLocaleString() + ' contracted seats · ' +
+        (fs.subType === 'addon' ? 'Add-on show' : 'Core subscription show') +
+        ' — Loading replaces current performance data.';
+    }
+  }
+
+  function setValue (id, val) {
+    var el = document.getElementById(id);
+    if (el) el.value = val;
+  }
+
+  function populatePricingGrid (pricing) {
+    if (!pricing) return;
+    var sections = getSections();
+    document.querySelectorAll('.pg-inp[data-col="c"]').forEach(function (inp) {
+      var tier     = inp.dataset.tier;
+      var idx      = +inp.dataset.idx;
+      var sec      = sections[idx];
+      if (!sec) return;
+      var tierPricing = pricing[tier];
+      if (!tierPricing) return;
+      var price = tierPricing[sec.name];
+      if (price !== undefined) inp.value = price;
+    });
+  }
+
+  window.loadFactSheet = function () {
+    var fs = _selectedShow ? findFactSheet(_selectedShow.displayName) : null;
+    if (!fs) return;
+
+    /* Capacity */
+    setValue('inpCapacity', fs.contractedSellablePerPerf);
+
+    /* Holds */
+    var h = fs.holds || {};
+    setValue('holdHouse',     h.house     || 0);
+    setValue('holdPresenter', h.presenter || 0);
+    setValue('holdTrouble',   (h.troubleBO || 0) + (h.troubleFOH || 0));
+    setValue('holdOther',     h.other     || 0);
+
+    /* Holds note */
+    var holdsNoteWrap = document.getElementById('holdsNoteWrap');
+    var holdsNoteText = document.getElementById('holdsNoteText');
+    if (holdsNoteText && h.notes) {
+      holdsNoteText.textContent = h.notes;
+      if (holdsNoteWrap) holdsNoteWrap.style.display = '';
+    } else if (holdsNoteWrap) {
+      holdsNoteWrap.style.display = 'none';
+    }
+
+    /* Subscriber type */
+    var subType = document.getElementById('subShowType');
+    if (subType) {
+      subType.value = fs.subType === 'addon' ? 'addon' : 'core';
+      toggleSubType();
+    }
+
+    /* Performances */
+    var tbody = document.getElementById('runTableBody');
+    tbody.innerHTML = '';
+    (fs.performances || []).forEach(function (p) {
+      var row = makePerfRow({ time: p.time, tier: p.tier });
+      var dateInp = row.querySelector('.rp-date');
+      if (dateInp) dateInp.value = p.date;
+      tbody.appendChild(row);
+    });
+    syncRunEmpty();
+
+    /* Pricing grid */
+    populatePricingGrid(fs.pricing);
+
+    /* Gross potential reference */
+    var gpEl   = document.getElementById('grossPotentialRef');
+    var gpExcl = document.getElementById('gpExcl');
+    var gpIncl = document.getElementById('gpIncl');
+    if (gpEl && fs.grossPotentialExclRest) {
+      gpExcl.textContent = '$' + Math.round(fs.grossPotentialExclRest).toLocaleString();
+      gpIncl.textContent = '$' + Math.round(fs.grossPotentialWithRest).toLocaleString();
+      gpEl.style.display = '';
+    }
+
+    calcScenario();
+
+    var note = document.getElementById('fsLoadNote');
+    if (note) note.textContent = '✓ Loaded ' + (fs.performances || []).length + ' performances and pricing from fact sheet. All values are editable.';
+  };
 
   /* ── Bootstrap ── */
   loadSeatConfig();
