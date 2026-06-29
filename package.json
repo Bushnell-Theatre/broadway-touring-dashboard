@@ -1,0 +1,28 @@
+{
+  "name": "broadway-touring-dashboard",
+  "version": "1.0.0",
+  "description": "**Production:** https://white-pebble-01710020f.7.azurestaticapps.net/  \r **Version:** v5.0 · June 2026  \r **Sponsor:** Stephanie Fried, COO — The Bushnell Center for the Performing Arts",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bushnell-Theatre/broadway-touring-dashboard.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Bushnell-Theatre/broadway-touring-dashboard/issues"
+  },
+  "homepage": "https://github.com/Bushnell-Theatre/broadway-touring-dashboard#readme",
+  "devDependencies": {
+    "prettier": "^3.9.3"
+  }
+}

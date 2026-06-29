@@ -1,240 +1,456 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
-<meta name="googlebot" content="noindex, nofollow">
-<meta name="referrer" content="no-referrer">
-<title>Broadway Touring Intelligence — Development Hub</title>
-<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Libre+Franklin:ital,wght@0,300;0,400;0,600;0,700;0,900;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-:root {
-  --ink:      #141414;
-  --ink2:     #3a3a3a;
-  --ink3:     #595959;
-  --rule:     #d8d4ce;
-  --rule2:    #ece9e4;
-  --bg:       #fdf8f4;
-  --bg2:      #f3f1ee;
-  --amber:    #003865;
-  --gold:     #ff9e1b;
-  --teal:     #0A6B5E;
-  --rose:     #B0303A;
-  --serif:    'Libre Baskerville', Georgia, serif;
-  --sans:     'Libre Franklin', system-ui, sans-serif;
-  --mono:     'IBM Plex Mono', monospace;
-}
-*{box-sizing:border-box;margin:0;padding:0;}
-html{scroll-behavior:smooth;}
-body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:13px;min-height:100vh;display:flex;flex-direction:column;}
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
+    <meta name="googlebot" content="noindex, nofollow" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Broadway Touring Intelligence — Development Hub</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Libre+Franklin:ital,wght@0,300;0,400;0,600;0,700;0,900;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --ink: #141414;
+        --ink2: #3a3a3a;
+        --ink3: #595959;
+        --rule: #d8d4ce;
+        --rule2: #ece9e4;
+        --bg: #fdf8f4;
+        --bg2: #f3f1ee;
+        --amber: #003865;
+        --gold: #ff9e1b;
+        --teal: #0a6b5e;
+        --rose: #b0303a;
+        --serif: 'Libre Baskerville', Georgia, serif;
+        --sans: 'Libre Franklin', system-ui, sans-serif;
+        --mono: 'IBM Plex Mono', monospace;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: var(--sans);
+        font-size: 13px;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
 
-/* MASTHEAD */
-.masthead{
-  background:var(--ink);color:#fff;
-  padding:0 40px;
-  display:flex;align-items:stretch;
-  border-bottom:3px solid var(--gold);
-  box-shadow:0 2px 12px rgba(0,0,0,.18);
-}
-.masthead-brand{display:flex;align-items:center;gap:16px;padding:16px 0;}
-.brand-icon{
-  width:38px;height:38px;background:var(--amber);border-radius:2px;
-  display:flex;align-items:center;justify-content:center;
-  font-family:var(--serif);font-size:1.1rem;font-weight:700;color:#fff;flex-shrink:0;
-}
-.brand-text h1{font-family:var(--serif);font-size:1.15rem;font-weight:700;color:#fff;letter-spacing:-.01em;line-height:1.1;}
-.brand-text .sub{font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-top:3px;}
-.masthead-right{margin-left:auto;display:flex;align-items:center;}
-.env-badge{
-  font-family:var(--mono);font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--gold);border:1px solid rgba(255,158,27,.35);
-  padding:4px 10px;border-radius:2px;
-}
+      /* MASTHEAD */
+      .masthead {
+        background: var(--ink);
+        color: #fff;
+        padding: 0 40px;
+        display: flex;
+        align-items: stretch;
+        border-bottom: 3px solid var(--gold);
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
+      }
+      .masthead-brand {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px 0;
+      }
+      .brand-icon {
+        width: 38px;
+        height: 38px;
+        background: var(--amber);
+        border-radius: 2px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--serif);
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #fff;
+        flex-shrink: 0;
+      }
+      .brand-text h1 {
+        font-family: var(--serif);
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: -0.01em;
+        line-height: 1.1;
+      }
+      .brand-text .sub {
+        font-size: 0.6rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.4);
+        margin-top: 3px;
+      }
+      .masthead-right {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+      }
+      .env-badge {
+        font-family: var(--mono);
+        font-size: 0.58rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--gold);
+        border: 1px solid rgba(255, 158, 27, 0.35);
+        padding: 4px 10px;
+        border-radius: 2px;
+      }
 
-/* HERO */
-.hero{
-  padding:56px 40px 40px;
-  border-bottom:1px solid var(--rule);
-  max-width:900px;
-}
-.hero-eyebrow{
-  font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;
-  color:var(--gold);font-weight:600;margin-bottom:14px;
-}
-.hero-title{
-  font-family:var(--serif);font-size:2rem;font-weight:700;
-  color:var(--ink);line-height:1.2;letter-spacing:-.02em;
-  margin-bottom:14px;
-}
-.hero-title em{color:var(--amber);font-style:normal;}
-.hero-desc{
-  font-size:.8rem;color:var(--ink3);line-height:1.7;
-  max-width:580px;
-}
+      /* HERO */
+      .hero {
+        padding: 56px 40px 40px;
+        border-bottom: 1px solid var(--rule);
+        max-width: 900px;
+      }
+      .hero-eyebrow {
+        font-size: 0.62rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--gold);
+        font-weight: 600;
+        margin-bottom: 14px;
+      }
+      .hero-title {
+        font-family: var(--serif);
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--ink);
+        line-height: 1.2;
+        letter-spacing: -0.02em;
+        margin-bottom: 14px;
+      }
+      .hero-title em {
+        color: var(--amber);
+        font-style: normal;
+      }
+      .hero-desc {
+        font-size: 0.8rem;
+        color: var(--ink3);
+        line-height: 1.7;
+        max-width: 580px;
+      }
 
-/* GRID */
-.builds{
-  padding:36px 40px 60px;
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
-  gap:20px;
-  max-width:1100px;
-}
-.build-card{
-  background:#fff;border:1px solid var(--rule);border-radius:3px;
-  padding:24px;
-  display:flex;flex-direction:column;
-  transition:box-shadow .15s,border-color .15s;
-  text-decoration:none;color:inherit;
-}
-.build-card:hover{border-color:var(--amber);box-shadow:0 6px 24px rgba(0,0,0,.07);}
-.build-card:hover .card-arrow{color:var(--amber);}
+      /* GRID */
+      .builds {
+        padding: 36px 40px 60px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+        max-width: 1100px;
+      }
+      .build-card {
+        background: #fff;
+        border: 1px solid var(--rule);
+        border-radius: 3px;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        transition:
+          box-shadow 0.15s,
+          border-color 0.15s;
+        text-decoration: none;
+        color: inherit;
+      }
+      .build-card:hover {
+        border-color: var(--amber);
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.07);
+      }
+      .build-card:hover .card-arrow {
+        color: var(--amber);
+      }
 
-.card-tag{
-  font-size:.55rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
-  margin-bottom:12px;display:inline-flex;align-items:center;gap:6px;
-}
-.tag-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
-.tag-primary .tag-dot{background:var(--teal);}
-.tag-demo    .tag-dot{background:var(--gold);}
-.tag-proto   .tag-dot{background:var(--rule);}
+      .card-tag {
+        font-size: 0.55rem;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .tag-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .tag-primary .tag-dot {
+        background: var(--teal);
+      }
+      .tag-demo .tag-dot {
+        background: var(--gold);
+      }
+      .tag-proto .tag-dot {
+        background: var(--rule);
+      }
 
-.card-name{
-  font-family:var(--serif);font-size:1.1rem;font-weight:700;
-  color:var(--ink);line-height:1.25;margin-bottom:8px;
-  min-height:2.75rem;
-}
-.card-desc{
-  font-size:.68rem;color:var(--ink3);line-height:1.65;
-  flex:1;margin-bottom:20px;
-}
-.card-meta{
-  display:flex;align-items:center;justify-content:space-between;
-  border-top:1px solid var(--rule2);padding-top:14px;
-  font-family:var(--mono);font-size:.6rem;color:var(--ink3);
-}
-.card-file{color:var(--amber);}
-.card-arrow{font-size:.9rem;transition:color .15s;}
+      .card-name {
+        font-family: var(--serif);
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--ink);
+        line-height: 1.25;
+        margin-bottom: 8px;
+        min-height: 2.75rem;
+      }
+      .card-desc {
+        font-size: 0.68rem;
+        color: var(--ink3);
+        line-height: 1.65;
+        flex: 1;
+        margin-bottom: 20px;
+      }
+      .card-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-top: 1px solid var(--rule2);
+        padding-top: 14px;
+        font-family: var(--mono);
+        font-size: 0.6rem;
+        color: var(--ink3);
+      }
+      .card-file {
+        color: var(--amber);
+      }
+      .card-arrow {
+        font-size: 0.9rem;
+        transition: color 0.15s;
+      }
 
-/* FOOTER */
-footer{
-  margin-top:auto;
-  background:var(--ink);color:rgba(255,255,255,.4);
-  padding:10px 40px;
-  display:flex;align-items:center;justify-content:space-between;
-  font-size:.58rem;letter-spacing:.06em;
-  border-top:1px solid rgba(255,255,255,.08);
-}
-footer strong{color:rgba(255,255,255,.65);}
-</style>
-</head>
-<body>
+      /* FOOTER */
+      footer {
+        margin-top: auto;
+        background: var(--ink);
+        color: rgba(255, 255, 255, 0.4);
+        padding: 10px 40px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.58rem;
+        letter-spacing: 0.06em;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      footer strong {
+        color: rgba(255, 255, 255, 0.65);
+      }
+    </style>
+  </head>
+  <body>
+    <header class="masthead">
+      <div class="masthead-brand">
+        <div class="brand-icon">B</div>
+        <div class="brand-text">
+          <h1>Broadway Touring Intelligence</h1>
+          <div class="sub">The Bushnell Center for the Performing Arts</div>
+        </div>
+      </div>
+      <div class="masthead-right">
+        <span class="env-badge">Development Hub</span>
+      </div>
+    </header>
 
-<header class="masthead">
-  <div class="masthead-brand">
-    <div class="brand-icon">B</div>
-    <div class="brand-text">
-      <h1>Broadway Touring Intelligence</h1>
-      <div class="sub">The Bushnell Center for the Performing Arts</div>
+    <div class="hero">
+      <div class="hero-eyebrow">Active Builds</div>
+      <h2 class="hero-title">
+        Broadway Touring Intelligence —
+        <br />
+        <em>Development Hub</em>
+      </h2>
+      <p class="hero-desc">
+        Internal working index for the Broadway Touring Sales Intelligence project. Select a build below to open it.
+        Demos and prototypes are experimental and subject to change.
+      </p>
+      <div
+        id="data-currency"
+        style="
+          margin-top: 20px;
+          padding: 14px 18px;
+          background: #fff;
+          border: 1px solid var(--rule);
+          border-radius: 3px;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 24px;
+          align-items: flex-start;
+        "
+      >
+        <div>
+          <div
+            style="
+              font-size: 0.52rem;
+              letter-spacing: 0.12em;
+              text-transform: uppercase;
+              color: var(--ink3);
+              margin-bottom: 3px;
+            "
+          >
+            Data Vintage
+          </div>
+          <div id="dc-date" style="font-family: var(--mono); font-size: 0.72rem; font-weight: 500; color: var(--ink)">
+            Loading…
+          </div>
+        </div>
+        <div>
+          <div
+            style="
+              font-size: 0.52rem;
+              letter-spacing: 0.12em;
+              text-transform: uppercase;
+              color: var(--ink3);
+              margin-bottom: 3px;
+            "
+          >
+            Record Count
+          </div>
+          <div id="dc-count" style="font-family: var(--mono); font-size: 0.72rem; font-weight: 500; color: var(--ink)">
+            —
+          </div>
+        </div>
+        <div>
+          <div
+            style="
+              font-size: 0.52rem;
+              letter-spacing: 0.12em;
+              text-transform: uppercase;
+              color: var(--ink3);
+              margin-bottom: 3px;
+            "
+          >
+            Validation
+          </div>
+          <div style="font-family: var(--mono); font-size: 0.72rem; font-weight: 500; color: #0a6b5e">PASS</div>
+        </div>
+        <div style="flex: 1; min-width: 200px">
+          <div
+            style="
+              font-size: 0.52rem;
+              letter-spacing: 0.12em;
+              text-transform: uppercase;
+              color: var(--ink3);
+              margin-bottom: 3px;
+            "
+          >
+            About this tool
+          </div>
+          <div style="font-size: 0.65rem; color: var(--ink3); line-height: 1.6">
+            Decision-support only — built on Broadway League touring data. Fit Scores are directional signals, not
+            predictions. Deal terms, local history, artistic value, and routing availability are not reflected.
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
-  <div class="masthead-right">
-    <span class="env-badge">Development Hub</span>
-  </div>
-</header>
+    <script>
+      fetch('data/data.json')
+        .then((r) => r.json())
+        .then((d) => {
+          const recs = d.records || [];
+          document.getElementById('dc-count').textContent = recs.length.toLocaleString() + ' records';
+          const dates = recs
+            .map((r) => r.week_of)
+            .filter(Boolean)
+            .sort();
+          const last = dates[dates.length - 1];
+          if (last) {
+            const dt = new Date(last + 'T00:00:00');
+            document.getElementById('dc-date').textContent =
+              'Week of ' + dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+          }
+        })
+        .catch(() => {
+          document.getElementById('dc-date').textContent = '—';
+          document.getElementById('dc-count').textContent = '—';
+        });
+    </script>
 
-<div class="hero">
-  <div class="hero-eyebrow">Active Builds</div>
-  <h2 class="hero-title">Broadway Touring Intelligence —<br><em>Development Hub</em></h2>
-  <p class="hero-desc">Internal working index for the Broadway Touring Sales Intelligence project. Select a build below to open it. Demos and prototypes are experimental and subject to change.</p>
-  <div id="data-currency" style="margin-top:20px;padding:14px 18px;background:#fff;border:1px solid var(--rule);border-radius:3px;display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;">
-    <div>
-      <div style="font-size:.52rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-bottom:3px;">Data Vintage</div>
-      <div id="dc-date" style="font-family:var(--mono);font-size:.72rem;font-weight:500;color:var(--ink);">Loading…</div>
+    <div class="builds">
+      <a class="build-card" href="dashboard.html">
+        <div class="card-tag tag-primary">
+          <span class="tag-dot"></span>
+          Primary Build
+        </div>
+        <div class="card-name">Sales Intelligence Dashboard</div>
+        <div class="card-desc">
+          Full data build. Loads weekly Broadway League touring data from file, with KPI strip, multi-tab analysis, peer
+          benchmarking, show history, and fit scoring. Current production candidate.
+        </div>
+        <div class="card-meta">
+          <span class="card-file">dashboard.html</span>
+          <span>v5.0 · Jun 24 2026</span>
+          <span class="card-arrow">→</span>
+        </div>
+      </a>
+
+      <a class="build-card" href="programming.html">
+        <div class="card-tag tag-demo">
+          <span class="tag-dot"></span>
+          Demo
+        </div>
+        <div class="card-name">Programming</div>
+        <div class="card-desc">
+          Full analytics build with data loading, KPI strip, show scorecards, peer benchmarking, show history, and
+          opportunity engine. Earlier iteration of the primary dashboard — retained as a programming reference.
+        </div>
+        <div class="card-meta">
+          <span class="card-file">programming.html</span>
+          <span>v5.0 · Jun 24 2026</span>
+          <span class="card-arrow">→</span>
+        </div>
+      </a>
+
+      <a class="build-card" href="exec_summary.html">
+        <div class="card-tag tag-demo">
+          <span class="tag-dot"></span>
+          Demo
+        </div>
+        <div class="card-name">Executive Summary</div>
+        <div class="card-desc">
+          Executive-facing summary view. Condensed layout with fit scoring, methodology tab, and confidence indicators.
+          Exploratory — may be merged into the primary build or retired.
+        </div>
+        <div class="card-meta">
+          <span class="card-file">exec_summary.html</span>
+          <span>v5.0 · Jun 24 2026</span>
+          <span class="card-arrow">→</span>
+        </div>
+      </a>
+
+      <a class="build-card" href="box_office.html">
+        <div class="card-tag tag-primary">
+          <span class="tag-dot"></span>
+          Box Office
+        </div>
+        <div class="card-name">Box Office Manager</div>
+        <div class="card-desc">
+          Box office demand monitor and scenario modeler. Loads preceding market data for current season shows, projects
+          gross revenue with day-of-week blending, and exports a pricing justification record.
+        </div>
+        <div class="card-meta">
+          <span class="card-file">box_office.html</span>
+          <span>v1.0 · Jun 29 2026</span>
+          <span class="card-arrow">→</span>
+        </div>
+      </a>
     </div>
-    <div>
-      <div style="font-size:.52rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-bottom:3px;">Record Count</div>
-      <div id="dc-count" style="font-family:var(--mono);font-size:.72rem;font-weight:500;color:var(--ink);">—</div>
-    </div>
-    <div>
-      <div style="font-size:.52rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-bottom:3px;">Validation</div>
-      <div style="font-family:var(--mono);font-size:.72rem;font-weight:500;color:#0A6B5E;">PASS</div>
-    </div>
-    <div style="flex:1;min-width:200px;">
-      <div style="font-size:.52rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-bottom:3px;">About this tool</div>
-      <div style="font-size:.65rem;color:var(--ink3);line-height:1.6;">Decision-support only — built on Broadway League touring data. Fit Scores are directional signals, not predictions. Deal terms, local history, artistic value, and routing availability are not reflected.</div>
-    </div>
-  </div>
-</div>
-<script>
-fetch('data/data.json').then(r=>r.json()).then(d=>{
-  const recs = d.records || [];
-  document.getElementById('dc-count').textContent = recs.length.toLocaleString() + ' records';
-  const dates = recs.map(r=>r.week_of).filter(Boolean).sort();
-  const last = dates[dates.length-1];
-  if(last){
-    const dt = new Date(last+'T00:00:00');
-    document.getElementById('dc-date').textContent = 'Week of ' + dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-  }
-}).catch(()=>{
-  document.getElementById('dc-date').textContent = '—';
-  document.getElementById('dc-count').textContent = '—';
-});
-</script>
 
-<div class="builds">
-
-  <a class="build-card" href="dashboard.html">
-    <div class="card-tag tag-primary"><span class="tag-dot"></span>Primary Build</div>
-    <div class="card-name">Sales Intelligence Dashboard</div>
-    <div class="card-desc">Full data build. Loads weekly Broadway League touring data from file, with KPI strip, multi-tab analysis, peer benchmarking, show history, and fit scoring. Current production candidate.</div>
-    <div class="card-meta">
-      <span class="card-file">dashboard.html</span>
-      <span>v5.0 · Jun 24 2026</span>
-      <span class="card-arrow">→</span>
-    </div>
-  </a>
-
-  <a class="build-card" href="programming.html">
-    <div class="card-tag tag-demo"><span class="tag-dot"></span>Demo</div>
-    <div class="card-name">Programming</div>
-    <div class="card-desc">Full analytics build with data loading, KPI strip, show scorecards, peer benchmarking, show history, and opportunity engine. Earlier iteration of the primary dashboard — retained as a programming reference.</div>
-    <div class="card-meta">
-      <span class="card-file">programming.html</span>
-      <span>v5.0 · Jun 24 2026</span>
-      <span class="card-arrow">→</span>
-    </div>
-  </a>
-
-  <a class="build-card" href="exec_summary.html">
-    <div class="card-tag tag-demo"><span class="tag-dot"></span>Demo</div>
-    <div class="card-name">Executive Summary</div>
-    <div class="card-desc">Executive-facing summary view. Condensed layout with fit scoring, methodology tab, and confidence indicators. Exploratory — may be merged into the primary build or retired.</div>
-    <div class="card-meta">
-      <span class="card-file">exec_summary.html</span>
-      <span>v5.0 · Jun 24 2026</span>
-      <span class="card-arrow">→</span>
-    </div>
-  </a>
-
-  <a class="build-card" href="box_office.html">
-    <div class="card-tag tag-primary"><span class="tag-dot"></span>Box Office</div>
-    <div class="card-name">Box Office Manager</div>
-    <div class="card-desc">Box office demand monitor and scenario modeler. Loads preceding market data for current season shows, projects gross revenue with day-of-week blending, and exports a pricing justification record.</div>
-    <div class="card-meta">
-      <span class="card-file">box_office.html</span>
-      <span>v1.0 · Jun 29 2026</span>
-      <span class="card-arrow">→</span>
-    </div>
-  </a>
-
-</div>
-
-<footer>
-  <div><strong>CONFIDENTIAL</strong> — Internal use only. The Bushnell Center for the Performing Arts.</div>
-  <div>Broadway Touring Intelligence · Development Hub</div>
-</footer>
-
-</body>
+    <footer>
+      <div>
+        <strong>CONFIDENTIAL</strong>
+        — Internal use only. The Bushnell Center for the Performing Arts.
+      </div>
+      <div>Broadway Touring Intelligence · Development Hub</div>
+    </footer>
+  </body>
 </html>

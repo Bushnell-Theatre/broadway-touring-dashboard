@@ -23,41 +23,43 @@ from datetime import datetime, timezone
 
 import openpyxl
 
-# ── CONSTANTS ─────────────────────────────────────────────────────────────────
+# ── CONSTANTS ───────────────────────────────────────────────────────────
 
-BUSHNELL_AVG   = 2722
-LOWER_BOUND    = BUSHNELL_AVG * 0.9
-UPPER_BOUND    = BUSHNELL_AVG * 1.1
+BUSHNELL_AVG = 2722
+LOWER_BOUND = BUSHNELL_AVG * 0.9
+UPPER_BOUND = BUSHNELL_AVG * 1.1
 
-NE_DETECT  = re.compile(r'(^|\s)n/e(\s|$)', re.IGNORECASE)
-NE_REMOVE  = re.compile(r'(^|\s)n/e(\s|$)', re.IGNORECASE)
-LAYOFF     = re.compile(r'layoff', re.IGNORECASE)
+NE_DETECT = re.compile(r'(^|\s)n/e(\s|$)', re.IGNORECASE)
+NE_REMOVE = re.compile(r'(^|\s)n/e(\s|$)', re.IGNORECASE)
+LAYOFF = re.compile(r'layoff', re.IGNORECASE)
 
-# ── HEADER ALIASES ────────────────────────────────────────────────────────────
+# ── HEADER ALIASES ──────────────────────────────────────────────────────
 
 ALIASES = {
-    'show':           ['show', 'showname', 'production'],
-    'theatre':        ['theatre', 'theater', 'venue', 'theatrename'],
-    'city':           ['city', 'market', 'location'],
-    'ticketRange':    ['ticketrange', 'regticketrange', 'ticketpricerange'],
-    'topPrice':       ['topprice', 'toppaidprice', 'top', 'premium'],
-    'numPerf':        ['numperf', 'performances', 'perfs', 'perf'],
-    'grossGross':     ['grossgross', 'gross', 'gg'],
+    'show': ['show', 'showname', 'production'],
+    'theatre': ['theatre', 'theater', 'venue', 'theatrename'],
+    'city': ['city', 'market', 'location'],
+    'ticketRange': ['ticketrange', 'regticketrange', 'ticketpricerange'],
+    'topPrice': ['topprice', 'toppaidprice', 'top', 'premium'],
+    'numPerf': ['numperf', 'performances', 'perfs', 'perf'],
+    'grossGross': ['grossgross', 'gross', 'gg'],
     'grossPotential': ['grosspotential', 'potential', 'gp'],
-    'ggPctGP':        ['ggpctgp', 'ggpgp', 'gpctgp', 'gggp'],
-    'paidTix':        ['paidtix', 'paidattn', 'paidattendance', 'paid', 'paidtickets', 'paidticket'],
-    'totalTix':       ['totaltix', 'totalattn', 'totalattendance', 'total', 'totaltickets', 'totalticket'],
-    'capacity':       ['capacity', 'totalcapacity', 'cap'],
-    'capPaid':        ['cappaid', 'capacitypaid'],
-    'capTotal':       ['captotal', 'capacitytotal'],
-    'onSub':          ['onsub', 'sub', 'subscription'],
-    'avgAdm':         ['avgadm', 'avgpaidadmission', 'avgpaid', 'averagepaidadmission'],
+    'ggPctGP': ['ggpctgp', 'ggpgp', 'gpctgp', 'gggp'],
+    'paidTix': ['paidtix', 'paidattn', 'paidattendance', 'paid', 'paidtickets', 'paidticket'],
+    'totalTix': ['totaltix', 'totalattn', 'totalattendance', 'total', 'totaltickets', 'totalticket'],
+    'capacity': ['capacity', 'totalcapacity', 'cap'],
+    'capPaid': ['cappaid', 'capacitypaid'],
+    'capTotal': ['captotal', 'capacitytotal'],
+    'onSub': ['onsub', 'sub', 'subscription'],
+    'avgAdm': ['avgadm', 'avgpaidadmission', 'avgpaid', 'averagepaidadmission'],
 }
 
-# ── HELPERS ───────────────────────────────────────────────────────────────────
+# ── HELPERS ─────────────────────────────────────────────────────────────
+
 
 def normalize_header(value):
-    return re.sub(r'[^a-z0-9]', '', str(value or '').lower().replace('\n', ' '))
+    return re.sub(r'[^a-z0-9]', '',
+                  str(value or '').lower().replace('\n', ' '))
 
 
 def build_lookup():
@@ -134,7 +136,7 @@ def normalize_key(s):
     return re.sub(r'[^a-z0-9 ]', '', s.lower()).strip()
 
 
-# ── ROW PROCESSING ────────────────────────────────────────────────────────────
+# ── ROW PROCESSING ──────────────────────────────────────────────────────
 
 def process_row(row, col_map, week_of, tier):
     def get(field):
@@ -144,9 +146,9 @@ def process_row(row, col_map, week_of, tier):
     def text(field):
         return str(get(field) or '').strip()
 
-    raw_show    = text('show')
+    raw_show = text('show')
     raw_theatre = text('theatre')
-    raw_city    = text('city')
+    raw_city = text('city')
 
     if not raw_show or not raw_city:
         return None
@@ -165,7 +167,7 @@ def process_row(row, col_map, week_of, tier):
     if not show or 'for engagements' in show.lower():
         return None
 
-    num_perf    = parse_number(get('numPerf'))
+    num_perf = parse_number(get('numPerf'))
     gross_gross = parse_number(get('grossGross'))
 
     # noEngagement: layoff in any field OR missing perf/gross data
@@ -177,8 +179,10 @@ def process_row(row, col_map, week_of, tier):
         gross_gross is None
     )
 
-    capacity       = parse_number(get('capacity'))
-    venue_sellable = round(capacity / num_perf, 2) if capacity and num_perf else None
+    capacity = parse_number(get('capacity'))
+    venue_sellable = round(
+        capacity / num_perf,
+        2) if capacity and num_perf else None
 
     similar_bushnell = (
         venue_sellable is not None and
@@ -194,33 +198,33 @@ def process_row(row, col_map, week_of, tier):
     ])
 
     return {
-        'week_of':          week_of,
-        'tier':             tier,
-        'show':             show,
-        'theatre':          raw_theatre,
-        'city':             raw_city,
-        'ticket_range':     text('ticketRange') or None,
-        'top_price':        parse_number(get('topPrice')),
-        'num_perf':         num_perf,
-        'gross_gross':      gross_gross,
-        'gross_potential':  parse_number(get('grossPotential')),
-        'gg_pct_gp':        parse_percent(get('ggPctGP')),
-        'paid_tix':         parse_number(get('paidTix')),
-        'total_tix':        parse_number(get('totalTix')),
-        'capacity':         capacity,
-        'cap_paid':         parse_percent(get('capPaid')),
-        'cap_total':        parse_percent(get('capTotal')),
-        'on_sub':           parse_bool(get('onSub')),
-        'avg_adm':          parse_number(get('avgAdm')),
-        'venue_sellable':   venue_sellable,
+        'week_of': week_of,
+        'tier': tier,
+        'show': show,
+        'theatre': raw_theatre,
+        'city': raw_city,
+        'ticket_range': text('ticketRange') or None,
+        'top_price': parse_number(get('topPrice')),
+        'num_perf': num_perf,
+        'gross_gross': gross_gross,
+        'gross_potential': parse_number(get('grossPotential')),
+        'gg_pct_gp': parse_percent(get('ggPctGP')),
+        'paid_tix': parse_number(get('paidTix')),
+        'total_tix': parse_number(get('totalTix')),
+        'capacity': capacity,
+        'cap_paid': parse_percent(get('capPaid')),
+        'cap_total': parse_percent(get('capTotal')),
+        'on_sub': parse_bool(get('onSub')),
+        'avg_adm': parse_number(get('avgAdm')),
+        'venue_sellable': venue_sellable,
         'similar_bushnell': similar_bushnell,
-        'non_equity':       non_equity,
-        'no_engagement':    no_engagement,
-        'canonical_key':    canonical_key,
+        'non_equity': non_equity,
+        'no_engagement': no_engagement,
+        'canonical_key': canonical_key,
     }
 
 
-# ── FILE PROCESSING ───────────────────────────────────────────────────────────
+# ── FILE PROCESSING ─────────────────────────────────────────────────────
 
 def process_file(filepath, log):
     records = []
@@ -241,7 +245,8 @@ def process_file(filepath, log):
         week_of = extract_date(sname)
 
         if not week_of:
-            log.append(f"WARN   | {fname} | {sname} | No date found in sheet name — skipped")
+            log.append(
+                f"WARN   | {fname} | {sname} | No date found in sheet name — skipped")
             continue
 
         ws = wb[sname]
@@ -249,13 +254,15 @@ def process_file(filepath, log):
 
         h_idx = find_header(rows)
         if h_idx is None:
-            log.append(f"WARN   | {fname} | {sname} | No header row found — skipped")
+            log.append(
+                f"WARN   | {fname} | {sname} | No header row found — skipped")
             continue
 
         col_map = map_columns(rows[h_idx])
         missing = [f for f in ALIASES if f not in col_map]
         if missing:
-            log.append(f"WARN   | {fname} | {sname} | Missing columns: {missing}")
+            log.append(
+                f"WARN   | {fname} | {sname} | Missing columns: {missing}")
 
         sheet_records = 0
         for row in rows[h_idx + 1:]:
@@ -264,12 +271,13 @@ def process_file(filepath, log):
                 records.append(rec)
                 sheet_records += 1
 
-        log.append(f"OK     | {fname} | {sname} | {sheet_records} records | week={week_of}")
+        log.append(
+            f"OK     | {fname} | {sname} | {sheet_records} records | week={week_of}")
 
     return records
 
 
-# ── DEDUPLICATION ─────────────────────────────────────────────────────────────
+# ── DEDUPLICATION ───────────────────────────────────────────────────────
 
 def deduplicate(records, log):
     seen = {}
@@ -280,11 +288,14 @@ def deduplicate(records, log):
             seen[key] = rec
         else:
             dupes += 1
-    log.append(f"INFO   | Deduplication: {len(records)} in, {dupes} dupes removed, {len(seen)} out")
+    log.append(
+        f"INFO   | Deduplication: {
+            len(records)} in, {dupes} dupes removed, {
+            len(seen)} out")
     return list(seen.values())
 
 
-# ── MAIN — FULL REBUILD ───────────────────────────────────────────────────────
+# ── MAIN — FULL REBUILD ─────────────────────────────────────────────────
 
 def main_rebuild(input_dir, output_file):
     """Process all XLSX files in a directory and write a fresh data.json."""
@@ -304,7 +315,9 @@ def main_rebuild(input_dir, output_file):
 
     log = []
     log.append(f"INFO   | MODE: full rebuild")
-    log.append(f"INFO   | Processing {len(xlsx_files)} files from '{input_dir}'")
+    log.append(
+        f"INFO   | Processing {
+            len(xlsx_files)} files from '{input_dir}'")
 
     all_records = []
     for fpath in xlsx_files:
@@ -327,7 +340,7 @@ def main_rebuild(input_dir, output_file):
     print(f"\nDone. {len(all_records)} records written to '{output_file}'")
 
 
-# ── MAIN — APPEND MODE ────────────────────────────────────────────────────────
+# ── MAIN — APPEND MODE ──────────────────────────────────────────────────
 
 def main_append(new_file, data_json):
     """
@@ -354,7 +367,9 @@ def main_append(new_file, data_json):
     with open(data_json, 'r', encoding='utf-8') as f:
         existing = json.load(f)
 
-    existing_records = existing if isinstance(existing, list) else existing.get('records', [])
+    existing_records = existing if isinstance(
+        existing, list) else existing.get(
+        'records', [])
     existing_keys = {r['canonical_key'] for r in existing_records}
     log.append(f"INFO   | Existing records: {len(existing_records)}")
 
@@ -372,7 +387,8 @@ def main_append(new_file, data_json):
         else:
             dupes += 1
 
-    log.append(f"INFO   | New records added: {added} | Duplicates skipped: {dupes}")
+    log.append(
+        f"INFO   | New records added: {added} | Duplicates skipped: {dupes}")
 
     # Re-sort
     existing_records.sort(key=lambda r: (r['week_of'], r['show']))
@@ -387,10 +403,12 @@ def main_append(new_file, data_json):
         json.dump(output, f, indent=2, ensure_ascii=False)
 
     print('\n'.join(log))
-    print(f"\nDone. {added} records added. Total: {len(existing_records)} records in '{data_json}'")
+    print(
+        f"\nDone. {added} records added. Total: {
+            len(existing_records)} records in '{data_json}'")
 
 
-# ── ENTRY POINT ───────────────────────────────────────────────────────────────
+# ── ENTRY POINT ─────────────────────────────────────────────────────────
 
 def main():
     if len(sys.argv) >= 2 and sys.argv[1] == '--append':

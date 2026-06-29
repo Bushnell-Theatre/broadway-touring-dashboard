@@ -20,44 +20,46 @@ const PEERS_URL = './peers.json';
 // ── GLOBAL STATE ──────────────────────────────────────────────────────────────
 // Pages read/write these after initData() resolves.
 
-window.ALL        = [];   // raw records from data.json
-window.FILTERED   = [];   // post-filter slice
-window.PEER_META  = {};   // keyed by "theatre|city"
+window.ALL = []; // raw records from data.json
+window.FILTERED = []; // post-filter slice
+window.PEER_META = {}; // keyed by "theatre|city"
 
 // ── FORMATTERS ────────────────────────────────────────────────────────────────
 // Canonical source: programming.html (most complete)
 
 /** Currency: $1.23B / $456.78M / $789K / $123 */
-window.fmt$ = v =>
-  v == null ? '—'
-  : v >= 1e9 ? '$' + (v / 1e9).toFixed(2) + 'B'
-  : v >= 1e6 ? '$' + (v / 1e6).toFixed(2) + 'M'
-  : v >= 1e3 ? '$' + (v / 1e3).toFixed(0) + 'K'
-  : '$' + Math.round(v).toLocaleString();
+window.fmt$ = (v) =>
+  v == null
+    ? '—'
+    : v >= 1e9
+      ? '$' + (v / 1e9).toFixed(2) + 'B'
+      : v >= 1e6
+        ? '$' + (v / 1e6).toFixed(2) + 'M'
+        : v >= 1e3
+          ? '$' + (v / 1e3).toFixed(0) + 'K'
+          : '$' + Math.round(v).toLocaleString();
 
 /** Percentage with NaN guard */
-window.pct = (v, d = 1) =>
-  v == null || Number.isNaN(v) ? '—' : Number(v).toFixed(d) + '%';
+window.pct = (v, d = 1) => (v == null || Number.isNaN(v) ? '—' : Number(v).toFixed(d) + '%');
 
 /** General number with decimal places */
-window.fmtN = (v, d = 1) =>
-  v == null || Number.isNaN(v) ? '—' : Number(v).toFixed(d);
+window.fmtN = (v, d = 1) => (v == null || Number.isNaN(v) ? '—' : Number(v).toFixed(d));
 
 /** Average of an array */
-window.avg = arr =>
-  arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+window.avg = (arr) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null);
 
 /** "Jun 8, 2025" from "2025-06-08"; returns "—" for null/empty */
-window.fmtDate = s => {
+window.fmtDate = (s) => {
   if (!s) return '—';
   const [y, m, d] = s.split('-').map(Number);
   return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
 /** "YYYY-MM-DD" → "YYYY-YYYY" fiscal year label (July start) */
-window.fiscalYear = dateStr => {
+window.fiscalYear = (dateStr) => {
   if (!dateStr) return null;
-  const y = +dateStr.slice(0, 4), mo = +dateStr.slice(5, 7);
+  const y = +dateStr.slice(0, 4),
+    mo = +dateStr.slice(5, 7);
   return mo >= 7 ? `${y}-${y + 1}` : `${y - 1}-${y}`;
 };
 
@@ -65,11 +67,13 @@ window.fiscalYear = dateStr => {
 window.getFiscalYear = window.fiscalYear;
 
 /** "2025-06-08" → "Jun 8, 2025" week label */
-window.fmtWeek = s => {
+window.fmtWeek = (s) => {
   if (!s) return '';
   const parts = s.split('-');
-  const y = parts[0], m = parseInt(parts[1]), d = parseInt(parts[2]);
-  return `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1]} ${d}, ${y}`;
+  const y = parts[0],
+    m = parseInt(parts[1]),
+    d = parseInt(parts[2]);
+  return `${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][m - 1]} ${d}, ${y}`;
 };
 
 // ── PEER HELPERS ──────────────────────────────────────────────────────────────
@@ -103,16 +107,16 @@ window.isPeerType = function isPeerType(d, type) {
  */
 window.applyFilters = function applyFilters(rows, opts = {}) {
   const { tier = '', sub = '', peer = '', equity = '', engage = '', season = '' } = opts;
-  return rows.filter(d => {
-    if (tier   && d.tier !== tier)                                    return false;
-    if (sub === 'sub'    && !d.on_sub)                                return false;
-    if (sub === 'nonsub' && d.on_sub)                                 return false;
-    if (peer   && !window.isPeerType(d, peer))                        return false;
-    if (equity === 'equity'    && d.non_equity)                       return false;
-    if (equity === 'nonequity' && !d.non_equity)                      return false;
-    if (engage === 'performed' && d.no_engagement)                    return false;
-    if (engage === 'no'        && !d.no_engagement)                   return false;
-    if (season && window.fiscalYear(d.week_of) !== season)            return false;
+  return rows.filter((d) => {
+    if (tier && d.tier !== tier) return false;
+    if (sub === 'sub' && !d.on_sub) return false;
+    if (sub === 'nonsub' && d.on_sub) return false;
+    if (peer && !window.isPeerType(d, peer)) return false;
+    if (equity === 'equity' && d.non_equity) return false;
+    if (equity === 'nonequity' && !d.non_equity) return false;
+    if (engage === 'performed' && d.no_engagement) return false;
+    if (engage === 'no' && !d.no_engagement) return false;
+    if (season && window.fiscalYear(d.week_of) !== season) return false;
     return true;
   });
 };
@@ -135,8 +139,13 @@ window.initData = async function initData(onReady, onError) {
   for (const url of urls) {
     try {
       const r = await fetch(url, { cache: 'no-store' });
-      if (r.ok) { rawData = await r.json(); break; }
-    } catch (e) { /* try next */ }
+      if (r.ok) {
+        rawData = await r.json();
+        break;
+      }
+    } catch (e) {
+      /* try next */
+    }
   }
 
   if (!rawData) {
@@ -155,7 +164,7 @@ window.initData = async function initData(onReady, onError) {
       const peersData = await r.json();
       const venues = peersData.venues || peersData;
       window.PEER_META = {};
-      venues.forEach(v => {
+      venues.forEach((v) => {
         window.PEER_META[v.theatre + '|' + v.city] = v;
       });
     }

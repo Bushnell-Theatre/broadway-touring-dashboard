@@ -30,20 +30,20 @@ from pathlib import Path
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
-# ── CONFIGURATION ─────────────────────────────────────────────────────────────
+# ── CONFIGURATION ───────────────────────────────────────────────────────
 
-WATCH_FOLDER  = r"C:\Users\rnunley\Bushnell Center for the Performing Arts\AI Taskforce Group-Testing-Development - Broadway League Report Uploads\reports"
-REPO_FOLDER   = r"C:\Users\rnunley\OneDrive - Bushnell Center for the Performing Arts\Documents\GitHub\broadway-touring-dashboard"
-SCRIPT_PATH   = os.path.join(REPO_FOLDER, "scripts", "process_touring.py")
-SCRAPE_PATH   = os.path.join(REPO_FOLDER, "scripts", "scrape_shows.py")
-CONTEXT_PATH  = os.path.join(REPO_FOLDER, "scripts", "scrape_context.py")
-DATA_JSON     = os.path.join(REPO_FOLDER, "src", "data", "data.json")
-SEASONS_JSON  = os.path.join(REPO_FOLDER, "src", "data", "seasons.json")
-SHOWS_JSON    = os.path.join(REPO_FOLDER, "src", "data", "shows.json")
-CONTEXT_JSON  = os.path.join(REPO_FOLDER, "src", "data", "context.json")
-LOG_FILE      = os.path.join(os.path.dirname(__file__), "watcher.log")
+WATCH_FOLDER = r"C:\Users\rnunley\Bushnell Center for the Performing Arts\AI Taskforce Group-Testing-Development - Broadway League Report Uploads\reports"
+REPO_FOLDER = r"C:\Users\rnunley\OneDrive - Bushnell Center for the Performing Arts\Documents\GitHub\broadway-touring-dashboard"
+SCRIPT_PATH = os.path.join(REPO_FOLDER, "scripts", "process_touring.py")
+SCRAPE_PATH = os.path.join(REPO_FOLDER, "scripts", "scrape_shows.py")
+CONTEXT_PATH = os.path.join(REPO_FOLDER, "scripts", "scrape_context.py")
+DATA_JSON = os.path.join(REPO_FOLDER, "src", "data", "data.json")
+SEASONS_JSON = os.path.join(REPO_FOLDER, "src", "data", "seasons.json")
+SHOWS_JSON = os.path.join(REPO_FOLDER, "src", "data", "shows.json")
+CONTEXT_JSON = os.path.join(REPO_FOLDER, "src", "data", "context.json")
+LOG_FILE = os.path.join(os.path.dirname(__file__), "watcher.log")
 
-# ── LOGGING ───────────────────────────────────────────────────────────────────
+# ── LOGGING ─────────────────────────────────────────────────────────────
 
 logging.basicConfig(
     level=logging.INFO,
@@ -55,16 +55,19 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
-# ── SHOW ENRICHMENT ───────────────────────────────────────────────────────────
+# ── SHOW ENRICHMENT ─────────────────────────────────────────────────────
+
 
 def _current_season():
     today = date.today()
-    year  = today.year if today.month >= 7 else today.year - 1
+    year = today.year if today.month >= 7 else today.year - 1
     return f"{year}-{year + 1}"
+
 
 def _season_bounds(season_str):
     year = int(season_str.split("-")[0])
     return f"{year}-07-01", f"{year + 1}-06-30"
+
 
 def enrich_new_shows():
     """
@@ -82,7 +85,9 @@ def enrich_new_shows():
                 seasons = json.load(f)
             season_entries = seasons.get(season, [])
             if season_entries:
-                log.info(f"Loaded {len(season_entries)} shows from seasons.json for {season}")
+                log.info(
+                    f"Loaded {
+                        len(season_entries)} shows from seasons.json for {season}")
         except Exception as e:
             log.warning(f"Could not read seasons.json: {e}")
 
@@ -121,15 +126,21 @@ def enrich_new_shows():
         log.info("No new shows to enrich.")
         return False
 
-    log.info(f"Enriching {len(new_entries)} new show(s): {', '.join(e['name'] for e in new_entries)}")
+    log.info(
+        f"Enriching {
+            len(new_entries)} new show(s): {
+            ', '.join(
+                e['name'] for e in new_entries)}")
 
-    # Import scrape_shows at runtime so watcher doesn't require SPARQLWrapper at startup
+    # Import scrape_shows at runtime so watcher doesn't require SPARQLWrapper
+    # at startup
     try:
         scrape_dir = os.path.dirname(SCRAPE_PATH)
         if scrape_dir not in sys.path:
             sys.path.insert(0, scrape_dir)
         import importlib.util
-        spec = importlib.util.spec_from_file_location("scrape_shows", SCRAPE_PATH)
+        spec = importlib.util.spec_from_file_location(
+            "scrape_shows", SCRAPE_PATH)
         scrape = importlib.util.load_from_spec(spec)
         spec.loader.exec_module(scrape)
     except Exception as e:
@@ -146,7 +157,12 @@ def enrich_new_shows():
             pass
 
     for entry in new_entries:
-        log.info(f"  Scraping: {entry['name']}  (league: {entry.get('league_name', entry['name'])})")
+        log.info(
+            f"  Scraping: {
+                entry['name']}  (league: {
+                entry.get(
+                    'league_name',
+                    entry['name'])})")
         try:
             record = scrape.enrich_show(entry, season)
             existing[entry["name"]] = record
@@ -162,7 +178,8 @@ def enrich_new_shows():
         log.error(f"Could not write shows.json: {e}")
         return False
 
-# ── PROCESSING ────────────────────────────────────────────────────────────────
+# ── PROCESSING ──────────────────────────────────────────────────────────
+
 
 def process_new_file(filepath):
     """Run append mode, enrich new shows, then commit both files to GitHub."""
@@ -173,7 +190,8 @@ def process_new_file(filepath):
     time.sleep(5)
 
     if not os.path.isfile(filepath):
-        log.warning(f"File no longer present after sync wait — skipped: {fname}")
+        log.warning(
+            f"File no longer present after sync wait — skipped: {fname}")
         return
 
     # Step 1: Append to data.json
@@ -217,7 +235,8 @@ def process_new_file(filepath):
         files_to_add.append("src/data/context.json")
 
     log.info(f"Committing {', '.join(files_to_add)} to GitHub...")
-    commit_msg = f"Weekly update: {fname} — {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+    commit_msg = f"Weekly update: {fname} — {
+        datetime.now().strftime('%Y-%m-%d %H:%M')}"
 
     add_cmd = ["git", "-C", REPO_FOLDER, "add"] + files_to_add
     git_commands = [
@@ -240,7 +259,7 @@ def process_new_file(filepath):
     log.info("-" * 60)
 
 
-# ── FILE SYSTEM HANDLER ───────────────────────────────────────────────────────
+# ── FILE SYSTEM HANDLER ─────────────────────────────────────────────────
 
 class XLSXHandler(FileSystemEventHandler):
     def __init__(self):
@@ -266,7 +285,7 @@ class XLSXHandler(FileSystemEventHandler):
                 process_new_file(path)
 
 
-# ── MAIN ──────────────────────────────────────────────────────────────────────
+# ── MAIN ────────────────────────────────────────────────────────────────
 
 def main():
     if not os.path.isdir(WATCH_FOLDER):

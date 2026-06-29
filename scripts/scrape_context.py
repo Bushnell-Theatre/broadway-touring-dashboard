@@ -31,45 +31,64 @@ from pathlib import Path
 import requests
 from dotenv import load_dotenv
 
-# -- PATHS ---------------------------------------------------------------------
+# -- PATHS ---------------------------------------------------------------
 
-SCRIPT_DIR   = Path(__file__).parent
-REPO_ROOT    = SCRIPT_DIR.parent
-DATA_JSON    = REPO_ROOT / "src" / "data" / "data.json"
+SCRIPT_DIR = Path(__file__).parent
+REPO_ROOT = SCRIPT_DIR.parent
+DATA_JSON = REPO_ROOT / "src" / "data" / "data.json"
 CONTEXT_JSON = REPO_ROOT / "src" / "data" / "context.json"
-CACHE_DIR    = SCRIPT_DIR / "cache" / "storm_events"
-ENV_FILE     = REPO_ROOT / ".env"
+CACHE_DIR = SCRIPT_DIR / "cache" / "storm_events"
+ENV_FILE = REPO_ROOT / ".env"
 
-# -- CONFIG --------------------------------------------------------------------
+# -- CONFIG --------------------------------------------------------------
 
 # NOAA Storm Events public bulk files (no API token needed)
-STORM_BASE   = "https://www1.ncdc.noaa.gov/pub/data/swdi/stormevents/csvfiles/"
-STORM_STATE  = "CONNECTICUT"
+STORM_BASE = "https://www1.ncdc.noaa.gov/pub/data/swdi/stormevents/csvfiles/"
+STORM_STATE = "CONNECTICUT"
 # County events (CZ_TYPE=C) use CZ_NAME="HARTFORD"
-# Zone events (CZ_TYPE=Z, used for winter weather) use CZ_NAME like "NORTHERN HARTFORD"
+# Zone events (CZ_TYPE=Z, used for winter weather) use CZ_NAME like
+# "NORTHERN HARTFORD"
 STORM_COUNTY = "HARTFORD"   # substring match against CZ_NAME for both C and Z records
 
 # Event types that could plausibly affect Bushnell audience attendance
 NOTABLE_TYPES = {
-    "HEAVY SNOW", "BLIZZARD", "ICE STORM", "WINTER STORM", "WINTER WEATHER",
-    "LAKE-EFFECT SNOW", "SLEET",
-    "HEAVY RAIN", "FLOOD", "FLASH FLOOD", "COASTAL FLOOD",
-    "DENSE FOG", "FREEZING FOG",
-    "HIGH WIND", "STRONG WIND", "THUNDERSTORM WIND",
-    "TORNADO", "FUNNEL CLOUD",
-    "TROPICAL STORM", "HURRICANE", "HURRICANE (TYPHOON)", "TROPICAL DEPRESSION",
-    "EXTREME COLD/WIND CHILL", "COLD/WIND CHILL", "FROST/FREEZE",
-    "EXCESSIVE HEAT", "HEAT",
+    "HEAVY SNOW",
+    "BLIZZARD",
+    "ICE STORM",
+    "WINTER STORM",
+    "WINTER WEATHER",
+    "LAKE-EFFECT SNOW",
+    "SLEET",
+    "HEAVY RAIN",
+    "FLOOD",
+    "FLASH FLOOD",
+    "COASTAL FLOOD",
+    "DENSE FOG",
+    "FREEZING FOG",
+    "HIGH WIND",
+    "STRONG WIND",
+    "THUNDERSTORM WIND",
+    "TORNADO",
+    "FUNNEL CLOUD",
+    "TROPICAL STORM",
+    "HURRICANE",
+    "HURRICANE (TYPHOON)",
+    "TROPICAL DEPRESSION",
+    "EXTREME COLD/WIND CHILL",
+    "COLD/WIND CHILL",
+    "FROST/FREEZE",
+    "EXCESSIVE HEAT",
+    "HEAT",
 }
 
-FRED_BASE    = "https://api.stlouisfed.org/fred/series/observations"
-FRED_SERIES  = {
+FRED_BASE = "https://api.stlouisfed.org/fred/series/observations"
+FRED_SERIES = {
     "consumer_confidence": "UMCSENT",   # U-Mich Consumer Sentiment (monthly)
-    "ct_unemployment":     "CTURN",     # Connecticut Unemployment Rate (monthly)
+    "ct_unemployment": "CTURN",     # Connecticut Unemployment Rate (monthly)
 }
 FRED_RETRY_DELAY = 0.3
 
-# -- SETUP ---------------------------------------------------------------------
+# -- SETUP ---------------------------------------------------------------
 
 load_dotenv(ENV_FILE)
 FRED_API_KEY = os.getenv("FRED_API_KEY", "")
@@ -78,7 +97,7 @@ if not FRED_API_KEY:
     print("WARNING: FRED_API_KEY not set in .env -- economic data will be null")
 
 
-# -- HELPERS -------------------------------------------------------------------
+# -- HELPERS -------------------------------------------------------------
 
 def parse_date(s):
     return datetime.strptime(s, "%Y-%m-%d").date()
@@ -94,15 +113,15 @@ def round1(v):
 
 def date_range_strs(start_str, end_str):
     """Yield YYYY-MM-DD strings from start to end inclusive (capped at 30 days)."""
-    d   = datetime.strptime(start_str, "%Y-%m-%d").date()
-    end = datetime.strptime(end_str,   "%Y-%m-%d").date()
+    d = datetime.strptime(start_str, "%Y-%m-%d").date()
+    end = datetime.strptime(end_str, "%Y-%m-%d").date()
     cap = d + timedelta(days=30)
     while d <= end and d <= cap:
         yield d.isoformat()
         d += timedelta(days=1)
 
 
-# -- DATA.JSON WEEK LIST -------------------------------------------------------
+# -- DATA.JSON WEEK LIST -------------------------------------------------
 
 def load_weeks():
     if not DATA_JSON.exists():
@@ -111,11 +130,12 @@ def load_weeks():
         raw = json.load(f)
     records = raw.get("records", raw) if isinstance(raw, dict) else raw
     weeks = sorted({r["week_of"] for r in records if r.get("week_of")})
-    print(f"Found {len(weeks)} distinct weeks in data.json ({weeks[0]} to {weeks[-1]})")
+    print(
+        f"Found {len(weeks)} distinct weeks in data.json ({weeks[0]} to {weeks[-1]})")
     return weeks
 
 
-# -- NOAA STORM EVENTS ---------------------------------------------------------
+# -- NOAA STORM EVENTS ---------------------------------------------------
 
 def list_storm_event_files():
     """
@@ -124,7 +144,8 @@ def list_storm_event_files():
     """
     r = requests.get(STORM_BASE, timeout=30)
     r.raise_for_status()
-    pattern = re.compile(r'(StormEvents_details-ftp_v[\d.]+_d(\d{4})_c\d+\.csv\.gz)')
+    pattern = re.compile(
+        r'(StormEvents_details-ftp_v[\d.]+_d(\d{4})_c\d+\.csv\.gz)')
     files = {}
     for m in pattern.finditer(r.text):
         fname, year = m.group(1), int(m.group(2))
@@ -138,7 +159,7 @@ def download_year(year, url):
     Current and prior year are always re-downloaded (data gets updated).
     """
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    fname      = url.split("/")[-1]
+    fname = url.split("/")[-1]
     cache_path = CACHE_DIR / fname
     current_year = date.today().year
 
@@ -175,7 +196,8 @@ def parse_events(raw_bytes):
 
             begin_str = row.get("BEGIN_DATE_TIME", "")
             try:
-                begin = datetime.strptime(begin_str, "%d-%b-%y %H:%M:%S").date()
+                begin = datetime.strptime(
+                    begin_str, "%d-%b-%y %H:%M:%S").date()
             except ValueError:
                 continue
 
@@ -185,18 +207,17 @@ def parse_events(raw_bytes):
             except ValueError:
                 end = begin
 
-            mag      = row.get("MAGNITUDE", "").strip()
+            mag = row.get("MAGNITUDE", "").strip()
             mag_type = row.get("MAGNITUDE_TYPE", "").strip()
-            narrative = (
-                row.get("EVENT_NARRATIVE") or row.get("EPISODE_NARRATIVE") or ""
-            ).strip()
+            narrative = (row.get("EVENT_NARRATIVE") or row.get(
+                "EPISODE_NARRATIVE") or "").strip()
             if len(narrative) > 300:
                 narrative = narrative[:297] + "..."
 
             events.append({
-                "type":      etype.title(),
-                "begin":     begin.isoformat(),
-                "end":       end.isoformat(),
+                "type": etype.title(),
+                "begin": begin.isoformat(),
+                "end": end.isoformat(),
                 "magnitude": f"{mag} {mag_type}".strip() if mag else None,
                 "narrative": narrative or None,
             })
@@ -227,7 +248,7 @@ def build_events_index(weeks):
             print(f"  No storm events file found for {year}")
             continue
         try:
-            raw    = download_year(year, file_map[year])
+            raw = download_year(year, file_map[year])
             events = parse_events(raw)
             print(f"  {year}: {len(events)} Hartford County notable events")
             for ev in events:
@@ -244,7 +265,7 @@ def get_weather_for_week(week_start, events_by_date):
     Collect distinct notable storm events that overlap the given week.
     Returns a weather dict ready for context.json.
     """
-    seen   = {}   # (type, begin) -> event, for dedup
+    seen = {}   # (type, begin) -> event, for dedup
     for offset in range(7):
         d = (week_start + timedelta(days=offset)).isoformat()
         for ev in events_by_date.get(d, []):
@@ -254,7 +275,7 @@ def get_weather_for_week(week_start, events_by_date):
     event_list = sorted(seen.values(), key=lambda e: e["begin"])
 
     if event_list:
-        types   = list(dict.fromkeys(e["type"] for e in event_list))
+        types = list(dict.fromkeys(e["type"] for e in event_list))
         summary = "; ".join(types[:3])
         if len(types) > 3:
             summary += f" (+{len(types) - 3} more)"
@@ -262,21 +283,21 @@ def get_weather_for_week(week_start, events_by_date):
         summary = None
 
     return {
-        "events":      event_list,
+        "events": event_list,
         "significant": bool(event_list),
-        "summary":     summary,
+        "summary": summary,
     }
 
 
-# -- FRED ECONOMIC -------------------------------------------------------------
+# -- FRED ECONOMIC -------------------------------------------------------
 
 def fetch_fred_series(series_id):
     if not FRED_API_KEY:
         return {}
     params = {
-        "series_id":         series_id,
-        "api_key":           FRED_API_KEY,
-        "file_type":         "json",
+        "series_id": series_id,
+        "api_key": FRED_API_KEY,
+        "file_type": "json",
         "observation_start": "2019-01-01",
     }
     try:
@@ -316,12 +337,18 @@ def get_economic_for_week(week_start, fred):
         return series[max(candidates)] if candidates else None
 
     ym = to_ym(week_start)
-    prior_month = (date(week_start.year, week_start.month, 1) - timedelta(days=1))
+    prior_month = (
+        date(
+            week_start.year,
+            week_start.month,
+            1) -
+        timedelta(
+            days=1))
     ym_prev = to_ym(prior_month)
 
-    cc_now  = latest_before(fred.get("consumer_confidence", {}), ym)
+    cc_now = latest_before(fred.get("consumer_confidence", {}), ym)
     cc_prev = latest_before(fred.get("consumer_confidence", {}), ym_prev)
-    unemp   = latest_before(fred.get("ct_unemployment",    {}), ym)
+    unemp = latest_before(fred.get("ct_unemployment", {}), ym)
 
     trend = None
     if cc_now is not None and cc_prev is not None:
@@ -330,13 +357,13 @@ def get_economic_for_week(week_start, fred):
 
     return {
         "consumer_confidence": round1(cc_now),
-        "ct_unemployment":     round1(unemp),
-        "confidence_trend":    trend,
-        "source_month":        ym,
+        "ct_unemployment": round1(unemp),
+        "confidence_trend": trend,
+        "source_month": ym,
     }
 
 
-# -- MAIN ----------------------------------------------------------------------
+# -- MAIN ----------------------------------------------------------------
 
 def main():
     weeks = load_weeks()
@@ -357,11 +384,11 @@ def main():
     sig_weeks = 0
     for week_str in weeks:
         week_date = parse_date(week_str)
-        weather   = get_weather_for_week(week_date, events_by_date)
-        economic  = get_economic_for_week(week_date, fred)
+        weather = get_weather_for_week(week_date, events_by_date)
+        economic = get_economic_for_week(week_date, fred)
 
         context[week_str] = {
-            "weather":  weather,
+            "weather": weather,
             "economic": economic,
         }
         if weather["significant"]:
@@ -378,9 +405,11 @@ def main():
     print(f"Total weeks:          {total}")
     print(f"Weeks with events:    {sig_weeks} ({100 * sig_weeks // total}%)")
     cc_ok = sum(
-        1 for w in weeks
-        if context.get(w, {}).get("economic", {}).get("consumer_confidence") is not None
-    )
+        1 for w in weeks if context.get(
+            w,
+            {}).get(
+            "economic",
+            {}).get("consumer_confidence") is not None)
     print(f"Economic coverage:    {cc_ok}/{total}")
     print("=" * 60)
 
