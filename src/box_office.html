@@ -1207,6 +1207,7 @@
         <a class="btn btn-outline" href="dashboard.html">Dashboard</a>
         <a class="btn btn-outline" href="programming.html">Programming</a>
         <a class="btn btn-outline" href="exec_summary.html">Exec Summary</a>
+        <!-- Hall selector — commented out; switchHall() and _activeHall preserved for when Belding support is wired up
         <select
           id="hallSelect"
           onchange="switchHall(this.value)"
@@ -1227,10 +1228,11 @@
           <option value="mortensen" style="background: #141414">Mortensen Hall</option>
           <option value="belding" style="background: #141414">Belding Theater</option>
         </select>
-        <button class="btn btn-outline" onclick="openConfigModal()" id="configBtn">
+        -->
+        <!-- <button class="btn btn-outline" onclick="openConfigModal()" id="configBtn">
           ⚙ Seating Config
           <span id="configBadge" class="config-status empty" style="margin-left: 6px">Not Set</span>
-        </button>
+        </button> -->
         <button class="btn btn-outline" onclick="resetAll()">↺ Reset</button>
         <button class="btn btn-outline" onclick="window.print()">⎙ Print</button>
       </div>
@@ -1439,14 +1441,22 @@
                 <span id="runShowName">—</span> · Run Total (<span id="runPerfCount">0</span> performances)
               </div>
               <div style="display: flex; gap: 28px; margin-top: 6px">
+                <!-- All sellable seats × contracted price, assumes full sell-through -->
+                <div>
+                  <div class="kpi-label">Contract Gross Potential</div>
+                  <div class="kpi-value" id="rtContractPotential">$0</div>
+                </div>
+                <!-- Actual revenue captured from tickets sold to date -->
                 <div>
                   <div class="kpi-label">Current Gross</div>
-                  <div class="kpi-value" id="rtCurrent">$0</div>
+                  <div class="kpi-value" id="rtCaptured">$0</div>
                 </div>
+                <!-- Projected gross using modified prices for unsold seats + captured revenue -->
                 <div>
                   <div class="kpi-label">Adjusted Gross</div>
                   <div class="kpi-value" id="rtAdjusted">$0</div>
                 </div>
+                <!-- Adjusted Gross − Contract Gross Potential -->
                 <div>
                   <div class="kpi-label">Delta</div>
                   <div class="kpi-value" id="rtDelta">$0</div>
@@ -1675,7 +1685,7 @@
     </div>
     <!-- /workspace -->
 
-    <!-- ══ SEATING CONFIG MODAL ══ -->
+    <!-- ══ SEATING CONFIG MODAL — commented out in v2.0; restore if Seating Config UI re-enabled ══
     <div
       class="modal-backdrop"
       id="configModal"
@@ -1731,6 +1741,7 @@
         </div>
       </div>
     </div>
+    ══ END SEATING CONFIG MODAL ══ -->
 
     <!-- ══ PERFORMANCE MODAL (v2.0) ══ -->
     <div
@@ -1768,17 +1779,25 @@
             </div>
           </div>
 
-          <!-- Performance summary -->
-          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px">
+          <!-- Performance summary: four metrics matching the run total strip -->
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px">
             <div class="out-cell">
+              <!-- All sellable seats × contracted price for this performance -->
+              <div class="out-label">Contract Gross Potential</div>
+              <div class="out-val" id="modalContractPotential">—</div>
+            </div>
+            <div class="out-cell">
+              <!-- Actual revenue from tickets sold to date for this performance -->
               <div class="out-label">Current Gross</div>
               <div class="out-val" id="modalCurrentGross">—</div>
             </div>
             <div class="out-cell">
+              <!-- Projected gross at modified prices for unsold seats + captured revenue -->
               <div class="out-label">Adjusted Gross</div>
               <div class="out-val" id="modalAdjustedGross">—</div>
             </div>
             <div class="out-cell">
+              <!-- Adjusted Gross − Contract Gross Potential -->
               <div class="out-label">Delta</div>
               <div class="out-val" id="modalDelta">—</div>
             </div>
@@ -1799,7 +1818,8 @@
               Run Total (all <span id="modalRunCount"></span> performances)
             </div>
             <div style="display: flex; gap: 20px; margin-top: 4px; font-family: var(--mono); font-size: 0.68rem">
-              <span>Current: <strong id="modalRunCurrent"></strong></span>
+              <span>Contract Potential: <strong id="modalRunCurrent"></strong></span>
+              <span>Current Gross: <strong id="modalRunCaptured"></strong></span>
               <span>Adjusted: <strong id="modalRunAdjusted"></strong></span>
               <span>Delta: <strong id="modalRunDelta"></strong></span>
             </div>
@@ -1864,7 +1884,7 @@
         <strong>BROADWAY TOURING · BOX OFFICE MANAGER</strong>
         — CONFIDENTIAL · For internal use only
       </div>
-      <div>v2.0 · June 30, 2026 · Bushnell Center for the Performing Arts</div>
+      <div>v2.1 · June 30, 2026 · Bushnell Center for the Performing Arts</div>
     </footer>
 
     <!-- ══ INLINE SCRIPT ══ -->
@@ -1886,7 +1906,7 @@
         /* ── Venues (v2.0) ── */
         var VENUES = {};
         var _activeHall = 'mortensen';
-        var _seatConfig = null;
+        // var _seatConfig = null; /* commented out — Seating Config UI removed in v2.0; restore if re-enabled */
         var _performances = [];
         var _openPerfId = null;
 
@@ -2396,69 +2416,42 @@
         /* ── Switch hall (v2.0 — reads from VENUES) ── */
         window.switchHall = function (hallKey) {
           _activeHall = hallKey;
-          _seatConfig = null;
-          loadSeatConfig();
+          // _seatConfig = null; loadSeatConfig(); /* restore if Seating Config UI re-enabled */
           _performances = [];
           renderPerfCardGrid();
           updateRunTotalStrip();
           syncFactSheetButton();
         };
 
-        /* ── Config modal ── */
+
+        /* ── Seating Config modal — commented out in v2.0; restore if UI re-enabled ──
         window.openConfigModal = function () {
           var hall = activeHall();
           document.getElementById('configModalTitle').textContent = hall.name + ' · Seating Configuration';
           document.getElementById('configModalDesc').textContent =
-            'Enter seat counts for each section in ' +
-            hall.name +
-            '. Saved separately per hall. ' +
-            'Seat counts are reference only — prices are entered per-performance in the Scenario Model.';
-
+            'Enter seat counts for each section in ' + hall.name +
+            '. Saved separately per hall. Seat counts are reference only — prices are entered per-performance.';
           var saved = _seatConfig || [];
           var savedMap = {};
-          saved.forEach(function (s) {
-            savedMap[s.name] = s.seats;
-          });
-
+          saved.forEach(function (s) { savedMap[s.name] = s.seats; });
           var tbody = document.getElementById('configTableBody');
-          tbody.innerHTML = hall.sections
-            .map(function (sec, i) {
-              var savedSeats = savedMap[sec.name];
-              var seats = savedSeats !== undefined ? savedSeats : sec.seats;
-              return (
-                '<tr>' +
-                '<td class="section-name">' +
-                sec.name +
-                '</td>' +
-                '<td style="text-align:right;font-family:var(--mono);font-size:.68rem;color:var(--ink3);">' +
-                sec.seats.toLocaleString() +
-                '</td>' +
-                '<td style="text-align:right;"><input type="number" class="cfg-seats" data-idx="' +
-                i +
-                '" min="0" max="5000" value="' +
-                seats +
-                '" placeholder="0" oninput="updateConfigTotal()"></td>' +
-                '</tr>'
-              );
-            })
-            .join('');
-
+          tbody.innerHTML = hall.sections.map(function (sec, i) {
+            var seats = savedMap[sec.name] !== undefined ? savedMap[sec.name] : sec.seats;
+            return '<tr>' +
+              '<td class="section-name">' + sec.name + '</td>' +
+              '<td style="text-align:right;font-family:var(--mono);font-size:.68rem;color:var(--ink3);">' + sec.seats.toLocaleString() + '</td>' +
+              '<td style="text-align:right;"><input type="number" class="cfg-seats" data-idx="' + i + '" min="0" max="5000" value="' + seats + '" placeholder="0" oninput="updateConfigTotal()"></td>' +
+              '</tr>';
+          }).join('');
           updateConfigTotal();
           document.getElementById('configModal').style.display = 'flex';
         };
-
-        window.closeConfigModal = function () {
-          document.getElementById('configModal').style.display = 'none';
-        };
-
+        window.closeConfigModal = function () { document.getElementById('configModal').style.display = 'none'; };
         window.updateConfigTotal = function () {
           var total = 0;
-          document.querySelectorAll('.cfg-seats').forEach(function (inp) {
-            total += +inp.value || 0;
-          });
+          document.querySelectorAll('.cfg-seats').forEach(function (inp) { total += +inp.value || 0; });
           document.getElementById('configTotalSeats').textContent = total.toLocaleString();
         };
-
         window.saveSeatConfig = function () {
           var hall = activeHall();
           var config = [];
@@ -2466,65 +2459,47 @@
             config.push({ name: hall.sections[i].name, seats: +inp.value || 0 });
           });
           _seatConfig = config;
-          try {
-            localStorage.setItem('btd_seat_config_' + _activeHall, JSON.stringify(config));
-          } catch (e) {}
+          try { localStorage.setItem('btd_seat_config_' + _activeHall, JSON.stringify(config)); } catch (e) {}
           applyConfigToScenario();
           closeConfigModal();
         };
-
         window.clearSeatConfig = function () {
           if (!confirm('Clear seating configuration for ' + activeHall().name + '?')) return;
           _seatConfig = null;
-          try {
-            localStorage.removeItem('btd_seat_config_' + _activeHall);
-          } catch (e) {}
+          try { localStorage.removeItem('btd_seat_config_' + _activeHall); } catch (e) {}
           applyConfigToScenario();
           closeConfigModal();
         };
-
         function loadSeatConfig() {
           try {
             var raw = localStorage.getItem('btd_seat_config_' + _activeHall);
             _seatConfig = raw ? JSON.parse(raw) : null;
-          } catch (e) {
-            _seatConfig = null;
-          }
+          } catch (e) { _seatConfig = null; }
           applyConfigToScenario();
         }
-
-        /* ── Update config badge after seat config load/save ── */
         function applyConfigToScenario() {
           var badge = document.getElementById('configBadge');
           if (!badge) return;
-          if (
-            _seatConfig &&
-            _seatConfig.reduce(function (a, b) {
-              return a + b.seats;
-            }, 0) > 0
-          ) {
-            badge.textContent = 'Configured';
-            badge.className = 'config-status loaded';
+          if (_seatConfig && _seatConfig.reduce(function (a, b) { return a + b.seats; }, 0) > 0) {
+            badge.textContent = 'Configured'; badge.className = 'config-status loaded';
           } else {
-            badge.textContent = 'Not Set';
-            badge.className = 'config-status empty';
+            badge.textContent = 'Not Set'; badge.className = 'config-status empty';
           }
         }
+        Also restore: _seatConfig = null in state, loadSeatConfig() in switchHall and bootstrap,
+        and the _seatConfig override logic in getSections().
+        ── END Seating Config modal ── */
 
         /* ── Scenario Model v2.0 ── */
 
-        /* ── getSections — respects saved config overrides ── */
+        /* ── getSections — returns sections from venues.json for the active hall ── */
+        /* (Seating Config seat-count overrides removed; restore _seatConfig logic if re-enabled) */
         function getSections() {
           var hall = activeHall();
-          var saved = _seatConfig || [];
-          var savedMap = {};
-          saved.forEach(function (s) {
-            savedMap[s.name] = s.seats;
-          });
           return (hall.sections || []).map(function (s) {
             return {
               name: s.name,
-              seats: savedMap[s.name] !== undefined ? savedMap[s.name] : s.seats,
+              seats: s.seats,
               group: s.group || '',
               nameAliases: s.nameAliases || [],
             };
@@ -2557,34 +2532,50 @@
         /* ── Calculation functions (v2.0) ── */
         function calcPerfTotals(perf) {
           var current = 0, adjusted = 0, captured = 0;
-          var hasSold = false;
+          var hasSold = false, hasAdjustments = false;
           perf.sections.forEach(function (s) {
             var unsold = Math.max(0, s.totalSeats - s.holds - (s.sold || 0));
-            var adjPrice =
-              s.adjustedPrice !== null && s.adjustedPrice !== undefined && s.adjustedPrice !== ''
-                ? +s.adjustedPrice
-                : s.currentPrice;
+            var hasAdj = s.adjustedPrice !== null && s.adjustedPrice !== undefined && s.adjustedPrice !== '';
+            var adjPrice = hasAdj ? +s.adjustedPrice : s.currentPrice;
+            if (hasAdj && +s.adjustedPrice !== s.currentPrice) hasAdjustments = true;
             if ((s.sold || 0) > 0) {
               hasSold = true;
               captured += s.sold * s.currentPrice;
             }
-            current += unsold * s.currentPrice + (s.sold > 0 ? s.sold * s.currentPrice : 0);
-            adjusted += unsold * adjPrice + (s.sold > 0 ? s.sold * s.currentPrice : 0);
+            current  += unsold * s.currentPrice + (s.sold > 0 ? s.sold * s.currentPrice : 0);
+            adjusted += unsold * adjPrice        + (s.sold > 0 ? s.sold * s.currentPrice : 0);
           });
-          return { current: current, adjusted: adjusted, delta: adjusted - current, captured: captured, isLive: hasSold };
+          return {
+            current: current,
+            adjusted: adjusted,
+            delta: adjusted - current,
+            captured: captured,
+            isLive: hasSold,
+            hasAdjustments: hasAdjustments,
+          };
         }
 
         function calcRunTotals() {
-          var current = 0, adjusted = 0;
+          /* Sum contract gross potential, adjusted gross, and captured (actual) revenue across all performances */
+          var contractPotential = 0, adjusted = 0, captured = 0, hasAdjustments = false;
           _performances.forEach(function (p) {
             var t = calcPerfTotals(p);
-            current += t.current;
-            adjusted += t.adjusted;
+            contractPotential += t.current;   /* t.current = all sellable seats × contracted price */
+            adjusted          += t.adjusted;
+            captured          += t.captured;  /* t.captured = sold seats × contracted price (actual revenue to date) */
+            if (t.hasAdjustments) hasAdjustments = true;
           });
-          return { current: current, adjusted: adjusted, delta: adjusted - current };
+          return {
+            contractPotential: contractPotential,
+            captured: captured,
+            adjusted: adjusted,
+            delta: adjusted - contractPotential,  /* Delta = Adjusted − Contract Gross Potential */
+            hasAdjustments: hasAdjustments,        /* true only when at least one section has a modified price */
+          };
         }
 
         function updateRunTotalStrip() {
+          /* Recalculate and display all four run-level gross metrics */
           var rt = calcRunTotals();
           var showName = _selectedShow ? _selectedShow.displayName : '—';
           var el;
@@ -2592,18 +2583,29 @@
           if (el) el.textContent = showName;
           el = document.getElementById('runPerfCount');
           if (el) el.textContent = _performances.length;
-          el = document.getElementById('rtCurrent');
-          if (el) el.textContent = '$' + Math.round(rt.current).toLocaleString();
+          /* Contract Gross Potential: all sellable seats × contracted price, full sell-through assumed */
+          el = document.getElementById('rtContractPotential');
+          if (el) el.textContent = '$' + Math.round(rt.contractPotential).toLocaleString();
+          /* Current Gross: actual captured revenue from tickets sold to date */
+          el = document.getElementById('rtCaptured');
+          if (el) el.textContent = '$' + Math.round(rt.captured).toLocaleString();
+          /* Adjusted Gross: only shown when at least one price has been modified */
           el = document.getElementById('rtAdjusted');
-          if (el) el.textContent = '$' + Math.round(rt.adjusted).toLocaleString();
+          if (el) el.textContent = rt.hasAdjustments ? '$' + Math.round(rt.adjusted).toLocaleString() : '—';
+          /* Delta: Adjusted − Contract Gross Potential — only meaningful when adjustments exist */
           el = document.getElementById('rtDelta');
           if (el) {
-            el.textContent = (rt.delta >= 0 ? '+$' : '-$') + Math.round(Math.abs(rt.delta)).toLocaleString();
-            el.style.color = rt.delta > 0 ? 'var(--teal)' : rt.delta < 0 ? 'var(--rose)' : '';
+            if (rt.hasAdjustments) {
+              el.textContent = (rt.delta >= 0 ? '+$' : '-$') + Math.round(Math.abs(rt.delta)).toLocaleString();
+              el.style.color = rt.delta > 0 ? 'var(--teal)' : rt.delta < 0 ? 'var(--rose)' : '';
+            } else {
+              el.textContent = '—';
+              el.style.color = '';
+            }
           }
           applyModeBadge();
           updateKPIs(rt.adjusted, rt.delta);
-          updateJustification(_performances.length, rt.current, rt.adjusted, rt.delta);
+          updateJustification(_performances.length, rt.contractPotential, rt.adjusted, rt.delta);
         }
 
         /* ── Performance management ── */
@@ -2864,7 +2866,7 @@
             impEl.style.color = totImpact > 0 ? 'var(--teal)' : totImpact < 0 ? 'var(--rose)' : '';
           }
 
-          /* Performance summary */
+          /* Performance summary — four metrics matching the run total strip */
           var t = calcPerfTotals(perf);
           var set = function (id, v, color) {
             var el = document.getElementById(id);
@@ -2872,19 +2874,27 @@
             el.textContent = v;
             if (color !== undefined) el.style.color = color;
           };
-          set('modalCurrentGross', '$' + Math.round(t.current).toLocaleString());
-          set('modalAdjustedGross', '$' + Math.round(t.adjusted).toLocaleString());
           var dColor = t.delta > 0 ? 'var(--teal)' : t.delta < 0 ? 'var(--rose)' : '';
-          set('modalDelta', (t.delta >= 0 ? '+$' : '-$') + Math.round(Math.abs(t.delta)).toLocaleString(), dColor);
+          /* Contract Gross Potential: all sellable seats at contracted price for this performance */
+          set('modalContractPotential', '$' + Math.round(t.current).toLocaleString());
+          /* Current Gross: actual revenue captured from sold seats for this performance */
+          set('modalCurrentGross', t.captured > 0 ? '$' + Math.round(t.captured).toLocaleString() : '—');
+          /* Adjusted Gross: only shown when at least one price has been modified */
+          set('modalAdjustedGross', t.hasAdjustments ? '$' + Math.round(t.adjusted).toLocaleString() : '—');
+          /* Delta: only shown when adjustments exist */
+          set('modalDelta', t.hasAdjustments
+            ? (t.delta >= 0 ? '+$' : '-$') + Math.round(Math.abs(t.delta)).toLocaleString()
+            : '—', t.hasAdjustments ? dColor : '');
 
-          /* Run total row */
+          /* Run total row (shown when >1 performance) */
           var rtr = document.getElementById('modalRunTotalRow');
           if (rtr) {
             rtr.style.display = _performances.length > 1 ? '' : 'none';
             if (_performances.length > 1) {
               setT('modalRunCount', _performances.length);
               var rt = calcRunTotals();
-              setT('modalRunCurrent', '$' + Math.round(rt.current).toLocaleString());
+              setT('modalRunCurrent', '$' + Math.round(rt.contractPotential).toLocaleString());
+              setT('modalRunCaptured', '$' + Math.round(rt.captured).toLocaleString());
               setT('modalRunAdjusted', '$' + Math.round(rt.adjusted).toLocaleString());
               setT('modalRunDelta', (rt.delta >= 0 ? '+$' : '-$') + Math.round(Math.abs(rt.delta)).toLocaleString());
             }
@@ -2903,15 +2913,22 @@
         }
 
         function updateKPIs(projRev, delta) {
-          document.getElementById('kProjected').textContent =
-            projRev > 0 ? '$' + Math.round(projRev / 1000) + 'K' : '—';
+          var projEl = document.getElementById('kProjected');
           var varEl = document.getElementById('kVariance');
-          if (delta !== 0) {
-            varEl.textContent = (delta >= 0 ? '+$' : '-$') + Math.round(Math.abs(delta) / 1000) + 'K';
-            varEl.style.color = delta >= 0 ? 'var(--teal)' : 'var(--rose)';
-          } else {
-            varEl.textContent = '—';
-            varEl.style.color = '';
+          if (projRev === undefined || projRev === null || isNaN(projRev)) {
+            if (projEl) projEl.textContent = '—';
+            if (varEl) { varEl.textContent = '—'; varEl.style.color = ''; }
+            return;
+          }
+          if (projEl) projEl.textContent = projRev > 0 ? '$' + Math.round(projRev / 1000) + 'K' : '—';
+          if (varEl) {
+            if (delta && delta !== 0 && !isNaN(delta)) {
+              varEl.textContent = (delta >= 0 ? '+$' : '-$') + Math.round(Math.abs(delta) / 1000) + 'K';
+              varEl.style.color = delta >= 0 ? 'var(--teal)' : 'var(--rose)';
+            } else {
+              varEl.textContent = '—';
+              varEl.style.color = '';
+            }
           }
         }
 
@@ -2988,6 +3005,9 @@
           var fs = _selectedShow ? findFactSheet(_selectedShow.displayName) : null;
           if (!fs) return;
 
+          /* Auto-detect hall from fact sheet: addon shows play Belding, everything else plays Mortensen */
+          _activeHall = fs.subType === 'addon' ? 'belding' : 'mortensen';
+
           var sections = getSections();
           var totalHolds = (fs.holds ? (fs.holds.house || 0) + (fs.holds.presenter || 0) + (fs.holds.troubleBO || 0) + (fs.holds.troubleFOH || 0) + (fs.holds.other || 0) : 0);
 
@@ -3022,7 +3042,7 @@
         };
 
         /* ── Bootstrap ── */
-        loadSeatConfig();
+        // loadSeatConfig(); /* restore if Seating Config UI re-enabled */
         renderPerfCardGrid();
         updateRunTotalStrip();
         loadData();
