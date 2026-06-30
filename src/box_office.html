@@ -1227,10 +1227,10 @@
           <option value="mortensen" style="background: #141414">Mortensen Hall</option>
           <option value="belding" style="background: #141414">Belding Theater</option>
         </select>
-        <button class="btn btn-outline" onclick="openConfigModal()" id="configBtn">
+        <!-- <button class="btn btn-outline" onclick="openConfigModal()" id="configBtn">
           ⚙ Seating Config
           <span id="configBadge" class="config-status empty" style="margin-left: 6px">Not Set</span>
-        </button>
+        </button> -->
         <button class="btn btn-outline" onclick="resetAll()">↺ Reset</button>
         <button class="btn btn-outline" onclick="window.print()">⎙ Print</button>
       </div>
@@ -1675,7 +1675,7 @@
     </div>
     <!-- /workspace -->
 
-    <!-- ══ SEATING CONFIG MODAL ══ -->
+    <!-- ══ SEATING CONFIG MODAL — commented out in v2.0; restore if Seating Config UI re-enabled ══
     <div
       class="modal-backdrop"
       id="configModal"
@@ -1731,6 +1731,7 @@
         </div>
       </div>
     </div>
+    ══ END SEATING CONFIG MODAL ══ -->
 
     <!-- ══ PERFORMANCE MODAL (v2.0) ══ -->
     <div
@@ -1886,7 +1887,7 @@
         /* ── Venues (v2.0) ── */
         var VENUES = {};
         var _activeHall = 'mortensen';
-        var _seatConfig = null;
+        // var _seatConfig = null; /* commented out — Seating Config UI removed in v2.0; restore if re-enabled */
         var _performances = [];
         var _openPerfId = null;
 
@@ -2396,69 +2397,42 @@
         /* ── Switch hall (v2.0 — reads from VENUES) ── */
         window.switchHall = function (hallKey) {
           _activeHall = hallKey;
-          _seatConfig = null;
-          loadSeatConfig();
+          // _seatConfig = null; loadSeatConfig(); /* restore if Seating Config UI re-enabled */
           _performances = [];
           renderPerfCardGrid();
           updateRunTotalStrip();
           syncFactSheetButton();
         };
 
-        /* ── Config modal ── */
+
+        /* ── Seating Config modal — commented out in v2.0; restore if UI re-enabled ──
         window.openConfigModal = function () {
           var hall = activeHall();
           document.getElementById('configModalTitle').textContent = hall.name + ' · Seating Configuration';
           document.getElementById('configModalDesc').textContent =
-            'Enter seat counts for each section in ' +
-            hall.name +
-            '. Saved separately per hall. ' +
-            'Seat counts are reference only — prices are entered per-performance in the Scenario Model.';
-
+            'Enter seat counts for each section in ' + hall.name +
+            '. Saved separately per hall. Seat counts are reference only — prices are entered per-performance.';
           var saved = _seatConfig || [];
           var savedMap = {};
-          saved.forEach(function (s) {
-            savedMap[s.name] = s.seats;
-          });
-
+          saved.forEach(function (s) { savedMap[s.name] = s.seats; });
           var tbody = document.getElementById('configTableBody');
-          tbody.innerHTML = hall.sections
-            .map(function (sec, i) {
-              var savedSeats = savedMap[sec.name];
-              var seats = savedSeats !== undefined ? savedSeats : sec.seats;
-              return (
-                '<tr>' +
-                '<td class="section-name">' +
-                sec.name +
-                '</td>' +
-                '<td style="text-align:right;font-family:var(--mono);font-size:.68rem;color:var(--ink3);">' +
-                sec.seats.toLocaleString() +
-                '</td>' +
-                '<td style="text-align:right;"><input type="number" class="cfg-seats" data-idx="' +
-                i +
-                '" min="0" max="5000" value="' +
-                seats +
-                '" placeholder="0" oninput="updateConfigTotal()"></td>' +
-                '</tr>'
-              );
-            })
-            .join('');
-
+          tbody.innerHTML = hall.sections.map(function (sec, i) {
+            var seats = savedMap[sec.name] !== undefined ? savedMap[sec.name] : sec.seats;
+            return '<tr>' +
+              '<td class="section-name">' + sec.name + '</td>' +
+              '<td style="text-align:right;font-family:var(--mono);font-size:.68rem;color:var(--ink3);">' + sec.seats.toLocaleString() + '</td>' +
+              '<td style="text-align:right;"><input type="number" class="cfg-seats" data-idx="' + i + '" min="0" max="5000" value="' + seats + '" placeholder="0" oninput="updateConfigTotal()"></td>' +
+              '</tr>';
+          }).join('');
           updateConfigTotal();
           document.getElementById('configModal').style.display = 'flex';
         };
-
-        window.closeConfigModal = function () {
-          document.getElementById('configModal').style.display = 'none';
-        };
-
+        window.closeConfigModal = function () { document.getElementById('configModal').style.display = 'none'; };
         window.updateConfigTotal = function () {
           var total = 0;
-          document.querySelectorAll('.cfg-seats').forEach(function (inp) {
-            total += +inp.value || 0;
-          });
+          document.querySelectorAll('.cfg-seats').forEach(function (inp) { total += +inp.value || 0; });
           document.getElementById('configTotalSeats').textContent = total.toLocaleString();
         };
-
         window.saveSeatConfig = function () {
           var hall = activeHall();
           var config = [];
@@ -2466,65 +2440,47 @@
             config.push({ name: hall.sections[i].name, seats: +inp.value || 0 });
           });
           _seatConfig = config;
-          try {
-            localStorage.setItem('btd_seat_config_' + _activeHall, JSON.stringify(config));
-          } catch (e) {}
+          try { localStorage.setItem('btd_seat_config_' + _activeHall, JSON.stringify(config)); } catch (e) {}
           applyConfigToScenario();
           closeConfigModal();
         };
-
         window.clearSeatConfig = function () {
           if (!confirm('Clear seating configuration for ' + activeHall().name + '?')) return;
           _seatConfig = null;
-          try {
-            localStorage.removeItem('btd_seat_config_' + _activeHall);
-          } catch (e) {}
+          try { localStorage.removeItem('btd_seat_config_' + _activeHall); } catch (e) {}
           applyConfigToScenario();
           closeConfigModal();
         };
-
         function loadSeatConfig() {
           try {
             var raw = localStorage.getItem('btd_seat_config_' + _activeHall);
             _seatConfig = raw ? JSON.parse(raw) : null;
-          } catch (e) {
-            _seatConfig = null;
-          }
+          } catch (e) { _seatConfig = null; }
           applyConfigToScenario();
         }
-
-        /* ── Update config badge after seat config load/save ── */
         function applyConfigToScenario() {
           var badge = document.getElementById('configBadge');
           if (!badge) return;
-          if (
-            _seatConfig &&
-            _seatConfig.reduce(function (a, b) {
-              return a + b.seats;
-            }, 0) > 0
-          ) {
-            badge.textContent = 'Configured';
-            badge.className = 'config-status loaded';
+          if (_seatConfig && _seatConfig.reduce(function (a, b) { return a + b.seats; }, 0) > 0) {
+            badge.textContent = 'Configured'; badge.className = 'config-status loaded';
           } else {
-            badge.textContent = 'Not Set';
-            badge.className = 'config-status empty';
+            badge.textContent = 'Not Set'; badge.className = 'config-status empty';
           }
         }
+        Also restore: _seatConfig = null in state, loadSeatConfig() in switchHall and bootstrap,
+        and the _seatConfig override logic in getSections().
+        ── END Seating Config modal ── */
 
         /* ── Scenario Model v2.0 ── */
 
-        /* ── getSections — respects saved config overrides ── */
+        /* ── getSections — returns sections from venues.json for the active hall ── */
+        /* (Seating Config seat-count overrides removed; restore _seatConfig logic if re-enabled) */
         function getSections() {
           var hall = activeHall();
-          var saved = _seatConfig || [];
-          var savedMap = {};
-          saved.forEach(function (s) {
-            savedMap[s.name] = s.seats;
-          });
           return (hall.sections || []).map(function (s) {
             return {
               name: s.name,
-              seats: savedMap[s.name] !== undefined ? savedMap[s.name] : s.seats,
+              seats: s.seats,
               group: s.group || '',
               nameAliases: s.nameAliases || [],
             };
@@ -3022,7 +2978,7 @@
         };
 
         /* ── Bootstrap ── */
-        loadSeatConfig();
+        // loadSeatConfig(); /* restore if Seating Config UI re-enabled */
         renderPerfCardGrid();
         updateRunTotalStrip();
         loadData();
