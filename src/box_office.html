@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
     <meta name="googlebot" content="noindex, nofollow" />
     <meta name="referrer" content="no-referrer" />
-    <title>Broadway Touring · Box Office Manager v1.3</title>
+    <title>Broadway Touring · Box Office Manager v2.0</title>
     <link
       href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Libre+Franklin:ital,wght@0,300;0,400;0,600;0,700;0,900;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap"
       rel="stylesheet"
@@ -1087,6 +1087,55 @@
         display: block;
         margin-bottom: 4px;
       }
+      /* ── PERFORMANCE CARDS (v2.0) ── */
+      .perf-card {
+        text-align: left;
+        padding: 10px 12px;
+        border-radius: 3px;
+        border: 1px solid var(--rule);
+        background: #fff;
+        cursor: pointer;
+        transition: border-color 0.15s, box-shadow 0.15s;
+        font-family: var(--sans);
+        width: 100%;
+      }
+      .perf-card:hover {
+        border-color: var(--amber-md);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+      }
+      .perf-card:active {
+        background: var(--bg2);
+      }
+      .pm-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.72rem;
+      }
+      .pm-table th {
+        font-size: 0.52rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--ink3);
+        background: var(--bg2);
+        padding: 7px 10px;
+        border-bottom: 2px solid var(--rule);
+        text-align: right;
+        white-space: nowrap;
+      }
+      .pm-table th:first-child {
+        text-align: left;
+      }
+      .pm-table td {
+        padding: 5px 8px;
+        border-bottom: 1px solid var(--rule2);
+        vertical-align: middle;
+      }
+      .pm-table tfoot td {
+        border-bottom: none;
+        border-top: 2px solid var(--rule);
+        font-weight: 600;
+        background: var(--bg2);
+      }
       @media (max-width: 1100px) {
         .kpi-strip {
           grid-template-columns: repeat(4, 1fr);
@@ -1371,7 +1420,7 @@
         </div>
         <!-- /tab-markets -->
 
-        <!-- ── TAB: Scenario Model ── -->
+        <!-- ── TAB: Scenario Model (v2.0) ── -->
         <div class="panel active" id="tab-scenario">
           <div class="section-divider">
             <h2>Scenario Model</h2>
@@ -1379,417 +1428,84 @@
             <span id="modeBadge" class="mode-badge mode-presale">Pre-Sale Mode — No sold data</span>
           </div>
 
-          <!-- Run Setup -->
-          <div class="card" style="margin-bottom: 18px">
-            <div class="card-hd" style="margin-bottom: 14px">Run Setup</div>
-            <div class="grid grid-2" style="margin-bottom: 16px">
-              <div>
-                <label class="inp-label">Show Name</label>
-                <input type="text" id="inpShowName" placeholder="Auto-fills from sidebar selection" />
-                <div id="fsLoadWrap" style="display: none; margin-top: 8px">
-                  <button class="btn btn-primary" style="width: 100%; padding: 9px" onclick="loadFactSheet()">
-                    ↓ Load Fact Sheet Data
-                  </button>
-                  <div style="font-size: 0.58rem; color: var(--ink3); margin-top: 5px" id="fsLoadNote"></div>
-                </div>
+          <!-- Run Total Strip (always visible) -->
+          <div
+            id="runTotalStrip"
+            class="card"
+            style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; margin-bottom: 18px"
+          >
+            <div>
+              <div style="font-size: 0.62rem; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.08em">
+                <span id="runShowName">—</span> · Run Total (<span id="runPerfCount">0</span> performances)
               </div>
-              <div>
-                <label class="inp-label">Contracted Sellable Seats</label>
-                <input
-                  type="number"
-                  id="inpCapacity"
-                  min="0"
-                  value="2704"
-                  oninput="calcScenario()"
-                  style="font-family: var(--mono)"
-                />
-                <div
-                  id="grossPotentialRef"
-                  style="display: none; font-size: 0.58rem; color: var(--ink3); margin-top: 5px"
-                >
-                  Fact sheet gross potential:
-                  <strong id="gpExcl">—</strong>
-                  excl. restoration ·
-                  <strong id="gpIncl">—</strong>
-                  incl. restoration
+              <div style="display: flex; gap: 28px; margin-top: 6px">
+                <div>
+                  <div class="kpi-label">Current Gross</div>
+                  <div class="kpi-value" id="rtCurrent">$0</div>
+                </div>
+                <div>
+                  <div class="kpi-label">Adjusted Gross</div>
+                  <div class="kpi-value" id="rtAdjusted">$0</div>
+                </div>
+                <div>
+                  <div class="kpi-label">Delta</div>
+                  <div class="kpi-value" id="rtDelta">$0</div>
                 </div>
               </div>
             </div>
-            <div style="margin-bottom: 16px">
+            <div id="fsLoadWrap" style="display: none; text-align: right">
+              <button class="btn btn-primary" id="fsLoadBtn" onclick="loadFactSheet()" style="padding: 9px 16px">
+                ↓ Load Fact Sheet Data
+              </button>
+              <div style="font-size: 0.58rem; color: var(--ink3); margin-top: 5px" id="fsLoadNote"></div>
+            </div>
+          </div>
+
+          <!-- Performance Card Grid -->
+          <div
+            id="perfCardGrid"
+            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px"
+          ></div>
+          <div style="display: flex; gap: 10px; margin-bottom: 18px">
+            <button class="btn" onclick="addPerformance()">+ Add Performance</button>
+          </div>
+
+          <!-- POS Placeholder -->
+          <div
+            style="
+              border: 1px dashed var(--rule);
+              border-radius: 3px;
+              background: var(--bg2);
+              padding: 12px 16px;
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              gap: 16px;
+              margin-bottom: 18px;
+            "
+          >
+            <div>
               <div
                 style="
-                  font-size: 0.58rem;
-                  font-weight: 700;
-                  letter-spacing: 0.1em;
+                  font-size: 0.56rem;
+                  letter-spacing: 0.12em;
                   text-transform: uppercase;
-                  color: var(--amber);
-                  margin-bottom: 10px;
-                "
-              >
-                Global Holds
-                <span style="font-weight: 400; color: var(--ink3); letter-spacing: 0; text-transform: none">
-                  — reduce net sellable for all performances
-                </span>
-              </div>
-              <div class="holds-grid">
-                <div>
-                  <label class="inp-label">House Holds</label>
-                  <input
-                    type="number"
-                    id="holdHouse"
-                    min="0"
-                    value="0"
-                    placeholder="0"
-                    oninput="calcScenario()"
-                    style="font-family: var(--mono)"
-                  />
-                </div>
-                <div>
-                  <label class="inp-label">Presenter Holds</label>
-                  <input
-                    type="number"
-                    id="holdPresenter"
-                    min="0"
-                    value="0"
-                    placeholder="0"
-                    oninput="calcScenario()"
-                    style="font-family: var(--mono)"
-                  />
-                </div>
-                <div>
-                  <label class="inp-label">Trouble Holds (BO + FOH)</label>
-                  <input
-                    type="number"
-                    id="holdTrouble"
-                    min="0"
-                    value="0"
-                    placeholder="0"
-                    oninput="calcScenario()"
-                    style="font-family: var(--mono)"
-                  />
-                </div>
-                <div>
-                  <label class="inp-label">Other</label>
-                  <input
-                    type="number"
-                    id="holdOther"
-                    min="0"
-                    value="0"
-                    placeholder="0"
-                    oninput="calcScenario()"
-                    style="font-family: var(--mono)"
-                  />
-                </div>
-              </div>
-              <div style="font-size: 0.62rem; color: var(--ink3); margin-top: 10px">
-                Net Sellable:
-                <strong id="netSellableDisplay" style="font-family: var(--mono)">—</strong>
-                seats per performance (contracted minus holds; overridable per-performance below)
-              </div>
-              <div
-                id="holdsNoteWrap"
-                style="
-                  display: none;
-                  margin-top: 8px;
-                  padding: 8px 12px;
-                  background: var(--bg2);
-                  border: 1px solid var(--rule);
-                  border-radius: 3px;
-                  font-size: 0.58rem;
                   color: var(--ink3);
-                  line-height: 1.55;
+                  font-weight: 600;
+                  margin-bottom: 3px;
                 "
               >
-                <strong style="display: block; margin-bottom: 3px">Holds Note (from fact sheet)</strong>
-                <span id="holdsNoteText"></span>
+                POS / Ticketing Integration
+              </div>
+              <div style="font-size: 0.62rem; color: var(--ink3); line-height: 1.55">
+                Live sold counts will populate here when the ticketing system integration is complete. Enter sold counts
+                manually inside each performance card in the interim.
               </div>
             </div>
-            <!-- Subscriber Sales -->
-            <div id="subSalesSection" style="margin-bottom: 16px">
-              <div
-                style="
-                  font-size: 0.58rem;
-                  font-weight: 700;
-                  letter-spacing: 0.1em;
-                  text-transform: uppercase;
-                  color: var(--amber);
-                  margin-bottom: 10px;
-                "
-              >
-                Subscriber Sales
-                <span style="font-weight: 400; color: var(--ink3); letter-spacing: 0; text-transform: none">
-                  — pre-allocated seats and estimated revenue
-                </span>
-              </div>
-              <div
-                id="subBeldingNote"
-                style="
-                  display: none;
-                  padding: 10px 14px;
-                  background: var(--bg2);
-                  border: 1px dashed var(--rule);
-                  border-radius: 3px;
-                  font-size: 0.62rem;
-                  color: var(--ink3);
-                "
-              >
-                Subscriber pricing not configured for Belding Theater.
-              </div>
-              <div id="subMortensenFields">
-                <div class="holds-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 12px">
-                  <div>
-                    <label class="inp-label">Show Type</label>
-                    <select
-                      id="subShowType"
-                      onchange="
-                        toggleSubType();
-                        calcScenario();
-                      "
-                      style="font-size: 0.68rem"
-                    >
-                      <option value="core">Core Subscription Show</option>
-                      <option value="addon">Add-On Show</option>
-                    </select>
-                  </div>
-                  <div id="subSeasonCountWrap">
-                    <label class="inp-label">Season Show Count</label>
-                    <input
-                      type="number"
-                      id="subSeasonCount"
-                      min="1"
-                      max="20"
-                      value="8"
-                      oninput="calcScenario()"
-                      style="font-family: var(--mono)"
-                    />
-                  </div>
-                  <div id="subAddonPriceWrap" style="display: none">
-                    <label class="inp-label">Add-On Price / Seat</label>
-                    <input
-                      type="number"
-                      id="subAddonPrice"
-                      min="0"
-                      step="0.01"
-                      placeholder="0.00"
-                      oninput="calcScenario()"
-                      style="font-family: var(--mono)"
-                    />
-                  </div>
-                  <div>
-                    <label class="inp-label">Sub Seats / Perf (est.)</label>
-                    <input
-                      type="number"
-                      id="subSeatsGlobal"
-                      min="0"
-                      placeholder="0"
-                      oninput="calcScenario()"
-                      style="font-family: var(--mono)"
-                    />
-                  </div>
-                </div>
-                <div style="font-size: 0.59rem; color: var(--ink3); line-height: 1.55; margin-bottom: 4px">
-                  Subscriber seats are estimated pre-Paciolan. These will be replaced by live counts when the POS
-                  integration is complete.
-                </div>
-              </div>
-            </div>
-
-            <!-- POS Placeholder -->
-            <div
-              style="
-                border: 1px dashed var(--rule);
-                border-radius: 3px;
-                background: var(--bg2);
-                padding: 12px 16px;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 16px;
-              "
-            >
-              <div>
-                <div
-                  style="
-                    font-size: 0.56rem;
-                    letter-spacing: 0.12em;
-                    text-transform: uppercase;
-                    color: var(--ink3);
-                    font-weight: 600;
-                    margin-bottom: 3px;
-                  "
-                >
-                  POS / Ticketing Integration
-                </div>
-                <div style="font-size: 0.62rem; color: var(--ink3); line-height: 1.55">
-                  Live sold counts will populate here when the ticketing system integration is complete. Enter sold
-                  counts manually in the performance table below in the interim.
-                </div>
-              </div>
-              <span class="status neutral" style="white-space: nowrap; flex-shrink: 0">Coming Soon</span>
-            </div>
+            <span class="status neutral" style="white-space: nowrap; flex-shrink: 0">Coming Soon</span>
           </div>
 
-          <!-- Performances -->
-          <div class="card" style="margin-bottom: 18px">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px">
-              <div class="card-hd">Performances</div>
-              <div style="display: flex; gap: 8px">
-                <button class="btn btn-ghost" style="font-size: 0.58rem" onclick="addStandardWeek()">
-                  + Standard Week
-                </button>
-                <button class="btn btn-ghost" style="font-size: 0.58rem" onclick="addPerfRow()">
-                  + Add Performance
-                </button>
-              </div>
-            </div>
-            <div style="overflow-x: auto">
-              <table class="run-table" id="runTable" style="display: none">
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Time</th>
-                    <th>Tier</th>
-                    <th class="num">Sellable Override</th>
-                    <th class="num">Sub Seats Override</th>
-                    <th class="num live-col" style="display: none">Sold</th>
-                    <th style="width: 36px"></th>
-                  </tr>
-                </thead>
-                <tbody id="runTableBody"></tbody>
-              </table>
-            </div>
-            <div
-              id="runEmpty"
-              style="
-                padding: 20px;
-                text-align: center;
-                color: var(--ink3);
-                font-size: 0.68rem;
-                border: 1px dashed var(--rule);
-                border-radius: 3px;
-                background: var(--bg);
-              "
-            >
-              No performances added. Use
-              <strong>+ Standard Week</strong>
-              to load a standard 8-performance week, or
-              <strong>+ Add Performance</strong>
-              to add individually.
-            </div>
-          </div>
-
-          <!-- Section Pricing Grid -->
-          <div class="card" style="margin-bottom: 18px">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px">
-              <div class="card-hd">Section Pricing Grid</div>
-              <div style="font-size: 0.6rem; color: var(--ink3)">
-                Face value · excl. $4 restoration · League-compliant · Adjusted inherits contracted when blank
-              </div>
-            </div>
-            <div id="pricingGridWrap"></div>
-          </div>
-
-          <!-- Per-Performance Results -->
-          <div class="card" id="resultsCard" style="display: none; margin-bottom: 18px">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px">
-              <div class="card-hd">Per-Performance Results</div>
-              <div style="font-size: 0.58rem; color: var(--ink3)">
-                Incl. Restoration col is reference only — not used in League reporting
-              </div>
-            </div>
-            <div style="overflow-x: auto">
-              <table class="results-tbl" id="resultsTable">
-                <thead>
-                  <tr>
-                    <th class="left">Date / Time</th>
-                    <th class="left">Tier</th>
-                    <th class="num">Net Sellable</th>
-                    <th class="num" style="color: var(--amber)">Sub Seats</th>
-                    <th class="num">ST Sellable</th>
-                    <th class="num" style="color: var(--amber)">
-                      Sub Rev
-                      <span style="font-weight: 400; font-size: 0.52rem">(incl. fees)</span>
-                    </th>
-                    <th class="num live-col" style="display: none">Sold</th>
-                    <th class="num live-col" style="display: none">Fill %</th>
-                    <th class="num live-col" style="display: none">Captured Rev</th>
-                    <th class="num">ST Baseline</th>
-                    <th class="num">ST Adjusted</th>
-                    <th class="num" style="font-weight: 700">Total Baseline</th>
-                    <th class="num" style="font-weight: 700">Total Adjusted</th>
-                    <th class="num">Delta ($)</th>
-                    <th class="num">Delta (%)</th>
-                    <th class="num">ST+Rest.</th>
-                  </tr>
-                </thead>
-                <tbody id="resultsBody"></tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- Run Total Strip -->
-          <div class="scenario-output" id="scenarioOutput" style="display: none; margin-top: 0; margin-bottom: 18px">
-            <div class="card-hd" style="margin-bottom: 14px">Run Total</div>
-            <div class="out-grid" style="grid-template-columns: repeat(5, 1fr); margin-bottom: 10px">
-              <div class="out-cell">
-                <div class="out-label">Total Net Sellable</div>
-                <div class="out-val" id="outTotalCap">—</div>
-              </div>
-              <div class="out-cell" style="border-left: 2px solid var(--amber)">
-                <div class="out-label" style="color: var(--amber)">Total Sub Seats</div>
-                <div class="out-val" id="outTotalSubSeats">—</div>
-              </div>
-              <div class="out-cell" style="border-left: 1px solid var(--amber)">
-                <div class="out-label" style="color: var(--amber)">Sub Revenue</div>
-                <div class="out-val" id="outSubRev">—</div>
-                <div class="out-sub">incl. fees (package pricing)</div>
-              </div>
-              <div class="out-cell live-col" style="display: none">
-                <div class="out-label">Total Sold</div>
-                <div class="out-val" id="outTotalSold">—</div>
-                <div class="out-sub" id="outFillRate"></div>
-              </div>
-              <div class="out-cell live-col" style="display: none">
-                <div class="out-label">Captured Revenue</div>
-                <div class="out-val" id="outCaptured">—</div>
-              </div>
-              <div class="out-cell">
-                <div class="out-label">ST Baseline</div>
-                <div class="out-val" id="outCurrentRev">—</div>
-                <div class="out-sub" id="outBaseRest"></div>
-              </div>
-              <div class="out-cell">
-                <div class="out-label">ST Adjusted</div>
-                <div class="out-val" id="outProjRev">—</div>
-                <div class="out-sub" id="outAdjRest"></div>
-              </div>
-            </div>
-            <div
-              class="out-grid"
-              style="grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--rule); padding-top: 10px"
-            >
-              <div class="out-cell" style="border-left: 3px solid var(--ink)">
-                <div class="out-label" style="font-weight: 700">Combined Baseline</div>
-                <div class="out-val" id="outCombBaseline">—</div>
-                <div class="out-sub">sub + single ticket</div>
-              </div>
-              <div class="out-cell" style="border-left: 3px solid var(--teal)">
-                <div class="out-label" style="font-weight: 700; color: var(--teal)">Combined Adjusted</div>
-                <div class="out-val" id="outCombAdj">—</div>
-                <div class="out-sub">sub + single ticket</div>
-              </div>
-              <div class="out-cell">
-                <div class="out-label">Delta ($)</div>
-                <div class="out-val" id="outDelta">—</div>
-              </div>
-              <div class="out-cell">
-                <div class="out-label">Delta (%)</div>
-                <div class="out-val" id="outPct">—</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Preceding Market Benchmark (populated by market data) -->
+          <!-- Preceding Market Benchmark -->
           <div id="scenarioBenchmark" class="placeholder-section" style="display: none">
             <div class="ph-label">Preceding Market Benchmark</div>
             <div class="ph-sub" id="benchmarkText">—</div>
@@ -2016,13 +1732,139 @@
       </div>
     </div>
 
+    <!-- ══ PERFORMANCE MODAL (v2.0) ══ -->
+    <div
+      class="modal-backdrop"
+      id="perfModal"
+      style="display: none"
+      onclick="if (event.target === this) closePerfModal();"
+    >
+      <div class="modal" style="max-width: 900px; width: 96vw">
+        <div class="modal-head">
+          <div>
+            <h2 id="perfModalTitle">Performance</h2>
+            <div id="perfModalSub" style="font-size: 0.65rem; color: var(--ink3); margin-top: 2px"></div>
+          </div>
+          <button class="modal-close" onclick="closePerfModal()">✕</button>
+        </div>
+        <div class="modal-body">
+          <!-- Metadata row: date / time / price level -->
+          <div style="display: grid; grid-template-columns: 150px 110px 90px; gap: 10px; margin-bottom: 16px">
+            <div>
+              <label class="inp-label">Date</label>
+              <input type="date" id="pmDate" oninput="updatePerfMeta()" />
+            </div>
+            <div>
+              <label class="inp-label">Time</label>
+              <input type="text" id="pmTime" placeholder="7:30 PM" oninput="updatePerfMeta()" />
+            </div>
+            <div>
+              <label class="inp-label">Price Level</label>
+              <select id="pmTier" onchange="updatePerfMeta()" style="font-size: 0.68rem">
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Performance summary -->
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px">
+            <div class="out-cell">
+              <div class="out-label">Current Gross</div>
+              <div class="out-val" id="modalCurrentGross">—</div>
+            </div>
+            <div class="out-cell">
+              <div class="out-label">Adjusted Gross</div>
+              <div class="out-val" id="modalAdjustedGross">—</div>
+            </div>
+            <div class="out-cell">
+              <div class="out-label">Delta</div>
+              <div class="out-val" id="modalDelta">—</div>
+            </div>
+          </div>
+
+          <!-- Run total row (only shown when >1 performance exists) -->
+          <div
+            id="modalRunTotalRow"
+            style="
+              display: none;
+              margin-bottom: 16px;
+              padding: 10px 12px;
+              background: var(--bg2);
+              border-radius: 3px;
+            "
+          >
+            <div style="font-size: 0.55rem; color: var(--ink3); text-transform: uppercase">
+              Run Total (all <span id="modalRunCount"></span> performances)
+            </div>
+            <div style="display: flex; gap: 20px; margin-top: 4px; font-family: var(--mono); font-size: 0.68rem">
+              <span>Current: <strong id="modalRunCurrent"></strong></span>
+              <span>Adjusted: <strong id="modalRunAdjusted"></strong></span>
+              <span>Delta: <strong id="modalRunDelta"></strong></span>
+            </div>
+          </div>
+
+          <!-- Fact sheet holds reference -->
+          <div
+            id="modalHoldsRef"
+            style="display: none; margin-bottom: 12px; padding: 8px 12px; background: var(--amber-lt); border-radius: 3px; font-size: 0.58rem; color: var(--ink2); line-height: 1.55"
+          ></div>
+
+          <!-- Section table -->
+          <div style="overflow-x: auto">
+            <table class="pm-table" id="perfSectionTable">
+              <thead>
+                <tr>
+                  <th style="text-align: left">Section</th>
+                  <th class="num">Total</th>
+                  <th class="num">Holds</th>
+                  <th class="num">Sold</th>
+                  <th class="num">Unsold</th>
+                  <th class="num live-modal-col" style="display: none">Captured Rev</th>
+                  <th class="num">Current $</th>
+                  <th class="num" style="color: var(--teal)">Adjusted $</th>
+                  <th class="num">Impact</th>
+                </tr>
+              </thead>
+              <tbody id="perfSectionBody"></tbody>
+              <tfoot>
+                <tr>
+                  <td style="font-size: 0.62rem; font-weight: 600">Total</td>
+                  <td class="num" id="pfTotalSeats" style="font-family: var(--mono)">—</td>
+                  <td class="num" id="pfTotalHolds" style="font-family: var(--mono)">—</td>
+                  <td class="num" id="pfTotalSold" style="font-family: var(--mono)">—</td>
+                  <td class="num" id="pfTotalUnsold" style="font-family: var(--mono)">—</td>
+                  <td class="num live-modal-col" id="pfTotalCaptured" style="display: none; font-family: var(--mono)">—</td>
+                  <td class="num">—</td>
+                  <td class="num">—</td>
+                  <td class="num" id="pfTotalImpact" style="font-family: var(--mono)">—</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <div style="font-size: 0.58rem; color: var(--ink3); margin-top: 10px; line-height: 1.55">
+            Sold figures are manual entry until Paciolan POS integration is complete. Subscriber, group, and discount
+            sales are not tracked separately here — they are included in Sold at whatever price was actually charged.
+          </div>
+        </div>
+        <div class="modal-foot" style="justify-content: space-between; align-items: center">
+          <button class="btn btn-ghost" onclick="deletePerfFromModal()" style="color: var(--rose)">
+            Delete Performance
+          </button>
+          <button class="btn btn-primary" onclick="closePerfModal()">Done</button>
+        </div>
+      </div>
+    </div>
+
     <!-- ══ FOOTER ══ -->
     <footer class="footer">
       <div>
         <strong>BROADWAY TOURING · BOX OFFICE MANAGER</strong>
         — CONFIDENTIAL · For internal use only
       </div>
-      <div>v1.3 · June 29, 2026 · Bushnell Center for the Performing Arts</div>
+      <div>v2.0 · June 30, 2026 · Bushnell Center for the Performing Arts</div>
     </footer>
 
     <!-- ══ INLINE SCRIPT ══ -->
@@ -2041,6 +1883,13 @@
         var _scenarioRan = false;
         var _natCapAvg = null;
 
+        /* ── Venues (v2.0) ── */
+        var VENUES = {};
+        var _activeHall = 'mortensen';
+        var _seatConfig = null;
+        var _performances = [];
+        var _openPerfId = null;
+
         /* ── Season label ordering (newest first in sidebar) ── */
         var SEASON_ORDER = ['2026-2027', '2025-2026', '2024-2025', '2023-2024', '2022-2023', '2021-2022', '2019-2020'];
 
@@ -2056,8 +1905,38 @@
           });
         };
 
+        /* ── Venues fetch (v2.0) ── */
+        function loadVenues() {
+          return fetch('data/venues.json')
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (d) {
+              VENUES = d && d.halls ? d.halls : {};
+            })
+            .catch(function () {
+              VENUES = {};
+            });
+        }
+
+        function activeHall() {
+          return VENUES[_activeHall] || { name: '', sections: [], defaultCapacity: 0 };
+        }
+
+        function resolveSectionName(hallKey, rawName) {
+          var hall = VENUES[hallKey];
+          if (!hall) return null;
+          for (var i = 0; i < hall.sections.length; i++) {
+            var s = hall.sections[i];
+            if (s.name === rawName) return s;
+            if (s.nameAliases && s.nameAliases.indexOf(rawName) !== -1) return s;
+          }
+          return null;
+        }
+
         /* ── Boot ── */
         window.loadData = function () {
+          var venuesP = loadVenues();
           var seasonsP = fetch('data/seasons.json').then(function (r) {
             return r.json();
           });
@@ -2072,11 +1951,11 @@
               return {};
             });
 
-          Promise.all([seasonsP, dataP, fsP])
+          Promise.all([venuesP, seasonsP, dataP, fsP])
             .then(function (results) {
-              _seasons = results[0] || {};
-              var raw = results[1] || {};
-              _factsheets = results[2] && results[2].shows ? results[2].shows : {};
+              _seasons = results[1] || {};
+              var raw = results[2] || {};
+              _factsheets = results[3] && results[3].shows ? results[3].shows : {};
               _records = Array.isArray(raw) ? raw : raw.records || raw.rows || raw.data || [];
               init();
             })
@@ -2226,6 +2105,9 @@
           document.getElementById('justifySeason').textContent = season || _activeSeason;
           document.getElementById('justifyTitle').textContent = _selectedShow.displayName;
 
+          _performances = [];
+          renderPerfCardGrid();
+          updateRunTotalStrip();
           syncFactSheetButton();
           renderAll();
         };
@@ -2266,6 +2148,7 @@
           _equity = 'all';
           _activeSeason = '2025-2026';
           _scenarioRan = false;
+          _performances = [];
           document.querySelectorAll('[data-peer]').forEach(function (b) {
             b.classList.toggle('active', b.dataset.peer === 'size');
           });
@@ -2278,11 +2161,9 @@
           renderShowList('2025-2026');
           resetMainPanel();
           resetKPIs();
+          renderPerfCardGrid();
+          updateRunTotalStrip();
           syncFactSheetButton();
-          var gpEl = document.getElementById('grossPotentialRef');
-          if (gpEl) gpEl.style.display = 'none';
-          var hnw = document.getElementById('holdsNoteWrap');
-          if (hnw) hnw.style.display = 'none';
         };
 
         function resetMainPanel() {
@@ -2305,7 +2186,12 @@
         /* ── Render dispatcher ── */
         window.renderAll = function () {
           renderMarkets();
-          updateKPIs();
+          if (_performances.length > 0) {
+            var rt = calcRunTotals();
+            updateKPIs(rt.adjusted, rt.delta);
+          } else {
+            updateKPIs();
+          }
         };
 
         /* ── Get rows for selected show ── */
@@ -2507,72 +2393,15 @@
           }
         };
 
-        /* ── Hall definitions (zones from event fact sheets) ── */
-        var HALLS = {
-          mortensen: {
-            name: 'Mortensen Hall',
-            defaultCap: 2704,
-            storageKey: 'btd_seat_config_mortensen',
-            sections: [
-              { name: 'Broadway Circle', seats: 244 },
-              { name: 'Mezzanine – Prime', seats: 156 },
-              { name: 'Orchestra Prime', seats: 684 },
-              { name: 'Mezzanine – Front', seats: 238 },
-              { name: 'Orchestra Perimeter – Side', seats: 88 },
-              { name: 'Mezzanine – Middle', seats: 314 },
-              { name: 'Balcony – Prime', seats: 83 },
-              { name: 'Balcony Front', seats: 195 },
-              { name: 'Mezzanine – Economy', seats: 280 },
-              { name: 'Balcony – Middle', seats: 276 },
-              { name: 'Balcony – Economy', seats: 98 },
-              { name: 'ADA / Accessible', seats: 48 },
-            ],
-          },
-          belding: {
-            name: 'Belding Theater',
-            defaultCap: 908,
-            storageKey: 'btd_seat_config_belding',
-            sections: [
-              { name: 'Gold Circle', seats: 205 },
-              { name: 'Mezz Prime', seats: 21 },
-              { name: 'Pit', seats: 51 },
-              { name: 'Front Orchestra Sides', seats: 115 },
-              { name: 'Mezz Front', seats: 36 },
-              { name: 'Rear Center Orchestra', seats: 172 },
-              { name: 'Boxes', seats: 12 },
-              { name: 'Rear Orchestra Sides', seats: 92 },
-              { name: 'Mezz Middle', seats: 55 },
-              { name: 'Orchestra ADA', seats: 16 },
-              { name: 'Rear Mezz and Sides', seats: 101 },
-              { name: 'Mezz Perimeter Sides', seats: 24 },
-              { name: 'Mezz Accessible', seats: 8 },
-            ],
-          },
-        };
-
-        var _activeHall = 'mortensen';
-        var _seatConfig = null; // array of {name, seats} for active hall, or null
-
-        function activeHall() {
-          return HALLS[_activeHall];
-        }
-
-        /* ── Switch hall — updates capacity default, reloads saved config ── */
+        /* ── Switch hall (v2.0 — reads from VENUES) ── */
         window.switchHall = function (hallKey) {
           _activeHall = hallKey;
           _seatConfig = null;
           loadSeatConfig();
-          var cap = activeHall().defaultCap;
-          var capInp = document.getElementById('inpCapacity');
-          if (capInp) capInp.value = cap;
-          /* Subscriber pricing is Mortensen-only */
-          var isMort = hallKey === 'mortensen';
-          var bNote = document.getElementById('subBeldingNote');
-          var bFields = document.getElementById('subMortensenFields');
-          if (bNote) bNote.style.display = isMort ? 'none' : '';
-          if (bFields) bFields.style.display = isMort ? '' : 'none';
-          buildPricingGrid();
-          calcScenario();
+          _performances = [];
+          renderPerfCardGrid();
+          updateRunTotalStrip();
+          syncFactSheetButton();
         };
 
         /* ── Config modal ── */
@@ -2638,11 +2467,9 @@
           });
           _seatConfig = config;
           try {
-            localStorage.setItem(hall.storageKey, JSON.stringify(config));
+            localStorage.setItem('btd_seat_config_' + _activeHall, JSON.stringify(config));
           } catch (e) {}
           applyConfigToScenario();
-          buildPricingGrid();
-          calcScenario();
           closeConfigModal();
         };
 
@@ -2650,17 +2477,15 @@
           if (!confirm('Clear seating configuration for ' + activeHall().name + '?')) return;
           _seatConfig = null;
           try {
-            localStorage.removeItem(activeHall().storageKey);
+            localStorage.removeItem('btd_seat_config_' + _activeHall);
           } catch (e) {}
           applyConfigToScenario();
-          buildPricingGrid();
-          calcScenario();
           closeConfigModal();
         };
 
         function loadSeatConfig() {
           try {
-            var raw = localStorage.getItem(activeHall().storageKey);
+            var raw = localStorage.getItem('btd_seat_config_' + _activeHall);
             _seatConfig = raw ? JSON.parse(raw) : null;
           } catch (e) {
             _seatConfig = null;
@@ -2686,251 +2511,9 @@
           }
         }
 
-        function buildSectionPriceTable() {
-          if (!_seatConfig) return;
-          var tbody = document.getElementById('sectionPriceBody');
-          tbody.innerHTML = _seatConfig
-            .map(function (sec, i) {
-              if (!sec.seats) return '';
-              return (
-                '<tr>' +
-                '<td class="sname">' +
-                sec.name +
-                '</td>' +
-                '<td class="sseats">' +
-                sec.seats.toLocaleString() +
-                '</td>' +
-                '<td style="text-align:right;"><input type="number" class="sec-cur" data-idx="' +
-                i +
-                '" min="0" step="0.01" placeholder="0.00" oninput="updateWeightedAvg()"></td>' +
-                '<td style="text-align:right;"><input type="number" class="sec-adj" data-idx="' +
-                i +
-                '" min="0" step="0.01" placeholder="0.00" oninput="updateWeightedAvg()"></td>' +
-                '</tr>'
-              );
-            })
-            .filter(Boolean)
-            .join('');
-          updateWeightedAvg();
-        }
+        /* ── Scenario Model v2.0 ── */
 
-        window.updateWeightedAvg = function () {
-          if (!_seatConfig) return;
-          var totalSeats = 0,
-            curSum = 0,
-            adjSum = 0;
-          document.querySelectorAll('#sectionPriceBody tr').forEach(function (row) {
-            var idx = +row.querySelector('.sec-cur').dataset.idx;
-            var seats = _seatConfig[idx] ? _seatConfig[idx].seats : 0;
-            var cur = +row.querySelector('.sec-cur').value || 0;
-            var adj = +row.querySelector('.sec-adj').value || 0;
-            if (seats && cur) {
-              curSum += seats * cur;
-              totalSeats += seats;
-            }
-            if (seats && adj) adjSum += seats * adj;
-          });
-          var wCur = totalSeats ? curSum / totalSeats : 0;
-          var wAdj = totalSeats ? adjSum / totalSeats : 0;
-          document.getElementById('wAvgCurrent').textContent = wCur ? '$' + wCur.toFixed(2) : '—';
-          document.getElementById('wAvgAdj').textContent = wAdj ? '$' + wAdj.toFixed(2) : '—';
-        };
-
-        function getSectionWeightedAvgs() {
-          var totalSeats = 0,
-            curSum = 0,
-            adjSum = 0,
-            hasCur = false,
-            hasAdj = false;
-          document.querySelectorAll('#sectionPriceBody tr').forEach(function (row) {
-            var idx = +row.querySelector('.sec-cur').dataset.idx;
-            var seats = _seatConfig[idx] ? _seatConfig[idx].seats : 0;
-            var cur = +row.querySelector('.sec-cur').value || 0;
-            var adj = +row.querySelector('.sec-adj').value || 0;
-            if (seats && cur) {
-              curSum += seats * cur;
-              hasCur = true;
-            }
-            if (seats && adj) {
-              adjSum += seats * adj;
-              hasAdj = true;
-            }
-            if (seats && (cur || adj)) totalSeats += seats;
-          });
-          return {
-            cur: hasCur && totalSeats ? curSum / totalSeats : null,
-            adj: hasAdj && totalSeats ? adjSum / totalSeats : null,
-          };
-        }
-
-        /* ── Scenario Model v1.3 ── */
-
-        var STD_WEEK = [
-          { label: 'Tuesday Eve', time: '7:30 PM', tier: 'B' },
-          { label: 'Wednesday Eve', time: '7:30 PM', tier: 'B' },
-          { label: 'Thursday Eve', time: '7:30 PM', tier: 'B' },
-          { label: 'Friday Eve', time: '7:30 PM', tier: 'A' },
-          { label: 'Saturday Mat', time: '2:00 PM', tier: 'A' },
-          { label: 'Saturday Eve', time: '7:30 PM', tier: 'A' },
-          { label: 'Sunday Mat', time: '1:00 PM', tier: 'A' },
-          { label: 'Sunday Eve', time: '6:30 PM', tier: 'C' },
-        ];
-
-        /* ── Subscriber pricing constants ── */
-        var SUB_PRICING_2627 = {
-          'Broadway Circle': {
-            'Tue/Wed': 1090,
-            'Thu/Fri': 1182,
-            'Sat/Sun Mat': 1312,
-            'Sat Eve': 1182,
-            'Sun Eve': 1090,
-          },
-          'Prime Orchestra/Box': {
-            'Tue/Wed': 1010,
-            'Thu/Fri': 1102,
-            'Sat/Sun Mat': 1232,
-            'Sat Eve': 1102,
-            'Sun Eve': 1010,
-          },
-          'Far Side Orchestra': { 'Tue/Wed': 632, 'Thu/Fri': 640, 'Sat/Sun Mat': 652, 'Sat Eve': 640, 'Sun Eve': 632 },
-          'Prime Mezzanine': {
-            'Tue/Wed': 1090,
-            'Thu/Fri': 1182,
-            'Sat/Sun Mat': 1312,
-            'Sat Eve': 1182,
-            'Sun Eve': 1090,
-          },
-          'Front Mezzanine': { 'Tue/Wed': 862, 'Thu/Fri': 965, 'Sat/Sun Mat': 1110, 'Sat Eve': 965, 'Sun Eve': 862 },
-          'Mid Mezzanine': { 'Tue/Wed': 632, 'Thu/Fri': 640, 'Sat/Sun Mat': 652, 'Sat Eve': 640, 'Sun Eve': 632 },
-          'Rear Mezzanine': { 'Tue/Wed': 448, 'Thu/Fri': 448, 'Sat/Sun Mat': 448, 'Sat Eve': 448, 'Sun Eve': 448 },
-          'Prime Balcony': { 'Tue/Wed': 632, 'Thu/Fri': 640, 'Sat/Sun Mat': 652, 'Sat Eve': 640, 'Sun Eve': 632 },
-          'Front Balcony': { 'Tue/Wed': 448, 'Thu/Fri': 448, 'Sat/Sun Mat': 448, 'Sat Eve': 441, 'Sun Eve': 448 },
-          'Mid/Rear Balcony': { 'Tue/Wed': 371, 'Thu/Fri': 371, 'Sat/Sun Mat': 371, 'Sat Eve': 371, 'Sun Eve': 371 },
-        };
-
-        /* Maps subscriber section labels → hall section names in HALLS.mortensen.sections */
-        var SUB_SECTION_MAP_MORTENSEN = {
-          'Broadway Circle': 'Broadway Circle',
-          'Prime Orchestra/Box': 'Orchestra Prime',
-          'Far Side Orchestra': 'Orchestra Perimeter – Side',
-          'Prime Mezzanine': 'Mezzanine – Prime',
-          'Front Mezzanine': 'Mezzanine – Front',
-          'Mid Mezzanine': 'Mezzanine – Middle',
-          'Rear Mezzanine': 'Mezzanine – Economy',
-          'Prime Balcony': 'Balcony – Prime',
-          'Front Balcony': 'Balcony Front',
-          'Mid/Rear Balcony': 'Balcony – Middle',
-        };
-
-        /* ── Performance row management ── */
-        window.addStandardWeek = function () {
-          STD_WEEK.forEach(function (p) {
-            document.getElementById('runTableBody').appendChild(makePerfRow(p));
-          });
-          syncRunEmpty();
-          calcScenario();
-        };
-
-        window.addPerfRow = function () {
-          document.getElementById('runTableBody').appendChild(makePerfRow({}));
-          syncRunEmpty();
-        };
-
-        window.removePerfRow = function (btn) {
-          btn.closest('tr').remove();
-          syncRunEmpty();
-          calcScenario();
-        };
-
-        function makePerfRow(opts) {
-          var tr = document.createElement('tr');
-          tr.innerHTML =
-            '<td><input type="date" class="rp-date" oninput="calcScenario()" style="width:130px;"></td>' +
-            '<td><input type="text" class="rp-time" value="' +
-            (opts.time || '') +
-            '" placeholder="7:30 PM" oninput="calcScenario()" style="width:76px;"></td>' +
-            '<td><select class="rp-tier" onchange="calcScenario()" style="width:58px;">' +
-            '<option value="A"' +
-            (opts.tier === 'A' ? ' selected' : '') +
-            '>A</option>' +
-            '<option value="B"' +
-            (opts.tier === 'B' ? ' selected' : '') +
-            '>B</option>' +
-            '<option value="C"' +
-            (opts.tier === 'C' ? ' selected' : '') +
-            '>C</option>' +
-            '</select></td>' +
-            '<td><input type="number" class="rp-override" min="0" placeholder="—" oninput="calcScenario()" style="width:86px;text-align:right;font-family:var(--mono);"></td>' +
-            '<td><input type="number" class="rp-suboverride" min="0" placeholder="—" oninput="calcScenario()" style="width:86px;text-align:right;font-family:var(--mono);color:var(--amber);"></td>' +
-            '<td class="live-col" style="display:none;"><input type="number" class="rp-sold" min="0" placeholder="0" oninput="calcScenario()" style="width:78px;text-align:right;font-family:var(--mono);"></td>' +
-            '<td><button class="btn btn-ghost" style="font-size:.6rem;padding:3px 8px;border:none;color:var(--ink3);" onclick="removePerfRow(this)">✕</button></td>';
-          return tr;
-        }
-
-        function syncRunEmpty() {
-          var rows = document.querySelectorAll('#runTableBody tr').length;
-          document.getElementById('runEmpty').style.display = rows ? 'none' : '';
-          document.getElementById('runTable').style.display = rows ? '' : 'none';
-        }
-
-        /* ── Section pricing grid ── */
-        window.buildPricingGrid = function () {
-          var wrap = document.getElementById('pricingGridWrap');
-          var sections = getSections();
-          var html =
-            '<div style="overflow-x:auto;"><table class="pg-table" id="pricingGrid"><thead>' +
-            '<tr>' +
-            '<th class="left" rowspan="2">Section</th>' +
-            '<th class="left num" rowspan="2">Seats</th>' +
-            '<th class="tier-hd" colspan="2">Tier A</th>' +
-            '<th class="tier-hd" colspan="2">Tier B</th>' +
-            '<th class="tier-hd" colspan="2">Tier C</th>' +
-            '</tr><tr>';
-          ['A', 'B', 'C'].forEach(function () {
-            html +=
-              '<th class="num" style="border-left:1px solid var(--rule);">Contracted</th><th class="num" style="color:var(--teal);">Adjusted</th>';
-          });
-          html += '</tr></thead><tbody>';
-          sections.forEach(function (sec, i) {
-            html +=
-              '<tr><td class="sec-name">' + sec.name + '</td><td class="num">' + sec.seats.toLocaleString() + '</td>';
-            ['A', 'B', 'C'].forEach(function (tier) {
-              html +=
-                '<td style="border-left:1px solid var(--rule);padding:3px 5px;">' +
-                '<input type="number" class="pg-inp" data-tier="' +
-                tier +
-                '" data-col="c" data-idx="' +
-                i +
-                '" min="0" step="0.01" placeholder="0.00" oninput="calcScenario()" style="width:78px;"></td>' +
-                '<td style="padding:3px 5px;">' +
-                '<input type="number" class="pg-inp" data-tier="' +
-                tier +
-                '" data-col="a" data-idx="' +
-                i +
-                '" min="0" step="0.01" placeholder="same" oninput="calcScenario()" style="width:78px;color:var(--teal);"></td>';
-            });
-            html += '</tr>';
-          });
-          /* Weighted avg footer row */
-          html +=
-            '<tr class="wtd-row"><td class="sec-name" style="font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);font-weight:400;">Wtd. Avg</td><td class="num">—</td>';
-          ['A', 'B', 'C'].forEach(function (tier) {
-            html +=
-              '<td class="num" style="border-left:1px solid var(--rule);font-family:var(--mono);font-size:.67rem;" id="wtdC' +
-              tier +
-              '">—</td>' +
-              '<td class="num" style="font-family:var(--mono);font-size:.67rem;color:var(--teal);" id="wtdA' +
-              tier +
-              '">—</td>';
-          });
-          html +=
-            '</tr></tbody></table></div>' +
-            '<div style="font-size:.58rem;color:var(--ink3);margin-top:8px;line-height:1.55;">' +
-            'All prices face value excl. $4.00 restoration. Adjusted column inherits contracted price when left blank. ' +
-            'Section seat counts from ⚙ Seating Config (hall defaults shown if not configured).</div>';
-          wrap.innerHTML = html;
-        };
-
+        /* ── getSections — respects saved config overrides ── */
         function getSections() {
           var hall = activeHall();
           var saved = _seatConfig || [];
@@ -2938,402 +2521,386 @@
           saved.forEach(function (s) {
             savedMap[s.name] = s.seats;
           });
-          return hall.sections.map(function (s) {
-            return { name: s.name, seats: savedMap[s.name] !== undefined ? savedMap[s.name] : s.seats };
+          return (hall.sections || []).map(function (s) {
+            return {
+              name: s.name,
+              seats: savedMap[s.name] !== undefined ? savedMap[s.name] : s.seats,
+              group: s.group || '',
+              nameAliases: s.nameAliases || [],
+            };
           });
         }
 
-        function readPricingGrid() {
-          var result = {};
-          document.querySelectorAll('.pg-inp').forEach(function (inp) {
-            var tier = inp.dataset.tier,
-              col = inp.dataset.col,
-              idx = inp.dataset.idx;
-            if (!result[idx]) result[idx] = {};
-            if (!result[idx][tier]) result[idx][tier] = {};
-            result[idx][tier][col] = parseFloat(inp.value) || 0;
-          });
-          return result;
-        }
-
-        function detectMode() {
-          var anyLive = false;
-          document.querySelectorAll('.rp-sold').forEach(function (inp) {
-            if (+inp.value > 0) anyLive = true;
-          });
-          return anyLive ? 'live' : 'presale';
-        }
-
-        function applyMode(mode) {
-          var isLive = mode === 'live';
-          var badge = document.getElementById('modeBadge');
-          if (badge) {
-            badge.textContent = isLive ? 'Live Mode — Sold data active' : 'Pre-Sale Mode — No sold data';
-            badge.className = 'mode-badge ' + (isLive ? 'mode-live' : 'mode-presale');
+        /* Look up a section price by canonical name, falling back through nameAliases */
+        function lookupSectionPrice(tier, sec, pricing) {
+          if (!pricing || !pricing[tier]) return null;
+          var tp = pricing[tier];
+          if (tp[sec.name] !== undefined) return tp[sec.name];
+          for (var i = 0; i < sec.nameAliases.length; i++) {
+            if (tp[sec.nameAliases[i]] !== undefined) return tp[sec.nameAliases[i]];
           }
-          document.querySelectorAll('.live-col').forEach(function (el) {
-            el.style.display = isLive ? '' : 'none';
-          });
-        }
-
-        /* ── Subscriber helpers ── */
-        window.toggleSubType = function () {
-          var isAddon = document.getElementById('subShowType').value === 'addon';
-          document.getElementById('subSeasonCountWrap').style.display = isAddon ? 'none' : '';
-          document.getElementById('subAddonPriceWrap').style.display = isAddon ? '' : 'none';
-        };
-
-        function getSubDayGroup(dateStr, timeStr) {
-          if (!dateStr) return null;
-          var d = new Date(dateStr + 'T12:00:00');
-          var day = d.getDay();
-          var isMat = timeStr && (timeStr.indexOf('1:00') !== -1 || timeStr.indexOf('2:00') !== -1);
-          if (day === 2 || day === 3) return 'Tue/Wed';
-          if (day === 4 || day === 5) return 'Thu/Fri';
-          if (day === 6 && isMat) return 'Sat/Sun Mat';
-          if (day === 6 && !isMat) return 'Sat Eve';
-          if (day === 0 && isMat) return 'Sat/Sun Mat';
-          if (day === 0 && !isMat) return 'Sun Eve';
           return null;
         }
 
-        function calcSubRevForPerf(dateStr, timeStr, subSeats) {
-          if (!subSeats || subSeats <= 0) return 0;
-          var dayGroup = getSubDayGroup(dateStr, timeStr);
-          if (!dayGroup) return 0;
-
-          var isAddon = document.getElementById('subShowType').value === 'addon';
-          var seasonCount = +document.getElementById('subSeasonCount').value || 8;
-          var addonPrice = +document.getElementById('subAddonPrice').value || 0;
-
-          /* Build a seat-count map of hall sections using current config */
-          var sections = getSections();
-          var hallSeatMap = {};
-          sections.forEach(function (s) {
-            hallSeatMap[s.name] = s.seats;
+        /* ── Mode badge ── */
+        function applyModeBadge() {
+          var anyLive = _performances.some(function (p) {
+            return p.sections.some(function (s) { return (s.sold || 0) > 0; });
           });
-
-          /* Sum total mapped seats so we can proportion sub seats by section weight */
-          var totalMappedSeats = 0;
-          Object.keys(SUB_SECTION_MAP_MORTENSEN).forEach(function (subSec) {
-            var hallSec = SUB_SECTION_MAP_MORTENSEN[subSec];
-            totalMappedSeats += hallSeatMap[hallSec] || 0;
-          });
-          if (totalMappedSeats === 0) return 0;
-
-          var totalSubRev = 0;
-          Object.keys(SUB_PRICING_2627).forEach(function (subSec) {
-            var hallSec = SUB_SECTION_MAP_MORTENSEN[subSec];
-            var secSeats = hallSeatMap[hallSec] || 0;
-            var secSubSeats = subSeats * (secSeats / totalMappedSeats);
-            var pkgPrice = SUB_PRICING_2627[subSec][dayGroup] || 0;
-            var perShowPrice = isAddon ? addonPrice : pkgPrice / seasonCount;
-            totalSubRev += secSubSeats * perShowPrice;
-          });
-          return totalSubRev;
+          var badge = document.getElementById('modeBadge');
+          if (badge) {
+            badge.textContent = anyLive ? 'Live Mode — Sold data active' : 'Pre-Sale Mode — No sold data';
+            badge.className = 'mode-badge ' + (anyLive ? 'mode-live' : 'mode-presale');
+          }
         }
 
-        /* ── Main live calculation ── */
-        window.calcScenario = function () {
-          var contracted = +document.getElementById('inpCapacity').value || activeHall().defaultCap;
-          var holdHouse = +document.getElementById('holdHouse').value || 0;
-          var holdPresenter = +document.getElementById('holdPresenter').value || 0;
-          var holdTrouble = +document.getElementById('holdTrouble').value || 0;
-          var holdOther = +document.getElementById('holdOther').value || 0;
-          var totalHolds = holdHouse + holdPresenter + holdTrouble + holdOther;
-          var netBase = Math.max(0, contracted - totalHolds);
-          var nsEl = document.getElementById('netSellableDisplay');
-          if (nsEl) nsEl.textContent = netBase.toLocaleString();
-
-          /* Subscriber globals */
-          var isMort = _activeHall === 'mortensen';
-          var subGlobal = isMort ? +document.getElementById('subSeatsGlobal').value || 0 : 0;
-
-          var sections = getSections();
-          var grid = readPricingGrid();
-          var mode = detectMode();
-          applyMode(mode);
-          var isLive = mode === 'live';
-          var perfRows = document.querySelectorAll('#runTableBody tr');
-
-          /* Update weighted avg row in pricing grid */
-          ['A', 'B', 'C'].forEach(function (tier) {
-            var totalSeats = 0,
-              sumC = 0,
-              sumA = 0;
-            sections.forEach(function (sec, i) {
-              var g = (grid[i] && grid[i][tier]) || {};
-              var c = g.c || 0;
-              var a = g.a || c;
-              if (c > 0) {
-                sumC += sec.seats * c;
-                sumA += sec.seats * a;
-                totalSeats += sec.seats;
-              }
-            });
-            var wC = totalSeats > 0 ? sumC / totalSeats : 0;
-            var wA = totalSeats > 0 ? sumA / totalSeats : 0;
-            var cEl = document.getElementById('wtdC' + tier);
-            var aEl = document.getElementById('wtdA' + tier);
-            if (cEl) cEl.textContent = wC > 0 ? '$' + wC.toFixed(2) : '—';
-            if (aEl) aEl.textContent = wA > 0 ? '$' + wA.toFixed(2) : '—';
+        /* ── Calculation functions (v2.0) ── */
+        function calcPerfTotals(perf) {
+          var current = 0, adjusted = 0, captured = 0;
+          var hasSold = false;
+          perf.sections.forEach(function (s) {
+            var unsold = Math.max(0, s.totalSeats - s.holds - (s.sold || 0));
+            var adjPrice =
+              s.adjustedPrice !== null && s.adjustedPrice !== undefined && s.adjustedPrice !== ''
+                ? +s.adjustedPrice
+                : s.currentPrice;
+            if ((s.sold || 0) > 0) {
+              hasSold = true;
+              captured += s.sold * s.currentPrice;
+            }
+            current += unsold * s.currentPrice + (s.sold > 0 ? s.sold * s.currentPrice : 0);
+            adjusted += unsold * adjPrice + (s.sold > 0 ? s.sold * s.currentPrice : 0);
           });
+          return { current: current, adjusted: adjusted, delta: adjusted - current, captured: captured, isLive: hasSold };
+        }
 
-          if (!perfRows.length) {
-            document.getElementById('resultsCard').style.display = 'none';
-            document.getElementById('scenarioOutput').style.display = 'none';
-            updateKPIs(0, 0);
+        function calcRunTotals() {
+          var current = 0, adjusted = 0;
+          _performances.forEach(function (p) {
+            var t = calcPerfTotals(p);
+            current += t.current;
+            adjusted += t.adjusted;
+          });
+          return { current: current, adjusted: adjusted, delta: adjusted - current };
+        }
+
+        function updateRunTotalStrip() {
+          var rt = calcRunTotals();
+          var showName = _selectedShow ? _selectedShow.displayName : '—';
+          var el;
+          el = document.getElementById('runShowName');
+          if (el) el.textContent = showName;
+          el = document.getElementById('runPerfCount');
+          if (el) el.textContent = _performances.length;
+          el = document.getElementById('rtCurrent');
+          if (el) el.textContent = '$' + Math.round(rt.current).toLocaleString();
+          el = document.getElementById('rtAdjusted');
+          if (el) el.textContent = '$' + Math.round(rt.adjusted).toLocaleString();
+          el = document.getElementById('rtDelta');
+          if (el) {
+            el.textContent = (rt.delta >= 0 ? '+$' : '-$') + Math.round(Math.abs(rt.delta)).toLocaleString();
+            el.style.color = rt.delta > 0 ? 'var(--teal)' : rt.delta < 0 ? 'var(--rose)' : '';
+          }
+          applyModeBadge();
+          updateKPIs(rt.adjusted, rt.delta);
+          updateJustification(_performances.length, rt.current, rt.adjusted, rt.delta);
+        }
+
+        /* ── Performance management ── */
+        function makeEmptyPerf() {
+          var sections = getSections();
+          return {
+            id: 'perf_' + Date.now() + '_' + Math.floor(Math.random() * 9999),
+            date: '',
+            time: '7:30 PM',
+            priceLevel: 'C',
+            factSheetHoldsTotal: 0,
+            sections: sections.map(function (sec) {
+              return { name: sec.name, totalSeats: sec.seats, holds: 0, sold: 0, currentPrice: 0, adjustedPrice: null };
+            }),
+          };
+        }
+
+        window.addPerformance = function () {
+          var p = makeEmptyPerf();
+          _performances.push(p);
+          renderPerfCardGrid();
+          updateRunTotalStrip();
+          openPerfModal(p.id);
+        };
+
+        function renderPerfCardGrid() {
+          var grid = document.getElementById('perfCardGrid');
+          if (!grid) return;
+          if (!_performances.length) {
+            grid.innerHTML =
+              '<div style="grid-column:1/-1;padding:20px;text-align:center;color:var(--ink3);font-size:.68rem;' +
+              'border:1px dashed var(--rule);border-radius:3px;background:var(--bg);">' +
+              'No performances added. Click <strong>+ Add Performance</strong> to begin, or use ' +
+              '<strong>↓ Load Fact Sheet Data</strong> if a fact sheet is available.</div>';
             return;
           }
+          grid.innerHTML = _performances
+            .map(function (p) {
+              var t = calcPerfTotals(p);
+              var hasEdit = p.sections.some(function (s) {
+                return (
+                  s.adjustedPrice !== null &&
+                  s.adjustedPrice !== undefined &&
+                  s.adjustedPrice !== '' &&
+                  +s.adjustedPrice !== s.currentPrice
+                );
+              });
+              var dateLabel = p.date ? formatDate(p.date.slice(0, 10)) : '—';
+              return (
+                '<button class="perf-card" onclick="openPerfModal(\'' +
+                p.id +
+                '\')">' +
+                '<div style="font-size:.6rem;color:var(--ink3);">' +
+                dateLabel +
+                '</div>' +
+                '<div style="font-size:.7rem;font-weight:600;">' +
+                (p.time || '—') +
+                '</div>' +
+                '<div style="font-size:.55rem;color:var(--ink3);margin-top:4px;">Price Level ' +
+                p.priceLevel +
+                '</div>' +
+                (t.current > 0
+                  ? '<div style="font-size:.55rem;font-family:var(--mono);margin-top:4px;color:var(--ink2);">$' +
+                    Math.round(t.current / 1000) +
+                    'K</div>'
+                  : '') +
+                (hasEdit ? '<div style="font-size:.52rem;color:var(--teal);margin-top:3px;">● Edited</div>' : '') +
+                '</button>'
+              );
+            })
+            .join('');
+        }
 
-          var totNetSell = 0,
-            totSold = 0,
-            totCaptured = 0,
-            totBaseline = 0,
-            totAdj = 0;
-          var totSubSeats = 0,
-            totSubRev = 0;
-          var resultsData = [];
+        /* ── Performance modal ── */
+        window.openPerfModal = function (perfId) {
+          _openPerfId = perfId;
+          var perf = _performances.filter(function (p) { return p.id === perfId; })[0];
+          if (!perf) return;
 
-          perfRows.forEach(function (row) {
-            var dateVal = row.querySelector('.rp-date').value;
-            var timeVal = row.querySelector('.rp-time').value;
-            var tier = row.querySelector('.rp-tier').value;
-            var overrideRaw = row.querySelector('.rp-override').value;
-            var subOvRaw = row.querySelector('.rp-suboverride').value;
-            var soldVal = +row.querySelector('.rp-sold').value || 0;
-            var netSell = overrideRaw !== '' ? Math.max(0, +overrideRaw) : netBase;
-            var subSeats = subOvRaw !== '' ? Math.max(0, +subOvRaw) : subGlobal;
-            var stSellable = Math.max(0, netSell - subSeats);
-            var subRev = isMort ? calcSubRevForPerf(dateVal, timeVal, subSeats) : 0;
+          /* Populate meta fields */
+          var pmDate = document.getElementById('pmDate');
+          if (pmDate) pmDate.value = perf.date || '';
+          var pmTime = document.getElementById('pmTime');
+          if (pmTime) pmTime.value = perf.time || '';
+          var pmTier = document.getElementById('pmTier');
+          if (pmTier) pmTier.value = perf.priceLevel || 'C';
 
-            /* Section-weighted single-ticket totals for this tier */
-            var sectionSeats = 0,
-              perfContracted = 0,
-              perfAdj = 0;
-            sections.forEach(function (sec, i) {
-              var g = (grid[i] && grid[i][tier]) || {};
-              var c = g.c || 0;
-              var a = g.a || c;
-              if (c > 0) {
-                perfContracted += sec.seats * c;
-                perfAdj += sec.seats * a;
-                sectionSeats += sec.seats;
-              }
-            });
-            var hasPrices = sectionSeats > 0;
+          /* Title */
+          var titleEl = document.getElementById('perfModalTitle');
+          if (titleEl) titleEl.textContent = perf.date ? formatLongDate(perf.date) + (perf.time ? ' — ' + perf.time : '') : 'New Performance';
+          var subEl = document.getElementById('perfModalSub');
+          if (subEl) subEl.textContent = 'Price Level ' + (perf.priceLevel || 'C');
 
-            var stBaseline = 0,
-              stAdj = 0,
-              captured = 0;
-            var fillPct = stSellable > 0 ? soldVal / stSellable : 0;
-
-            if (hasPrices) {
-              var scale = sectionSeats > 0 ? stSellable / sectionSeats : 1;
-              if (isLive && soldVal > 0) {
-                var wtdC = perfContracted / sectionSeats;
-                var wtdA = perfAdj / sectionSeats;
-                var remaining = Math.max(0, stSellable - soldVal);
-                captured = soldVal * wtdC;
-                stBaseline = captured + remaining * wtdC;
-                stAdj = captured + remaining * wtdA;
-              } else {
-                stBaseline = perfContracted * scale;
-                stAdj = perfAdj * scale;
-              }
+          /* Holds reference */
+          var holdsRef = document.getElementById('modalHoldsRef');
+          if (holdsRef) {
+            if (perf.factSheetHoldsTotal > 0) {
+              holdsRef.style.display = '';
+              holdsRef.textContent =
+                'Fact sheet holds reference: ' +
+                perf.factSheetHoldsTotal +
+                ' total — allocate across sections below as needed. Per-section holds default to 0.';
+            } else {
+              holdsRef.style.display = 'none';
             }
+          }
 
-            var totalBaseline = stBaseline + subRev;
-            var totalAdj = stAdj + subRev;
-            var delta = totalAdj - totalBaseline;
-            var deltaPct = totalBaseline > 0 ? (delta / totalBaseline) * 100 : 0;
-            /* Restoration on single-ticket seats only */
-            var stAdjWithRest = stAdj + stSellable * 4.0;
-
-            totNetSell += netSell;
-            totSold += soldVal;
-            totCaptured += captured;
-            totBaseline += stBaseline;
-            totAdj += stAdj;
-            totSubSeats += subSeats;
-            totSubRev += subRev;
-
-            resultsData.push({
-              label: (dateVal || '—') + (timeVal ? '  ' + timeVal : ''),
-              tier: tier,
-              netSell: netSell,
-              subSeats: subSeats,
-              stSellable: stSellable,
-              subRev: subRev,
-              sold: soldVal,
-              fillPct: fillPct,
-              captured: captured,
-              stBaseline: stBaseline,
-              stAdj: stAdj,
-              totalBaseline: totalBaseline,
-              totalAdj: totalAdj,
-              delta: delta,
-              deltaPct: deltaPct,
-              stAdjWithRest: stAdjWithRest,
-              hasPrices: hasPrices,
-            });
+          /* Build section table */
+          var isLive = perf.sections.some(function (s) { return (s.sold || 0) > 0; });
+          document.querySelectorAll('.live-modal-col').forEach(function (el) {
+            el.style.display = isLive ? '' : 'none';
           });
 
-          /* Render per-performance results table */
-          var resultsCard = document.getElementById('resultsCard');
-          var resBody = document.getElementById('resultsBody');
-          var hasSubs = totSubSeats > 0;
-          if (totBaseline > 0 || totAdj > 0 || totSubRev > 0) {
-            resBody.innerHTML = resultsData
-              .map(function (r) {
-                var dColor = r.delta >= 0 ? 'var(--teal)' : 'var(--rose)';
-                var m = 'font-family:var(--mono);font-size:.65rem;';
-                var ms = m + 'font-size:.62rem;';
+          var tbody = document.getElementById('perfSectionBody');
+          if (tbody) {
+            tbody.innerHTML = perf.sections
+              .map(function (s, i) {
+                var unsold = Math.max(0, s.totalSeats - s.holds - (s.sold || 0));
+                var adjPrice =
+                  s.adjustedPrice !== null && s.adjustedPrice !== undefined && s.adjustedPrice !== ''
+                    ? +s.adjustedPrice
+                    : s.currentPrice;
+                var impact = unsold * (adjPrice - s.currentPrice);
+                var impactStr =
+                  impact === 0
+                    ? '—'
+                    : (impact >= 0 ? '+$' : '-$') + Math.round(Math.abs(impact)).toLocaleString();
+                var impactColor = impact > 0 ? 'var(--teal)' : impact < 0 ? 'var(--rose)' : '';
+                var captured = (s.sold || 0) * s.currentPrice;
+                var adjVal = s.adjustedPrice !== null && s.adjustedPrice !== undefined ? s.adjustedPrice : '';
                 return (
                   '<tr>' +
-                  '<td style="white-space:nowrap;font-size:.65rem;">' +
-                  r.label +
-                  '</td>' +
-                  '<td style="text-align:center;"><span class="status neutral" style="font-size:.48rem;">Tier ' +
-                  r.tier +
-                  '</span></td>' +
-                  '<td style="text-align:right;' +
-                  m +
-                  '">' +
-                  r.netSell.toLocaleString() +
-                  '</td>' +
-                  '<td style="text-align:right;' +
-                  m +
-                  'color:var(--amber);">' +
-                  (r.subSeats > 0 ? r.subSeats.toLocaleString() : '—') +
-                  '</td>' +
-                  '<td style="text-align:right;' +
-                  m +
-                  '">' +
-                  r.stSellable.toLocaleString() +
-                  '</td>' +
-                  '<td style="text-align:right;' +
-                  m +
-                  'color:var(--amber);">' +
-                  (r.subRev > 0 ? '$' + Math.round(r.subRev).toLocaleString() : '—') +
-                  '</td>' +
-                  '<td class="live-col" style="display:none;text-align:right;' +
-                  m +
-                  '">' +
-                  (r.sold > 0 ? r.sold.toLocaleString() : '—') +
-                  '</td>' +
-                  '<td class="live-col" style="display:none;text-align:right;' +
-                  m +
-                  '">' +
-                  (r.sold > 0 ? (r.fillPct * 100).toFixed(1) + '%' : '—') +
-                  '</td>' +
-                  '<td class="live-col" style="display:none;text-align:right;' +
-                  m +
-                  '">' +
-                  (r.captured > 0 ? '$' + Math.round(r.captured).toLocaleString() : '—') +
-                  '</td>' +
-                  '<td style="text-align:right;' +
-                  m +
-                  '">' +
-                  (r.hasPrices ? '$' + Math.round(r.stBaseline).toLocaleString() : '—') +
-                  '</td>' +
-                  '<td style="text-align:right;' +
-                  m +
-                  '">' +
-                  (r.hasPrices ? '$' + Math.round(r.stAdj).toLocaleString() : '—') +
-                  '</td>' +
-                  '<td style="text-align:right;' +
-                  m +
-                  'font-weight:600;">' +
-                  (r.hasPrices || r.subRev > 0 ? '$' + Math.round(r.totalBaseline).toLocaleString() : '—') +
-                  '</td>' +
-                  '<td style="text-align:right;' +
-                  m +
-                  'font-weight:600;color:var(--teal);">' +
-                  (r.hasPrices || r.subRev > 0 ? '$' + Math.round(r.totalAdj).toLocaleString() : '—') +
-                  '</td>' +
-                  '<td style="text-align:right;' +
-                  m +
-                  'color:' +
-                  dColor +
-                  ';">' +
-                  (r.hasPrices ? (r.delta >= 0 ? '+$' : '-$') + Math.round(Math.abs(r.delta)).toLocaleString() : '—') +
-                  '</td>' +
-                  '<td style="text-align:right;' +
-                  m +
-                  'color:' +
-                  dColor +
-                  ';">' +
-                  (r.hasPrices ? (r.deltaPct >= 0 ? '+' : '') + r.deltaPct.toFixed(1) + '%' : '—') +
-                  '</td>' +
-                  '<td style="text-align:right;' +
-                  ms +
-                  'color:var(--ink3);">' +
-                  (r.hasPrices ? '$' + Math.round(r.stAdjWithRest).toLocaleString() : '—') +
-                  '</td>' +
+                  '<td style="font-size:.65rem;">' + s.name + '</td>' +
+                  '<td class="num"><input type="number" class="pm-total" data-idx="' + i + '" min="0" value="' + s.totalSeats + '" oninput="recalcPerfModal()" style="width:60px;text-align:right;font-family:var(--mono);font-size:.65rem;"></td>' +
+                  '<td class="num"><input type="number" class="pm-holds" data-idx="' + i + '" min="0" value="' + (s.holds || 0) + '" oninput="recalcPerfModal()" style="width:56px;text-align:right;font-family:var(--mono);font-size:.65rem;"></td>' +
+                  '<td class="num"><input type="number" class="pm-sold" data-idx="' + i + '" min="0" value="' + (s.sold || 0) + '" oninput="recalcPerfModal()" style="width:56px;text-align:right;font-family:var(--mono);font-size:.65rem;"></td>' +
+                  '<td class="num pm-unsold" data-idx="' + i + '" style="font-family:var(--mono);font-size:.65rem;">' + unsold.toLocaleString() + '</td>' +
+                  '<td class="num live-modal-col" style="display:' + (isLive ? '' : 'none') + ';font-family:var(--mono);font-size:.65rem;color:var(--ink2);">' + (captured > 0 ? '$' + Math.round(captured).toLocaleString() : '—') + '</td>' +
+                  '<td class="num"><input type="number" class="pm-cur" data-idx="' + i + '" min="0" step="0.01" value="' + (s.currentPrice || '') + '" placeholder="0.00" oninput="recalcPerfModal()" style="width:70px;text-align:right;font-family:var(--mono);font-size:.65rem;"></td>' +
+                  '<td class="num"><input type="number" class="pm-adj" data-idx="' + i + '" min="0" step="0.01" value="' + adjVal + '" placeholder="' + (s.currentPrice || '—') + '" oninput="recalcPerfModal()" style="width:70px;text-align:right;font-family:var(--mono);font-size:.65rem;color:var(--teal);"></td>' +
+                  '<td class="num pm-impact" data-idx="' + i + '" style="font-family:var(--mono);font-size:.65rem;color:' + impactColor + ';">' + impactStr + '</td>' +
                   '</tr>'
                 );
               })
               .join('');
-            applyMode(mode);
-            resultsCard.style.display = '';
+          }
 
-            /* Run total strip */
-            var combBaseline = totBaseline + totSubRev;
-            var combAdj = totAdj + totSubRev;
-            var totalDelta = combAdj - combBaseline;
-            var totalDeltaPct = combBaseline > 0 ? (totalDelta / combBaseline) * 100 : 0;
-            var totalSTWithRest = totAdj + totNetSell * 4.0;
+          recalcPerfModal();
+          document.getElementById('perfModal').style.display = 'flex';
+        };
 
-            document.getElementById('outTotalCap').textContent = totNetSell.toLocaleString();
-            document.getElementById('outTotalSubSeats').textContent = hasSubs ? totSubSeats.toLocaleString() : '—';
-            document.getElementById('outSubRev').textContent = hasSubs
-              ? '$' + Math.round(totSubRev).toLocaleString()
-              : '—';
-            document.getElementById('outCurrentRev').textContent = '$' + Math.round(totBaseline).toLocaleString();
-            document.getElementById('outBaseRest').textContent = 'ST face value excl. rest.';
-            document.getElementById('outProjRev').textContent = '$' + Math.round(totAdj).toLocaleString();
-            document.getElementById('outAdjRest').textContent =
-              'incl. rest: $' + Math.round(totalSTWithRest).toLocaleString();
-            document.getElementById('outCombBaseline').textContent = '$' + Math.round(combBaseline).toLocaleString();
-            document.getElementById('outCombAdj').textContent = '$' + Math.round(combAdj).toLocaleString();
+        window.closePerfModal = function () {
+          document.getElementById('perfModal').style.display = 'none';
+          _openPerfId = null;
+          renderPerfCardGrid();
+          updateRunTotalStrip();
+        };
 
-            var dEl = document.getElementById('outDelta');
-            dEl.textContent = (totalDelta >= 0 ? '+$' : '-$') + Math.round(Math.abs(totalDelta)).toLocaleString();
-            dEl.className = 'out-val ' + (totalDelta >= 0 ? 'positive' : 'negative');
-            var pEl = document.getElementById('outPct');
-            pEl.textContent = (totalDeltaPct >= 0 ? '+' : '') + totalDeltaPct.toFixed(1) + '%';
-            pEl.className = 'out-val ' + (totalDeltaPct >= 0 ? 'positive' : 'negative');
+        window.deletePerfFromModal = function () {
+          if (!_openPerfId) return;
+          if (!confirm('Remove this performance?')) return;
+          _performances = _performances.filter(function (p) { return p.id !== _openPerfId; });
+          closePerfModal();
+        };
 
-            if (isLive) {
-              var overallFill = totNetSell > 0 ? totSold / totNetSell : 0;
-              document.getElementById('outTotalSold').textContent = totSold.toLocaleString();
-              document.getElementById('outFillRate').textContent = (overallFill * 100).toFixed(1) + '% fill';
-              document.getElementById('outCaptured').textContent = '$' + Math.round(totCaptured).toLocaleString();
+        window.updatePerfMeta = function () {
+          if (!_openPerfId) return;
+          var perf = _performances.filter(function (p) { return p.id === _openPerfId; })[0];
+          if (!perf) return;
+          var pmDate = document.getElementById('pmDate');
+          if (pmDate) perf.date = pmDate.value;
+          var pmTime = document.getElementById('pmTime');
+          if (pmTime) perf.time = pmTime.value;
+          var pmTier = document.getElementById('pmTier');
+          if (pmTier) perf.priceLevel = pmTier.value;
+          /* Update modal title */
+          var titleEl = document.getElementById('perfModalTitle');
+          if (titleEl) titleEl.textContent = perf.date ? formatLongDate(perf.date) + (perf.time ? ' — ' + perf.time : '') : 'New Performance';
+          var subEl = document.getElementById('perfModalSub');
+          if (subEl) subEl.textContent = 'Price Level ' + (perf.priceLevel || 'C');
+        };
+
+        window.recalcPerfModal = function () {
+          if (!_openPerfId) return;
+          var perf = _performances.filter(function (p) { return p.id === _openPerfId; })[0];
+          if (!perf) return;
+
+          /* Read all inputs back into the perf object */
+          var rows = document.querySelectorAll('#perfSectionBody tr');
+          rows.forEach(function (row) {
+            var totalInp = row.querySelector('.pm-total');
+            if (!totalInp) return;
+            var i = +totalInp.dataset.idx;
+            if (i >= perf.sections.length) return;
+            var s = perf.sections[i];
+            s.totalSeats = +totalInp.value || 0;
+            s.holds = +row.querySelector('.pm-holds').value || 0;
+            s.sold = +row.querySelector('.pm-sold').value || 0;
+            s.currentPrice = parseFloat(row.querySelector('.pm-cur').value) || 0;
+            var adjVal = row.querySelector('.pm-adj').value;
+            s.adjustedPrice = adjVal !== '' ? parseFloat(adjVal) : null;
+
+            /* Update unsold display */
+            var unsold = Math.max(0, s.totalSeats - s.holds - s.sold);
+            var unsoldEl = row.querySelector('.pm-unsold');
+            if (unsoldEl) unsoldEl.textContent = unsold.toLocaleString();
+
+            /* Update impact display */
+            var adjP = s.adjustedPrice !== null && s.adjustedPrice !== undefined ? s.adjustedPrice : s.currentPrice;
+            var impact = unsold * (adjP - s.currentPrice);
+            var impactEl = row.querySelector('.pm-impact');
+            if (impactEl) {
+              impactEl.textContent =
+                impact === 0
+                  ? '—'
+                  : (impact >= 0 ? '+$' : '-$') + Math.round(Math.abs(impact)).toLocaleString();
+              impactEl.style.color = impact > 0 ? 'var(--teal)' : impact < 0 ? 'var(--rose)' : '';
             }
 
-            document.getElementById('scenarioOutput').style.display = '';
-            updateKPIs(combAdj, totalDelta);
-            updateJustification(
-              totBaseline,
-              totAdj,
-              totalDelta,
-              totalDeltaPct,
-              totNetSell,
-              totSold,
-              isLive,
-              resultsData.length,
-              totSubSeats,
-              totSubRev,
-              combBaseline,
-              combAdj,
-            );
-          } else {
-            resultsCard.style.display = 'none';
-            document.getElementById('scenarioOutput').style.display = 'none';
-            updateKPIs(0, 0);
+            /* Update captured rev cell */
+            var cells = row.querySelectorAll('.live-modal-col');
+            if (cells.length) {
+              var cap = s.sold * s.currentPrice;
+              cells[0].textContent = cap > 0 ? '$' + Math.round(cap).toLocaleString() : '—';
+            }
+          });
+
+          /* Live mode columns */
+          var isLive = perf.sections.some(function (s) { return (s.sold || 0) > 0; });
+          document.querySelectorAll('.live-modal-col').forEach(function (el) {
+            el.style.display = isLive ? '' : 'none';
+          });
+
+          /* Totals footer */
+          var totSeats = 0, totHolds = 0, totSold = 0, totUnsold = 0, totCaptured = 0, totImpact = 0;
+          perf.sections.forEach(function (s) {
+            var unsold = Math.max(0, s.totalSeats - s.holds - (s.sold || 0));
+            var adjP = s.adjustedPrice !== null && s.adjustedPrice !== undefined ? s.adjustedPrice : s.currentPrice;
+            totSeats += s.totalSeats;
+            totHolds += s.holds;
+            totSold += s.sold || 0;
+            totUnsold += unsold;
+            totCaptured += (s.sold || 0) * s.currentPrice;
+            totImpact += unsold * (adjP - s.currentPrice);
+          });
+          var setT = function (id, v) { var el = document.getElementById(id); if (el) el.textContent = v; };
+          setT('pfTotalSeats', totSeats.toLocaleString());
+          setT('pfTotalHolds', totHolds.toLocaleString());
+          setT('pfTotalSold', totSold.toLocaleString());
+          setT('pfTotalUnsold', totUnsold.toLocaleString());
+          setT('pfTotalCaptured', totCaptured > 0 ? '$' + Math.round(totCaptured).toLocaleString() : '—');
+          var impEl = document.getElementById('pfTotalImpact');
+          if (impEl) {
+            impEl.textContent =
+              totImpact === 0
+                ? '—'
+                : (totImpact >= 0 ? '+$' : '-$') + Math.round(Math.abs(totImpact)).toLocaleString();
+            impEl.style.color = totImpact > 0 ? 'var(--teal)' : totImpact < 0 ? 'var(--rose)' : '';
           }
+
+          /* Performance summary */
+          var t = calcPerfTotals(perf);
+          var set = function (id, v, color) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            el.textContent = v;
+            if (color !== undefined) el.style.color = color;
+          };
+          set('modalCurrentGross', '$' + Math.round(t.current).toLocaleString());
+          set('modalAdjustedGross', '$' + Math.round(t.adjusted).toLocaleString());
+          var dColor = t.delta > 0 ? 'var(--teal)' : t.delta < 0 ? 'var(--rose)' : '';
+          set('modalDelta', (t.delta >= 0 ? '+$' : '-$') + Math.round(Math.abs(t.delta)).toLocaleString(), dColor);
+
+          /* Run total row */
+          var rtr = document.getElementById('modalRunTotalRow');
+          if (rtr) {
+            rtr.style.display = _performances.length > 1 ? '' : 'none';
+            if (_performances.length > 1) {
+              setT('modalRunCount', _performances.length);
+              var rt = calcRunTotals();
+              setT('modalRunCurrent', '$' + Math.round(rt.current).toLocaleString());
+              setT('modalRunAdjusted', '$' + Math.round(rt.adjusted).toLocaleString());
+              setT('modalRunDelta', (rt.delta >= 0 ? '+$' : '-$') + Math.round(Math.abs(rt.delta)).toLocaleString());
+            }
+          }
+
+          updateRunTotalStrip();
         };
+
+        /* Long date formatter for modal title */
+        function formatLongDate(iso) {
+          if (!iso) return '';
+          var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+          var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+          var d = new Date(iso + 'T12:00:00');
+          return days[d.getDay()] + ', ' + months[d.getMonth()] + ' ' + d.getDate();
+        }
 
         function updateKPIs(projRev, delta) {
           document.getElementById('kProjected').textContent =
@@ -3348,100 +2915,42 @@
           }
         }
 
-        function updateJustification(
-          stBaseline,
-          stAdj,
-          delta,
-          deltaPct,
-          netSell,
-          sold,
-          isLive,
-          perfCount,
-          subSeats,
-          subRev,
-          combBaseline,
-          combAdj,
-        ) {
-          var showName = _selectedShow
-            ? _selectedShow.displayName
-            : document.getElementById('inpShowName').value || '(no show selected)';
+        function updateJustification(perfCount, current, adjusted, delta) {
+          var showName = _selectedShow ? _selectedShow.displayName : '(no show selected)';
           var jTitle = document.getElementById('justifyTitle');
           if (jTitle) jTitle.textContent = showName;
 
-          var hasSubs = subSeats > 0;
-          var baseDesc = isLive
-            ? '$' +
-              Math.round(combBaseline).toLocaleString() +
-              ' combined baseline (' +
-              sold.toLocaleString() +
-              ' ST sold + projected remaining at contracted; ' +
-              (hasSubs
-                ? 'sub revenue est. $' + Math.round(subRev).toLocaleString() + ' incl. fees'
-                : 'no subscriber data') +
-              ')'
-            : '$' +
-              Math.round(combBaseline).toLocaleString() +
-              ' combined baseline · ' +
-              '$' +
-              Math.round(stBaseline).toLocaleString() +
-              ' ST (pre-sale) + ' +
-              (hasSubs
-                ? '$' + Math.round(subRev).toLocaleString() + ' sub (incl. fees, est. pre-Paciolan)'
-                : 'no subscriber data');
+          var deltaPct = current > 0 ? (delta / current) * 100 : 0;
+          var isLive = _performances.some(function (p) {
+            return p.sections.some(function (s) { return (s.sold || 0) > 0; });
+          });
+
           var jBase = document.getElementById('justifyBaseline');
-          if (jBase) jBase.textContent = baseDesc;
+          if (jBase)
+            jBase.textContent =
+              '$' + Math.round(current).toLocaleString() +
+              ' current gross potential across ' + perfCount + ' performance' + (perfCount !== 1 ? 's' : '') +
+              ' · ' + (isLive ? 'live mode (sold data active)' : 'pre-sale mode');
 
-          var adjDesc =
-            '$' +
-            Math.round(combAdj).toLocaleString() +
-            ' combined adjusted · ' +
-            '$' +
-            Math.round(stAdj).toLocaleString() +
-            ' ST adjusted + ' +
-            (hasSubs ? '$' + Math.round(subRev).toLocaleString() + ' sub (unchanged) · ' : '') +
-            (delta >= 0 ? '+' : '') +
-            '$' +
-            Math.round(Math.abs(delta)).toLocaleString() +
-            ' / ' +
-            (deltaPct >= 0 ? '+' : '') +
-            deltaPct.toFixed(1) +
-            '% vs. combined baseline';
           var jScen = document.getElementById('justifyScenario');
-          if (jScen) jScen.textContent = adjDesc;
+          if (jScen)
+            jScen.textContent =
+              '$' + Math.round(adjusted).toLocaleString() + ' adjusted gross · ' +
+              (delta >= 0 ? '+' : '') + '$' + Math.round(Math.abs(delta)).toLocaleString() +
+              ' / ' + (deltaPct >= 0 ? '+' : '') + deltaPct.toFixed(1) + '% vs. current pricing. ' +
+              'Face value excl. $4.00 restoration — League-compliant.';
 
-          var rationale =
-            (isLive ? 'Live mode' : 'Pre-sale mode') +
-            ': ' +
-            perfCount +
-            ' performance' +
-            (perfCount !== 1 ? 's' : '') +
-            ' · ' +
-            netSell.toLocaleString() +
-            ' total net sellable. ';
-          if (hasSubs) {
-            rationale +=
-              'Estimated ' +
-              subSeats.toLocaleString() +
-              ' subscriber seats/perf (pre-Paciolan) generating $' +
-              Math.round(subRev).toLocaleString() +
-              ' total sub revenue (incl. fees, package pricing). ';
-          }
-          rationale +=
-            'Single-ticket adjusted gross ' +
-            (delta >= 0 ? 'increases' : 'decreases') +
-            ' combined total by $' +
-            Math.abs(Math.round(delta)).toLocaleString() +
-            ' (' +
-            (deltaPct >= 0 ? '+' : '') +
-            deltaPct.toFixed(1) +
-            '% vs. combined baseline). ' +
-            'ST face value excl. $4.00 restoration — League-compliant. Subscriber revenue incl. fees — not mixed with face value.';
           var jRat = document.getElementById('justifyRationale');
-          if (jRat) jRat.textContent = rationale;
+          if (jRat) {
+            var precCount = document.querySelectorAll('#precTableBody tr').length;
+            jRat.textContent =
+              perfCount + ' performance' + (perfCount !== 1 ? 's' : '') + ' · ' +
+              (precCount ? precCount + ' preceding market weeks for context.' : 'No preceding market data loaded.') +
+              ' Pricing adjustments are per-section, per-performance.';
+          }
 
-          var precCount = document.querySelectorAll('#precTableBody tr').length;
           var jPrec = document.getElementById('justifyPrecCount');
-          if (jPrec) jPrec.textContent = precCount || '—';
+          if (jPrec) jPrec.textContent = document.querySelectorAll('#precTableBody tr').length || '—';
           _scenarioRan = true;
         }
 
@@ -3474,97 +2983,48 @@
           }
         }
 
-        function setValue(id, val) {
-          var el = document.getElementById(id);
-          if (el) el.value = val;
-        }
-
-        function populatePricingGrid(pricing) {
-          if (!pricing) return;
-          var sections = getSections();
-          document.querySelectorAll('.pg-inp[data-col="c"]').forEach(function (inp) {
-            var tier = inp.dataset.tier;
-            var idx = +inp.dataset.idx;
-            var sec = sections[idx];
-            if (!sec) return;
-            var tierPricing = pricing[tier];
-            if (!tierPricing) return;
-            var price = tierPricing[sec.name];
-            if (price !== undefined) inp.value = price;
-          });
-        }
-
+        /* ── Fact Sheet loader (v2.0) ── */
         window.loadFactSheet = function () {
           var fs = _selectedShow ? findFactSheet(_selectedShow.displayName) : null;
           if (!fs) return;
 
-          /* Capacity */
-          setValue('inpCapacity', fs.contractedSellablePerPerf);
+          var sections = getSections();
+          var totalHolds = (fs.holds ? (fs.holds.house || 0) + (fs.holds.presenter || 0) + (fs.holds.troubleBO || 0) + (fs.holds.troubleFOH || 0) + (fs.holds.other || 0) : 0);
 
-          /* Holds */
-          var h = fs.holds || {};
-          setValue('holdHouse', h.house || 0);
-          setValue('holdPresenter', h.presenter || 0);
-          setValue('holdTrouble', (h.troubleBO || 0) + (h.troubleFOH || 0));
-          setValue('holdOther', h.other || 0);
-
-          /* Holds note */
-          var holdsNoteWrap = document.getElementById('holdsNoteWrap');
-          var holdsNoteText = document.getElementById('holdsNoteText');
-          if (holdsNoteText && h.notes) {
-            holdsNoteText.textContent = h.notes;
-            if (holdsNoteWrap) holdsNoteWrap.style.display = '';
-          } else if (holdsNoteWrap) {
-            holdsNoteWrap.style.display = 'none';
-          }
-
-          /* Subscriber type */
-          var subType = document.getElementById('subShowType');
-          if (subType) {
-            subType.value = fs.subType === 'addon' ? 'addon' : 'core';
-            toggleSubType();
-          }
-
-          /* Performances */
-          var tbody = document.getElementById('runTableBody');
-          tbody.innerHTML = '';
-          (fs.performances || []).forEach(function (p) {
-            var row = makePerfRow({ time: p.time, tier: p.tier });
-            var dateInp = row.querySelector('.rp-date');
-            if (dateInp) dateInp.value = p.date;
-            tbody.appendChild(row);
+          _performances = (fs.performances || []).map(function (p) {
+            return {
+              id: 'perf_' + p.date + '_' + (p.time || '').replace(/[^0-9]/g, '') + '_' + Math.floor(Math.random() * 999),
+              date: p.date || '',
+              time: p.time || '',
+              priceLevel: p.tier || 'C',
+              factSheetHoldsTotal: totalHolds,
+              sections: sections.map(function (sec) {
+                var price = lookupSectionPrice(p.tier || 'C', sec, fs.pricing);
+                return {
+                  name: sec.name,
+                  totalSeats: sec.seats,
+                  holds: 0,
+                  sold: 0,
+                  currentPrice: price !== null ? price : 0,
+                  adjustedPrice: null,
+                };
+              }),
+            };
           });
-          syncRunEmpty();
 
-          /* Pricing grid */
-          populatePricingGrid(fs.pricing);
-
-          /* Gross potential reference */
-          var gpEl = document.getElementById('grossPotentialRef');
-          var gpExcl = document.getElementById('gpExcl');
-          var gpIncl = document.getElementById('gpIncl');
-          if (gpEl && fs.grossPotentialExclRest) {
-            gpExcl.textContent = '$' + Math.round(fs.grossPotentialExclRest).toLocaleString();
-            gpIncl.textContent = '$' + Math.round(fs.grossPotentialWithRest).toLocaleString();
-            gpEl.style.display = '';
-          }
-
-          calcScenario();
+          renderPerfCardGrid();
+          updateRunTotalStrip();
 
           var note = document.getElementById('fsLoadNote');
           if (note)
             note.textContent =
-              '✓ Loaded ' +
-              (fs.performances || []).length +
-              ' performances and pricing from fact sheet. All values are editable.';
+              '✓ Loaded ' + _performances.length + ' performances from fact sheet. Click any card to edit pricing.';
         };
 
         /* ── Bootstrap ── */
         loadSeatConfig();
-        buildPricingGrid();
-        syncRunEmpty();
-        document.getElementById('inpCapacity').value = activeHall().defaultCap;
-        calcScenario();
+        renderPerfCardGrid();
+        updateRunTotalStrip();
         loadData();
       })();
     </script>
