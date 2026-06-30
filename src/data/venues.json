@@ -1,0 +1,276 @@
+{
+  "_meta": {
+    "purpose": "Canonical venue, hall, and seating section reference for The Bushnell Center for the Performing Arts. Single source of truth for section names and seat counts used by box_office.html and factsheets.json. Broadway touring and one-nighter events share these physical spaces; this file defines the spaces independent of any single event type.",
+    "generated": "2026-06-30",
+    "notes": "Section names here are the official Bushnell section map canonical names (read from the color-coded SECTION MAP, scan_Randale Nunley_*.pdf p.3). Fact sheets and subscriber pricing sheets use different naming conventions for the same physical sections — see nameAliases on each section for known variants. Any lookup code that joins this file to factsheets.json pricing keys MUST fall back through nameAliases before reporting a miss.",
+    "sectionMapSource": "scan_Randale Nunley_1782838211.pdf, page 3 — color-coded SECTION MAP, Mortensen Hall",
+    "reconciliationDate": "2026-06-30"
+  },
+  "venue": "The Bushnell Center for the Performing Arts",
+  "address": "166 Capitol Ave, Hartford, CT 06106",
+  "halls": {
+    "mortensen": {
+      "name": "Mortensen Hall",
+      "usedFor": ["Broadway touring", "one-nighters", "large-format events"],
+      "defaultCapacity": 2704,
+      "sections": [
+        {
+          "name": "Broadway Circle",
+          "seats": 244,
+          "group": "premium",
+          "nameAliases": [],
+          "_reconciliationNote": "Name matches official section map exactly. No change required."
+        },
+        {
+          "name": "Prime Orchestra",
+          "seats": 684,
+          "group": "premium",
+          "nameAliases": ["Orchestra Prime", "Prime Orchestra/Box"],
+          "_reconciliationNote": "Renamed from fact-sheet canonical 'Orchestra Prime' to official map canonical 'Prime Orchestra'. Seat count preserved at 684 pending confirmation of whether 'Rear Orchestra/Box' (a distinct color zone on the official map) should be split out from this total. See _needsHumanConfirmation[0]."
+        },
+        {
+          "name": "Side Orchestra",
+          "seats": 88,
+          "group": "mid",
+          "nameAliases": ["Orchestra Perimeter – Side", "Orchestra Perimeter - Side", "Far Side Orchestra"],
+          "_reconciliationNote": "Renamed from fact-sheet canonical 'Orchestra Perimeter – Side' to official map canonical 'Side Orchestra'. Seat count unchanged."
+        },
+        {
+          "name": "ADA / Accessible",
+          "seats": 48,
+          "group": "premium",
+          "nameAliases": ["ADA", "Accessible"],
+          "_reconciliationNote": "Not a named zone in the official section map color legend; this is a sellable ticketing category that spans physical zones. Kept as a separate section for revenue modeling. Physical orchestra wheelchair (8) + companion/accessible (28) = 36 orchestra-level accessible seats; the remaining 12 are distributed across mezzanine and balcony levels. See _needsHumanConfirmation[1] for the 18-seat unresolved gap in orchestra-level seat accounting."
+        },
+        {
+          "name": "Prime Mezzanine",
+          "seats": 156,
+          "group": "premium",
+          "nameAliases": ["Mezzanine – Prime", "Mezzanine - Prime"],
+          "_reconciliationNote": "Renamed from fact-sheet canonical 'Mezzanine – Prime' to official map canonical 'Prime Mezzanine'. Seat count unchanged. All 4 mezzanine sections sum to 988 = physical mezzanine total (Front 556 + Rear 432). Confirmed."
+        },
+        {
+          "name": "Front Mezzanine",
+          "seats": 238,
+          "group": "premium",
+          "nameAliases": ["Mezzanine – Front", "Mezzanine - Front", "Mezzanine – front", "Mezzanine - front"],
+          "_reconciliationNote": "Renamed from fact-sheet canonical 'Mezzanine – Front' to official map canonical 'Front Mezzanine'. Seat count unchanged."
+        },
+        {
+          "name": "Middle Mezzanine",
+          "seats": 314,
+          "group": "mid",
+          "nameAliases": ["Mezzanine – Middle", "Mezzanine - Middle", "Mid Mezzanine"],
+          "_reconciliationNote": "Renamed from fact-sheet canonical 'Mezzanine – Middle' to official map canonical 'Middle Mezzanine'. Seat count unchanged."
+        },
+        {
+          "name": "Rear Mezzanine",
+          "seats": 280,
+          "group": "economy",
+          "nameAliases": ["Mezzanine – Economy", "Mezzanine - Economy"],
+          "_reconciliationNote": "Renamed from fact-sheet canonical 'Mezzanine – Economy' to official map canonical 'Rear Mezzanine'. The fact-sheet label 'Economy' is replaced by the physically descriptive 'Rear'. Seat count unchanged."
+        },
+        {
+          "name": "Prime Balcony",
+          "seats": 83,
+          "group": "mid",
+          "nameAliases": ["Balcony – Prime", "Balcony - Prime"],
+          "_reconciliationNote": "Renamed from fact-sheet canonical 'Balcony – Prime' to official map canonical 'Prime Balcony'. Seat count unchanged. All 4 balcony sections sum to 652 = physical balcony total (Front 333 + Rear 319). Confirmed."
+        },
+        {
+          "name": "Front Balcony",
+          "seats": 195,
+          "group": "economy",
+          "nameAliases": ["Balcony Front"],
+          "_reconciliationNote": "Renamed from fact-sheet canonical 'Balcony Front' to official map canonical 'Front Balcony'. Seat count unchanged."
+        },
+        {
+          "name": "Mid/Rear Balcony",
+          "seats": 276,
+          "group": "economy",
+          "nameAliases": ["Balcony – Middle", "Balcony - Middle"],
+          "_reconciliationNote": "Renamed from fact-sheet canonical 'Balcony – Middle' to official map canonical 'Mid/Rear Balcony'. Seat count unchanged."
+        },
+        {
+          "name": "Rear Balcony",
+          "seats": 98,
+          "group": "economy",
+          "nameAliases": ["Balcony – Economy", "Balcony - Economy"],
+          "_reconciliationNote": "Renamed from fact-sheet canonical 'Balcony – Economy' to official map canonical 'Rear Balcony'. The fact-sheet label 'Economy' is replaced by the physically descriptive 'Rear'. Seat count unchanged."
+        }
+      ],
+      "standardHolds": {
+        "_note": "These are typical values seen across multiple fact sheets. Actual holds vary per show — always use the show's own fact sheet figures when available. See factsheets.json per show.",
+        "house": 40,
+        "presenter": 50,
+        "troubleBO": 10,
+        "troubleFOH": 10
+      },
+      "physicalHouseReference": {
+        "totalHouseCapacity": 2799,
+        "source": "Seat Widths Map (hand-marked house chart), Mortensen Hall",
+        "note": "Physical seating zones (Orchestra/Mezzanine/Balcony, by level and row) do NOT map 1:1 to the sellable pricing zones used in fact sheets and in this file's sections array. Pricing zones (e.g. Prime Orchestra, Broadway Circle) cut across multiple physical sections and row ranges. This reference is informational only -- do not use for sellable capacity or revenue calculations until a row-level mapping is completed.",
+        "levels": {
+          "orchestra": {
+            "pit": 77,
+            "orchestra": 986,
+            "parterreBox": 60,
+            "wheelchair": 8,
+            "companionAccessible": 28,
+            "total": 1159
+          },
+          "mezzanine": {
+            "front": 556,
+            "rear": 432,
+            "total": 988
+          },
+          "balcony": {
+            "front": 333,
+            "rear": 319,
+            "total": 652
+          }
+        }
+      },
+      "_reconciliationNotes": {
+        "summary": "Sections reconciled 2026-06-30 against official Bushnell SECTION MAP (scan p.3). All 10 misnamed sections corrected to official canonical names; prior fact-sheet names moved to nameAliases. Two structural issues require human confirmation — see _needsHumanConfirmation.",
+        "seatCountVerification": {
+          "mezzanine": "CONFIRMED: Prime Mezzanine (156) + Front Mezzanine (238) + Middle Mezzanine (314) + Rear Mezzanine (280) = 988 = physical mezzanine total (Front 556 + Rear 432). No excluded seats at mezzanine level.",
+          "balcony": "CONFIRMED: Prime Balcony (83) + Front Balcony (195) + Mid/Rear Balcony (276) + Rear Balcony (98) = 652 = physical balcony total (Front 333 + Rear 319). No excluded seats at balcony level.",
+          "orchestra": "UNRESOLVED: Orchestra sections sum to 1,064 vs physical orchestra 1,159. Pit (77) is excluded from standard sellable inventory for most configurations. Remaining 18-seat gap between physical non-pit orchestra (1,082) and orchestra sections (1,064) is unresolved. See _needsHumanConfirmation[1].",
+          "grandTotal": "Sellable 2,704 vs physical 2,799. Difference = 95, entirely attributable to orchestra level: Pit (77) + unexplained 18-seat gap."
+        },
+        "namingConventionChange": "Fact sheets use '[Location] – [Type]' word order (e.g. 'Orchestra Prime', 'Mezzanine – Front'). Official Bushnell section map uses '[Type] [Location]' order (e.g. 'Prime Orchestra', 'Front Mezzanine'). All 10 misnamed sections updated to official map order. Fact-sheet names retained as nameAliases. IMPORTANT: factsheets.json pricing objects key on the old fact-sheet names. Any code doing exact-string lookups against factsheets.json pricing keys must traverse nameAliases as a fallback before reporting a miss.",
+        "economyToRearRename": "Three sections previously labeled 'Economy' renamed to physically descriptive 'Rear' to match official map: 'Mezzanine – Economy' → 'Rear Mezzanine'; 'Balcony – Economy' → 'Rear Balcony'; 'Balcony – Middle' → 'Mid/Rear Balcony'.",
+        "rearOrchestraBoxGap": "The official section map includes 'Rear Orchestra/Box' as a distinct color zone with no corresponding entry in venues.json. The physical Parterre Boxes (60 seats per house chart) are the most likely candidate for this zone. The current 'Prime Orchestra' section (684 seats) may combine two distinct official map zones: 'Prime Orchestra' (center/front rows) and 'Rear Orchestra/Box' (rear orchestra rows + Parterre Boxes). This cannot be resolved without a row-level seat manifest. See _needsHumanConfirmation[0]."
+      },
+      "_needsHumanConfirmation": [
+        {
+          "id": 0,
+          "issue": "'Rear Orchestra/Box' zone not split out from 'Prime Orchestra'",
+          "detail": "The official SECTION MAP shows 'Rear Orchestra/Box' as a distinct colored zone separate from 'Prime Orchestra'. The current 'Prime Orchestra' section (684 seats) likely combines these two zones. The physical house chart shows 60 Parterre Box seats (labeled 'parterreBox') that may be entirely or partly within 'Rear Orchestra/Box'. Without a row-level seat-assignment manifest the exact split cannot be determined.",
+          "interpretationA": "'Rear Orchestra/Box' = the 60 Parterre Box seats only. Then 'Prime Orchestra' = 684 − 60 = 624 seats.",
+          "interpretationB": "'Rear Orchestra/Box' = Parterre Boxes (60) + rear-center orchestra rows (unknown count). 'Prime Orchestra' < 624.",
+          "interpretationC": "Both zones are priced identically in all fact sheets and can remain combined at 684 for revenue modeling; 'Rear Orchestra/Box' is noted as a sub-zone alias only.",
+          "confirmWith": "Bushnell box office staff or Archtics/TM zone code manifest; compare zone codes against the section map color boundaries"
+        },
+        {
+          "id": 1,
+          "issue": "18-seat unexplained gap at orchestra level",
+          "detail": "Physical non-pit orchestra seats: 986 (main) + 60 (Parterre Box) + 8 (wheelchair) + 28 (companion/accessible) = 1,082. Sellable orchestra sections: Prime Orchestra (684) + Side Orchestra (88) + Broadway Circle (244) + ADA/Accessible (48) = 1,064. Gap = 18 seats not accounted for in any section. Pit (77) accounts for the remaining 95-seat difference from the 2,799 physical total.",
+          "likelyExplanation": "18 companion/accessible seats that are neither in the ADA/Accessible sellable section nor in any standard-pricing section — possibly fixed non-sale positions (director's box, production hold) or counted differently between the house chart and the ticketing manifest.",
+          "confirmWith": "Bushnell box office staff — ask for the orchestra-level accessible seat breakdown and whether any non-sale fixed positions exist in the orchestra"
+        }
+      ]
+    },
+    "belding": {
+      "name": "Belding Theater",
+      "usedFor": ["Broadway add-on engagements", "one-nighters", "smaller-format events"],
+      "defaultCapacity": 908,
+      "totalPhysicalSeats": 908,
+      "subscriberPricingConfigured": false,
+      "sections": [
+        {
+          "name": "Gold Circle",
+          "seats": 205,
+          "group": "premium",
+          "nameAliases": []
+        },
+        {
+          "name": "Mezz Prime",
+          "seats": 21,
+          "group": "premium",
+          "nameAliases": ["Mezzanine Prime"]
+        },
+        {
+          "name": "Pit",
+          "seats": 51,
+          "group": "premium",
+          "nameAliases": [],
+          "_reconciliationNote": "Subscriber pricing sheet shows 51; physical house chart shows 47. 4-seat discrepancy flagged — see _needsHumanConfirmation[0]. Keeping at 51 (pricing-sheet value) until confirmed."
+        },
+        {
+          "name": "Front Orchestra Sides",
+          "seats": 115,
+          "group": "premium",
+          "nameAliases": []
+        },
+        {
+          "name": "Mezz Front",
+          "seats": 36,
+          "group": "premium",
+          "nameAliases": ["Mezzanine Front"]
+        },
+        {
+          "name": "Rear Center Orchestra",
+          "seats": 172,
+          "group": "mid",
+          "nameAliases": []
+        },
+        {
+          "name": "Boxes",
+          "seats": 12,
+          "group": "mid",
+          "nameAliases": [],
+          "_reconciliationNote": "Physical mezzanine chart confirms Boxes = 12. Confirmed."
+        },
+        {
+          "name": "Rear Orchestra Sides",
+          "seats": 92,
+          "group": "mid",
+          "nameAliases": []
+        },
+        {
+          "name": "Mezz Middle",
+          "seats": 55,
+          "group": "mid",
+          "nameAliases": ["Mezzanine Middle"]
+        },
+        {
+          "name": "Orchestra ADA",
+          "seats": 16,
+          "group": "economy",
+          "nameAliases": ["ADA"]
+        },
+        {
+          "name": "Rear Mezz and Sides",
+          "seats": 101,
+          "group": "economy",
+          "nameAliases": ["Rear Mezzanine"]
+        },
+        {
+          "name": "Mezz Perimeter Sides",
+          "seats": 24,
+          "group": "economy",
+          "nameAliases": []
+        },
+        {
+          "name": "Mezz Accessible",
+          "seats": 8,
+          "group": "economy",
+          "nameAliases": ["Accessible"],
+          "_reconciliationNote": "Physical mezzanine chart: wheelchair (4) + companion/accessible (8) = 12 mezzanine accessible seats. This section (8) covers the companion/accessible seats; the 4 wheelchair positions may be absorbed within adjacent sections or are fixed non-sellable positions."
+        }
+      ],
+      "standardHolds": {
+        "_note": "Based on Oh, Mary! fact sheet — the only Belding Broadway engagement on file. Confirm against each show's own fact sheet.",
+        "house": 30,
+        "presenter": 30,
+        "troubleBO": 0,
+        "troubleFOH": 0,
+        "other": 20
+      },
+      "_reconciliationNotes": {
+        "summary": "Belding sections reconciled 2026-06-30 against physical house chart (scan_Randale Nunley_*.pdf). Total 908 matches both physical chart and defaultCapacity. Mezzanine-level check: Mezz Prime (21) + Mezz Front (36) + Mezz Middle (55) + Rear Mezz and Sides (101) + Mezz Perimeter Sides (24) + Mezz Accessible (8) + Boxes (12) = 257 = physical mezzanine total (Boxes 12 + Mezzanine 233 + Wheelchair 4 + Companion 8). Confirmed. One discrepancy flagged for human confirmation.",
+        "pitDiscrepancy": "Physical chart shows Pit = 47; subscriber pricing sheet shows Pit = 51. The 4-seat difference is internally consistent: the 4 extra 'Pit' seats in venues.json reduce the non-pit orchestra sections by 4 relative to physical (600 sellable vs 604 physical non-pit non-Pit). Total hall count (908) is unchanged in both interpretations."
+      },
+      "_needsHumanConfirmation": [
+        {
+          "id": 0,
+          "issue": "Belding Pit seat count: 47 (physical chart) vs 51 (pricing sheet)",
+          "detail": "The Belding Theater physical house chart shows the Pit row as 47 seats. The subscriber pricing sheet from which this file's Belding sections were derived shows 51. The hall total (908) is unchanged either way; the 4 seats shift between 'Pit' and the general orchestra pool. Most likely explanation: 4 pit positions are sold as standard front-row orchestra seats in the subscriber configuration.",
+          "confirmWith": "Belding Theater box office or production manager — confirm the Pit seat count in the standard subscriber seating configuration"
+        }
+      ]
+    }
+  }
+}

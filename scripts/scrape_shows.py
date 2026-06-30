@@ -26,28 +26,24 @@ from datetime import date
 from pathlib import Path
 from urllib.parse import quote
 
-import os
 import requests
+from SPARQLWrapper import SPARQLWrapper, JSON
 
-try:
-    from SPARQLWrapper import SPARQLWrapper, JSON
-except ModuleNotFoundError:
-    SPARQLWrapper = None
-    JSON = None
+# ── PATHS ───────────────────────────────────────────────────────────────
+ROOT = Path(__file__).resolve().parent.parent
+DATA_IN = ROOT / "src" / "data" / "data.json"
+SEASONS_IN = ROOT / "src" / "data" / "seasons.json"
+DATA_OUT = ROOT / "src" / "data" / "shows.json"
+
+# ── SEASON LOGIC ────────────────────────────────────────────────────────
 
 
-# ── PATHS ─────────────────────────────────────────────────────────────────────
-ROOT        = Path(__file__).resolve().parent.parent
-DATA_IN     = ROOT / "src" / "data" / "data.json"
-SEASONS_IN  = ROOT / "src" / "data" / "seasons.json"
-DATA_OUT    = ROOT / "src" / "data" / "shows.json"
-
-# ── SEASON LOGIC ──────────────────────────────────────────────────────────────
 def current_season():
     """Return the current fiscal season string e.g. '2025-2026'."""
     today = date.today()
-    year  = today.year if today.month >= 7 else today.year - 1
+    year = today.year if today.month >= 7 else today.year - 1
     return f"{year}-{year + 1}"
+
 
 def season_bounds(season_str):
     """Return (start_date, end_date) strings for a fiscal season."""
@@ -55,6 +51,8 @@ def season_bounds(season_str):
     return f"{year}-07-01", f"{year + 1}-06-30"
 
 # ── LOAD SHOWS FROM SEASONS.JSON ─────────────────────────────────────────────
+
+
 def load_season_shows(season):
     """
     Returns a list of dicts with 'name' and 'league_name' for the given season.
@@ -67,10 +65,15 @@ def load_season_shows(season):
             seasons = json.load(f)
         if season in seasons:
             entry = seasons[season]
-            shows = entry.get("shows", entry) if isinstance(entry, dict) else entry
+            shows = entry.get(
+                "shows",
+                entry) if isinstance(
+                entry,
+                dict) else entry
             print(f"Loaded {len(shows)} shows from seasons.json for {season}")
             return shows
-        print(f"Season {season} not found in seasons.json — falling back to data.json")
+        print(
+            f"Season {season} not found in seasons.json — falling back to data.json")
 
     # Fallback: derive from data.json (league_name = name)
     print(f"Reading {DATA_IN} ...")
@@ -87,85 +90,50 @@ def load_season_shows(season):
         and r.get("show", "").strip()
     })
     shows = [{"name": n, "league_name": n} for n in league_names]
-    print(f"Found {len(shows)} distinct Bushnell shows in {season} (from data.json)")
+    print(
+        f"Found {
+            len(shows)} distinct Bushnell shows in {season} (from data.json)")
     return shows
 
-# ── SPARQL HELPERS ────────────────────────────────────────────────────────────
+
+# ── SPARQL HELPERS ──────────────────────────────────────────────────────
 SPARQL_ENDPOINT = "https://query.wikidata.org/sparql"
 DBPEDIA_ENDPOINT = "https://dbpedia.org/sparql"
-WIKIDATA_API    = "https://www.wikidata.org/w/api.php"
+WIKIDATA_API = "https://www.wikidata.org/w/api.php"
 _USER_AGENT = "BushnellDashboard/1.0 (broadway-touring-dashboard; contact: broadway@bushnell.org)"
-
-class _RequestsSparqlClient:
-    """Small SPARQL client fallback so this script does not require SPARQLWrapper."""
-
-    def __init__(self, endpoint):
-        self.endpoint = endpoint
-        self.query_text = None
-        self.headers = {"User-Agent": _USER_AGENT, "Accept": "application/sparql-results+json"}
-
-    def addCustomHttpHeader(self, key, value):
-        self.headers[key] = value
-
-    def setReturnFormat(self, fmt):
-        return None
-
-    def setQuery(self, query):
-        self.query_text = query
-
-    def query(self):
-        return self
-
-    def convert(self):
-        if not self.query_text:
-            raise RuntimeError("SPARQL query text was not set")
-        resp = requests.get(
-            self.endpoint,
-            params={"query": self.query_text, "format": "json"},
-            headers=self.headers,
-            timeout=int(os.getenv("BWAY_SPARQL_TIMEOUT", "30")),
-        )
-        if resp.status_code != 200:
-            raise RuntimeError(f"SPARQL HTTP {resp.status_code}: {resp.text[:300]}")
-        return resp.json()
 
 
 def _sparql_client(endpoint=SPARQL_ENDPOINT):
-    if SPARQLWrapper is None:
-        return _RequestsSparqlClient(endpoint)
     sparql = SPARQLWrapper(endpoint)
     sparql.addCustomHttpHeader("User-Agent", _USER_AGENT)
     sparql.setReturnFormat(JSON)
     return sparql
 
 
-def _sleep(seconds):
-    """Sleep with a scale factor so tests can set BWAY_SCRAPE_SLEEP_SCALE=0."""
-    scale = float(os.getenv("BWAY_SCRAPE_SLEEP_SCALE", "1"))
-    if scale <= 0:
-        return
-    time.sleep(seconds * scale)
-
-
 def _run_sparql(sparql, max_retries=4):
-    """Execute a configured SPARQL query with retries and 429 backoff."""
+    """Execute a configured SPARQLWrapper query with retries and 429 backoff."""
     for attempt in range(1, max_retries + 1):
         try:
             return sparql.query().convert()
         except Exception as e:
             if attempt == max_retries:
                 raise
+            # Wikidata rate-limit: back off for 60s then retry
             if "429" in str(e):
-                wait = int(os.getenv("BWAY_SPARQL_429_WAIT", "60"))
-                print(f"  Rate limited (429) - waiting {wait}s before retry...")
+                wait = 60
+                print(
+                    f"  Rate limited (429) — waiting {wait}s before retry...")
             else:
                 wait = 2 ** attempt
-            print(f"  SPARQL attempt {attempt} failed ({e}), retrying in {wait}s...")
-            _sleep(wait)
+            print(
+                f"  SPARQL attempt {attempt} failed ({e}), retrying in {wait}s...")
+            time.sleep(wait)
+
 
 def _escape_sparql_string(s):
     """Escape a string for safe embedding in a SPARQL string literal."""
     return s.replace("\\", "\\\\").replace('"', '\\"')
+
 
 def _fetch_wikidata_item(wikidata_id):
     """
@@ -200,21 +168,23 @@ def _fetch_wikidata_item(wikidata_id):
             return None
         b = bindings[0]
         return {
-            "wikidata_id":   wikidata_id,
-            "opening_date":  b["openDate"]["value"][:10]      if "openDate"      in b else None,
-            "closing_date":  b["closeDate"]["value"][:10]     if "closeDate"     in b else None,
-            "composer":      b["composerLabel"]["value"]       if "composerLabel" in b else None,
-            "lyricist":      b["lyricistLabel"]["value"]       if "lyricistLabel" in b else None,
-            "wikipedia_url": b["article"]["value"]             if "article"       in b else None,
-            "image_url":     _commons_image_url(b["image"]["value"].split("/")[-1]) if "image" in b else None,
+            "wikidata_id": wikidata_id,
+            "opening_date": b["openDate"]["value"][:10] if "openDate" in b else None,
+            "closing_date": b["closeDate"]["value"][:10] if "closeDate" in b else None,
+            "composer": b["composerLabel"]["value"] if "composerLabel" in b else None,
+            "lyricist": b["lyricistLabel"]["value"] if "lyricistLabel" in b else None,
+            "wikipedia_url": b["article"]["value"] if "article" in b else None,
+            "image_url": _commons_image_url(b["image"]["value"].split("/")[-1]) if "image" in b else None,
         }
     except Exception as e:
         if "429" in str(e):
-            print(f"  SPARQL rate-limited — falling back to REST API for {wikidata_id}...")
-            _sleep(2)
+            print(
+                f"  SPARQL rate-limited — falling back to REST API for {wikidata_id}...")
+            time.sleep(2)
             return _fetch_wikidata_item_rest(wikidata_id)
         print(f"  Item fetch error for {wikidata_id}: {e}")
         return None
+
 
 def _commons_image_url(filename):
     """Convert a Wikimedia Commons filename to a direct image URL."""
@@ -250,10 +220,15 @@ def _fetch_wikidata_item_rest(wikidata_id):
     try:
         resp = requests.get(
             WIKIDATA_API,
-            params={"action": "wbgetentities", "ids": wikidata_id,
-                    "format": "json", "props": "claims|sitelinks", "languages": "en"},
+            params={
+                "action": "wbgetentities",
+                "ids": wikidata_id,
+                "format": "json",
+                "props": "claims|sitelinks",
+                "languages": "en"},
             timeout=15,
-            headers={"User-Agent": _USER_AGENT},
+            headers={
+                "User-Agent": _USER_AGENT},
         )
         if resp.status_code == 429:
             print(f"  REST API also rate-limited for {wikidata_id}")
@@ -264,14 +239,22 @@ def _fetch_wikidata_item_rest(wikidata_id):
         if not entity or entity.get("missing"):
             return None
 
-        claims   = entity.get("claims", {})
+        claims = entity.get("claims", {})
         sitelinks = entity.get("sitelinks", {})
 
         def claim_time(prop):
             cs = claims.get(prop, [])
             if not cs:
                 return None
-            t = cs[0].get("mainsnak", {}).get("datavalue", {}).get("value", {}).get("time", "")
+            t = cs[0].get(
+                "mainsnak",
+                {}).get(
+                "datavalue",
+                {}).get(
+                "value",
+                {}).get(
+                "time",
+                "")
             return t.lstrip("+")[:10] if t else None
 
         def claim_entity_id(prop):
@@ -294,7 +277,8 @@ def _fetch_wikidata_item_rest(wikidata_id):
         if "enwiki" in sitelinks:
             title = sitelinks["enwiki"].get("title", "")
             if title:
-                wiki_url = "https://en.wikipedia.org/wiki/" + quote(title.replace(" ", "_"))
+                wiki_url = "https://en.wikipedia.org/wiki/" + \
+                    quote(title.replace(" ", "_"))
 
         image_val = claim_str("P18")
         image_url = None
@@ -302,19 +286,21 @@ def _fetch_wikidata_item_rest(wikidata_id):
             image_url = _commons_image_url(image_val.split("/")[-1])
 
         return {
-            "wikidata_id":   wikidata_id,
-            "opening_date":  claim_time("P571"),
-            "closing_date":  claim_time("P576"),
-            "composer":      composer_label,
-            "lyricist":      lyricist_label,
+            "wikidata_id": wikidata_id,
+            "opening_date": claim_time("P571"),
+            "closing_date": claim_time("P576"),
+            "composer": composer_label,
+            "lyricist": lyricist_label,
             "wikipedia_url": wiki_url,
-            "image_url":     image_url,
+            "image_url": image_url,
         }
     except Exception as e:
         print(f"  REST fetch error for {wikidata_id}: {e}")
         return None
 
-# ── WIKIDATA SEARCH FALLBACK ──────────────────────────────────────────────────
+# ── WIKIDATA SEARCH FALLBACK ────────────────────────────────────────────
+
+
 def _qid_from_wikipedia(show_name):
     """
     Look up a show's Wikidata QID via the Wikipedia API (pageprops).
@@ -352,19 +338,19 @@ def _search_wikidata(show_name):
             resp = requests.get(
                 WIKIDATA_API,
                 params={
-                    "action":   "wbsearchentities",
-                    "search":   query,
+                    "action": "wbsearchentities",
+                    "search": query,
                     "language": "en",
-                    "type":     "item",
-                    "limit":    10,
-                    "format":   "json",
+                    "type": "item",
+                    "limit": 10,
+                    "format": "json",
                 },
                 timeout=10,
                 headers={"User-Agent": _USER_AGENT},
             )
             if resp.status_code == 429:
                 print(f"  Rate limited (429) on search — waiting 60s...")
-                _sleep(60)
+                time.sleep(60)
                 return None
             if resp.status_code != 200:
                 continue
@@ -376,7 +362,9 @@ def _search_wikidata(show_name):
             print(f"  Wikidata search error for '{query}': {e}")
     return None
 
-# ── WIKIDATA SPARQL ───────────────────────────────────────────────────────────
+# ── WIKIDATA SPARQL ─────────────────────────────────────────────────────
+
+
 def query_wikidata(show_name):
     """
     Query Wikidata for a Broadway musical by name.
@@ -416,18 +404,19 @@ def query_wikidata(show_name):
         if bindings:
             b = bindings[0]
             return {
-                "wikidata_id":   b["item"]["value"].split("/")[-1] if "item" in b else None,
-                "opening_date":  b["openDate"]["value"][:10]       if "openDate"       in b else None,
-                "closing_date":  b["closeDate"]["value"][:10]      if "closeDate"      in b else None,
-                "composer":      b["composerLabel"]["value"]        if "composerLabel"  in b else None,
-                "lyricist":      b["lyricistLabel"]["value"]        if "lyricistLabel"  in b else None,
-                "wikipedia_url": b["article"]["value"]              if "article"        in b else None,
-                "image_url":     _commons_image_url(b["image"]["value"].split("/")[-1]) if "image" in b else None,
+                "wikidata_id": b["item"]["value"].split("/")[-1] if "item" in b else None,
+                "opening_date": b["openDate"]["value"][:10] if "openDate" in b else None,
+                "closing_date": b["closeDate"]["value"][:10] if "closeDate" in b else None,
+                "composer": b["composerLabel"]["value"] if "composerLabel" in b else None,
+                "lyricist": b["lyricistLabel"]["value"] if "lyricistLabel" in b else None,
+                "wikipedia_url": b["article"]["value"] if "article" in b else None,
+                "image_url": _commons_image_url(b["image"]["value"].split("/")[-1]) if "image" in b else None,
             }
 
     except Exception as e:
         if "429" in str(e):
-            print(f"  SPARQL rate-limited for '{show_name}' — skipping to fuzzy+REST path...")
+            print(
+                f"  SPARQL rate-limited for '{show_name}' — skipping to fuzzy+REST path...")
         else:
             print(f"  Wikidata exact-match error for '{show_name}': {e}")
 
@@ -438,13 +427,13 @@ def query_wikidata(show_name):
     # Fuzzy Wikidata search as final fallback
     if not wikidata_id:
         print(f"  Trying Wikidata fuzzy search...")
-        _sleep(2)
+        time.sleep(2)
         wikidata_id = _search_wikidata(show_name)
         if wikidata_id:
             print(f"  Fuzzy match: {wikidata_id}")
 
     if wikidata_id:
-        _sleep(2)
+        time.sleep(2)
         return _fetch_wikidata_item(wikidata_id)
 
     return None
@@ -476,21 +465,33 @@ def _tony_from_claims(claims):
         try:
             resp = requests.get(
                 WIKIDATA_API,
-                params={"action": "wbgetentities", "ids": batch, "format": "json",
-                        "props": "labels", "languages": "en"},
+                params={
+                    "action": "wbgetentities",
+                    "ids": batch,
+                    "format": "json",
+                    "props": "labels",
+                    "languages": "en"},
                 timeout=10,
-                headers={"User-Agent": _USER_AGENT},
+                headers={
+                    "User-Agent": _USER_AGENT},
             )
             if resp.status_code == 200:
                 for eid, entity in resp.json().get("entities", {}).items():
-                    label = entity.get("labels", {}).get("en", {}).get("value", "")
+                    label = entity.get(
+                        "labels",
+                        {}).get(
+                        "en",
+                        {}).get(
+                        "value",
+                        "")
                     if "tony award" in label.lower():
                         tony_ids.add(eid)
         except Exception:
             pass
 
     wins = len(win_ids & tony_ids)
-    noms = len(nom_ids & tony_ids) + wins  # P1411 = nominated-not-won; total = both
+    # P1411 = nominated-not-won; total = both
+    noms = len(nom_ids & tony_ids) + wins
     return noms, wins
 
 
@@ -524,7 +525,13 @@ def query_tony_awards(wikidata_id):
         bindings = results["results"]["bindings"]
         if bindings:
             b = bindings[0]
-            return int(b.get("nominations", {}).get("value", 0)), int(b.get("wins", {}).get("value", 0))
+            return int(
+                b.get(
+                    "nominations", {}).get(
+                    "value", 0)), int(
+                b.get(
+                    "wins", {}).get(
+                        "value", 0))
         return 0, 0
     except Exception as e:
         if "429" in str(e):
@@ -533,9 +540,14 @@ def query_tony_awards(wikidata_id):
             try:
                 resp = requests.get(
                     WIKIDATA_API,
-                    params={"action": "wbgetentities", "ids": wikidata_id, "format": "json",
-                            "props": "claims"},
-                    timeout=15, headers={"User-Agent": _USER_AGENT},
+                    params={
+                        "action": "wbgetentities",
+                        "ids": wikidata_id,
+                        "format": "json",
+                        "props": "claims"},
+                    timeout=15,
+                    headers={
+                        "User-Agent": _USER_AGENT},
                 )
                 if resp.status_code == 200:
                     entity = resp.json().get("entities", {}).get(wikidata_id, {})
@@ -547,9 +559,10 @@ def query_tony_awards(wikidata_id):
         return 0, 0
 
 
-# ── IBDB ──────────────────────────────────────────────────────────────────────
+# ── IBDB ────────────────────────────────────────────────────────────────
 IBDB_SEARCH = "https://www.ibdb.com/search-results.php"
-IBDB_BASE   = "https://www.ibdb.com"
+IBDB_BASE = "https://www.ibdb.com"
+
 
 def _ibdb_search(show_name):
     """Search IBDB and return the URL of the best-matching production page."""
@@ -580,8 +593,12 @@ def scrape_ibdb(show_name):
     if not url:
         return {}
     try:
-        resp = requests.get(url, timeout=15,
-                            headers={"User-Agent": _USER_AGENT, "Accept": "text/html"})
+        resp = requests.get(
+            url,
+            timeout=15,
+            headers={
+                "User-Agent": _USER_AGENT,
+                "Accept": "text/html"})
         if resp.status_code != 200:
             return {}
         text = resp.text
@@ -604,7 +621,8 @@ def scrape_ibdb(show_name):
 
         print(f"  IBDB: {url}")
         if tony_noms:
-            print(f"  IBDB Tony: ~{tony_wins} wins / ~{tony_noms} nominations (text count)")
+            print(
+                f"  IBDB Tony: ~{tony_wins} wins / ~{tony_noms} nominations (text count)")
 
         return result
     except Exception as e:
@@ -612,7 +630,7 @@ def scrape_ibdb(show_name):
         return {}
 
 
-# ── DBPEDIA ───────────────────────────────────────────────────────────────────
+# ── DBPEDIA ─────────────────────────────────────────────────────────────
 def query_dbpedia(show_name):
     """
     Query DBpedia for a Broadway musical. Independent of Wikidata — useful
@@ -620,9 +638,10 @@ def query_dbpedia(show_name):
     Returns a dict of available fields, or None on failure.
     """
     sparql = _sparql_client(DBPEDIA_ENDPOINT)
-    # Normalize name to DBpedia resource format: spaces → underscores, append _(musical)
+    # Normalize name to DBpedia resource format: spaces → underscores, append
+    # _(musical)
     candidate = show_name.replace(" ", "_")
-    resource  = f"http://dbpedia.org/resource/{candidate}_(musical)"
+    resource = f"http://dbpedia.org/resource/{candidate}_(musical)"
 
     query = f"""
     PREFIX dbo: <http://dbpedia.org/ontology/>
@@ -683,16 +702,19 @@ def query_dbpedia(show_name):
         tony_noms, tony_wins = _dbpedia_tony_count(resource)
 
         result = {
-            "composer":     composer,
-            "lyricist":     lyricist,
+            "composer": composer,
+            "lyricist": lyricist,
             "opening_date": open_date,
-            "abstract":     abstract[:500] if abstract else None,
-            "image_url":    thumbnail,
+            "abstract": abstract[:500] if abstract else None,
+            "image_url": thumbnail,
             "tony_nominations": tony_noms,
-            "tony_wins":        tony_wins,
+            "tony_wins": tony_wins,
             "dbpedia_resource": resource,
         }
-        print(f"  DBpedia: opened {open_date or '?'} | composer: {composer or '?'} | Tonys: {tony_wins}W/{tony_noms}N")
+        print(
+            f"  DBpedia: opened {
+                open_date or '?'} | composer: {
+                composer or '?'} | Tonys: {tony_wins}W/{tony_noms}N")
         return result
 
     except Exception as e:
@@ -724,13 +746,19 @@ def _dbpedia_tony_count(resource):
         results = _run_sparql(sparql, max_retries=2)
         b = results["results"]["bindings"]
         if b:
-            return int(b[0].get("noms", {}).get("value", 0)), int(b[0].get("wins", {}).get("value", 0))
+            return int(
+                b[0].get(
+                    "noms", {}).get(
+                    "value", 0)), int(
+                b[0].get(
+                    "wins", {}).get(
+                        "value", 0))
     except Exception:
         pass
     return 0, 0
 
 
-# ── WIKIPEDIA ─────────────────────────────────────────────────────────────────
+# ── WIKIPEDIA ───────────────────────────────────────────────────────────
 def query_wikipedia(wikipedia_url, max_retries=3):
     """
     Fetch the opening paragraph (summary) from a Wikipedia article.
@@ -744,27 +772,32 @@ def query_wikipedia(wikipedia_url, max_retries=3):
 
     for attempt in range(1, max_retries + 1):
         try:
-            resp = requests.get(api_url, timeout=10, headers={"User-Agent": _USER_AGENT})
+            resp = requests.get(
+                api_url, timeout=10, headers={
+                    "User-Agent": _USER_AGENT})
             if resp.status_code == 200:
                 return resp.json().get("extract", None)
             if resp.status_code == 404:
                 return None
             if attempt < max_retries:
                 wait = 2 ** attempt
-                print(f"  Wikipedia HTTP {resp.status_code}, retrying in {wait}s...")
-                _sleep(wait)
+                print(
+                    f"  Wikipedia HTTP {
+                        resp.status_code}, retrying in {wait}s...")
+                time.sleep(wait)
         except Exception as e:
             if attempt == max_retries:
                 print(f"  Wikipedia error for '{title}': {e}")
                 return None
             wait = 2 ** attempt
-            print(f"  Wikipedia attempt {attempt} failed ({e}), retrying in {wait}s...")
-            _sleep(wait)
+            print(
+                f"  Wikipedia attempt {attempt} failed ({e}), retrying in {wait}s...")
+            time.sleep(wait)
 
     return None
 
 
-# ── CORE ENRICHMENT ───────────────────────────────────────────────────────────
+# ── CORE ENRICHMENT ─────────────────────────────────────────────────────
 def enrich_show(show_entry, season):
     """
     Fetch metadata for a show from multiple sources, documenting each.
@@ -772,31 +805,31 @@ def enrich_show(show_entry, season):
     Each field in 'sources' records which service provided that value.
     Exposed at module level so watcher.py can call it directly.
     """
-    name        = show_entry["name"]
+    name = show_entry["name"]
     league_name = show_entry.get("league_name", name)
 
     record = {
-        "name":               name,
-        "league_name":        league_name,
-        "season":             season,
-        "scraped_on":         date.today().isoformat(),
-        "opening_date":       None,
-        "closing_date":       None,
-        "composer":           None,
-        "lyricist":           None,
-        "tony_nominations":   0,
-        "tony_wins":          0,
-        "wikipedia_url":      None,
-        "wikipedia_summary":  None,
-        "image_url":          None,
-        "wikidata_id":        None,
-        "ibdb_url":           None,
-        "sources":            {},
+        "name": name,
+        "league_name": league_name,
+        "season": season,
+        "scraped_on": date.today().isoformat(),
+        "opening_date": None,
+        "closing_date": None,
+        "composer": None,
+        "lyricist": None,
+        "tony_nominations": 0,
+        "tony_wins": 0,
+        "wikipedia_url": None,
+        "wikipedia_summary": None,
+        "image_url": None,
+        "wikidata_id": None,
+        "ibdb_url": None,
+        "sources": {},
     }
 
-    # ── Wikidata ──────────────────────────────────────────────────────────────
+    # ── Wikidata ────────────────────────────────────────────────────────────
     wd = query_wikidata(name)
-    _sleep(3)
+    time.sleep(3)
 
     if wd:
         wd_source = "Wikidata"
@@ -805,27 +838,34 @@ def enrich_show(show_entry, season):
             if wd.get(field):
                 record[field] = wd[field]
                 record["sources"][field] = wd_source
-        print(f"  Wikidata: opened {wd.get('opening_date','?')} | composer: {wd.get('composer','?')}")
+        print(
+            f"  Wikidata: opened {
+                wd.get(
+                    'opening_date',
+                    '?')} | composer: {
+                wd.get(
+                    'composer',
+                    '?')}")
 
         noms, wins = query_tony_awards(wd.get("wikidata_id"))
         if noms or wins:
             record["tony_nominations"] = noms
-            record["tony_wins"]        = wins
+            record["tony_wins"] = wins
             record["sources"]["tony_nominations"] = wd_source
-            record["sources"]["tony_wins"]        = wd_source
+            record["sources"]["tony_wins"] = wd_source
         print(f"  Tonys (Wikidata): {wins} wins / {noms} nominations")
-        _sleep(3)
+        time.sleep(3)
 
         summary = query_wikipedia(wd.get("wikipedia_url"))
         if summary:
             record["wikipedia_summary"] = summary
             record["sources"]["wikipedia_summary"] = "Wikipedia"
             print(f"  Wikipedia: {summary[:80]}...")
-        _sleep(1)
+        time.sleep(1)
     else:
         print(f"  No Wikidata match — trying DBpedia...")
         db = query_dbpedia(name)
-        _sleep(2)
+        time.sleep(2)
         if db:
             for field in ("composer", "lyricist", "opening_date", "image_url"):
                 if db.get(field) and not record[field]:
@@ -836,13 +876,13 @@ def enrich_show(show_entry, season):
                 record["sources"]["wikipedia_summary"] = "DBpedia"
             if db.get("tony_nominations") and not record["tony_nominations"]:
                 record["tony_nominations"] = db["tony_nominations"]
-                record["tony_wins"]        = db["tony_wins"]
+                record["tony_wins"] = db["tony_wins"]
                 record["sources"]["tony_nominations"] = "DBpedia"
-                record["sources"]["tony_wins"]        = "DBpedia"
+                record["sources"]["tony_wins"] = "DBpedia"
 
     # ── IBDB ─────────────────────────────────────────────────────────────────
     ibdb = scrape_ibdb(name)
-    _sleep(2)
+    time.sleep(2)
 
     if ibdb:
         if ibdb.get("ibdb_url"):
@@ -854,20 +894,22 @@ def enrich_show(show_entry, season):
             record["opening_date"] = ibdb["opening_date_ibdb"]
             record["sources"]["opening_date"] = "IBDB"
 
-        # IBDB Tony counts: use if Wikidata returned nothing or as a cross-check
+        # IBDB Tony counts: use if Wikidata returned nothing or as a
+        # cross-check
         ibdb_noms = ibdb.get("tony_nominations_ibdb", 0)
         ibdb_wins = ibdb.get("tony_wins_ibdb", 0)
         if ibdb_noms and not record["tony_nominations"]:
             record["tony_nominations"] = ibdb_noms
-            record["tony_wins"]        = ibdb_wins
+            record["tony_wins"] = ibdb_wins
             record["sources"]["tony_nominations"] = "IBDB"
-            record["sources"]["tony_wins"]        = "IBDB"
-            print(f"  Tonys (IBDB): ~{ibdb_wins} wins / ~{ibdb_noms} nominations")
+            record["sources"]["tony_wins"] = "IBDB"
+            print(
+                f"  Tonys (IBDB): ~{ibdb_wins} wins / ~{ibdb_noms} nominations")
 
     return record
 
 
-# ── MAIN ──────────────────────────────────────────────────────────────────────
+# ── MAIN ────────────────────────────────────────────────────────────────
 def all_seasons():
     """Return all season IDs from seasons.json, sorted newest first."""
     if SEASONS_IN.exists():
@@ -878,26 +920,11 @@ def all_seasons():
 
 
 def main():
-    # --season X -> single season; default -> all seasons in seasons.json
-    # --force    -> refresh even if cached recently
-    # --stale-days N -> refresh records older than N days, default 30
-    # --show NAME -> scrape a single show by display name for debugging
-    force = "--force" in sys.argv
-    stale_days = 30
-    if "--stale-days" in sys.argv:
-        idx = sys.argv.index("--stale-days")
-        if idx + 1 < len(sys.argv):
-            stale_days = int(sys.argv[idx + 1])
-
-    only_show = None
-    if "--show" in sys.argv:
-        idx = sys.argv.index("--show")
-        if idx + 1 < len(sys.argv):
-            only_show = sys.argv[idx + 1].strip().lower()
-
+    # --season X  → single season; default → all seasons in seasons.json
     if "--season" in sys.argv:
         idx = sys.argv.index("--season")
-        seasons_to_scrape = [sys.argv[idx + 1]] if idx + 1 < len(sys.argv) else [current_season()]
+        seasons_to_scrape = [sys.argv[idx + 1]] if idx + \
+            1 < len(sys.argv) else [current_season()]
     else:
         seasons_to_scrape = all_seasons()
 
@@ -911,7 +938,8 @@ def main():
             existing = {s["name"]: s for s in json.load(f)}
         print(f"Loaded {len(existing)} existing records from shows.json")
 
-    # Collect unique shows across all target seasons (newest season wins on dupe)
+    # Collect unique shows across all target seasons (newest season wins on
+    # dupe)
     seen_names = {}
     for season in seasons_to_scrape:
         for entry in load_season_shows(season):
@@ -920,36 +948,29 @@ def main():
                 seen_names[name] = (entry, season)
 
     all_entries = list(seen_names.values())
-    if only_show:
-        all_entries = [(entry, season) for entry, season in all_entries if entry.get("name", "").strip().lower() == only_show]
     print(f"Total unique shows across all seasons: {len(all_entries)}")
-    if only_show and not all_entries:
-        print(f"No matching show found for --show '{only_show}'")
-        return
 
-    # Preserve existing records that are outside the current scrape target.
-    # This prevents --season or --show debug runs from accidentally shrinking shows.json.
-    results_by_name = dict(existing)
+    results = []
     for i, (entry, season) in enumerate(all_entries, 1):
         name = entry["name"]
-        print(f"\n[{i}/{len(all_entries)}] {name}  (season: {season}, league: {entry.get('league_name', name)})")
+        print(
+            f"\n[{i}/{
+                len(all_entries)}] {name}  (season: {season}, league: {
+                entry.get(
+                    'league_name',
+                    name)})")
 
         if name in existing:
             rec = existing[name]
             scraped_on = rec.get("scraped_on", "")
-            if scraped_on and not force:
-                try:
-                    age = (date.today() - date.fromisoformat(scraped_on)).days
-                except ValueError:
-                    age = stale_days + 1
-                if age < stale_days:
-                    print(f"  Skipping - cached {age} days ago")
-                    results_by_name[name] = rec
+            if scraped_on:
+                age = (date.today() - date.fromisoformat(scraped_on)).days
+                if age < 30:
+                    print(f"  Skipping — cached {age} days ago")
+                    results.append(rec)
                     continue
 
-        results_by_name[name] = enrich_show(entry, season)
-
-    results = [results_by_name[k] for k in sorted(results_by_name)]
+        results.append(enrich_show(entry, season))
 
     DATA_OUT.parent.mkdir(parents=True, exist_ok=True)
     with open(DATA_OUT, "w", encoding="utf-8") as f:
@@ -958,10 +979,10 @@ def main():
     print(f"\n{'=' * 60}")
     print(f"Done. Wrote {len(results)} records to {DATA_OUT}")
 
-    matched   = sum(1 for r in results if r["wikidata_id"])
+    matched = sum(1 for r in results if r["wikidata_id"])
     with_tony = sum(1 for r in results if r["tony_nominations"] > 0)
     with_wiki = sum(1 for r in results if r["wikipedia_summary"])
-    with_img  = sum(1 for r in results if r["image_url"])
+    with_img = sum(1 for r in results if r["image_url"])
     print(f"  Wikidata matches:    {matched}/{len(results)}")
     print(f"  Tony data:           {with_tony}/{len(results)}")
     print(f"  Wikipedia summaries: {with_wiki}/{len(results)}")
