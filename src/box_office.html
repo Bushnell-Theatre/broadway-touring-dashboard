@@ -1896,7 +1896,14 @@
         var _records = []; // all data.json records
         var _seasons = {}; // seasons.json keyed by season label
         var _factsheets = {}; // factsheets.json keyed by show display name
-        var _activeSeason = '2025-2026';
+        /* Season starts July 1 — July+ means we're already in the next season */
+        function defaultSeason() {
+          var now = new Date();
+          var year = now.getFullYear();
+          var month = now.getMonth() + 1; // 1–12
+          return month >= 7 ? year + '-' + (year + 1) : (year - 1) + '-' + year;
+        }
+        var _activeSeason = defaultSeason();
         var _selectedShow = null; // { leagueName, displayName, sub, open, close }
         var _peer = 'size';
         var _equity = 'all';
@@ -2166,7 +2173,7 @@
           _selectedShow = null;
           _peer = 'size';
           _equity = 'all';
-          _activeSeason = '2025-2026';
+          _activeSeason = defaultSeason();
           _scenarioRan = false;
           _performances = [];
           document.querySelectorAll('[data-peer]').forEach(function (b) {
@@ -2176,9 +2183,9 @@
             b.classList.toggle('active', b.dataset.equity === 'all');
           });
           document.querySelectorAll('[data-season]').forEach(function (b) {
-            b.classList.toggle('active', b.dataset.season === '2025-2026');
+            b.classList.toggle('active', b.dataset.season === _activeSeason);
           });
-          renderShowList('2025-2026');
+          renderShowList(_activeSeason);
           resetMainPanel();
           resetKPIs();
           renderPerfCardGrid();
