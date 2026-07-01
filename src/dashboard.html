@@ -2778,7 +2778,8 @@
         // Render season pills dynamically
         const pillContainer = document.getElementById('seasonPills');
         if (pillContainer) {
-          const defaultSeason = '2025-2026';
+          const now = new Date(), yr = now.getFullYear(), mo = now.getMonth() + 1;
+          const defaultSeason = mo >= 7 ? `${yr}-${yr + 1}` : `${yr - 1}-${yr}`;
           pillContainer.innerHTML =
             `<button class="pill" data-season="" onclick="setSeasonFilter('')" aria-label="All seasons">All</button>` +
             SEASONS.map((s) => {
@@ -3047,12 +3048,14 @@
         document.getElementById('fDateFrom').value = '';
         document.getElementById('fDateTo').value = '';
         window._DATE_RANGE = null;
-        // Reset to default season (2025-2026)
+        // Reset to default season (dynamic — July 1 fiscal year)
+        const _rNow = new Date(), _rYr = _rNow.getFullYear(), _rMo = _rNow.getMonth() + 1;
+        const _rDef = _rMo >= 7 ? `${_rYr}-${_rYr + 1}` : `${_rYr - 1}-${_rYr}`;
         ACTIVE_SEASONS.clear();
-        ACTIVE_SEASONS.add('2025-2026');
+        ACTIVE_SEASONS.add(_rDef);
         document
           .querySelectorAll('[data-season]')
-          .forEach((b) => b.classList.toggle('active', b.dataset.season === '2025-2026'));
+          .forEach((b) => b.classList.toggle('active', b.dataset.season === _rDef));
         filterShowList();
         setTier(null, '');
         setSub(null, '');

@@ -1500,7 +1500,7 @@
       let ALL = [],
         FILTERED = [],
         STATE = {
-          season: '2025-2026',
+          season: (function(){ var n=new Date(),y=n.getFullYear(),m=n.getMonth()+1; return m>=7?y+'-'+(y+1):(y-1)+'-'+y; })(),
           tab: 'brief',
         },
         CHARTS = {},
@@ -1794,7 +1794,7 @@
 
       function resetAll() {
         STATE = {
-          season: '2025-2026',
+          season: (function(){ var n=new Date(),y=n.getFullYear(),m=n.getMonth()+1; return m>=7?y+'-'+(y+1):(y-1)+'-'+y; })(),
           tab: 'brief',
         };
         ACTIVE_TIER = '';

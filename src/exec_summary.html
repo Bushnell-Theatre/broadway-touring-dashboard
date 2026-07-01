@@ -2635,7 +2635,7 @@
       };
       let ALL = [],
         CHARTS = {},
-        ACTIVE_SEASON = '2025-2026',
+        ACTIVE_SEASON = (function(){ var n=new Date(),y=n.getFullYear(),m=n.getMonth()+1; return m>=7?y+'-'+(y+1):(y-1)+'-'+y; })(),
         CONTEXT = {},
         SCORE_MED = 65; // PEER_META → window.PEER_META from utils.js
       let _factsheets = {};
