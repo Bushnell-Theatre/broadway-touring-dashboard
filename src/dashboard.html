@@ -1439,6 +1439,7 @@
         <a class="btn btn-outline" href="index.html">⌂ Hub</a>
         <a class="btn btn-outline" href="programming.html">Programming</a>
         <a class="btn btn-outline" href="exec_summary.html">Exec Summary</a>
+        <a class="btn btn-outline" href="box_office.html">Box Office</a>
         <button class="btn btn-outline" onclick="clearAllData()" aria-label="Reload data from source">↺ Reset</button>
         <button class="btn btn-outline" id="printBtn" onclick="printDashboard()" aria-label="Print dashboard">
           ⎙ Print
@@ -2778,7 +2779,8 @@
         // Render season pills dynamically
         const pillContainer = document.getElementById('seasonPills');
         if (pillContainer) {
-          const defaultSeason = '2025-2026';
+          const now = new Date(), yr = now.getFullYear(), mo = now.getMonth() + 1;
+          const defaultSeason = mo >= 7 ? `${yr}-${yr + 1}` : `${yr - 1}-${yr}`;
           pillContainer.innerHTML =
             `<button class="pill" data-season="" onclick="setSeasonFilter('')" aria-label="All seasons">All</button>` +
             SEASONS.map((s) => {
@@ -3047,12 +3049,14 @@
         document.getElementById('fDateFrom').value = '';
         document.getElementById('fDateTo').value = '';
         window._DATE_RANGE = null;
-        // Reset to default season (2025-2026)
+        // Reset to default season (dynamic — July 1 fiscal year)
+        const _rNow = new Date(), _rYr = _rNow.getFullYear(), _rMo = _rNow.getMonth() + 1;
+        const _rDef = _rMo >= 7 ? `${_rYr}-${_rYr + 1}` : `${_rYr - 1}-${_rYr}`;
         ACTIVE_SEASONS.clear();
-        ACTIVE_SEASONS.add('2025-2026');
+        ACTIVE_SEASONS.add(_rDef);
         document
           .querySelectorAll('[data-season]')
-          .forEach((b) => b.classList.toggle('active', b.dataset.season === '2025-2026'));
+          .forEach((b) => b.classList.toggle('active', b.dataset.season === _rDef));
         filterShowList();
         setTier(null, '');
         setSub(null, '');
@@ -5331,5 +5335,14 @@ async function processFile(file) {
         Build date: June 24, 2026
       </div>
     </footer>
+  <!-- Mobile Warning Modal -->
+  <div id="mobileWarningModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+    <div style="background:#fff;border-radius:8px;padding:2rem;max-width:380px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.3);">
+      <h2 style="margin:0 0 .75rem;font-size:1.25rem;">Desktop Recommended</h2>
+      <p style="margin:0 0 1.25rem;color:#555;line-height:1.5;">This tool is designed for desktop or laptop use. The layout may not display correctly on smaller screens.</p>
+      <button onclick="document.getElementById('mobileWarningModal').style.display='none'" style="padding:.5rem 1.5rem;border:1px solid #ccc;border-radius:4px;background:#fff;cursor:pointer;font-size:.95rem;">Continue Anyway</button>
+    </div>
+  </div>
+  <script>(function(){if(window.innerWidth<768){document.getElementById('mobileWarningModal').style.display='flex';}}());</script>
   </body>
 </html>
