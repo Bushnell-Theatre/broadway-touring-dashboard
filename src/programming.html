@@ -595,6 +595,10 @@
       .small-canvas {
         height: 180px !important;
       }
+      /* ── Radar chart — sized to let diamond fill the card ── */
+      #cCurrent {
+        height: 520px !important;
+      }
       .rank-list {
         display: grid;
         gap: 8px;
@@ -893,6 +897,7 @@
         <a class="btn btn-outline" href="index.html">⌂ Hub</a>
         <a class="btn btn-outline" href="dashboard.html">Dashboard</a>
         <a class="btn btn-outline" href="exec_summary.html">Exec Summary</a>
+        <a class="btn btn-outline" href="box_office.html">Box Office</a>
         <button class="btn btn-outline" onclick="resetAll()">↺ Reset</button>
         <button class="btn btn-outline" onclick="window.print()">⎙ Print</button>
       </div>
@@ -2020,12 +2025,12 @@
         CURRENT_PROFILES = profiles;
         const shows = season.shows.map((s) => s.title);
         $('tab-season').innerHTML =
-          `<div class="section-divider"><h2>Season Performance</h2><div class="section-divider-line"></div><div class="section-divider-meta">Show scorecards · ${season.name}</div></div><div class="grid grid-4">${profiles.map((p, i) => showCard(p, i === 0, i)).join('')}</div><div class="grid grid-2" style="margin-top:18px"><div class="card"><div class="card-hd">Selected Show Detail</div><div id="currentDetail"></div></div><div class="card"><div class="card-hd">Season Comparison</div><canvas id="cCurrent"></canvas></div></div><div class="section-divider" style="margin-top:28px"><h2>Show Intel</h2><div class="section-divider-line"></div><div class="section-divider-meta">Production history and buzz for ${season.name}</div></div><div class="explainer"><p><strong>Purpose:</strong> this section surfaces Broadway production history, Tony recognition, and critical context for current season shows. Use it to normalize fit scoring against show-level factors that raw capacity data cannot capture — a new tour, a major revival, or a Tony sweep all affect demand in ways the feed alone will not explain.</p></div><div class="grid grid-2"><div class="card full"><div class="card-hd">Current Season Show Metadata</div><table class="mini-table"><thead><tr><th>Show</th><th>Opened</th><th class="num">Tony Wins</th><th class="num">Nominations</th><th>Composer</th><th>Notes</th></tr></thead><tbody id="intelTableBody"><tr><td colspan="6" class="empty">Loading show metadata...</td></tr></tbody></table></div><div class="card"><div class="card-hd">Selected Show</div><div id="intelDetail"><div class="empty">Select a show from the table above.</div></div></div><div class="card"><div class="card-hd">Tony Recognition</div><canvas id="cIntelTony" class="small-canvas"></canvas></div></div>`;
+          `<div class="section-divider"><h2>Season Performance</h2><div class="section-divider-line"></div><div class="section-divider-meta">Show scorecards · ${season.name}</div></div><div class="grid grid-4">${profiles.map((p, i) => showCard(p, i === 0, i)).join('')}</div><div class="grid grid-2" style="margin-top:18px;align-items:start"><div class="card"><div class="card-hd">Selected Show Detail</div><div id="currentDetail"></div></div><div class="card"><div class="card-hd">Signal Breakdown</div><canvas id="cCurrent"></canvas></div></div><div class="section-divider" style="margin-top:28px"><h2>Show Intel</h2><div class="section-divider-line"></div><div class="section-divider-meta">Production history and buzz for ${season.name}</div></div><div class="explainer"><p><strong>Purpose:</strong> this section surfaces Broadway production history, Tony recognition, and critical context for current season shows. Use it to normalize fit scoring against show-level factors that raw capacity data cannot capture — a new tour, a major revival, or a Tony sweep all affect demand in ways the feed alone will not explain.</p></div><div class="grid grid-2"><div class="card full"><div class="card-hd">Current Season Show Metadata</div><table class="mini-table"><thead><tr><th>Show</th><th>Opened</th><th class="num">Tony Wins</th><th class="num">Nominations</th><th>Composer</th><th>Notes</th></tr></thead><tbody id="intelTableBody"><tr><td colspan="6" class="empty">Loading show metadata...</td></tr></tbody></table></div><div class="card"><div class="card-hd">Selected Show</div><div id="intelDetail"><div class="empty">Select a show from the table above.</div></div></div><div class="card"><div class="card-hd">Tony Recognition</div><canvas id="cIntelTony" class="small-canvas"></canvas></div></div>`;
         document
           .querySelectorAll('.show-card')
           .forEach((c) => c.addEventListener('click', () => selectCurrent(+c.dataset.idx)));
         selectCurrent(0);
-        chartFit(profiles, 'cCurrent');
+        requestAnimationFrame(() => chartRadar(profiles[0], 'cCurrent'));
         loadShowIntel(shows);
       }
 
@@ -2039,6 +2044,7 @@
         document.querySelectorAll('.show-card').forEach((c, i) => c.classList.toggle('active', i === idx));
         const p = CURRENT_PROFILES[idx] || CURRENT_PROFILES[0];
         $('currentDetail').innerHTML = p ? detailHtml(p) : '<div class="empty">No current show data.</div>';
+        chartRadar(p, 'cCurrent');
       }
 
       function detailHtml(p) {
@@ -2389,6 +2395,181 @@
             )
             .join('') || '<div class="empty">No matching records.</div>'
         );
+      }
+
+      function chartRadar(profile, id) {
+        destroy(id);
+        const canvas = $(id);
+        if (!canvas || !profile) return;
+        const ctx = canvas.getContext('2d');
+        // Read CSS-determined dimensions — CSS forces #cCurrent height to 520px
+        const W = canvas.offsetWidth || 500;
+        const H = canvas.offsetHeight || 520;
+        canvas.width = W;
+        canvas.height = H;
+        const cx = W / 2, cy = H / 2;
+        // Derive max safe r from both axes so the diamond fills the card.
+        // Bottom clearance: labelOffset(r*0.275) + lineGap(22) + valSize/2(10) + legend(14) + gap(8) = 54px.
+        // So: r*1.275 < H/2-54  →  rVert = (H/2-54)/1.275
+        // Horizontal only needs label text overflow (~50px).
+        const rVert  = (H / 2 - 54) / 1.275;
+        const rHoriz = (W / 2 - 50) / 1.275;
+        const r = Math.floor(Math.min(rVert, rHoriz));
+        // Geometric scale for strokes and offsets; font sizes are capped independently.
+        const s = r / 80;
+        const AXES = ['Demand', 'Revenue', 'Peer', 'Confidence'];
+        const n = 4;
+        const angles = Array.from({ length: n }, (_, i) => (i / n) * Math.PI * 2 - Math.PI / 2);
+
+        function profileVals(p) {
+          const m = p.metrics;
+          const confMap = { High: 100, Medium: 67, Low: 33, None: 0 };
+          return [
+            m.cap != null ? Math.min(m.cap, 100) : null,
+            m.gg != null ? Math.min(m.gg, 100) : null,
+            m.peerCap != null ? Math.min(m.peerCap, 100) : null,
+            confMap[confidenceLabel(p)] ?? 0,
+          ];
+        }
+
+        const vals = profileVals(profile);
+        const avgVals = [0, 1, 2, 3].map((i) => {
+          const known = (CURRENT_PROFILES || []).map(profileVals).filter((v) => v[i] !== null);
+          return known.length ? known.reduce((acc, v) => acc + v[i], 0) / known.length : 0;
+        });
+
+        // Background rings
+        [0.25, 0.5, 0.75, 1].forEach((lvl) => {
+          ctx.beginPath();
+          angles.forEach((a, i) => {
+            const x = cx + Math.cos(a) * r * lvl, y = cy + Math.sin(a) * r * lvl;
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+          });
+          ctx.closePath();
+          ctx.strokeStyle = 'rgba(0,56,101,.10)';
+          ctx.lineWidth = s;
+          ctx.stroke();
+        });
+
+        // Axis spokes
+        angles.forEach((a) => {
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
+          ctx.strokeStyle = 'rgba(0,56,101,.12)';
+          ctx.lineWidth = s;
+          ctx.stroke();
+        });
+
+        // Season average polygon
+        ctx.beginPath();
+        angles.forEach((a, i) => {
+          const v = (avgVals[i] || 0) / 100;
+          const x = cx + Math.cos(a) * r * v, y = cy + Math.sin(a) * r * v;
+          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        });
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(0,56,101,.07)';
+        ctx.fill();
+        ctx.setLineDash([4 * s, 3 * s]);
+        ctx.strokeStyle = 'rgba(0,56,101,.28)';
+        ctx.lineWidth = 1.5 * s;
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Show polygon
+        ctx.beginPath();
+        angles.forEach((a, i) => {
+          const v = (vals[i] !== null ? vals[i] : 0) / 100;
+          const x = cx + Math.cos(a) * r * v, y = cy + Math.sin(a) * r * v;
+          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        });
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(217,123,26,.14)';
+        ctx.fill();
+        ctx.strokeStyle = '#d97b1a';
+        ctx.lineWidth = 2.5 * s;
+        ctx.stroke();
+
+        // Vertex dots
+        angles.forEach((a, i) => {
+          const v = (vals[i] !== null ? vals[i] : 0) / 100;
+          const x = cx + Math.cos(a) * r * v, y = cy + Math.sin(a) * r * v;
+          ctx.beginPath();
+          ctx.arc(x, y, 4 * s, 0, Math.PI * 2);
+          ctx.fillStyle = vals[i] !== null ? '#d97b1a' : 'rgba(0,56,101,.25)';
+          ctx.fill();
+          ctx.strokeStyle = 'white';
+          ctx.lineWidth = 1.5 * s;
+          ctx.stroke();
+        });
+
+        // Axis labels + metric values — font sizes capped; lineGap derived from fontSize (not s)
+        const labelOffset = 22 * s;
+        const fontSize    = Math.round(Math.min(18, Math.max(12, r * 0.12)));
+        const valSize     = Math.round(fontSize * 1.1);
+        // lineGap is the half-distance between axis name center and value center.
+        // Must be > (fontSize + valSize) / 2 so the two text lines don't overlap.
+        const lineGap     = Math.round((fontSize + valSize) / 2 + 3);
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        angles.forEach((a, i) => {
+          const lx = cx + Math.cos(a) * (r + labelOffset);
+          const ly = cy + Math.sin(a) * (r + labelOffset);
+          ctx.fillStyle = '#6b7a8d';
+          ctx.font = `${fontSize}px system-ui, sans-serif`;
+          ctx.fillText(AXES[i], lx, ly - lineGap);
+          const lbl = vals[i] !== null ? Math.round(vals[i]) + (i < 3 ? '%' : '') : '—';
+          ctx.fillStyle = vals[i] !== null ? '#d97b1a' : 'rgba(0,56,101,.35)';
+          ctx.font = `700 ${valSize}px system-ui, sans-serif`;
+          ctx.fillText(lbl, lx, ly + lineGap);
+        });
+
+        // Center score
+        ctx.fillStyle = '#003865';
+        ctx.font = `700 ${Math.round(Math.min(36, Math.max(18, r * 0.2)))}px system-ui, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(profile.score, cx, cy - 9 * s);
+        ctx.fillStyle = '#6b7a8d';
+        ctx.font = `${fontSize}px system-ui, sans-serif`;
+        ctx.fillText('fit score', cx, cy + 9 * s);
+
+        // Legend — fixed pixel sizes so text never overruns at any canvas width
+        const legY    = H - 12;
+        const legFs   = 11;   // fixed, not s-scaled
+        const legLine = 14;   // swatch line length
+        const legGap  = 6;    // gap between swatch line and text
+        const legSep  = 18;   // gap between the two legend items
+        // Approximate text widths at 11px: "Season avg"≈63px, "Selected"≈46px
+        const item1W  = legLine + legGap + 63;
+        const item2W  = legLine + legGap + 46;
+        const startX  = Math.round(cx - (item1W + legSep + item2W) / 2);
+
+        ctx.textAlign    = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.font         = `${legFs}px system-ui, sans-serif`;
+
+        ctx.setLineDash([3, 2]);
+        ctx.strokeStyle = 'rgba(0,56,101,.40)';
+        ctx.lineWidth   = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(startX, legY);
+        ctx.lineTo(startX + legLine, legY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#8a9ab0';
+        ctx.fillText('Season avg', startX + legLine + legGap, legY);
+
+        const x2 = startX + item1W + legSep;
+        ctx.strokeStyle = '#d97b1a';
+        ctx.lineWidth   = 2;
+        ctx.beginPath();
+        ctx.moveTo(x2, legY);
+        ctx.lineTo(x2 + legLine, legY);
+        ctx.stroke();
+        ctx.fillStyle = '#8a9ab0';
+        ctx.fillText('Selected', x2 + legLine + legGap, legY);
       }
 
       function chartFit(profiles, id) {
@@ -2897,5 +3078,14 @@
 
       loadData();
     </script>
+  <!-- Mobile Warning Modal -->
+  <div id="mobileWarningModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+    <div style="background:#fff;border-radius:8px;padding:2rem;max-width:380px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.3);">
+      <h2 style="margin:0 0 .75rem;font-size:1.25rem;">Desktop Recommended</h2>
+      <p style="margin:0 0 1.25rem;color:#555;line-height:1.5;">This tool is designed for desktop or laptop use. The layout may not display correctly on smaller screens.</p>
+      <button onclick="document.getElementById('mobileWarningModal').style.display='none'" style="padding:.5rem 1.5rem;border:1px solid #ccc;border-radius:4px;background:#fff;cursor:pointer;font-size:.95rem;">Continue Anyway</button>
+    </div>
+  </div>
+  <script>(function(){if(window.innerWidth<768){document.getElementById('mobileWarningModal').style.display='flex';}}());</script>
   </body>
 </html>

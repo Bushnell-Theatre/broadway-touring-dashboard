@@ -1909,6 +1909,7 @@
         <a class="btn btn-outline" href="index.html">⌂ Hub</a>
         <a class="btn btn-outline" href="dashboard.html">Dashboard</a>
         <a class="btn btn-outline" href="programming.html">Programming</a>
+        <a class="btn btn-outline" href="box_office.html">Box Office</a>
         <button class="btn btn-outline" onclick="location.reload()">↺ Reload</button>
       </div>
     </header>
@@ -4195,5 +4196,14 @@
       Chart.defaults.font.size = 10;
       loadData();
     </script>
+  <!-- Mobile Warning Modal -->
+  <div id="mobileWarningModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+    <div style="background:#fff;border-radius:8px;padding:2rem;max-width:380px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.3);">
+      <h2 style="margin:0 0 .75rem;font-size:1.25rem;">Desktop Recommended</h2>
+      <p style="margin:0 0 1.25rem;color:#555;line-height:1.5;">This tool is designed for desktop or laptop use. The layout may not display correctly on smaller screens.</p>
+      <button onclick="document.getElementById('mobileWarningModal').style.display='none'" style="padding:.5rem 1.5rem;border:1px solid #ccc;border-radius:4px;background:#fff;cursor:pointer;font-size:.95rem;">Continue Anyway</button>
+    </div>
+  </div>
+  <script>(function(){if(window.innerWidth<768){document.getElementById('mobileWarningModal').style.display='flex';}}());</script>
   </body>
 </html>
