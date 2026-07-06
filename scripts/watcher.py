@@ -83,7 +83,8 @@ def enrich_new_shows():
         try:
             with open(SEASONS_JSON, encoding="utf-8") as f:
                 seasons = json.load(f)
-            season_entries = seasons.get(season, [])
+            season_data    = seasons.get(season, {})
+            season_entries = season_data.get("shows", []) if isinstance(season_data, dict) else season_data
             if season_entries:
                 log.info(
                     f"Loaded {
