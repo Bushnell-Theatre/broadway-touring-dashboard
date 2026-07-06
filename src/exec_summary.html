@@ -1881,6 +1881,115 @@
         margin: 0;
         line-height: 1.55;
       }
+      /* ── Signal Card ── */
+      .signal-card {
+        margin-top: 14px;
+        border: 1px solid var(--rule);
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      .signal-header {
+        padding: 10px 14px;
+        background: var(--bg2);
+        border-bottom: 1px solid var(--rule);
+      }
+      .signal-title {
+        font-size: 0.62rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        color: var(--ink3);
+        margin-bottom: 8px;
+      }
+      .signal-composites {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .signal-composite {
+        background: #fff;
+        border: 1px solid var(--rule2);
+        border-radius: 3px;
+        padding: 8px 10px;
+      }
+      .signal-composite-label {
+        font-size: 0.52rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--ink3);
+        margin-bottom: 3px;
+      }
+      .signal-composite-score {
+        font-family: var(--serif);
+        font-size: 1.4rem;
+        font-weight: 700;
+        line-height: 1;
+      }
+      .signal-composite-sub {
+        font-size: 0.58rem;
+        color: var(--ink3);
+        margin-top: 3px;
+      }
+      .signal-components {
+        padding: 8px 14px 4px;
+      }
+      .signal-component {
+        display: grid;
+        grid-template-columns: 70px 46px 1fr 68px;
+        align-items: center;
+        gap: 7px;
+        padding: 5px 0;
+        border-bottom: 1px solid var(--rule2);
+      }
+      .signal-component:last-child {
+        border-bottom: none;
+      }
+      .signal-comp-label {
+        font-size: 0.58rem;
+        font-weight: 700;
+        color: var(--ink);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .signal-comp-metric {
+        font-size: 0.58rem;
+        color: var(--ink3);
+        text-align: right;
+        font-family: var(--mono);
+        white-space: nowrap;
+      }
+      .signal-comp-bar {
+        height: 5px;
+        background: var(--rule2);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .signal-comp-fill {
+        height: 100%;
+        background: var(--teal);
+        border-radius: 4px;
+        transition: width 0.3s;
+      }
+      .signal-comp-fill--neutral {
+        background: var(--amber);
+      }
+      .signal-comp-pcts {
+        font-size: 0.55rem;
+        color: var(--ink3);
+        white-space: nowrap;
+        text-align: right;
+      }
+      .signal-footer {
+        padding: 6px 14px;
+        background: var(--bg2);
+        border-top: 1px solid var(--rule);
+        font-size: 0.52rem;
+        color: var(--ink3);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
     </style>
   </head>
   <body>
@@ -2078,8 +2187,8 @@
     <footer class="footer">
       <div>
         THE BUSHNELL CENTER FOR THE PERFORMING ARTS · BROADWAY TOURING EXEC SUMMARY ·
-        <strong>v5.1</strong>
-        · Build date: June 24, 2026
+        <strong>v5.2</strong>
+        · Build date: July 6, 2026
       </div>
       <div id="footerMeta">Static feed</div>
     </footer>
@@ -2638,7 +2747,7 @@
         CHARTS = {},
         ACTIVE_SEASON = (function(){ var n=new Date(),y=n.getFullYear(),m=n.getMonth()+1; return m>=7?y+'-'+(y+1):(y-1)+'-'+y; })(),
         CONTEXT = {},
-        SCORE_MED = 65; // PEER_META → window.PEER_META from utils.js
+        SCORE_MED = 50; // threshold: 50th national percentile
       let _factsheets = {};
       let ACTIVE_TIER = '',
         ACTIVE_SUB = '',
@@ -2681,7 +2790,7 @@
       }
 
       function scoreLabelForMode(mode) {
-        return mode === 'past' ? 'Result Index' : mode === 'future' ? 'Fit Score' : 'Fit / Performance';
+        return mode === 'past' ? 'Result Index' : 'Nat. Signal';
       }
 
       function readLabelForMode(mode) {
@@ -2689,24 +2798,77 @@
       }
 
       function scoreCellText(p) {
-        return p.isFutureNewTour ? 'NEW' : p.score;
+        return p.isFutureNewTour ? 'NEW' : p.score != null ? p.score : '—';
       }
 
       function scoreBadge(p) {
-        const cls = p.isFutureNewTour ? 'neutral' : p.score >= SCORE_MED ? 'good' : 'warn';
+        const cls = p.isFutureNewTour ? 'neutral' : p.score == null ? 'neutral' : p.score >= SCORE_MED ? 'good' : 'warn';
         const lbl = scoreCellText(p);
-        const delta =
-          !p.isFutureNewTour && SCORE_MED != null
-            ? (p.score - Math.round(SCORE_MED) >= 0 ? '+' : '') + (p.score - Math.round(SCORE_MED)) + ' vs median'
-            : '';
+        const sub = p.isFutureNewTour || p.score == null ? '' : topPct(p.score) + ' nationally';
         return (
           '<span class="status ' +
           cls +
           '">' +
           lbl +
           '</span>' +
-          (delta ? '<div style="font-size:.52rem;color:var(--ink3);margin-top:2px">' + delta + '</div>' : '')
+          (sub ? '<div style="font-size:.52rem;color:var(--ink3);margin-top:2px">' + sub + '</div>' : '')
         );
+      }
+
+      /* ── Planning Signal Card helpers ── */
+      function topPct(pct) {
+        if (pct == null) return '—';
+        var top = 100 - pct;
+        return top <= 1 ? 'top 1%' : 'top ' + top + '%';
+      }
+
+      function scoreColor(pct) {
+        if (pct == null) return 'var(--ink3)';
+        return pct >= 75 ? 'var(--teal)' : pct >= 50 ? 'var(--amber)' : 'var(--rose)';
+      }
+
+      function renderSignalCard(p) {
+        var el = $('signalCard');
+        if (!el) return;
+        if (!p || !p.signal) { el.style.display = 'none'; return; }
+        var sig  = p.signal;
+        var nat  = sig.national;
+        var peer = sig.peer;
+        var rm   = sig.rawMetrics;
+
+        el.style.display = 'block';
+
+        $('sigNatComposite').textContent = nat.composite != null ? nat.composite : '—';
+        $('sigNatComposite').style.color = scoreColor(nat.composite);
+        $('sigNatSub').textContent = nat.composite != null ? topPct(nat.composite) + ' nationally' : 'No data';
+
+        var peerLabel = sig.activePeerType || 'size';
+        $('sigPeerLabel').textContent = 'Peer (' + peerLabel.charAt(0).toUpperCase() + peerLabel.slice(1) + ')';
+        $('sigPeerComposite').textContent = peer.composite != null ? peer.composite : '—';
+        $('sigPeerComposite').style.color = scoreColor(peer.composite);
+        $('sigPeerSub').textContent = peer.composite != null ? topPct(peer.composite) + ' peer group' : 'No peer data';
+
+        $('sigDemandMetric').textContent = rm.cap != null ? rm.cap.toFixed(1) + '%' : '—';
+        $('sigDemandFill').style.width = (nat.demand != null ? nat.demand : 0) + '%';
+        $('sigDemandNat').textContent = nat.demand != null ? nat.demand : '—';
+        $('sigDemandPeer').textContent = peer.demand != null ? peer.demand : '—';
+
+        $('sigRevenueMetric').textContent = rm.gg != null ? rm.gg.toFixed(1) + '%' : '—';
+        $('sigRevenueFill').style.width = (nat.revenue != null ? nat.revenue : 0) + '%';
+        $('sigRevenueNat').textContent = nat.revenue != null ? nat.revenue : '—';
+        $('sigRevenuePeer').textContent = peer.revenue != null ? peer.revenue : '—';
+
+        $('sigPeerFitMetric').textContent = rm.peerCap != null ? rm.peerCap.toFixed(1) + '%' : '—';
+        $('sigPeerFitFill').style.width = (nat.peerFit != null ? nat.peerFit : 0) + '%';
+        $('sigPeerFitNat').textContent = nat.peerFit != null ? nat.peerFit : '—';
+        $('sigPeerFitPeer').textContent = peer.peerFit != null ? peer.peerFit : '—';
+
+        $('sigConfMetric').textContent = nat.confidence != null ? nat.confidence : '—';
+        $('sigConfFill').style.width = (nat.confidence != null ? nat.confidence : 0) + '%';
+        $('sigConfNat').textContent = nat.confidence != null ? nat.confidence : '—';
+
+        $('sigPoolInfo').textContent =
+          'National: ' + sig.poolSizes.national + ' records · Peer: ' + sig.poolSizes.peer + ' · Matched: ' + rm.count;
       }
 
       // ── PLANNING SIGNAL MODEL ─────────────────────────────────────────────────────
@@ -2923,49 +3085,14 @@
           venues: new Set(active.map((d) => d.theatre + '|' + d.city)).size,
         };
         const isFutureNewTour = ACTIVE_SEASON === '2026-2027' && m.count === 0;
-        let score = 50;
-        const decomp = {
-          base: 50,
-          cap: 0,
-          gg: 0,
-          peer: 0,
-          depth: 0,
-          sub: 0,
-        };
-        if (isFutureNewTour) {
-          score = 65;
-        } else {
-          if (m.cap != null) {
-            decomp.cap = Math.round((m.cap - 70) * 0.45 * 10) / 10;
-            score += decomp.cap;
-          }
-          if (m.gg != null) {
-            decomp.gg = Math.round((m.gg - 75) * 0.22 * 10) / 10;
-            score += decomp.gg;
-          }
-          if (m.peerCap != null) {
-            decomp.peer = Math.round((m.peerCap - 70) * 0.22 * 10) / 10;
-            score += decomp.peer;
-          }
-          if (m.count >= 8) {
-            decomp.depth = 8;
-            score += 8;
-          } else if (m.count < 3) {
-            decomp.depth = -15;
-            score -= 15;
-          }
-          if (show.sub && m.subCap != null && m.nonSubCap != null) {
-            decomp.sub = Math.round((m.subCap - m.nonSubCap) * 0.08 * 10) / 10;
-            score += decomp.sub;
-          }
-          score = Math.max(0, Math.min(100, Math.round(score)));
-        }
+        const signal = planningSignal(rows, ALL, ACTIVE_PEER);
+        const score = signal ? signal.national.composite : null;
         return {
           show,
           rows,
           metrics: m,
+          signal,
           score,
-          decomp,
           isFutureNewTour,
         };
       }
@@ -3244,7 +3371,7 @@
         $('tab-planning').innerHTML =
           `<div class="section-divider"><h2>Future Planning</h2><div class="section-divider-line"></div><div class="section-divider-meta">${future.season.name} candidate read</div></div><div class="explainer"><p><strong>Purpose:</strong> this view is for season planning conversations. It compares next-season titles against existing tour evidence where available. New-tour titles are marked <strong>NEW</strong> when the static touring feed has no comparable historical records yet; leadership should treat those as open strategic bets, not failed scores.</p></div><div class="grid grid-3"><div class="card full"><div class="card-hd">Candidate Fit Scores</div><table class="mini-table"><thead><tr><th>Candidate</th><th>Pkg</th><th class="num">Fit</th><th class="num">Tour Cap</th><th>Demand</th><th class="num">GG%</th><th>Revenue</th><th class="num">Peer Cap</th><th class="num">Records</th><th>Confidence</th><th>Planning Read</th></tr></thead><tbody>${profiles
             .map((p) => {
-              const cls = p.isFutureNewTour ? 'neutral' : p.score >= SCORE_MED ? 'good' : 'warn';
+              const cls = p.isFutureNewTour ? 'neutral' : p.score == null ? 'neutral' : p.score >= SCORE_MED ? 'good' : 'warn';
               const scoreLabel = p.isFutureNewTour ? 'NEW' : p.score;
               return ((_fs = planningSignals(p)) =>
                 `<tr><td>${p.show.title}<br><span style="color:var(--ink3);font-size:.58rem">${dateLine(p.show)}</span></td><td>${p.show.sub ? 'Sub' : 'Add-on'}</td><td class="num"><span class="status ${cls}">${scoreLabel}</span></td><td class="num">${pct(p.metrics.cap)}</td><td>${signalBadge(_fs.demand)}</td><td class="num">${pct(p.metrics.gg)}</td><td>${signalBadge(_fs.revenue)}</td><td class="num">${pct(p.metrics.peerCap)}</td><td class="num">${p.metrics.count}</td><td>${signalBadge(_fs.confidence)}</td><td>${_fs.planningRead}</td></tr>`)();
@@ -3304,7 +3431,7 @@
         const missingFactorsHtml = `<div class="method-card full"><h3>Missing Factors — Not Yet in This Dashboard</h3><div class="grid grid-3" style="margin-top:8px"><div class="note"><div class="note-hd">Financial Deal Structure</div><div class="note-body">Guarantee · split terms / overages · estimated local expenses · labor cost · marketing spend · expected net contribution · breakeven attendance · pricing plan · presenter share · ancillary revenue</div></div><div class="note"><div class="note-hd">Local Bushnell History</div><div class="note-body">Previous Bushnell engagement · attendance · gross · subscription response · single-ticket response · group sales · patron feedback · operational issues · renewal impact · first-time buyer impact</div></div><div class="note"><div class="note-hd">Audience Segmentation</div><div class="note-body">Subscribers · single-ticket buyers · first-time buyers · lapsed buyers · group sales · students / education · donors · geographic or demographic segments</div></div><div class="note"><div class="note-hd">Competitive / Local Calendar</div><div class="note-body">Major concerts · sports events · holidays · school breaks · competing performing arts · major civic events · parking / traffic disruption · local festivals · major news or election disruptions</div></div><div class="note"><div class="note-hd">Routing and Availability</div><div class="note-body">First national tour vs. later tour · equity / non-equity · likely routing region · available weeks · minimum engagement length · technical requirements · load-in complexity · dark-week and holiday-week suitability</div></div><div class="note"><div class="note-hd">Strategic Value</div><div class="note-body">Audience development · mission fit · donor value · brand value · education / community value · season balance. Strategic judgment is kept separate from the Planning Signal and should not be blended into Demand or Revenue scores.</div></div></div></div>`;
 
         $('tab-reference').innerHTML =
-          `<div class="section-divider"><h2>Methodology &amp; Definitions</h2><div class="section-divider-line"></div><div class="section-divider-meta">How leadership should read the scoring</div></div>${dqHtml}<div class="grid grid-2">${planningSignalHtml}${meansHtml}${missingFactorsHtml}<div class="method-card"><h3>Fit Score Rubric</h3><p>The composite Fit Score (0–100) is computed from: paid capacity performance, GG% of Gross Potential performance, Bushnell-size peer performance, sample depth adjustment, and subscription lift where relevant. The score is a legacy single-number summary. The Planning Signal model provides the same signals with greater transparency.</p><div class="formula">Base score: 50<br>+ paid-capacity performance<br>+ gross-potential performance<br>+ Bushnell-size peer performance<br>+ sample-depth adjustment<br>+ subscription lift, when relevant</div><p style="margin-top:10px">Scores should start a conversation, not end one. A lower score may still be the right artistic, mission, or audience-development decision.</p></div><div class="method-card"><h3>Confidence Levels</h3><table class="mini-table"><tbody><tr><td><strong>High</strong></td><td>Many weeks, many venues, peer data available.</td></tr><tr><td><strong>Medium</strong></td><td>Enough national data, limited peer data.</td></tr><tr><td><strong>Low</strong></td><td>Sparse touring history or few comparable venues.</td></tr><tr><td><strong>Exploratory</strong></td><td>New title or little/no touring data.</td></tr></tbody></table></div><div class="method-card"><h3>What Are Peers?</h3><p>Peers are classified by type: Size (±10% of Bushnell sellable capacity, 2,450–2,994 seats), Proximity (Northeast/New England markets), Market (comparable nonprofit mid-sized city PACs), and Extended Size (±15% range). A venue may carry multiple classifications.</p><ul><li>Use peer capacity to judge likely room fit.</li><li>Use national capacity to understand overall title demand.</li><li>Use the gap between them to find Hartford-like opportunities and risks.</li></ul></div><div class="method-card full"><h3>Executive Use Guidance</h3><p>This tool is strongest when used as a common language for programming, marketing, and finance. For future seasons, a strong Planning Signal suggests a title has measurable touring support. For previous seasons, the same index should be read retrospectively: a strong result documents what worked, while a softer result asks the team what affected demand, pricing, timing, subscription positioning, or mission rationale. The dashboard should not replace leadership judgment — it should make that judgment clearer and better documented.</p></div></div><div class="section-divider" style="margin-top:28px"><h2>Help &amp; FAQ</h2><div class="section-divider-line"></div><div class="section-divider-meta">Common questions and definitions</div></div><div style="padding:0 4px">${[
+          `<div class="section-divider"><h2>Methodology &amp; Definitions</h2><div class="section-divider-line"></div><div class="section-divider-meta">How leadership should read the scoring</div></div>${dqHtml}<div class="grid grid-2">${planningSignalHtml}${meansHtml}${missingFactorsHtml}<div class="method-card"><h3>Confidence Levels</h3><table class="mini-table"><tbody><tr><td><strong>High</strong></td><td>Many weeks, many venues, peer data available.</td></tr><tr><td><strong>Medium</strong></td><td>Enough national data, limited peer data.</td></tr><tr><td><strong>Low</strong></td><td>Sparse touring history or few comparable venues.</td></tr><tr><td><strong>Exploratory</strong></td><td>New title or little/no touring data.</td></tr></tbody></table></div><div class="method-card"><h3>What Are Peers?</h3><p>Peers are classified by type: Size (±10% of Bushnell sellable capacity, 2,450–2,994 seats), Proximity (Northeast/New England markets), Market (comparable nonprofit mid-sized city PACs), and Extended Size (±15% range). A venue may carry multiple classifications.</p><ul><li>Use peer capacity to judge likely room fit.</li><li>Use national capacity to understand overall title demand.</li><li>Use the gap between them to find Hartford-like opportunities and risks.</li></ul></div><div class="method-card full"><h3>Executive Use Guidance</h3><p>This tool is strongest when used as a common language for programming, marketing, and finance. For future seasons, a strong Planning Signal suggests a title has measurable touring support. For previous seasons, the same index should be read retrospectively: a strong result documents what worked, while a softer result asks the team what affected demand, pricing, timing, subscription positioning, or mission rationale. The dashboard should not replace leadership judgment — it should make that judgment clearer and better documented.</p></div></div><div class="section-divider" style="margin-top:28px"><h2>Help &amp; FAQ</h2><div class="section-divider-line"></div><div class="section-divider-meta">Common questions and definitions</div></div><div style="padding:0 4px">${[
             section('Data Source', [
               ['Broadway League', HELP_TEXT.broadwayLeague],
               ['Report Week', HELP_TEXT.reportWeek],
@@ -3501,14 +3628,14 @@
         if (mode === 'past') {
           if (p.metrics.count === 0) return 'No matched tour records found for this title in the feed.';
           if (p.metrics.count < 3) return 'Limited historical evidence; use as directional only.';
-          if (p.score >= SCORE_MED)
+          if (p.score != null && p.score >= SCORE_MED)
             return 'Strong historical performance; this title category worked well in the tour data.';
           return 'Softer historical performance; review demand, pricing, timing, or package role.';
         }
         if (p.isFutureNewTour) return 'New tour / no history yet; potential upside, validate with comps.';
         if (p.metrics.count === 0) return 'No current match in feed.';
         if (p.metrics.count < 3) return 'Light data; validate with comparables.';
-        if (p.score >= SCORE_MED) return 'Strong fit signal.';
+        if (p.score != null && p.score >= SCORE_MED) return 'Strong fit signal.';
         return 'Watch pricing, demand, or subscription dependence.';
       }
 
@@ -3550,14 +3677,18 @@
               : 'Current programming performance';
         const scoreLabel = scoreLabelForMode(mode);
         $('tab-current').innerHTML =
-          `<div class="section-divider"><h2>${title}</h2><div class="section-divider-line"></div><div class="section-divider-meta">${season.name} · ${meta}</div></div><div class="explainer"><p><strong>${mode === 'past' ? 'Retrospective lens:' : 'Planning lens:'}</strong> ${mode === 'past' ? 'For completed seasons, the index is read as a performance result: what happened in the touring data, how strong the title looked, and what lessons it provides for future programming.' : 'For current and future seasons, the score is directional and should be paired with pricing, timing, subscription role, and local audience knowledge.'}</p></div><div class="grid grid-3">${rows.map((p) => `<div class="show-card" onclick="selectCurrent('${esc(p.show.title)}')"><div class="show-name">${p.show.title}</div><div class="card-sub" style="margin-bottom:8px">${dateLine(p.show)}</div><div class="metric-row"><div class="metric"><div class="val ${p.isFutureNewTour ? 'neutral' : p.score >= SCORE_MED ? 'good' : 'warn'}">${scoreCellText(p)}</div><div class="lbl">${scoreLabel}</div></div><div class="metric"><div class="val">${pct(p.metrics.cap, 0)}</div><div class="lbl">Demand Cap</div></div><div class="metric"><div class="val">${pct(p.metrics.gg, 0)}</div><div class="lbl">Revenue GG%</div></div></div>${((_s = planningSignals(p)) => `<div style="font-size:.52rem;color:var(--ink3);margin-top:6px">Planning Read: <strong>${_s.planningRead}</strong></div>${signalRow(_s)}`)()}<div class="card-sub" style="margin-top:6px;margin-bottom:0">${p.metrics.count} matched records · ${p.metrics.venues} venues · peer cap ${pct(p.metrics.peerCap)}</div></div>`).join('')}</div><div class="grid grid-2" style="margin-top:18px"><div class="card"><div class="card-hd">Selected Show Detail</div><div id="currentDetail">${rows[0] ? detailHtml(rows[0], mode) : '<div class="empty">No matching show records.</div>'}</div></div><div class="card"><div class="card-hd">Season Capacity Comparison</div><canvas id="cCurrentCap"></canvas></div></div>`;
+          `<div class="section-divider"><h2>${title}</h2><div class="section-divider-line"></div><div class="section-divider-meta">${season.name} · ${meta}</div></div><div class="explainer"><p><strong>${mode === 'past' ? 'Retrospective lens:' : 'Planning lens:'}</strong> ${mode === 'past' ? 'For completed seasons, the index is read as a performance result: what happened in the touring data, how strong the title looked, and what lessons it provides for future programming.' : 'For current and future seasons, the score is directional and should be paired with pricing, timing, subscription role, and local audience knowledge.'}</p></div><div class="grid grid-3">${rows.map((p) => `<div class="show-card" onclick="selectCurrent('${esc(p.show.title)}')"><div class="show-name">${p.show.title}</div><div class="card-sub" style="margin-bottom:8px">${dateLine(p.show)}</div><div class="metric-row"><div class="metric"><div class="val ${p.isFutureNewTour ? 'neutral' : p.score == null ? 'neutral' : p.score >= SCORE_MED ? 'good' : 'warn'}">${scoreCellText(p)}</div><div class="lbl">${scoreLabel}</div></div><div class="metric"><div class="val">${pct(p.metrics.cap, 0)}</div><div class="lbl">Demand Cap</div></div><div class="metric"><div class="val">${pct(p.metrics.gg, 0)}</div><div class="lbl">Revenue GG%</div></div></div>${((_s = planningSignals(p)) => `<div style="font-size:.52rem;color:var(--ink3);margin-top:6px">Planning Read: <strong>${_s.planningRead}</strong></div>${signalRow(_s)}`)()}<div class="card-sub" style="margin-top:6px;margin-bottom:0">${p.metrics.count} matched records · ${p.metrics.venues} venues · peer cap ${pct(p.metrics.peerCap)}</div></div>`).join('')}</div><div class="grid grid-2" style="margin-top:18px"><div class="card"><div class="card-hd">Selected Show Detail</div><div id="currentDetail">${rows[0] ? detailHtml(rows[0], mode) : '<div class="empty">No matching show records.</div>'}</div><div class="signal-card" id="signalCard" style="display:none"><div class="signal-header"><div class="signal-title">Planning Signal</div><div class="signal-composites"><div class="signal-composite"><div class="signal-composite-label">National (3yr)</div><div class="signal-composite-score" id="sigNatComposite">—</div><div class="signal-composite-sub" id="sigNatSub"></div></div><div class="signal-composite"><div class="signal-composite-label" id="sigPeerLabel">Peer</div><div class="signal-composite-score" id="sigPeerComposite">—</div><div class="signal-composite-sub" id="sigPeerSub"></div></div></div></div><div class="signal-components"><div class="signal-component"><div class="signal-comp-label">Demand</div><div class="signal-comp-metric" id="sigDemandMetric">—</div><div class="signal-comp-bar"><div class="signal-comp-fill" id="sigDemandFill" style="width:0%"></div></div><div class="signal-comp-pcts"><span id="sigDemandNat">—</span> / <span id="sigDemandPeer">—</span></div></div><div class="signal-component"><div class="signal-comp-label">Revenue</div><div class="signal-comp-metric" id="sigRevenueMetric">—</div><div class="signal-comp-bar"><div class="signal-comp-fill" id="sigRevenueFill" style="width:0%"></div></div><div class="signal-comp-pcts"><span id="sigRevenueNat">—</span> / <span id="sigRevenuePeer">—</span></div></div><div class="signal-component"><div class="signal-comp-label">Peer Fit</div><div class="signal-comp-metric" id="sigPeerFitMetric">—</div><div class="signal-comp-bar"><div class="signal-comp-fill" id="sigPeerFitFill" style="width:0%"></div></div><div class="signal-comp-pcts"><span id="sigPeerFitNat">—</span> / <span id="sigPeerFitPeer">—</span></div></div><div class="signal-component"><div class="signal-comp-label">Confidence</div><div class="signal-comp-metric" id="sigConfMetric">—</div><div class="signal-comp-bar"><div class="signal-comp-fill signal-comp-fill--neutral" id="sigConfFill" style="width:0%"></div></div><div class="signal-comp-pcts"><span id="sigConfNat">—</span></div></div></div><div class="signal-footer"><span>Demand 40% · Revenue 25% · Peer Fit 25% · Confidence 10%</span><span id="sigPoolInfo"></span></div></div></div><div class="card"><div class="card-hd">Season Capacity Comparison</div><canvas id="cCurrentCap"></canvas></div></div>`;
         chartCap(rows, 'cCurrentCap');
+        if (rows[0]) renderSignalCard(rows[0]);
       }
 
       function selectCurrent(title) {
         const { season, profiles } = seasonProfiles();
         const p = profiles.find((x) => x.show.title === title);
-        if (p && $('currentDetail')) $('currentDetail').innerHTML = detailHtml(p, seasonMode(season.id));
+        if (p && $('currentDetail')) {
+          $('currentDetail').innerHTML = detailHtml(p, seasonMode(season.id));
+          renderSignalCard(p);
+        }
       }
 
       function detailHtml(p, mode = seasonMode()) {
@@ -3584,51 +3715,6 @@
             vtag.charAt(0).toUpperCase() +
             vtag.slice(1) +
             '</span></div><div class="lbl">Trend</div></div>';
-        }
-        let decompHtml = '';
-        if (!p.isFutureNewTour && p.decomp) {
-          const d = p.decomp;
-          const drow = (lbl, val, note) => {
-            if (val == null || val === 0)
-              return (
-                '<tr><td>' +
-                lbl +
-                '</td><td class="num" style="color:var(--ink3)">—</td><td style="color:var(--ink3);font-size:.6rem">' +
-                note +
-                '</td></tr>'
-              );
-            const sign = val > 0 ? '+' : '';
-            const dcls = val > 0 ? 'color:var(--good)' : val < 0 ? 'color:var(--warn)' : '';
-            return (
-              '<tr><td>' +
-              lbl +
-              '</td><td class="num" style="' +
-              dcls +
-              '">' +
-              sign +
-              val +
-              '</td><td style="color:var(--ink3);font-size:.6rem">' +
-              note +
-              '</td></tr>'
-            );
-          };
-          decompHtml =
-            '<div style="margin-top:12px"><div class="card-hd" style="margin-bottom:6px">Score Breakdown</div><table class="mini-table"><tbody><tr><td>Base</td><td class="num">50</td><td style="color:var(--ink3);font-size:.6rem">starting point</td></tr>' +
-            drow('Demand (Cap)', d.cap, p.metrics.cap != null ? pct(p.metrics.cap) + ' avg paid cap' : 'no data') +
-            drow('Revenue (GG%)', d.gg, p.metrics.gg != null ? pct(p.metrics.gg) + ' GG% of potential' : 'no data') +
-            drow('Peer Fit', d.peer, p.metrics.peerCap != null ? pct(p.metrics.peerCap) + ' peer cap' : 'no data') +
-            drow('Sample Depth', d.depth, p.metrics.count + ' matched records') +
-            (p.show.sub
-              ? drow(
-                  'Sub Lift',
-                  d.sub,
-                  p.metrics.subCap != null
-                    ? pct(p.metrics.subCap) + ' sub vs ' + pct(p.metrics.nonSubCap) + ' non-sub'
-                    : 'n/a',
-                )
-              : '') +
-            `<tr style="border-top:1px solid var(--rule);font-weight:600"><td>Final Score</td><td class="num">${p.score}</td><td style="color:var(--ink3);font-size:.6rem">clamped 0–100</td></tr>` +
-            '</tbody></table></div>';
         }
         const recentCtx = recent.map((r) => ({
           r,
@@ -3729,7 +3815,7 @@
             pread +
             '</div></div>';
         }
-        return `<div class="card-title">${p.show.title}</div><div class="card-sub">Matched on "${p.show.match || p.show.title}" · ${p.show.sub ? 'subscription package' : 'non-subscription/add-on'} · ${p.metrics.count} records</div><div class="explainer"><p><strong>${mode === 'past' ? 'Historical read' : 'Planning Signal'}:</strong> ${_psig.planningRead}. ${_psig.interpretation} Confidence is <strong>${confidenceLabel(p)}</strong>: ${confidenceText(p)}</p></div>${signalRow(_psig)}<div class="metric-row"><div class="metric"><div class="val ${p.score >= SCORE_MED ? 'good' : 'warn'}">${scoreCellText(p)}</div><div class="lbl">${label}</div></div><div class="metric"><div class="val">${pct(p.metrics.cap)}</div><div class="lbl">Avg Cap</div></div><div class="metric"><div class="val">${pct(p.metrics.peerCap)}</div><div class="lbl">Peer Cap</div></div>${velocityHtml}</div><table class="mini-table" style="margin-top:14px"><thead><tr><th>${mode === 'past' ? 'Historical Markets' : 'Recent Market'}</th><th>Week</th><th class="num">Gross</th><th class="num">Cap</th></tr></thead><tbody>${recent.length ? recent.map((r) => `<tr><td>${r.theatre}<br><span style="color:var(--ink3);font-size:.58rem">${r.city}</span></td><td>${fmtDate(r.week_of)}${contextBadge(r.week_of)}</td><td class="num">${fmt$(r.gross_gross)}</td><td class="num">${pct(r.cap_paid)}</td></tr>`).join('') : '<tr><td colspan="4" class="empty">No active tour records found.</td></tr>'}</tbody></table>${salesWindowHtml}${decompHtml}${headwindHtml}${(() => {
+        return `<div class="card-title">${p.show.title}</div><div class="card-sub">Matched on "${p.show.match || p.show.title}" · ${p.show.sub ? 'subscription package' : 'non-subscription/add-on'} · ${p.metrics.count} records</div><div class="explainer"><p><strong>${mode === 'past' ? 'Historical read' : 'Planning Signal'}:</strong> ${_psig.planningRead}. ${_psig.interpretation} Confidence is <strong>${confidenceLabel(p)}</strong>: ${confidenceText(p)}</p></div>${signalRow(_psig)}<div class="metric-row"><div class="metric"><div class="val ${p.score != null && p.score >= SCORE_MED ? 'good' : 'warn'}">${scoreCellText(p)}</div><div class="lbl">${label}</div></div><div class="metric"><div class="val">${pct(p.metrics.cap)}</div><div class="lbl">Avg Cap</div></div><div class="metric"><div class="val">${pct(p.metrics.peerCap)}</div><div class="lbl">Peer Cap</div></div>${velocityHtml}</div><table class="mini-table" style="margin-top:14px"><thead><tr><th>${mode === 'past' ? 'Historical Markets' : 'Recent Market'}</th><th>Week</th><th class="num">Gross</th><th class="num">Cap</th></tr></thead><tbody>${recent.length ? recent.map((r) => `<tr><td>${r.theatre}<br><span style="color:var(--ink3);font-size:.58rem">${r.city}</span></td><td>${fmtDate(r.week_of)}${contextBadge(r.week_of)}</td><td class="num">${fmt$(r.gross_gross)}</td><td class="num">${pct(r.cap_paid)}</td></tr>`).join('') : '<tr><td colspan="4" class="empty">No active tour records found.</td></tr>'}</tbody></table>${salesWindowHtml}${headwindHtml}${(() => {
           // Revenue Questions section
           const _m = p.metrics;
           if (p.isFutureNewTour || _m.count < 2) return '';
@@ -3816,8 +3902,8 @@
           .slice(0, 30);
         const seasonAvgCap = avg(seasonRows.map((p) => p.metrics.cap));
         const seasonAvgGross = avg(seasonRows.map((p) => p.metrics.gross));
-        const strong = seasonRows.filter((p) => p.score >= SCORE_MED).length;
-        const watch = seasonRows.filter((p) => p.score < SCORE_MED && p.metrics.count > 0).length;
+        const strong = seasonRows.filter((p) => p.score != null && p.score >= SCORE_MED).length;
+        const watch = seasonRows.filter((p) => p.score != null && p.score < SCORE_MED && p.metrics.count > 0).length;
         $('tab-history').innerHTML =
           `<div class="section-divider"><h2>Show History</h2><div class="section-divider-line"></div><div class="section-divider-meta">Retrospective read: how did we do?</div></div><div class="explainer"><p><strong>Purpose:</strong> previous seasons are shown as completed performance reviews, not forecasts. The result index uses the same demand, revenue, peer, and sample-depth signals, but the interpretation is retrospective: what worked, what lagged, and what should inform future booking and marketing decisions.</p></div><div class="grid grid-4"><div class="kpi-card"><div class="kpi-label">Reviewed Season</div><div class="kpi-value">${selected ? selected.id.slice(2, 4) + '-' + selected.id.slice(7, 9) : '—'}</div><div class="kpi-note">selected season lens</div></div><div class="kpi-card"><div class="kpi-label">Avg Capacity</div><div class="kpi-value">${pct(seasonAvgCap, 0)}</div><div class="kpi-note">season slate actuals</div></div><div class="kpi-card"><div class="kpi-label">Avg Gross</div><div class="kpi-value">${fmt$(seasonAvgGross)}</div><div class="kpi-note">matched touring records</div></div><div class="kpi-card"><div class="kpi-label">Strong / Watch</div><div class="kpi-value">${strong} / ${watch}</div><div class="kpi-note">performance result bands</div></div></div><div class="grid grid-2" style="margin-top:18px"><div class="card full"><div class="card-hd">${selected ? selected.name : 'Previous Season'} Performance Review</div><table class="mini-table"><thead><tr><th>Show</th><th>Pkg</th><th class="num">Result</th><th class="num">Cap</th><th>Demand</th><th class="num">GG%</th><th>Revenue</th><th class="num">Peer Cap</th><th class="num">Avg Gross</th><th>Confidence</th><th>Historical Read</th></tr></thead><tbody>${seasonRows.map((p) => rowHtml(p, 'past')).join('') || '<tr><td colspan="8" class="empty">No programmed show records matched this season.</td></tr>'}</tbody></table></div>${bushnellVsMarketTable(seasonRows, selected ? selected.id : '')}<div class="card"><div class="card-hd">Selected History</div><div id="historyDetail">${seasonRows[0] ? detailHtml(seasonRows[0], 'past') : library[0] ? detailHtml(library[0], 'past') : '<div class="empty">Search for a show.</div>'}</div></div><div class="card"><div class="card-hd">Broader Historical Show Library</div><div class="card-sub">All matched touring titles, sorted by weeks reported.</div><table class="mini-table"><thead><tr><th>Show</th><th class="num">Weeks</th><th class="num">Cap</th><th class="num">Gross</th></tr></thead><tbody>${library.map((p) => `<tr onclick="historyDetail('${esc(p.show.title)}')" style="cursor:pointer"><td>${p.show.title}</td><td class="num">${p.metrics.weeks}</td><td class="num">${pct(p.metrics.cap)}</td><td class="num">${fmt$(p.metrics.gross)}</td></tr>`).join('')}</tbody></table></div></div>`;
       }
@@ -3837,7 +3923,7 @@
         $('tab-future').innerHTML =
           `<div class="section-divider"><h2>Future Planning</h2><div class="section-divider-line"></div><div class="section-divider-meta">${future.season.name} candidate read</div></div><div class="explainer"><p><strong>Purpose:</strong> this view is for season planning conversations. It compares next-season titles against existing tour evidence where available. New-tour titles are marked <strong>NEW</strong> when the static touring feed has no comparable historical records yet; leadership should treat those as open strategic bets, not failed scores.</p></div><div class="grid grid-3"><div class="card full"><div class="card-hd">Candidate Fit Scores</div><table class="mini-table"><thead><tr><th>Candidate</th><th>Pkg</th><th class="num">Bushnell Target</th><th class="num">Fit</th><th class="num">Tour Cap</th><th>Demand</th><th class="num">GG%</th><th>Revenue</th><th class="num">Peer Cap</th><th class="num">Records</th><th>Confidence</th><th>Planning Read</th></tr></thead><tbody>${profiles
             .map((p) => {
-              const cls = p.isFutureNewTour ? 'neutral' : p.score >= SCORE_MED ? 'good' : 'warn';
+              const cls = p.isFutureNewTour ? 'neutral' : p.score == null ? 'neutral' : p.score >= SCORE_MED ? 'good' : 'warn';
               const scoreLabel = p.isFutureNewTour ? 'NEW' : p.score;
               ((_fs = planningSignals(p)) =>
                 `<tr><td>${p.show.title}<br><span style="color:var(--ink3);font-size:.58rem">${dateLine(p.show)}</span></td><td>${p.show.sub ? 'Sub' : 'Add-on'}</td><td class="num">${(() => {
