@@ -11,7 +11,26 @@
       href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Libre+Franklin:ital,wght@0,300;0,400;0,600;0,700;0,900;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
+    <!-- ── Shared CSS ───────────────────────────────────────────────────────── -->
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/charts.css" />
     <script src="js/utils.js"></script>
+    <!-- ── BTD Core Modules (dependency order) ──────────────────────────────── -->
+    <!-- js/core/charts.js omitted: requires Chart.js CDN which is not loaded on this page -->
+    <script src="js/core/config.js"></script>
+    <script src="js/core/state.js"></script>
+    <script src="js/core/format.js"></script>
+    <script src="js/core/metrics.js"></script>
+    <script src="js/core/validation.js"></script>
+    <script src="js/core/peers.js"></script>
+    <script src="js/core/filters.js"></script>
+    <script src="js/core/data.js"></script>
+    <script src="js/core/signals.js"></script>
+    <script src="js/core/context.js"></script>
+    <script src="js/core/seasons.js"></script>
+    <script src="js/core/tabs.js"></script>
+    <script src="js/core/components.js"></script>
+    <script src="js/core/page-common.js"></script>
     <style>
       :root {
         --ink: #141414;
