@@ -64,6 +64,7 @@ Revenue (GG%) is the headline metric. Capacity is context, not the lead story.
 | [docs/OPERATIONS.md](docs/OPERATIONS.md) | Data pipeline: how to run when a new report arrives, how to add a show or season, deployment steps, environment variables |
 | [docs/DEVELOPER.md](docs/DEVELOPER.md) | Architecture, BTD namespace, shared modules, how to extend the signal model |
 | [docs/CHARTS.md](docs/CHARTS.md) | What each chart shows and why |
+| [docs/SERVER_MIGRATION_AND_EMAIL_INGESTION.md](docs/SERVER_MIGRATION_AND_EMAIL_INGESTION.md) | Planned: moving the pipeline to a dedicated box and switching report ingestion from SharePoint to a shared mailbox |
 
 ---
 
