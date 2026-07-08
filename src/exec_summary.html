@@ -16,8 +16,28 @@
       href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Libre+Franklin:ital,wght@0,300;0,400;0,600;0,700;0,900;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
+    <!-- ── Shared CSS ───────────────────────────────────────────────────────── -->
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/charts.css" />
     <script src="js/utils.js"></script>
+    <!-- ── BTD Core Modules (dependency order) ──────────────────────────────── -->
+    <script src="js/core/config.js"></script>
+    <script src="js/core/state.js"></script>
+    <script src="js/core/format.js"></script>
+    <script src="js/core/metrics.js"></script>
+    <script src="js/core/validation.js"></script>
+    <script src="js/core/peers.js"></script>
+    <script src="js/core/filters.js"></script>
+    <script src="js/core/data.js"></script>
+    <script src="js/core/signals.js"></script>
+    <script src="js/core/context.js"></script>
+    <script src="js/core/seasons.js"></script>
+    <script src="js/core/tabs.js"></script>
+    <!-- Chart.js CDN must precede js/core/charts.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script src="js/core/charts.js"></script>
+    <script src="js/core/components.js"></script>
+    <script src="js/core/page-common.js"></script>
     <style>
       :root {
         --ink: #141414;
@@ -1990,10 +2010,62 @@
         justify-content: space-between;
         gap: 8px;
       }
+
+      /* ── Sidebar toggle — hidden on desktop, shown at tablet portrait ── */
+      .sidebar-toggle {
+        display: none;
+        background: none;
+        border: none;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 0 12px;
+        align-items: center;
+      }
+
+      @media (max-width: 900px) {
+        .sidebar-toggle {
+          display: flex;
+        }
+
+        .sidebar {
+          position: fixed;
+          left: -240px;
+          top: 0;
+          height: 100vh;
+          width: 240px;
+          z-index: 100;
+          transition: left 0.25s ease;
+          box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+        }
+        .sidebar.open {
+          left: 0;
+        }
+
+        .sidebar-backdrop {
+          display: none;
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.35);
+          z-index: 99;
+        }
+        .sidebar-backdrop.open {
+          display: block;
+        }
+      }
     </style>
   </head>
   <body>
     <header class="masthead">
+      <button
+        class="sidebar-toggle"
+        onclick="toggleSidebar()"
+        aria-label="Toggle filters panel"
+        aria-expanded="false"
+        id="sidebarToggle"
+      >
+        ☰
+      </button>
       <div class="masthead-brand">
         <div class="brand-icon">BT</div>
         <div class="brand-text">
@@ -2064,6 +2136,8 @@
         <div class="kpi-sub">below median fit</div>
       </div>
     </div>
+    <!-- Sidebar backdrop — closes sidebar on tap outside at mobile widths -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
     <div class="workspace">
       <aside class="sidebar">
         <div class="sidebar-section">
@@ -4280,6 +4354,15 @@
       }
       Chart.defaults.font.family = "'Libre Franklin', sans-serif";
       Chart.defaults.font.size = 10;
+
+      /* ── Sidebar toggle ── */
+      function toggleSidebar() {
+        const sb = document.querySelector('.sidebar');
+        const bd = document.getElementById('sidebarBackdrop');
+        sb.classList.toggle('open');
+        bd.classList.toggle('open');
+      }
+
       loadData();
     </script>
   <!-- Mobile Warning Modal -->
