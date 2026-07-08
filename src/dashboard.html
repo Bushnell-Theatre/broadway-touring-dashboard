@@ -36,160 +36,14 @@
     <script src="js/core/page-common.js"></script>
     <script src="js/core/dashboard-analytics.js"></script>
     <style>
-      :root {
-        --ink: #141414;
-        --ink2: #3a3a3a;
-        --ink3: #595959;
-        --rule: #d8d4ce;
-        --rule2: #ece9e4;
-        --bg: #fdf8f4;
-        --bg2: #f3f1ee;
-        --bg3: #edeae6;
-        --amber: #003865;
-        --amber-lt: #e4ecf8;
-        --amber-md: #6798b9;
-        --teal: #0a6b5e;
-        --teal-lt: #e2f2f0;
-        --rose: #b0303a;
-        --rose-lt: #fde8e9;
-        --cobalt: #1a4e8a;
-        --cobalt-lt: #e4ecf8;
-        --serif: 'Libre Baskerville', Georgia, serif;
-        --sans: 'Libre Franklin', system-ui, sans-serif;
-        --mono: 'IBM Plex Mono', monospace;
-      }
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
-      html {
-        scroll-behavior: smooth;
-      }
-      body {
-        background: var(--bg);
-        color: var(--ink);
-        font-family: var(--sans);
-        font-size: 13px;
-        min-height: 100vh;
-      }
+      /* ── DASHBOARD — page-specific inline styles ────────────────────────────────
+       * All shared rules (reset, masthead, buttons, kpi-strip, workspace, sidebar,
+       * pills, nav-tabs, panels, section-divider, signal-card, faq, footer,
+       * sidebar-toggle, responsive breakpoints) live in css/styles.css.
+       * Every rule below is unique to dashboard.html.
+       * ────────────────────────────────────────────────────────────────────────── */
 
-      /* ── MASTHEAD ── */
-      .masthead {
-        background: var(--ink);
-        color: #fff;
-        padding: 0 32px;
-        display: flex;
-        align-items: stretch;
-        border-bottom: 3px solid #ff9e1b;
-        position: sticky;
-        top: 0;
-        z-index: 50;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
-      }
-      .masthead-brand {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        padding: 14px 0;
-        border-right: 1px solid rgba(255, 255, 255, 0.12);
-        padding-right: 24px;
-        margin-right: 24px;
-      }
-      .brand-icon {
-        width: 36px;
-        height: 36px;
-        background: #003865;
-        border-radius: 2px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-family: var(--serif);
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #fff;
-        flex-shrink: 0;
-      }
-      .brand-text h1 {
-        font-family: var(--serif);
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #fff;
-        letter-spacing: -0.01em;
-        line-height: 1.1;
-      }
-      .brand-text .sub {
-        font-size: 0.6rem;
-        letter-spacing: 0.16em;
-        text-transform: uppercase;
-        color: rgba(255, 255, 255, 0.45);
-        margin-top: 3px;
-      }
-      .masthead-status {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 0.62rem;
-        color: rgba(255, 255, 255, 0.45);
-        letter-spacing: 0.05em;
-      }
-      .masthead-status .dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: #5dbf8a;
-        flex-shrink: 0;
-        box-shadow: 0 0 0 3px rgba(93, 191, 138, 0.2);
-      }
-      .masthead-status strong {
-        color: rgba(255, 255, 255, 0.8);
-      }
-      .masthead-actions {
-        margin-left: auto;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-
-      .btn {
-        font-family: var(--sans);
-        font-size: 0.62rem;
-        font-weight: 600;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        padding: 8px 14px;
-        border-radius: 2px;
-        cursor: pointer;
-        transition: all 0.15s;
-        white-space: nowrap;
-        border: none;
-      }
-      .btn-primary {
-        background: var(--amber);
-        color: #fff;
-      }
-      .btn-primary:hover {
-        background: #a35508;
-      }
-      .btn-outline {
-        background: transparent;
-        color: rgba(255, 255, 255, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-      }
-      .btn-outline:hover {
-        border-color: rgba(255, 255, 255, 0.5);
-        color: #fff;
-      }
-      .btn-ghost {
-        background: transparent;
-        color: var(--ink3);
-        border: 1px solid var(--rule);
-        font-family: var(--sans);
-      }
-      .btn-ghost:hover {
-        border-color: var(--amber);
-        color: var(--amber);
-      }
+      /* page-specific — Clear Data button, dashboard-only destructive action */
       .btn-danger {
         background: transparent;
         color: var(--rose);
@@ -207,11 +61,13 @@
       .btn-danger:hover {
         background: var(--rose-lt);
       }
+
+      /* page-specific — XLSX import input, always hidden */
       #fileInput {
         display: none;
       }
 
-      /* ── SECTION RULE ── */
+      /* page-specific — horizontal section rule above the filter pill row */
       .section-rule {
         display: flex;
         align-items: center;
@@ -231,161 +87,12 @@
         white-space: nowrap;
       }
 
-      /* ── KPI BAR ── */
-      .kpi-strip {
-        display: grid;
-        grid-template-columns: repeat(8, 1fr);
-        border-bottom: 1px solid var(--rule);
-        background: #fff;
-      }
-      .kpi-cell {
-        padding: 18px 22px;
-        border-right: 1px solid var(--rule);
-        position: relative;
-      }
-      .kpi-cell:last-child {
-        border-right: none;
-      }
-      .kpi-cell::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 22px;
-        right: 22px;
-        height: 2px;
-        background: transparent;
-        transition: background 0.2s;
-      }
-      .kpi-cell:hover::after {
-        background: var(--amber);
-      }
-      .kpi-label {
-        font-size: 0.58rem;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        color: var(--ink3);
-        margin-bottom: 6px;
-        font-weight: 500;
-      }
-      .kpi-value {
-        font-family: var(--serif);
-        font-size: 1.55rem;
-        font-weight: 700;
-        color: var(--ink);
-        line-height: 1;
-        letter-spacing: -0.02em;
-      }
-      .kpi-sub {
-        font-size: 0.58rem;
-        color: var(--ink3);
-        margin-top: 4px;
-      }
-
-      /* ── LAYOUT ── */
-      .workspace {
-        display: flex;
-        min-height: calc(100vh - 108px);
-      }
-
-      /* ── SIDEBAR ── */
-      .sidebar {
-        width: 220px;
-        flex-shrink: 0;
-        background: #fff;
-        border-right: 1px solid var(--rule);
-        display: flex;
-        flex-direction: column;
-        overflow-y: auto;
-      }
-      .sidebar-section {
-        padding: 16px;
-        border-bottom: 1px solid var(--rule2);
-      }
+      /* page-specific — sidebar last section has no bottom border */
       .sidebar-section:last-child {
         border-bottom: none;
       }
-      .sidebar-label {
-        display: block;
-        font-size: 0.56rem;
-        letter-spacing: 0.16em;
-        text-transform: uppercase;
-        color: var(--amber);
-        font-weight: 600;
-        margin-bottom: 9px;
-      }
-      select {
-        width: 100%;
-        background: var(--bg);
-        border: 1px solid var(--rule);
-        color: var(--ink);
-        font-family: var(--sans);
-        font-size: 0.72rem;
-        padding: 6px 10px;
-        border-radius: 2px;
-        outline: none;
-        appearance: none;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b6b6b'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 8px center;
-        padding-right: 26px;
-        cursor: pointer;
-      }
-      select:focus {
-        border-color: var(--amber);
-        outline: none;
-      }
 
-      .pill-row {
-        display: flex;
-        gap: 5px;
-        flex-wrap: wrap;
-      }
-      .pill {
-        font-family: var(--sans);
-        font-size: 0.58rem;
-        font-weight: 600;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        padding: 5px 10px;
-        border-radius: 20px;
-        cursor: pointer;
-        transition: all 0.15s;
-        border: 1px solid var(--rule);
-        background: var(--bg);
-        color: var(--ink3);
-      }
-      .pill.active {
-        border-color: var(--amber);
-        color: var(--amber);
-        background: var(--amber-lt);
-      }
-      .pill:hover:not(.active) {
-        border-color: var(--ink3);
-        color: var(--ink2);
-      }
-      .pill:focus {
-        outline: 2px solid var(--amber);
-        outline-offset: 2px;
-      }
-      .btn:focus {
-        outline: 2px solid var(--amber);
-        outline-offset: 2px;
-      }
-      .nav-tab:focus {
-        outline: 2px solid var(--amber);
-        outline-offset: -2px;
-      }
-      select:focus {
-        outline: 2px solid var(--amber);
-        outline-offset: 0;
-      }
-      input[type='date']:focus,
-      input[type='number']:focus,
-      input[type='text']:focus {
-        outline: 2px solid var(--amber);
-        outline-offset: 0;
-      }
-
+      /* page-specific — range slider min/max number inputs */
       .range-row {
         display: flex;
         gap: 6px;
@@ -411,6 +118,7 @@
         font-size: 0.7rem;
       }
 
+      /* page-specific — show filter search UI in sidebar */
       .show-search-input {
         width: 100%;
         background: var(--bg);
@@ -429,7 +137,6 @@
       .show-search-input::placeholder {
         color: var(--ink3);
       }
-
       .show-quick {
         display: flex;
         gap: 5px;
@@ -454,7 +161,6 @@
         border-color: var(--amber);
         color: var(--amber);
       }
-
       .show-list {
         max-height: 180px;
         overflow-y: auto;
@@ -492,70 +198,7 @@
         text-align: right;
       }
 
-      /* ── MAIN ── */
-      .main-pane {
-        flex: 1;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        min-width: 0;
-      }
-
-      /* ── NAV TABS ── */
-      .nav-tabs {
-        display: flex;
-        background: #fff;
-        border-bottom: 1px solid var(--rule);
-        padding: 0 28px;
-        flex-shrink: 0;
-      }
-      .nav-tab {
-        font-family: var(--sans);
-        font-size: 0.62rem;
-        font-weight: 600;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        padding: 10px 16px;
-        cursor: pointer;
-        color: var(--ink3);
-        border-bottom: 3px solid transparent;
-        margin-bottom: -1px;
-        border-radius: 3px 3px 0 0;
-        transition: all 0.15s;
-        user-select: none;
-      }
-      .nav-tab:hover {
-        color: var(--ink);
-        background: rgba(0, 56, 101, 0.06);
-      }
-      .nav-tab:focus {
-        outline: 2px solid var(--amber);
-        outline-offset: -2px;
-      }
-      .nav-tab.active {
-        color: var(--bg);
-        background: var(--ink);
-        border-bottom-color: var(--ink);
-      }
-      .nav-tab.tab-right {
-        margin-left: auto;
-      }
-      .nav-tab.tab-right ~ .nav-tab.tab-right {
-        margin-left: 0;
-      }
-
-      /* ── PANELS ── */
-      .panel {
-        display: none;
-        padding: 24px 28px;
-        overflow-y: auto;
-        flex: 1;
-      }
-      .panel.active {
-        display: block;
-      }
-
-      /* ── TABLE ── */
+      /* page-specific — full data table (only dashboard uses data tables) */
       .tbl-wrap {
         overflow-x: auto;
         border: 1px solid var(--rule);
@@ -614,6 +257,7 @@
         border-right: none;
       }
 
+      /* page-specific — table row badges (tier/type labels) */
       .badge {
         font-size: 0.5rem;
         font-weight: 700;
@@ -633,6 +277,7 @@
         border: 1px solid var(--rule);
       }
 
+      /* page-specific — capacity bar fill cells in data table */
       .cap-cell {
         display: flex;
         align-items: center;
@@ -674,7 +319,7 @@
         font-size: 0.72rem;
       }
 
-      /* ── CHARTS ── */
+      /* page-specific — chart grid layout and canvas heights */
       .chart-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -727,7 +372,7 @@
         height: 320px !important;
       }
 
-      /* ── RANKINGS ── */
+      /* page-specific — ranking grid and cards (distinct from shared .rank-list rows) */
       .rank-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -755,43 +400,6 @@
         padding-bottom: 12px;
         border-bottom: 1px solid var(--rule2);
       }
-      .rank-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 9px 0;
-        border-bottom: 1px solid var(--rule2);
-      }
-      .rank-item:last-child {
-        border-bottom: none;
-      }
-      .rank-n {
-        font-family: var(--serif);
-        font-size: 0.95rem;
-        color: var(--rule);
-        width: 22px;
-        text-align: right;
-        flex-shrink: 0;
-      }
-      .rank-n.top {
-        color: var(--amber);
-      }
-      .rank-body {
-        flex: 1;
-        min-width: 0;
-      }
-      .rank-name {
-        font-size: 0.7rem;
-        color: var(--ink);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-      .rank-detail {
-        font-size: 0.58rem;
-        color: var(--ink3);
-        margin-top: 2px;
-      }
       .rank-bar-track {
         width: 100%;
         height: 3px;
@@ -804,14 +412,8 @@
         border-radius: 2px;
         background: var(--amber);
       }
-      .rank-val {
-        font-family: var(--serif);
-        font-size: 0.9rem;
-        color: var(--ink);
-        flex-shrink: 0;
-      }
 
-      /* ── MODAL ── */
+      /* page-specific — XLSX import modal */
       .modal-overlay {
         display: none;
         position: fixed;
@@ -892,30 +494,7 @@
         gap: 8px;
       }
 
-      /* ── DIVIDER HEADER ── */
-      .section-divider {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 16px;
-      }
-      .section-divider h2 {
-        font-family: var(--serif);
-        font-size: 0.85rem;
-        color: var(--ink);
-        white-space: nowrap;
-      }
-      .section-divider-line {
-        flex: 1;
-        height: 1px;
-        background: var(--rule2);
-      }
-      .section-divider-meta {
-        font-size: 0.58rem;
-        color: var(--ink3);
-      }
-
-      /* ── SCROLLBAR ── */
+      /* page-specific — custom scrollbar (sidebar and panels scroll frequently) */
       ::-webkit-scrollbar {
         width: 5px;
         height: 5px;
@@ -931,7 +510,7 @@
         background: var(--ink3);
       }
 
-      /* ── THEATRE SIZE MINI GRID ── */
+      /* page-specific — theatre size mini grid in scorecard */
       .size-grid {
         display: grid;
         grid-template-columns: repeat(5, 1fr);
@@ -963,7 +542,7 @@
         margin-top: 2px;
       }
 
-      /* ── INLINE ALERT ── */
+      /* page-specific — inline alert banner (data stale warning) */
       .alert {
         display: flex;
         align-items: center;
@@ -979,184 +558,7 @@
         color: var(--cobalt);
       }
 
-      /* ── RESPONSIVE ── */
-
-      /* Large screens - constrain max width */
-      .masthead,
-      .kpi-strip,
-      .workspace {
-        max-width: 3840px;
-        margin-left: auto;
-        margin-right: auto;
-      }
-
-      /* Sidebar toggle button - hidden on desktop */
-      .sidebar-toggle {
-        display: none;
-        background: none;
-        border: none;
-        color: rgba(255, 255, 255, 0.7);
-        font-size: 1.2rem;
-        cursor: pointer;
-        padding: 0 12px;
-        align-items: center;
-      }
-
-      /* 4K+ scaling */
-      @media (min-width: 2560px) {
-        body {
-          font-size: 16px;
-        }
-        .kpi-value {
-          font-size: 2rem;
-        }
-        .chart-card:not(.full) canvas {
-          height: 340px !important;
-        }
-        .chart-card.full canvas {
-          height: 260px !important;
-        }
-      }
-
-      /* Tablet landscape */
-      @media (max-width: 1200px) {
-        .sidebar {
-          width: 190px;
-        }
-      }
-
-      /* Tablet portrait */
-      @media (max-width: 900px) {
-        .sidebar-toggle {
-          display: flex;
-        }
-
-        .sidebar {
-          position: fixed;
-          left: -240px;
-          top: 0;
-          height: 100vh;
-          width: 240px;
-          z-index: 100;
-          transition: left 0.25s ease;
-          box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
-        }
-        .sidebar.open {
-          left: 0;
-        }
-
-        .sidebar-backdrop {
-          display: none;
-          position: fixed;
-          inset: 0;
-          background: rgba(0, 0, 0, 0.35);
-          z-index: 99;
-        }
-        .sidebar-backdrop.open {
-          display: block;
-        }
-
-        .workspace {
-          min-height: calc(100vh - 108px);
-        }
-
-        .kpi-strip {
-          grid-template-columns: repeat(3, 1fr);
-        }
-        .kpi-cell {
-          padding: 14px 16px;
-        }
-        .kpi-value {
-          font-size: 1.25rem;
-        }
-
-        .chart-grid {
-          grid-template-columns: 1fr;
-        }
-        .chart-card.full {
-          grid-column: 1;
-        }
-        .chart-card:not(.full) canvas {
-          height: 220px !important;
-        }
-        .chart-card.full canvas {
-          height: 180px !important;
-        }
-
-        .rank-grid {
-          grid-template-columns: 1fr;
-        }
-        .rank-card.full {
-          grid-column: 1;
-        }
-
-        .panel {
-          padding: 16px;
-        }
-      }
-
-      /* Mobile */
-      @media (max-width: 600px) {
-        .masthead {
-          padding: 0 16px;
-        }
-        .masthead-brand {
-          padding-right: 12px;
-          margin-right: 12px;
-        }
-        .brand-text h1 {
-          font-size: 0.9rem;
-        }
-        .masthead-status {
-          display: none;
-        }
-
-        .kpi-strip {
-          grid-template-columns: repeat(2, 1fr);
-        }
-        .kpi-value {
-          font-size: 1.1rem;
-        }
-
-        .nav-tabs {
-          padding: 0 12px;
-        }
-        .nav-tab {
-          padding: 12px 10px;
-          font-size: 0.58rem;
-        }
-
-        .panel {
-          padding: 12px;
-        }
-        .chart-card {
-          padding: 14px;
-        }
-        .chart-card:not(.full) canvas {
-          height: 180px !important;
-        }
-        .chart-card.full canvas {
-          height: 160px !important;
-        }
-
-        .tbl-wrap {
-          font-size: 0.6rem;
-        }
-      }
-
-      /* ── FOOTER ── */
-      .footer {
-        background: var(--ink);
-        color: rgba(255, 255, 255, 0.45);
-        padding: 10px 32px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        font-size: 0.58rem;
-        letter-spacing: 0.06em;
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
-        flex-shrink: 0;
-      }
+      /* page-specific — footer sub-columns for left/right text blocks */
       .footer-left {
         line-height: 1.6;
       }
@@ -1164,148 +566,9 @@
         text-align: right;
         line-height: 1.6;
       }
-      .footer strong {
-        color: rgba(255, 255, 255, 0.7);
-      }
 
-      /* ── PRINT STYLES ─────────────────────────────────────────────────────────── */
-      @media print {
-        @page {
-          size: landscape;
-          margin: 0.5in;
-        }
-
-        /* Hide non-print elements */
-        .sidebar,
-        .sidebar-toggle,
-        .sidebar-backdrop,
-        #tab-table,
-        .nav-tabs,
-        button,
-        .show-quick,
-        .show-search-input,
-        .rank-item[onclick],
-        [onclick] {
-          pointer-events: none;
-        }
-
-        .sidebar,
-        .sidebar-toggle,
-        .sidebar-backdrop {
-          display: none !important;
-        }
-        .nav-tabs {
-          display: none !important;
-        }
-        #tab-table {
-          display: none !important;
-        }
-
-        /* Show all panels for print */
-        .panel {
-          display: block !important;
-          page-break-before: always;
-        }
-        .panel:first-of-type {
-          page-break-before: avoid;
-        }
-
-        /* Layout */
-        .main-pane {
-          margin-left: 0 !important;
-          width: 100% !important;
-        }
-        body {
-          background: #fff !important;
-        }
-
-        /* Masthead as header on every page */
-        .masthead {
-          position: running(header);
-          display: block !important;
-          border-bottom: 2px solid #003865;
-          margin-bottom: 12pt;
-        }
-        @page {
-          @top-center {
-            content: element(header);
-          }
-        }
-
-        /* Print header — repeat masthead info */
-        .print-header {
-          display: block !important;
-          font-size: 9pt;
-          color: #003865;
-          border-bottom: 1.5pt solid #003865;
-          padding-bottom: 6pt;
-          margin-bottom: 12pt;
-        }
-
-        /* Active filters block before footer */
-        .print-filters {
-          display: block !important;
-          font-size: 8pt;
-          color: #595959;
-          border-top: 1pt solid #ccc;
-          padding-top: 6pt;
-          margin-top: 12pt;
-          page-break-inside: avoid;
-        }
-
-        /* Footer */
-        .footer {
-          display: block !important;
-          font-size: 7.5pt;
-          page-break-inside: avoid;
-        }
-
-        /* Charts — ensure canvas prints */
-        canvas {
-          max-width: 100% !important;
-        }
-        .chart-card {
-          page-break-inside: avoid;
-        }
-        .rank-card {
-          page-break-inside: avoid;
-        }
-
-        /* Expand breakdowns hidden in print */
-        [id^='wow-bd-'],
-        [id^='rShowGross-bd-'],
-        [id^='rShowGrossBottom-bd-'],
-        [id^='peer-detail-'] {
-          display: none !important;
-        }
-
-        /* Section breaks */
-        #tab-rankings {
-          page-break-before: always;
-        }
-        #tab-analytics {
-          page-break-before: always;
-        }
-        #tab-seasons {
-          page-break-before: always;
-        }
-        #tab-peers {
-          page-break-before: always;
-        }
-
-        /* Print button hidden */
-        #printBtn {
-          display: none !important;
-        }
-      }
-
-      /* Print elements hidden on screen */
-      .print-header,
-      .print-filters {
-        display: none;
-      }
-
-      /* ── TOOLTIPS ── */
+      /* page-specific — tooltip wrapper variant using adjacent sibling selector
+       * (styles.css .tip-icon uses :hover .tip-text child; dashboard uses + sibling) */
       .tip {
         position: relative;
         display: inline-flex;
@@ -1363,7 +626,7 @@
         border-bottom-color: var(--ink);
       }
 
-      /* ── PEER TYPE BADGES ── */
+      /* page-specific — peer badge uses inline-block for table cell inline context */
       .peer-badge {
         display: inline-block;
         font-size: 10px;
@@ -1390,6 +653,222 @@
         background: #e8f0f8;
         color: #003865;
         border: 1px solid #b0c4d8;
+      }
+
+      /* page-specific — 2560px: body 16px (styles.css uses 18px via --base-font);
+       * kpi-value 2rem (styles.css uses 1.85rem); chart canvas height overrides */
+      @media (min-width: 2560px) {
+        body {
+          font-size: 16px;
+        }
+        .kpi-value {
+          font-size: 2rem;
+        }
+        .chart-card:not(.full) canvas {
+          height: 340px !important;
+        }
+        .chart-card.full canvas {
+          height: 260px !important;
+        }
+      }
+
+      /* page-specific — tablet (900px): kpi-strip 3-col for data density;
+       * chart-grid and rank-grid single-column; panel padding reduction */
+      @media (max-width: 900px) {
+        .kpi-strip {
+          grid-template-columns: repeat(3, 1fr);
+        }
+        .kpi-cell {
+          padding: 14px 16px;
+        }
+        .kpi-value {
+          font-size: 1.25rem;
+        }
+        .chart-grid {
+          grid-template-columns: 1fr;
+        }
+        .chart-card.full {
+          grid-column: 1;
+        }
+        .chart-card:not(.full) canvas {
+          height: 220px !important;
+        }
+        .chart-card.full canvas {
+          height: 180px !important;
+        }
+        .rank-grid {
+          grid-template-columns: 1fr;
+        }
+        .rank-card.full {
+          grid-column: 1;
+        }
+        /* page-specific — panel padding tightened at 900px (styles.css does 16px at 768px) */
+        .panel {
+          padding: 16px;
+        }
+      }
+
+      /* page-specific — small mobile (600px): masthead compression, tighter paddings;
+       * shared masthead/nav-tabs/kpi-strip resets handled by styles.css at 768px */
+      @media (max-width: 600px) {
+        .masthead-brand {
+          padding-right: 12px;
+          margin-right: 12px;
+        }
+        .brand-text h1 {
+          font-size: 0.9rem;
+        }
+        .masthead-status {
+          display: none;
+        }
+        .kpi-value {
+          font-size: 1.1rem;
+        }
+        .nav-tab {
+          padding: 12px 10px;
+          font-size: 0.58rem;
+        }
+        .panel {
+          padding: 12px;
+        }
+        .chart-card {
+          padding: 14px;
+        }
+        .chart-card:not(.full) canvas {
+          height: 180px !important;
+        }
+        .chart-card.full canvas {
+          height: 160px !important;
+        }
+        .tbl-wrap {
+          font-size: 0.6rem;
+        }
+      }
+
+      /* page-specific — print layout for full dashboard export */
+      @media print {
+        @page {
+          size: landscape;
+          margin: 0.5in;
+        }
+
+        .sidebar,
+        .sidebar-toggle,
+        .sidebar-backdrop,
+        #tab-table,
+        .nav-tabs,
+        button,
+        .show-quick,
+        .show-search-input,
+        .rank-item[onclick],
+        [onclick] {
+          pointer-events: none;
+        }
+
+        .sidebar,
+        .sidebar-toggle,
+        .sidebar-backdrop {
+          display: none !important;
+        }
+        .nav-tabs {
+          display: none !important;
+        }
+        #tab-table {
+          display: none !important;
+        }
+
+        .panel {
+          display: block !important;
+          page-break-before: always;
+        }
+        .panel:first-of-type {
+          page-break-before: avoid;
+        }
+
+        .main-pane {
+          margin-left: 0 !important;
+          width: 100% !important;
+        }
+        body {
+          background: #fff !important;
+        }
+
+        .masthead {
+          position: running(header);
+          display: block !important;
+          border-bottom: 2px solid #003865;
+          margin-bottom: 12pt;
+        }
+        @page {
+          @top-center {
+            content: element(header);
+          }
+        }
+
+        .print-header {
+          display: block !important;
+          font-size: 9pt;
+          color: #003865;
+          border-bottom: 1.5pt solid #003865;
+          padding-bottom: 6pt;
+          margin-bottom: 12pt;
+        }
+
+        .print-filters {
+          display: block !important;
+          font-size: 8pt;
+          color: #595959;
+          border-top: 1pt solid #ccc;
+          padding-top: 6pt;
+          margin-top: 12pt;
+          page-break-inside: avoid;
+        }
+
+        .footer {
+          display: block !important;
+          font-size: 7.5pt;
+          page-break-inside: avoid;
+        }
+
+        canvas {
+          max-width: 100% !important;
+        }
+        .chart-card {
+          page-break-inside: avoid;
+        }
+        .rank-card {
+          page-break-inside: avoid;
+        }
+
+        [id^='wow-bd-'],
+        [id^='rShowGross-bd-'],
+        [id^='rShowGrossBottom-bd-'],
+        [id^='peer-detail-'] {
+          display: none !important;
+        }
+
+        #tab-rankings {
+          page-break-before: always;
+        }
+        #tab-analytics {
+          page-break-before: always;
+        }
+        #tab-seasons {
+          page-break-before: always;
+        }
+        #tab-peers {
+          page-break-before: always;
+        }
+
+        #printBtn {
+          display: none !important;
+        }
+      }
+
+      /* page-specific — print header/filters hidden on screen */
+      .print-header,
+      .print-filters {
+        display: none;
       }
     </style>
   </head>
