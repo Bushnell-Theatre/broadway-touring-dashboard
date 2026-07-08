@@ -62,13 +62,50 @@ Use existing CSS custom properties (`var(--ink)`, `var(--teal)`, `var(--amber)`,
 | `src/programming.html` | Programming decision support | Tom |
 | `src/box_office.html` | Box office scenario modeler | Brandon |
 | `src/index.html` | Development hub / landing page | All |
-| `src/js/utils.js` | Shared JavaScript utilities | All dashboards |
-| `src/styles.css` | Shared base styles | All dashboards |
-| `src/charts.css` | Shared chart styles | All dashboards |
+| `src/js/utils.js` | Shared JavaScript utilities (true globals — NOT an IIFE) | All dashboards |
+| `src/js/core/*.js` | BTD namespace modules — 16 files, loaded in dependency order | All dashboards |
+| `src/js/pages/*.page.js` | Extracted page controllers — **NOT yet wired in; inline scripts are authoritative** | — |
+| `src/css/styles.css` | Shared base styles | All dashboards |
+| `src/css/charts.css` | Shared chart styles | All dashboards |
 | `scripts/process_touring.py` | Broadway League XLSX → data.json pipeline | IT (Randale) |
 | `scripts/watcher.py` | File watcher for pipeline automation | IT |
 
 **Read `references/data-sources.md` for the canonical data file descriptions.**
+
+---
+
+## JavaScript Architecture
+
+### Load order (all pages except box_office.html)
+
+```
+utils.js                           ← true globals (fmt$, pct, avg, planningSignal, etc.)
+js/core/config.js                  → BTD.config
+js/core/state.js                   → BTD.state
+js/core/format.js                  → BTD.format
+js/core/metrics.js                 → BTD.metrics
+js/core/validation.js              → BTD.validation
+js/core/peers.js                   → BTD.peers
+js/core/filters.js                 → BTD.filters
+js/core/data.js                    → BTD.data
+js/core/signals.js                 → BTD.signals
+js/core/context.js                 → BTD.context
+js/core/seasons.js                 → BTD.seasons
+js/core/tabs.js                    → BTD.tabs
+Chart.js CDN                       ← must precede charts.js
+js/core/charts.js                  → BTD.charts
+js/core/components.js              → BTD.components
+js/core/page-common.js             → BTD.page
+js/core/dashboard-analytics.js    → BTD.dashboardAnalytics (dashboard.html only)
+```
+
+`box_office.html` omits `js/core/charts.js` and `dashboard-analytics.js` (no Chart.js CDN on that page).
+
+### Key invariants
+
+- **utils.js is NOT an IIFE.** All its functions (`planningSignal`, `fmt$`, `pct`, etc.) are true globals — no `BTD.` prefix needed.
+- **All core modules ARE IIFEs.** They expose via `BTD.X` namespace. Inline scripts check `if(window.BTD && BTD.X)` before using any BTD API.
+- **pages/*.page.js files are OUT OF SYNC with current HTML.** `exec-summary.page.js` predates the Part 3 Planning Signal redesign (commit `695eb6c`). Do NOT wire any `.page.js` file until it is re-synced with its HTML page's inline script.
 
 ---
 
@@ -104,15 +141,23 @@ All dashboards also fetch:
 - See `references/box-office-model.md` for the full calculation spec
 
 ### dashboard.html
-- Has a working `toggleSidebar()` — do not change it; port to other pages instead
+- Has `toggleSidebar()`, sidebar toggle button, and sidebar backdrop — this is the canonical implementation
 - Breakpoints: 1200px / 900px / 600px — do not add new ones without aligning other pages
 - Has Chart.js and XLSX loaded via CDN
+- Is the only page that loads `js/core/dashboard-analytics.js`
+
+### programming.html and exec_summary.html
+- Now have `toggleSidebar()`, `.sidebar-toggle` button, and `.sidebar-backdrop` — ported from dashboard.html
+
+### exec_summary.html
+- Has a V2 Responsive Scale System (inline CSS, lines ~1094–1781) with min-width breakpoints for 1440/2560/3840/6000px — this is exec_summary-specific and intentionally stays inline
 
 ### All pages
 - Masthead nav links must include all pages except the current one
 - Sidebar collapse pattern must match dashboard.html's implementation
 - Standard breakpoints: 1200px / 900px / 600px / 480px
 - KPI strip collapses to 2 columns at 600px
+- CSS load order: Google Fonts → `css/styles.css` → `css/charts.css` → inline `<style>`
 
 ---
 
