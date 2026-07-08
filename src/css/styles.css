@@ -330,6 +330,26 @@ select:focus, input:focus { outline: 2px solid var(--amber); outline-offset: 2px
 
 /* ── RESPONSIVE — Desktop first ─────────────────────────────────────────────── */
 
+/* Large desktop (1700px+): give grids a bit more breathing room */
+@media (min-width: 1700px) {
+  :root { --kpi-value: 1.65rem; --chart-h: 260px; --small-chart-h: 195px; }
+}
+
+/* 2.5K QHD / browser-scaled 4K */
+@media (min-width: 2560px) {
+  :root { --base-font: 18px; --kpi-value: 1.85rem; --chart-h: 400px; --small-chart-h: 285px; --page-max: 2520px; }
+}
+
+/* 4K / large conference display */
+@media (min-width: 3840px) {
+  :root { --base-font: 22px; --kpi-value: 2.15rem; --chart-h: 500px; --small-chart-h: 360px; --page-max: 3720px; }
+}
+
+/* 8K / wall display — keep centered, not edge-to-edge */
+@media (min-width: 6000px) {
+  :root { --base-font: 24px; --kpi-value: 2.15rem; --chart-h: 520px; --small-chart-h: 380px; --page-max: 5200px; }
+}
+
 /* Standard desktop / laptop */
 @media (max-width: 1920px) {
   :root { --kpi-value: 1.4rem; }
