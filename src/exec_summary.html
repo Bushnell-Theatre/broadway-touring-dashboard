@@ -373,35 +373,8 @@
       }
 
 
-      /* --------------------------------------------------------------------------
-   V2 RESPONSIVE SCALE SYSTEM: 8K DOWN TO TABLET
-   Purpose: preserve the existing visual language while making the dashboard
-   readable on wall displays, conference screens, desktops, laptops, and tablets.
-   This layer intentionally changes presentation only. Data logic is untouched.
----------------------------------------------------------------------------- */
-      :root {
-        /* --page-max is intentionally omitted — controlled by styles.css media queries */
-        --base-font: 13px;
-        --shell-pad-x: 28px;
-        --mast-pad-x: 32px;
-        --sidebar-w: 238px;
-        --panel-pad-y: 24px;
-        --panel-pad-x: 28px;
-        --grid-gap: 18px;
-        --card-pad: 20px;
-        --chart-h: 240px;
-        --small-chart-h: 180px;
-        --kpi-min: 150px;
-        --kpi-pad-y: 15px;
-        --kpi-pad-x: 18px;
-        --kpi-value: 1.32rem;
-        --section-title: 0.95rem;
-        --card-title-size: 1rem;
-        --body-copy: 0.68rem;
-        --table-copy: 0.68rem;
-        --nav-copy: 0.62rem;
-        --touch: 34px;
-      }
+      /* All layout and responsive tokens are controlled by styles.css :root and breakpoints.
+         No inline :root override — see styles.css for the full token system. */
 
       html {
         font-size: var(--base-font);
