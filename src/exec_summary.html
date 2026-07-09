@@ -812,8 +812,8 @@
     <footer class="footer">
       <div>
         THE BUSHNELL CENTER FOR THE PERFORMING ARTS · BROADWAY TOURING EXEC SUMMARY ·
-        <strong>v5.2</strong>
-        · Build date: July 6, 2026
+        <strong id="pageVersion">v5.2</strong>
+        · Build date: <span id="pageDate">July 6, 2026</span>
       </div>
       <div id="footerMeta">Static feed</div>
     </footer>
@@ -2925,5 +2925,20 @@
     </div>
   </div>
   <script>(function(){if(window.innerWidth<768){document.getElementById('mobileWarningModal').style.display='flex';}}());</script>
+  <script>
+    /* ── Load version from versions.json — single source of truth ── */
+    (function () {
+      fetch('data/versions.json')
+        .then(function (r) { return r.json(); })
+        .then(function (v) {
+          if (!v.exec_summary) return;
+          var ev = document.getElementById('pageVersion');
+          var ed = document.getElementById('pageDate');
+          if (ev) ev.textContent = v.exec_summary.version;
+          if (ed) ed.textContent = v.exec_summary.date;
+        })
+        .catch(function () { /* static fallback text remains */ });
+    }());
+  </script>
   </body>
 </html>
