@@ -34,12 +34,10 @@
     <style>
       /* ── BOX OFFICE — page-specific inline styles ────────────────────────────
        * All shared rules (reset, masthead, kpi-strip, workspace, sidebar,
-       * sidebar-label, pills, select/text-input, nav-tabs, panels, section-divider,
-       * grids, cards, callout, mini-table, status, bar-track, footer, empty,
-       * nav-tab.tab-right) live in css/styles.css.
-       *
-       * box_office has NO sidebar-toggle — sidebar always visible, collapses to
-       * full-width on mobile. See page-specific @media blocks below.
+       * sidebar-label, sidebar-toggle, pills, select/text-input, nav-tabs,
+       * panels, section-divider, grids, cards, callout, mini-table, status,
+       * bar-track, footer, empty, nav-tab.tab-right, responsive breakpoints)
+       * live in css/styles.css.
        * ────────────────────────────────────────────────────────────────────────── */
 
       /* page-specific — primary CTA button (Apply / Calculate actions) */
@@ -735,49 +733,19 @@
         font-weight: 600;
         background: var(--bg2);
       }
-      /* page-specific — scenario output collapses from 5-col at medium laptop width */
-      @media (max-width: 1100px) {
-        .out-grid {
-          grid-template-columns: repeat(2, 1fr);
-        }
-      }
-
-      /* page-specific — no sidebar-toggle; override styles.css 900px slide-in so sidebar stays visible */
-      @media (max-width: 900px) {
-        .sidebar {
-          position: static;
-          left: auto;
-          height: auto;
-          width: 100%;
-          border-right: none;
-          border-bottom: 1px solid var(--rule);
-          box-shadow: none;
-          overflow-y: visible;
-          transition: none;
-        }
-      }
-
-      /* page-specific — mobile: hide status, enable horizontal nav scroll, linearize output */
-      @media (max-width: 700px) {
-        .masthead-status {
-          display: none;
-        }
-        .nav-tabs {
-          overflow-x: auto;
-          padding: 0 12px;
-        }
-        .nav-tab {
-          white-space: nowrap;
-        }
-        .out-grid {
-          grid-template-columns: 1fr;
-        }
-      }
     </style>
   </head>
   <body>
     <!-- ══ MASTHEAD ══ -->
     <header class="masthead">
+      <!-- Sidebar toggle — visible at ≤900px -->
+      <button
+        class="sidebar-toggle"
+        onclick="toggleSidebar()"
+        aria-label="Toggle filters panel"
+        aria-expanded="false"
+        id="sidebarToggle"
+      >☰</button>
       <div class="masthead-brand">
         <div class="brand-icon">B</div>
         <div class="brand-text">
@@ -829,6 +797,9 @@
         <button class="btn btn-outline" onclick="window.print()">⎙ Print</button>
       </div>
     </header>
+
+    <!-- Sidebar backdrop — click to close on tablet -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
 
     <!-- ══ KPI STRIP ══ -->
     <div class="kpi-strip">
@@ -2646,6 +2617,20 @@
         updateRunTotalStrip();
         loadData();
       })();
+
+      /*
+       * toggleSidebar — opens/closes the filter sidebar on tablet.
+       * Identical implementation across all four dashboard pages.
+       */
+      function toggleSidebar() {
+        var sidebar  = document.querySelector('.sidebar');
+        var backdrop = document.getElementById('sidebarBackdrop');
+        var toggle   = document.getElementById('sidebarToggle');
+        if (!sidebar) return;
+        var isOpen = sidebar.classList.toggle('open');
+        if (backdrop) backdrop.classList.toggle('open', isOpen);
+        if (toggle)   toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      }
     </script>
   <!-- Mobile Warning Modal -->
   <div id="mobileWarningModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
