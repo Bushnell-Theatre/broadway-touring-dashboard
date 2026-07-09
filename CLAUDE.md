@@ -56,6 +56,18 @@ toggle behavior on one page, apply the same change to all four.
 
 ---
 
+## Versioning
+
+`src/data/versions.json` is the single source of truth for all page version numbers and dates.
+
+**Do not hardcode version strings in any HTML file.** Each page fetches `versions.json` at
+boot and injects its version into `id="pageVersion"` and `id="pageDate"` elements. The
+`index.html` hub card version spans use `id="ver-<key>"` and are also populated from this file.
+
+To bump a version: edit `versions.json` only — one commit, all pages update automatically.
+
+---
+
 ## The Golden Rule — One File, One Change
 
 Make one file change, commit, verify in the browser, then move to the next.
