@@ -401,38 +401,317 @@ select:focus, input:focus { outline: 2px solid var(--amber); outline-offset: 2px
 
 /* ── RESPONSIVE BREAKPOINTS ──────────────────────────────────────────────────
  * Canonical breakpoints for all BTD pages. Minimum supported: iPad (768px).
- * Min-width breakpoints (large screens) come first; max-width (mobile-down) follow.
+ * Min-width range blocks (V2 scale system) come first, then max-width blocks.
+ * All pages scale identically — no page-specific breakpoint files.
+ * v5.2 — Final Breakpoint Cleanup: exec_summary V2 ranges promoted here,
+ *         dashboard 900px layout rules added unscoped, standalone large-screen
+ *         blocks replaced by the V2 range-based system.
  * ────────────────────────────────────────────────────────────────────────── */
 
-/* Large desktop (1700px+) */
+/* ── MIN-WIDTH BREAKPOINTS (large-screen scaling) ─────────────────────────── */
+
+/* Large desktop (1700px+) — layout adjustments for wide screens */
 @media (min-width: 1700px) {
   :root { --kpi-value: 1.65rem; --chart-h: 260px; --small-chart-h: 195px; }
+  .panel { padding: 22px 28px; }
+  .grid-4 { grid-template-columns: repeat(4, minmax(220px, 1fr)); }
+  .grid-3 { grid-template-columns: repeat(3, minmax(280px, 1fr)); }
+  .grid-2 { grid-template-columns: repeat(2, minmax(420px, 1fr)); }
+  canvas { height: 230px !important; }
+  .small-canvas { height: 170px !important; }
 }
 
-/* 2.5K QHD / browser-scaled 4K */
-@media (min-width: 2560px) {
-  :root { --base-font: 18px; --kpi-value: 1.85rem; --chart-h: 400px; --small-chart-h: 285px; --page-max: 2520px; }
+/* Standard desktop / conference monitor (1440px–2559px) */
+@media (min-width: 1440px) and (max-width: 2559px) {
+  :root {
+    --page-max: 1920px;
+    --base-font: 16px;
+    --mast-pad-x: 38px;
+    --sidebar-w: 300px;
+    --panel-pad-y: 32px;
+    --panel-pad-x: 38px;
+    --grid-gap: 24px;
+    --card-pad: 26px;
+    --chart-h: 330px;
+    --small-chart-h: 240px;
+    --kpi-min: 205px;
+    --kpi-pad-y: 22px;
+    --kpi-pad-x: 24px;
+    --kpi-value: 1.65rem;
+    --section-title: 1.12rem;
+    --card-title-size: 1.12rem;
+    --body-copy: 0.76rem;
+    --table-copy: 0.72rem;
+    --nav-copy: 0.66rem;
+    --touch: 44px;
+  }
+  .masthead { min-height: 72px; }
+  .brand-icon { width: 44px; height: 44px; font-size: 1.22rem; }
+  .brand-text h1 { font-size: 1.28rem; }
+  .brand-text .sub { font-size: 0.64rem; }
+  .masthead-status { font-size: 0.64rem; }
+  .sidebar-label, .card-hd, .kpi-label { font-size: 0.62rem; }
+  .kpi-sub, .mini-label, .rank-detail { font-size: 0.62rem; }
+  .show-name { font-size: 1rem; }
+  .metric .val { font-size: 1.18rem; }
+  .metric .lbl { font-size: 0.54rem; }
+  .status { font-size: 0.52rem; padding: 4px 8px; }
+  .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kpi-strip { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+  .mini-table { min-width: 900px; }
 }
 
-/* 4K / large conference display */
-@media (min-width: 3840px) {
-  :root { --base-font: 22px; --kpi-value: 2.15rem; --chart-h: 500px; --small-chart-h: 360px; --page-max: 3720px; }
+/* Laptop (1101px–1439px) — reduce chrome, keep data legible */
+@media (min-width: 1101px) and (max-width: 1439px) {
+  :root {
+    --page-max: 100%;
+    --base-font: 12px;
+    --mast-pad-x: 20px;
+    --sidebar-w: 210px;
+    --panel-pad-y: 18px;
+    --panel-pad-x: 22px;
+    --grid-gap: 14px;
+    --card-pad: 15px;
+    --chart-h: 205px;
+    --small-chart-h: 150px;
+    --kpi-min: 135px;
+    --kpi-pad-y: 12px;
+    --kpi-pad-x: 14px;
+    --kpi-value: 1.1rem;
+    --section-title: 0.86rem;
+    --card-title-size: 0.9rem;
+    --body-copy: 0.64rem;
+    --table-copy: 0.62rem;
+    --nav-copy: 0.56rem;
+    --touch: 32px;
+  }
+  .grid-2 { grid-template-columns: 1fr; }
+  .grid-3 { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+  .grid-4 { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+  .masthead-actions .btn { padding: 7px 10px; }
 }
 
-/* 8K / wall display — keep centered, not edge-to-edge */
+/* Tablet landscape (901px–1100px) — filter rail becomes a top control band */
+@media (min-width: 901px) and (max-width: 1100px) {
+  :root {
+    --page-max: 100%;
+    --base-font: 12px;
+    --mast-pad-x: 18px;
+    --panel-pad-y: 18px;
+    --panel-pad-x: 18px;
+    --grid-gap: 14px;
+    --card-pad: 14px;
+    --chart-h: 210px;
+    --small-chart-h: 150px;
+    --kpi-min: 150px;
+    --kpi-value: 1.12rem;
+    --body-copy: 0.66rem;
+    --table-copy: 0.64rem;
+    --nav-copy: 0.58rem;
+    --touch: 38px;
+  }
+  .workspace { display: block; min-height: auto; }
+  .sidebar {
+    width: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--rule);
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+  }
+  .sidebar-section {
+    display: block;
+    width: auto;
+    min-width: 0;
+    border-right: 1px solid var(--rule2);
+    border-bottom: none;
+  }
+  .sidebar-section:nth-child(3n) { border-right: none; }
+  .main-pane { overflow: visible; display: block; }
+  .panel { overflow: visible; }
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; }
+  .card.full { grid-column: 1 / -1; }
+}
+
+/* Tablet portrait (761px–900px) — stacked content, keep filters readable */
+@media (min-width: 761px) and (max-width: 900px) {
+  :root {
+    --page-max: 100%;
+    --base-font: 12px;
+    --mast-pad-x: 16px;
+    --panel-pad-y: 16px;
+    --panel-pad-x: 16px;
+    --grid-gap: 13px;
+    --card-pad: 14px;
+    --chart-h: 210px;
+    --small-chart-h: 150px;
+    --kpi-min: 160px;
+    --kpi-value: 1.1rem;
+    --body-copy: 0.68rem;
+    --table-copy: 0.64rem;
+    --nav-copy: 0.58rem;
+    --touch: 40px;
+  }
+  .workspace { display: block; min-height: auto; }
+  .main-pane { overflow: visible; display: block; }
+  .panel { overflow: visible; }
+  .sidebar {
+    width: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--rule);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .sidebar-section {
+    display: block;
+    width: auto;
+    min-width: 0;
+    border-right: 1px solid var(--rule2);
+    border-bottom: 1px solid var(--rule2);
+  }
+  .sidebar-section:nth-child(2n) { border-right: none; }
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .kpi-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .masthead { min-height: 58px; }
+  .masthead-status { display: none; }
+}
+
+/* 2.5K QHD (2560px–3839px) */
+@media (min-width: 2560px) and (max-width: 3839px) {
+  :root {
+    --page-max: 2520px;
+    --base-font: 18px;
+    --mast-pad-x: 48px;
+    --sidebar-w: 330px;
+    --panel-pad-y: 36px;
+    --panel-pad-x: 42px;
+    --grid-gap: 26px;
+    --card-pad: 28px;
+    --chart-h: 400px;
+    --small-chart-h: 285px;
+    --kpi-min: 240px;
+    --kpi-pad-y: 24px;
+    --kpi-pad-x: 28px;
+    --kpi-value: 1.85rem;
+    --section-title: 1.2rem;
+    --card-title-size: 1.18rem;
+    --body-copy: 0.8rem;
+    --table-copy: 0.76rem;
+    --nav-copy: 0.7rem;
+    --touch: 48px;
+  }
+  .masthead { min-height: 74px; }
+  .brand-icon { width: 48px; height: 48px; font-size: 1.32rem; }
+  .brand-text h1 { font-size: 1.36rem; }
+  .brand-text .sub { font-size: 0.66rem; }
+  .sidebar-label, .card-hd, .kpi-label { font-size: 0.62rem; }
+  .kpi-sub, .mini-label, .rank-detail { font-size: 0.62rem; }
+  .show-name { font-size: 1rem; }
+  .status { font-size: 0.52rem; padding: 4px 8px; }
+  .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kpi-strip { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+  .mini-table { min-width: 980px; }
+}
+
+/* 4K / large conference display (3840px–5999px) */
+@media (min-width: 3840px) and (max-width: 5999px) {
+  :root {
+    --page-max: 3720px;
+    --base-font: 22px;
+    --mast-pad-x: 64px;
+    --sidebar-w: 395px;
+    --panel-pad-y: 44px;
+    --panel-pad-x: 56px;
+    --grid-gap: 34px;
+    --card-pad: 38px;
+    --chart-h: 500px;
+    --small-chart-h: 360px;
+    --kpi-min: 320px;
+    --kpi-pad-y: 30px;
+    --kpi-pad-x: 34px;
+    --kpi-value: 2.15rem;
+    --section-title: 1.42rem;
+    --card-title-size: 1.34rem;
+    --body-copy: 0.86rem;
+    --table-copy: 0.82rem;
+    --nav-copy: 0.76rem;
+    --touch: 56px;
+  }
+  .masthead { min-height: 84px; }
+  .brand-icon { width: 58px; height: 58px; font-size: 1.55rem; }
+  .brand-text h1 { font-size: 1.68rem; }
+  .brand-text .sub { font-size: 0.72rem; }
+  .masthead-status { font-size: 0.72rem; }
+  .sidebar-label, .card-hd, .kpi-label { font-size: 0.66rem; }
+  .kpi-sub, .mini-label, .rank-detail { font-size: 0.66rem; }
+  .metric .val { font-size: 1.25rem; }
+  .metric .lbl { font-size: 0.58rem; }
+  .show-name { font-size: 1.12rem; }
+  .status { font-size: 0.58rem; padding: 5px 10px; }
+  .btn { font-size: 0.68rem; padding: 12px 18px; }
+  .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kpi-strip { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+  .mini-table { min-width: 1180px; }
+}
+
+/* 8K / wall display (6000px+) — keep centered, not edge-to-edge */
 @media (min-width: 6000px) {
-  :root { --base-font: 24px; --kpi-value: 2.15rem; --chart-h: 520px; --small-chart-h: 380px; --page-max: 5200px; }
+  :root {
+    --page-max: 5200px;
+    --base-font: 24px;
+    --mast-pad-x: 64px;
+    --sidebar-w: 420px;
+    --panel-pad-y: 46px;
+    --panel-pad-x: 56px;
+    --grid-gap: 34px;
+    --card-pad: 38px;
+    --chart-h: 520px;
+    --small-chart-h: 380px;
+    --kpi-min: 360px;
+    --kpi-pad-y: 30px;
+    --kpi-pad-x: 34px;
+    --kpi-value: 2.15rem;
+    --section-title: 1.45rem;
+    --card-title-size: 1.42rem;
+    --body-copy: 0.82rem;
+    --table-copy: 0.76rem;
+    --nav-copy: 0.72rem;
+    --touch: 52px;
+  }
+  .brand-icon { width: 58px; height: 58px; font-size: 1.55rem; }
+  .brand-text h1 { font-size: 1.65rem; }
+  .brand-text .sub { font-size: 0.72rem; }
+  .masthead-status { font-size: 0.72rem; }
+  .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kpi-strip { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+  .mini-table { min-width: 1100px; }
 }
 
-/* Tablet landscape / small laptop */
+/* ── MAX-WIDTH BREAKPOINTS (tablet and mobile) ────────────────────────────── */
+
+/* Tablet landscape / small laptop (≤1200px) */
 @media (max-width: 1200px) {
   :root { --sidebar-w: 200px; }
   .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+  .grid-2 { grid-template-columns: 1fr; }
+  .masthead-actions .btn { padding: 7px 10px; }
+  .out-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
-/* Tablet portrait (iPad) — sidebar collapses to toggle */
+/* Tablet portrait / iPad — sidebar collapses to toggle (≤900px) */
 @media (max-width: 900px) {
+  /* Sidebar toggle button appears */
   .sidebar-toggle { display: flex; }
+  /* Sidebar slides in from left on all pages */
   .sidebar {
     position: fixed;
     left: -240px;
@@ -445,18 +724,51 @@ select:focus, input:focus { outline: 2px solid var(--amber); outline-offset: 2px
     overflow-y: auto;
   }
   .sidebar.open { left: 0; }
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 99;
+  }
   .sidebar-backdrop.open { display: block; }
+  /* Stack workspace vertically */
+  .workspace { display: block; }
   .grid-3 { grid-template-columns: repeat(2, 1fr); }
+  /* Dashboard chart / rank layout — unscoped; pages without these classes are unaffected */
+  .kpi-strip { grid-template-columns: repeat(3, 1fr); }
+  .kpi-cell { padding: 14px 16px; }
+  .kpi-value { font-size: 1.25rem; }
+  .chart-grid { grid-template-columns: 1fr; }
+  .chart-card.full { grid-column: 1; }
+  .chart-card:not(.full) canvas { height: 220px !important; }
+  .chart-card.full canvas { height: 180px !important; }
+  .rank-grid { grid-template-columns: 1fr; }
+  .rank-card.full { grid-column: 1; }
+  .panel { padding: 16px; }
 }
 
-/* iPad portrait minimum */
+/* Mobile / iPad portrait minimum (≤768px) */
 @media (max-width: 768px) {
   :root { --sidebar-w: 100%; }
-  .masthead { padding: 0 16px; }
-  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .masthead { padding: 0 12px; align-items: center; }
+  .masthead-brand { border-right: none; margin-right: 8px; padding-right: 8px; }
+  .brand-text h1 { font-size: 0.9rem; }
+  .brand-text .sub { display: none; }
+  .masthead-actions { gap: 5px; }
+  .masthead-actions .btn { font-size: 0.54rem; padding: 6px 8px; }
+  .masthead-status { display: none; }
+  .sidebar-section { display: block; width: 100%; min-width: 0; border-right: none; }
+  .kpi-value { font-size: 1.1rem; }
+  .kpi-cell { padding: 11px 12px; }
   .kpi-strip { grid-template-columns: repeat(2, 1fr); }
+  .nav-tabs { overflow-x: auto; padding: 0 12px; }
+  .nav-tab { padding: 12px 10px; font-size: 0.58rem; white-space: nowrap; }
+  .panel { padding: 12px; }
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
   .workspace { flex-direction: column; }
-  .nav-tabs { padding: 0 12px; }
-  .panel { padding: 16px; }
+  .out-grid { grid-template-columns: 1fr; }
+  .section-divider { align-items: flex-start; flex-wrap: wrap; }
+  .section-divider-line { display: none; }
   .footer { flex-direction: column; gap: 6px; text-align: center; }
 }
