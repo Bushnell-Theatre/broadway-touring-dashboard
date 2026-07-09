@@ -1,0 +1,6 @@
+{
+  "dashboard":   { "version": "v5.0", "date": "June 24, 2026" },
+  "programming": { "version": "v5.2", "date": "July 6, 2026"  },
+  "exec_summary":{ "version": "v5.2", "date": "July 6, 2026"  },
+  "box_office":  { "version": "v2.1", "date": "June 30, 2026" }
+}
