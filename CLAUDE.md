@@ -66,6 +66,31 @@ boot and injects its version into `id="pageVersion"` and `id="pageDate"` element
 
 To bump a version: edit `versions.json` only — one commit, all pages update automatically.
 
+### Version format: MAJOR.MINOR
+
+Pages use two-part versioning (`v5.2`, `v2.1`). No patch number — these are not libraries.
+
+| Part | Bump when |
+|---|---|
+| **MAJOR** | Page is architecturally rebuilt; a significant feature is removed; the data model changes in a breaking way; the page's fundamental purpose changes |
+| **MINOR** | New feature added (new tab, new chart, new data source, new workflow); significant UI enhancement; backward-compatible data model addition |
+| **No bump** | Bug fix, CSS tweak, copy edit, data pipeline update, breakpoint adjustment — these ship as deploys without a version change |
+
+**When in doubt: MINOR.** The version signals to stakeholders that something meaningfully
+new is available. Bug fixes and styling don't rise to that bar.
+
+**Both the version AND the date must be updated together in `versions.json`.** A version
+bump with a stale date is misleading.
+
+### Current versions (update this table when bumping)
+
+| Page | Current | Last meaningful change |
+|---|---|---|
+| dashboard.html | v5.0 | June 24, 2026 — initial production release |
+| programming.html | v5.2 | July 6, 2026 — Planning Signal redesign |
+| exec_summary.html | v5.2 | July 6, 2026 — Planning Signal redesign |
+| box_office.html | v2.1 | June 30, 2026 — venues.json integration |
+
 ---
 
 ## The Golden Rule — One File, One Change

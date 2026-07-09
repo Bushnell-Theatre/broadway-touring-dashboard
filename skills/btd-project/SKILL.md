@@ -197,9 +197,15 @@ For detailed reference on specific topics, read these files as needed:
 
 ## Version Convention
 
-- box_office.html: v2.x (major version = structural redesign)
-- dashboard.html: v5.x
-- exec_summary.html: v5.x
-- programming.html: v5.x
-- Minor version bump (x.0 → x.1) for additive changes
-- Major version bump for structural rewrites
+**Single source of truth:** `src/data/versions.json` — edit only this file to bump any version.
+All pages and the index hub read from it at boot. Never hardcode version strings in HTML.
+
+Format is **MAJOR.MINOR** (no patch). Full rules in `CLAUDE.md` → Versioning section.
+
+| Bump | When |
+|---|---|
+| MAJOR | Architectural rebuild, feature removed, breaking data model change |
+| MINOR | New feature, new tab, new chart, new data source |
+| None | Bug fix, CSS tweak, copy edit, data update |
+
+Current versions: dashboard v5.0 · programming v5.2 · exec_summary v5.2 · box_office v2.1
