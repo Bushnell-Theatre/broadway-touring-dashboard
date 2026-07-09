@@ -11,3 +11,11 @@ __pycache__/
 *.pyc
 *.zip
 *.bak
+
+# Generated validation/report artifacts — run scripts locally, do not commit output
+validation_report.html
+validation_report.json
+src/data/validation_report.json
+
+# Raw source data — processed versions live in src/data/
+data/*.csv
