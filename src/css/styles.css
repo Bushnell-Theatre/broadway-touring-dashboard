@@ -42,10 +42,26 @@
   --sidebar-w:   220px; /* standardized across all pages — was 220/230/240px per page */
 
   /* Responsive sizing — override in breakpoints */
-  --base-font:   13px;
-  --kpi-value:   1.55rem;
-  --chart-h:     240px;
-  --small-chart-h: 180px;
+  --base-font:      13px;
+  --kpi-value:      1.55rem;
+  --chart-h:        240px;
+  --small-chart-h:  180px;
+
+  /* Layout tokens — base (mobile/small) defaults; all overridden in breakpoints */
+  --mast-pad-x:     32px;
+  --panel-pad-y:    24px;
+  --panel-pad-x:    28px;
+  --grid-gap:       18px;
+  --card-pad:       20px;
+  --kpi-min:        150px;
+  --kpi-pad-y:      15px;
+  --kpi-pad-x:      18px;
+  --section-title:  0.95rem;
+  --card-title-size: 1rem;
+  --body-copy:      0.68rem;
+  --table-copy:     0.68rem;
+  --nav-copy:       0.62rem;
+  --touch:          34px;
 }
 
 /* ── RESET & BASE ───────────────────────────────────────────────────────────── */
