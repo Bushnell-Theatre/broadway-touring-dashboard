@@ -35,6 +35,7 @@ A fully static web application. There is no server, no API, no database, and no 
 │  src/dashboard.html      ← operations                   │
 │  src/programming.html    ← programming team             │
 │  src/exec_summary.html   ← leadership                   │
+│  src/box_office.html     ← box office (Brandon)         │
 │  src/data/*.json         ← all data files               │
 │  src/css/*.css                                          │
 │  src/js/utils.js                                        │

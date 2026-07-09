@@ -132,6 +132,7 @@ All dashboards also fetch:
 ## Dashboard-Specific Notes
 
 ### box_office.html
+- Has `toggleSidebar()`, `.sidebar-toggle` button, and `.sidebar-backdrop` — identical to all other pages
 - Uses `venues.json` as the canonical source for hall/section/seat data — do NOT hardcode section arrays
 - Uses `factsheets.json` for per-show contracted pricing, holds, and performance schedules
 - Scenario model works per-performance, per-section — no global pricing grid
@@ -141,21 +142,17 @@ All dashboards also fetch:
 - See `references/box-office-model.md` for the full calculation spec
 
 ### dashboard.html
-- Has `toggleSidebar()`, sidebar toggle button, and sidebar backdrop — this is the canonical implementation
-- Breakpoints: 1200px / 900px / 600px — do not add new ones without aligning other pages
+- Has `toggleSidebar()`, sidebar toggle button, and sidebar backdrop — all four pages share this pattern
 - Has Chart.js and XLSX loaded via CDN
 - Is the only page that loads `js/core/dashboard-analytics.js`
 
-### programming.html and exec_summary.html
-- Now have `toggleSidebar()`, `.sidebar-toggle` button, and `.sidebar-backdrop` — ported from dashboard.html
-
 ### exec_summary.html
-- Has a V2 Responsive Scale System (inline CSS, lines ~1094–1781) with min-width breakpoints for 1440/2560/3840/6000px — this is exec_summary-specific and intentionally stays inline
+- The V2 Responsive Scale System breakpoints are in `src/css/styles.css` (unscoped, applies to all pages) — do not add them back inline
 
 ### All pages
 - Masthead nav links must include all pages except the current one
-- Sidebar collapse pattern must match dashboard.html's implementation
-- Standard breakpoints: 1200px / 900px / 600px / 480px
+- All four pages have identical `toggleSidebar()` / `.sidebar-toggle` / `.sidebar-backdrop` — do not diverge this pattern
+- Canonical breakpoints are in `src/css/styles.css` and enforced in `CLAUDE.md` — 11 blocks from 768px through 6000px. No new breakpoint values without checking the canonical set first.
 - KPI strip collapses to 2 columns at 600px
 - CSS load order: Google Fonts → `css/styles.css` → `css/charts.css` → inline `<style>`
 

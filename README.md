@@ -16,6 +16,7 @@ A fully static web application that helps the Bushnell Center for the Performing
 | [Programming](src/programming.html) | Programming team | Working view — show-by-show signal analysis, planning candidates |
 | [Executive Summary](src/exec_summary.html) | Leadership | High-level season read, KPIs, watchlist |
 | [Dashboard](src/dashboard.html) | Operations / QA | Raw data, charts, analytics, peer benchmarks |
+| [Box Office](src/box_office.html) | Brandon (Box Office) | Scenario modeler — per-performance pricing, holds, gross projections |
 
 ---
 
@@ -64,7 +65,7 @@ Revenue (GG%) is the headline metric. Capacity is context, not the lead story.
 | [docs/OPERATIONS.md](docs/OPERATIONS.md) | Data pipeline: how to run when a new report arrives, how to add a show or season, deployment steps, environment variables |
 | [docs/DEVELOPER.md](docs/DEVELOPER.md) | Architecture, BTD namespace, shared modules, how to extend the signal model |
 | [docs/CHARTS.md](docs/CHARTS.md) | What each chart shows and why |
-| [docs/SERVER_MIGRATION_AND_EMAIL_INGESTION.md](docs/SERVER_MIGRATION_AND_EMAIL_INGESTION.md) | Planned: moving the pipeline to a dedicated box and switching report ingestion from SharePoint to a shared mailbox |
+| [SERVER_SETUP.md](SERVER_SETUP.md) | Setting up a dedicated server to run the data pipeline automatically |
 
 ---
 
