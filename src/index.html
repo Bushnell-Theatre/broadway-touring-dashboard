@@ -388,7 +388,7 @@
         </div>
         <div class="card-meta">
           <span class="card-file">dashboard.html</span>
-          <span>v5.0 · Jun 24 2026</span>
+          <span id="ver-dashboard">v5.0 · Jun 24 2026</span>
           <span class="card-arrow">→</span>
         </div>
       </a>
@@ -405,7 +405,7 @@
         </div>
         <div class="card-meta">
           <span class="card-file">programming.html</span>
-          <span>v5.0 · Jun 24 2026</span>
+          <span id="ver-programming">v5.0 · Jun 24 2026</span>
           <span class="card-arrow">→</span>
         </div>
       </a>
@@ -422,7 +422,7 @@
         </div>
         <div class="card-meta">
           <span class="card-file">exec_summary.html</span>
-          <span>v5.0 · Jun 24 2026</span>
+          <span id="ver-exec_summary">v5.0 · Jun 24 2026</span>
           <span class="card-arrow">→</span>
         </div>
       </a>
@@ -439,7 +439,7 @@
         </div>
         <div class="card-meta">
           <span class="card-file">box_office.html</span>
-          <span>v1.0 · Jun 29 2026</span>
+          <span id="ver-box_office">v1.0 · Jun 29 2026</span>
           <span class="card-arrow">→</span>
         </div>
       </a>
@@ -461,5 +461,21 @@
     </div>
   </div>
   <script>(function(){if(window.innerWidth<768){document.getElementById('mobileWarningModal').style.display='flex';}}());</script>
+  <script>
+    /* ── Load page versions from versions.json — single source of truth ── */
+    (function () {
+      fetch('data/versions.json')
+        .then(function (r) { return r.json(); })
+        .then(function (v) {
+          ['dashboard', 'programming', 'exec_summary', 'box_office'].forEach(function (key) {
+            var el = document.getElementById('ver-' + key);
+            if (el && v[key]) {
+              el.textContent = v[key].version + ' · ' + v[key].date;
+            }
+          });
+        })
+        .catch(function () { /* static fallback text remains */ });
+    }());
+  </script>
   </body>
 </html>
