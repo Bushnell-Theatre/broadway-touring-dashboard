@@ -1452,7 +1452,7 @@
         <strong>BROADWAY TOURING · BOX OFFICE MANAGER</strong>
         — CONFIDENTIAL · For internal use only
       </div>
-      <div>v2.1 · June 30, 2026 · Bushnell Center for the Performing Arts</div>
+      <div><span id="pageVersion">v2.1</span> · <span id="pageDate">June 30, 2026</span> · Bushnell Center for the Performing Arts</div>
     </footer>
 
     <!-- ══ INLINE SCRIPT ══ -->
@@ -2646,5 +2646,20 @@
     </div>
   </div>
   <script>(function(){if(window.innerWidth<768){document.getElementById('mobileWarningModal').style.display='flex';}}());</script>
+  <script>
+    /* ── Load version from versions.json — single source of truth ── */
+    (function () {
+      fetch('data/versions.json')
+        .then(function (r) { return r.json(); })
+        .then(function (v) {
+          if (!v.box_office) return;
+          var ev = document.getElementById('pageVersion');
+          var ed = document.getElementById('pageDate');
+          if (ev) ev.textContent = v.box_office.version;
+          if (ed) ed.textContent = v.box_office.date;
+        })
+        .catch(function () { /* static fallback text remains */ });
+    }());
+  </script>
   </body>
 </html>
