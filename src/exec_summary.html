@@ -45,7 +45,12 @@
        * show-card, metric, rank-list, bar-track, footer, signal-card, faq,
        * sidebar-toggle, responsive breakpoints) live in css/styles.css.
        *
-       * Three CSS layers:
+       * ⚠ DO NOT ADD @media BLOCKS HERE.
+       *   All breakpoints belong in css/styles.css — no exceptions.
+       *   The only permitted inline @media is @media print (if added).
+       *   See CLAUDE.md for the canonical breakpoint set and CSS rules.
+       *
+       * Two CSS layers:
        *   Layer 1: Page-specific components not in styles.css
        *   Layer 2: Executive Scaling Pass — visual density tuning for exec audience
        *   Layer 3: V2 Responsive Scale System — token-based breakpoints 8K → tablet
