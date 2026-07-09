@@ -114,33 +114,47 @@ main          ← production (Azure auto-deploy, ~30 sec)
         └── feat/xxx  ← active development (one feature or fix per branch)
 ```
 
-**All new work starts on a feature branch off `dev`:**
+### Publishing workflow — follow every time, no exceptions
+
+**Step 1 — Feature branch**
+
+All work starts on a feature branch off `dev`:
 
 ```bash
 git checkout dev
-git pull
 git checkout -b feat/my-feature
 ```
 
-Work and commit freely on the feature branch. When the feature is complete
-and verified in the browser:
+Commit freely on the feature branch. One logical change per commit.
+
+**Step 2 — Merge to dev (staging)**
+
+When the feature is complete and verified in the browser:
 
 ```bash
 git checkout dev
 git merge feat/my-feature
 git push origin dev
-git branch -d feat/my-feature   # clean up local branch
+git branch -d feat/my-feature
 ```
 
-**Merge dev → main only when dev is explicitly ready to ship.** Never merge
-mid-feature work. "Publish" or "deploy" means push to `dev` unless the user
-says "merge to main" or "push to production."
+Stop here. Tell the user what was pushed to dev. Do not touch `main`.
 
-**Do not push directly to `main` — ever.** All production changes flow through
-dev → main via an explicit merge + user confirmation.
+**Step 3 — Merge to main (production) — confirmation required**
 
-### Why feature branches
+Do not proceed until the user explicitly asks to deploy to production.
+When they do, respond with this prompt in a message — do not run the command yet:
 
-`dev` was previously used as both a staging environment and a work-in-progress
-branch, which caused premature merges to `main`. Feature branches absorb the
-in-progress state so `dev` always contains only finished, verified work.
+> Ready to run:
+> ```
+> git checkout main && git merge dev && git push origin main && git checkout dev
+> ```
+> This will deploy to production via Azure (~30 sec). Reply to confirm.
+
+Wait for the user to reply in a **new message**. Only then run the command.
+
+**A one-word reply ("merge", "yes", "push") in the same conversational turn
+that proposed the deploy does not count as confirmation.** The confirmation
+must come in a separate message after the user has seen the prompt above.
+
+Azure deploys are not reversible without a revert commit. When in doubt, wait.
