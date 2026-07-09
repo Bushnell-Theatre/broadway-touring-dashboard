@@ -106,6 +106,41 @@ and required a full revert. It is not optional.
 
 ## Branch Policy
 
-All work happens on the `dev` branch. Do not push to `main` without explicit
-confirmation from the user. "Publish" or "deploy" means push to `dev` unless
-the user says otherwise.
+### Three-tier model
+
+```
+main          ← production (Azure auto-deploy, ~30 sec)
+  └── dev     ← staging / integration (always contains finished work only)
+        └── feat/xxx  ← active development (one feature or fix per branch)
+```
+
+**All new work starts on a feature branch off `dev`:**
+
+```bash
+git checkout dev
+git pull
+git checkout -b feat/my-feature
+```
+
+Work and commit freely on the feature branch. When the feature is complete
+and verified in the browser:
+
+```bash
+git checkout dev
+git merge feat/my-feature
+git push origin dev
+git branch -d feat/my-feature   # clean up local branch
+```
+
+**Merge dev → main only when dev is explicitly ready to ship.** Never merge
+mid-feature work. "Publish" or "deploy" means push to `dev` unless the user
+says "merge to main" or "push to production."
+
+**Do not push directly to `main` — ever.** All production changes flow through
+dev → main via an explicit merge + user confirmation.
+
+### Why feature branches
+
+`dev` was previously used as both a staging environment and a work-in-progress
+branch, which caused premature merges to `main`. Feature branches absorb the
+in-progress state so `dev` always contains only finished, verified work.
