@@ -4745,9 +4745,9 @@ async function processFile(file) {
       </div>
       <div class="footer-right">
         Broadway Touring Sales Intelligence ·
-        <strong>v5.0</strong>
+        <strong id="pageVersion">v5.0</strong>
         <br />
-        Build date: June 24, 2026
+        Build date: <span id="pageDate">June 24, 2026</span>
       </div>
     </footer>
   <!-- Mobile Warning Modal -->
@@ -4759,5 +4759,20 @@ async function processFile(file) {
     </div>
   </div>
   <script>(function(){if(window.innerWidth<768){document.getElementById('mobileWarningModal').style.display='flex';}}());</script>
+  <script>
+    /* ── Load version from versions.json — single source of truth ── */
+    (function () {
+      fetch('data/versions.json')
+        .then(function (r) { return r.json(); })
+        .then(function (v) {
+          if (!v.dashboard) return;
+          var ev = document.getElementById('pageVersion');
+          var ed = document.getElementById('pageDate');
+          if (ev) ev.textContent = v.dashboard.version;
+          if (ed) ed.textContent = v.dashboard.date;
+        })
+        .catch(function () { /* static fallback text remains */ });
+    }());
+  </script>
   </body>
 </html>
