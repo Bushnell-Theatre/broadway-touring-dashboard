@@ -216,6 +216,7 @@ select:focus, input:focus { outline: 2px solid var(--amber); outline-offset: 2px
   padding: 0 28px;
   flex-shrink: 0;
   overflow-x: auto;
+  overflow-y: hidden; /* prevent browser auto-setting overflow-y:auto which shows scroll arrows */
 }
 .nav-tab {
   font-family: var(--sans);
