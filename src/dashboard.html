@@ -785,6 +785,112 @@
       .print-filters {
         display: none;
       }
+
+      /* page-specific — chart/KPI info button and modal */
+      .info-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 1px solid var(--rule);
+        background: transparent;
+        color: var(--ink3);
+        font-size: 0.6rem;
+        font-family: var(--serif);
+        font-style: italic;
+        font-weight: 700;
+        cursor: pointer;
+        line-height: 1;
+        vertical-align: middle;
+        margin-left: 6px;
+        flex-shrink: 0;
+        transition: border-color 0.15s, color 0.15s, background 0.15s;
+      }
+      .info-btn:hover {
+        border-color: var(--amber);
+        color: var(--amber);
+        background: var(--amber-lt);
+      }
+      .kpi-label .info-btn {
+        width: 14px;
+        height: 14px;
+        font-size: 0.55rem;
+        margin-left: 4px;
+      }
+      #infoModal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        z-index: 2000;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+      #infoModal.open {
+        display: flex;
+      }
+      .info-modal-box {
+        background: #fff;
+        border-radius: 4px;
+        max-width: 560px;
+        width: 100%;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.22);
+        display: flex;
+        flex-direction: column;
+        max-height: 80vh;
+        overflow: hidden;
+      }
+      .info-modal-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        padding: 20px 24px 16px;
+        border-bottom: 1px solid var(--rule);
+        gap: 12px;
+        flex-shrink: 0;
+      }
+      .info-modal-title {
+        font-family: var(--serif);
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--ink);
+        line-height: 1.25;
+      }
+      .info-modal-close {
+        border: none;
+        background: transparent;
+        font-size: 0.85rem;
+        color: var(--ink3);
+        cursor: pointer;
+        padding: 2px 4px;
+        line-height: 1;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+      .info-modal-close:hover { color: var(--ink); }
+      .info-modal-body {
+        padding: 20px 24px 24px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .info-modal-section-label {
+        font-size: 0.58rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--amber);
+        margin-bottom: 5px;
+      }
+      .info-modal-text {
+        font-size: 0.75rem;
+        color: var(--ink2);
+        line-height: 1.7;
+      }
     </style>
   </head>
   <body>
@@ -868,42 +974,42 @@
     <!-- KPI STRIP -->
     <div class="kpi-strip">
       <div class="kpi-cell">
-        <div class="kpi-label">Engagements</div>
+        <div class="kpi-label">Engagements<button class="info-btn" onclick="showInfo('kpi-engagements')" aria-label="About Engagements">i</button></div>
         <div class="kpi-value" id="kCount">—</div>
         <div class="kpi-sub">with gross data</div>
       </div>
       <div class="kpi-cell">
-        <div class="kpi-label">Total Gross</div>
+        <div class="kpi-label">Total Gross<button class="info-btn" onclick="showInfo('kpi-gross')" aria-label="About Total Gross">i</button></div>
         <div class="kpi-value" id="kGross">—</div>
         <div class="kpi-sub">filtered selection</div>
       </div>
       <div class="kpi-cell">
-        <div class="kpi-label">Avg % Cap Paid</div>
+        <div class="kpi-label">Avg % Cap Paid<button class="info-btn" onclick="showInfo('kpi-cap')" aria-label="About Avg % Cap Paid">i</button></div>
         <div class="kpi-value" id="kCap">—</div>
         <div class="kpi-sub">paid seats / total capacity</div>
       </div>
       <div class="kpi-cell">
-        <div class="kpi-label">Avg GG% Potential</div>
+        <div class="kpi-label">Avg GG% Potential<button class="info-btn" onclick="showInfo('kpi-ggpct')" aria-label="About Avg GG% Potential">i</button></div>
         <div class="kpi-value" id="kGgPct">—</div>
         <div class="kpi-sub">gross vs potential</div>
       </div>
       <div class="kpi-cell">
-        <div class="kpi-label">Avg Paid Admission</div>
+        <div class="kpi-label">Avg Paid Admission<button class="info-btn" onclick="showInfo('kpi-adm')" aria-label="About Avg Paid Admission">i</button></div>
         <div class="kpi-value" id="kAdm">—</div>
         <div class="kpi-sub">per ticket sold</div>
       </div>
       <div class="kpi-cell">
-        <div class="kpi-label">Sub Avg Gross</div>
+        <div class="kpi-label">Sub Avg Gross<button class="info-btn" onclick="showInfo('kpi-sub')" aria-label="About Sub Avg Gross">i</button></div>
         <div class="kpi-value" id="kSubAvg">—</div>
         <div class="kpi-sub">avg gross subscribed</div>
       </div>
       <div class="kpi-cell">
-        <div class="kpi-label">Peer Avg % Cap</div>
+        <div class="kpi-label">Peer Avg % Cap<button class="info-btn" onclick="showInfo('kpi-peercap')" aria-label="About Peer Avg % Cap">i</button></div>
         <div class="kpi-value" id="kPeerCap">—</div>
         <div class="kpi-sub">size-matched peer venues</div>
       </div>
       <div class="kpi-cell">
-        <div class="kpi-label">Peer Avg Gross</div>
+        <div class="kpi-label">Peer Avg Gross<button class="info-btn" onclick="showInfo('kpi-peergross')" aria-label="About Peer Avg Gross">i</button></div>
         <div class="kpi-value" id="kPeerGross">—</div>
         <div class="kpi-sub">size-matched peer venues</div>
       </div>
@@ -1298,7 +1404,7 @@
                Shows: Cumulative gross revenue per show across all filtered weeks, top 12
                Rendered by: renderCharts() — look for dc('sg')
                ═══════════════════════════════════════════════════ -->
-              <div class="chart-hd">Top 12 Shows</div>
+              <div class="chart-hd">Top 12 Shows<button class="info-btn" onclick="showInfo('chart-sg')" aria-label="About Top 12 Shows">i</button></div>
               <div class="chart-sub">Total gross — all filtered weeks</div>
               <canvas id="cShowGross"></canvas>
             </div>
@@ -1311,7 +1417,7 @@
                Teal bar = at or above 100% potential | Navy bar = below potential
                Rendered by: renderCharts() — look for dc('gp')
                ═══════════════════════════════════════════════════ -->
-              <div class="chart-hd">Avg GG% of Potential</div>
+              <div class="chart-hd">Avg GG% of Potential<button class="info-btn" onclick="showInfo('chart-gp')" aria-label="About Avg GG% of Potential">i</button></div>
               <div class="chart-sub">By show — color indicates over/under potential</div>
               <canvas id="cGgPct"></canvas>
             </div>
@@ -1327,7 +1433,7 @@
                Broadway League report weeks, not a data error
                Rendered by: renderCharts() — look for dc('wk')
                ═══════════════════════════════════════════════════ -->
-              <div class="chart-hd">Weekly Gross Trend</div>
+              <div class="chart-hd">Weekly Gross Trend<button class="info-btn" onclick="showInfo('chart-wk')" aria-label="About Weekly Gross Trend">i</button></div>
               <div class="chart-sub">
                 Total gross by report week ·
                 <span id="weeklyChartNote" style="color: var(--amber)">
@@ -1345,7 +1451,7 @@
                Color: Green ≥ 90% | Amber 60–89% | Red < 60%
                Rendered by: renderCharts() — look for dc('mc')
                ═══════════════════════════════════════════════════ -->
-              <div class="chart-hd">% Capacity Paid by Market</div>
+              <div class="chart-hd">% Capacity Paid by Market<button class="info-btn" onclick="showInfo('chart-mc')" aria-label="About % Capacity Paid by Market">i</button></div>
               <div class="chart-sub">Top 20 markets — green ≥ 90%, amber 60–89%, red &lt; 60%</div>
               <canvas id="cMarketCap"></canvas>
             </div>
@@ -1358,7 +1464,7 @@
                split between subscribed and non-subscribed engagements
                Rendered by: renderCharts() — look for dc('sc')
                ═══════════════════════════════════════════════════ -->
-              <div class="chart-hd">Subscription vs Non-Subscription</div>
+              <div class="chart-hd">Subscription vs Non-Subscription<button class="info-btn" onclick="showInfo('chart-sc')" aria-label="About Subscription vs Non-Subscription">i</button></div>
               <div class="chart-sub">Average gross and capacity comparison</div>
               <canvas id="cSubComp"></canvas>
             </div>
@@ -1374,7 +1480,7 @@
           </div>
           <div class="rank-grid">
             <div class="rank-card">
-              <div class="rank-hd">Top Grossing Shows</div>
+              <div class="rank-hd">Top Grossing Shows<button class="info-btn" onclick="showInfo('rank-topgross')" aria-label="About Top Grossing Shows">i</button></div>
               <div class="rank-sub">Cumulative gross across all filtered weeks</div>
               <!-- ═══════════════════════════════════════════════════
              LIST: Top Grossing Shows
@@ -1385,7 +1491,7 @@
               <div id="rShowGross"></div>
             </div>
             <div class="rank-card">
-              <div class="rank-hd">Bottom Grossing Shows</div>
+              <div class="rank-hd">Bottom Grossing Shows<button class="info-btn" onclick="showInfo('rank-bottomgross')" aria-label="About Bottom Grossing Shows">i</button></div>
               <div class="rank-sub">Cumulative gross across all filtered weeks</div>
               <!-- ═══════════════════════════════════════════════════
                LIST: Bottom Grossing Shows
@@ -1396,7 +1502,7 @@
               <div id="rShowGrossBottom"></div>
             </div>
             <div class="rank-card full">
-              <div class="rank-hd">Week-over-Week Change</div>
+              <div class="rank-hd">Week-over-Week Change<button class="info-btn" onclick="showInfo('rank-wow')" aria-label="About Week-over-Week Change">i</button></div>
               <div class="rank-sub">
                 All shows — sorted by WoW % change ·
                 <span id="wowWeekLabel" style="color: var(--amber)"></span>
@@ -1411,7 +1517,7 @@
               <div id="rShowWow"></div>
             </div>
             <div class="rank-card">
-              <div class="rank-hd">Top Markets by Total Gross</div>
+              <div class="rank-hd">Top Markets by Total Gross<button class="info-btn" onclick="showInfo('rank-mktgross')" aria-label="About Top Markets by Total Gross">i</button></div>
               <div class="rank-sub">Cumulative gross revenue by city</div>
               <!-- ═══════════════════════════════════════════════════
                LIST: Top Markets by Total Gross
@@ -1422,7 +1528,7 @@
               <div id="rMarketGross"></div>
             </div>
             <div class="rank-card">
-              <div class="rank-hd">Markets by Avg Capacity</div>
+              <div class="rank-hd">Markets by Avg Capacity<button class="info-btn" onclick="showInfo('rank-mktcap')" aria-label="About Markets by Avg Capacity">i</button></div>
               <div class="rank-sub">Average % capacity paid across engagements</div>
               <!-- ═══════════════════════════════════════════════════
                LIST: Markets by Avg % Capacity Paid
@@ -1433,7 +1539,7 @@
               <div id="rMarketCap"></div>
             </div>
             <div class="rank-card full">
-              <div class="rank-hd">Capacity Utilization by Theatre Size</div>
+              <div class="rank-hd">Capacity Utilization by Theatre Size<button class="info-btn" onclick="showInfo('rank-theatre-size')" aria-label="About Capacity Utilization by Theatre Size">i</button></div>
               <div class="rank-sub">Seat capacity brackets — average % paid and gross</div>
               <!-- ═══════════════════════════════════════════════════
              CHART: Capacity Utilization by Theatre Size
@@ -1483,7 +1589,7 @@
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px">
             <div class="chart-card" style="grid-column: 1/-1">
               <div class="chart-hd">
-                Seasonality
+                Seasonality<button class="info-btn" onclick="showInfo('analytics-seasonality')" aria-label="About Seasonality">i</button>
                 <span style="float: right; display: flex; gap: 4px">
                   <button
                     class="pill active"
@@ -1526,7 +1632,7 @@
 
             <div class="chart-card" style="grid-column: 1/-1">
               <div class="chart-hd">
-                Year over Year Comparison
+                Year over Year Comparison<button class="info-btn" onclick="showInfo('analytics-yoy')" aria-label="About Year over Year Comparison">i</button>
                 <span style="float: right; display: flex; gap: 4px">
                   <button
                     class="pill active"
@@ -1565,7 +1671,7 @@
             </div>
 
             <div class="chart-card">
-              <div class="chart-hd">Show Longevity</div>
+              <div class="chart-hd">Show Longevity<button class="info-btn" onclick="showInfo('analytics-longevity')" aria-label="About Show Longevity">i</button></div>
               <div class="chart-sub">Number of weeks each show ran — top 20</div>
               <!-- ═══════════════════════════════════════════════════
          CHART: Show Longevity
@@ -1578,7 +1684,7 @@
             </div>
 
             <div class="chart-card">
-              <div class="chart-hd">Top Shows by % Capacity</div>
+              <div class="chart-hd">Top Shows by % Capacity<button class="info-btn" onclick="showInfo('analytics-caprank')" aria-label="About Top Shows by % Capacity">i</button></div>
               <div class="chart-sub">Avg % capacity paid — ranked, min 3 weeks</div>
               <!-- ═══════════════════════════════════════════════════
          CHART: Top Shows by % Capacity Paid
@@ -1592,7 +1698,7 @@
             </div>
 
             <div class="chart-card">
-              <div class="chart-hd">Most Consistent Shows</div>
+              <div class="chart-hd">Most Consistent Shows<button class="info-btn" onclick="showInfo('analytics-consistency')" aria-label="About Most Consistent Shows">i</button></div>
               <div class="chart-sub">Lowest std deviation in weekly gross — min 5 weeks</div>
               <!-- ═══════════════════════════════════════════════════
          CHART: Most Consistent Shows (Gross Variance)
@@ -1608,7 +1714,7 @@
             </div>
 
             <div class="chart-card">
-              <div class="chart-hd">No Performance Rate</div>
+              <div class="chart-hd">No Performance Rate<button class="info-btn" onclick="showInfo('analytics-noperf')" aria-label="About No Performance Rate">i</button></div>
               <div class="chart-sub">
                 Shows with both active and dark weeks — dark week % of total appearances, min 3 active weeks
               </div>
@@ -1625,7 +1731,7 @@
             </div>
 
             <div class="chart-card" style="grid-column: 1/-1">
-              <div class="chart-hd">Bushnell vs Peer Gap</div>
+              <div class="chart-hd">Bushnell vs Peer Gap<button class="info-btn" onclick="showInfo('analytics-peergap')" aria-label="About Bushnell vs Peer Gap">i</button></div>
               <div class="chart-sub">Weekly avg % capacity — Bushnell-size venues vs all others</div>
               <!-- ═══════════════════════════════════════════════════
          CHART: Bushnell vs Peer Gap — Weekly Avg % Capacity
@@ -4751,6 +4857,30 @@ async function processFile(file) {
       </div>
     </footer>
   <!-- Mobile Warning Modal -->
+  <!-- ── CHART INFO MODAL ── -->
+  <div id="infoModal" role="dialog" aria-modal="true" aria-labelledby="infoModalTitle">
+    <div class="info-modal-box">
+      <div class="info-modal-head">
+        <div class="info-modal-title" id="infoModalTitle"></div>
+        <button class="info-modal-close" onclick="closeInfo()" aria-label="Close">✕</button>
+      </div>
+      <div class="info-modal-body">
+        <div>
+          <div class="info-modal-section-label">What this shows</div>
+          <div class="info-modal-text" id="infoWhat"></div>
+        </div>
+        <div>
+          <div class="info-modal-section-label">How it's calculated</div>
+          <div class="info-modal-text" id="infoHow"></div>
+        </div>
+        <div>
+          <div class="info-modal-section-label">What to look for</div>
+          <div class="info-modal-text" id="infoLook"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="mobileWarningModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
     <div style="background:#fff;border-radius:8px;padding:2rem;max-width:380px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.3);">
       <h2 style="margin:0 0 .75rem;font-size:1.25rem;">Desktop Recommended</h2>
@@ -4773,6 +4903,190 @@ async function processFile(file) {
         })
         .catch(function () { /* static fallback text remains */ });
     }());
+  </script>
+  <script>
+    /* ── CHART / KPI INFO MODAL ── */
+    var INFO = {
+      'kpi-engagements': {
+        title: 'Engagements',
+        what: 'The count of individual performance weeks included in your current filter selection. Each engagement represents one week of Broadway League reporting data for a specific show at a specific venue — so a show that ran for 10 weeks at one theatre counts as 10 engagements.',
+        how: 'The dashboard counts every row in the Broadway League dataset where gross revenue was reported, limited to your active filters. Rows without gross data — dark weeks or missing reports — are excluded from this count.',
+        look: 'A higher count means more statistical confidence in the averages shown below it. If this number seems unexpectedly low after filtering, try widening your date range or relaxing other filters. Very small counts (under 20) should be interpreted with caution.'
+      },
+      'kpi-gross': {
+        title: 'Total Gross',
+        what: 'The sum of all ticket revenue reported across every engagement in your current filter. This is the headline revenue figure for whatever combination of shows, markets, and time periods you have selected.',
+        how: 'Broadway League members report gross gross (GG) — total ticket revenue before any deductions — for each venue, show, and week combination. This tile sums all of those GG values within the current filter.',
+        look: 'The raw number is less meaningful than trends and comparisons. Compare this against the same shows in prior periods, or against peer markets, to understand relative revenue scale. Watch how this figure changes as you adjust filters — it can reveal which shows or markets are driving the most economic activity.'
+      },
+      'kpi-cap': {
+        title: 'Avg % Cap Paid',
+        what: 'On average, what percentage of seats at these venues were sold to paying customers — excluding complimentary tickets. This is the single most consistent indicator of audience demand across the Broadway touring industry, since it normalizes for venue size.',
+        how: 'For each engagement, the Broadway League reports paid tickets sold and total venue capacity. This tile divides paid tickets by total capacity for each engagement, then averages those ratios across all filtered engagements.',
+        look: 'A healthy range for Broadway-caliber touring is roughly 75–85%. Averages below 60% suggest weak market fit or soft demand; above 90% suggests strong demand and potentially that the venue is undersized for the show. Compare your Peer Avg % Cap tile to the right to see how these results compare to comparable venues nationally.'
+      },
+      'kpi-ggpct': {
+        title: 'Avg GG% Potential',
+        what: 'On average, how much of the theoretical maximum revenue was actually captured. Gross potential (GP) represents what the venue would earn if every seat sold at the highest published price — this metric shows what fraction of that ceiling was actually reached.',
+        how: 'Each engagement in the Broadway League data carries a gross potential figure. The dashboard divides actual gross gross by gross potential for each engagement, then averages those ratios across the filter. Values above 100% are possible when premium or dynamic pricing lifts revenue above the face-value ceiling.',
+        look: 'This metric captures both seat fill and price efficiency together, making it more revealing than capacity alone. A show can fill 90% of seats but still show a low GG%GP if heavy discounting was applied. Strong-performing shows and markets typically show 70% or above. Teal-coded values in the charts signal at-or-above-ceiling performance.'
+      },
+      'kpi-adm': {
+        title: 'Avg Paid Admission',
+        what: 'The average amount actually paid per ticket, derived from reported revenue and sold ticket counts. This is a practical proxy for effective ticket price — what the market was willing to pay on average after any discounting, dynamic pricing, or subscription bundling.',
+        how: 'The Broadway League reports both gross gross and paid tickets for each engagement. The dashboard divides gross by paid tickets to compute an implied average admission per engagement, then averages those figures across all filtered engagements.',
+        look: 'Compare this figure across shows to identify pricing spread. High-demand productions — long-running blockbusters, marquee titles — will cluster significantly higher. Comparing a show\'s average admission at Bushnell against its national average tells you whether your market is pricing competitively, at a premium, or at a discount relative to the field.'
+      },
+      'kpi-sub': {
+        title: 'Sub Avg Gross',
+        what: 'The average gross revenue for engagements that were part of a subscription season package, as distinct from single-ticket walk-up sales. Subscription engagements are generally pre-sold and more predictable — this tile shows their average revenue contribution.',
+        how: 'Each Broadway League record is tagged to indicate whether the show was booked as part of the venue\'s subscription series. This tile filters to those tagged records and computes average gross gross across that subset within the current filter.',
+        look: 'For venues with a Broadway subscription series like Bushnell, this is your baseline revenue floor per show. A large gap between this figure and Total Gross ÷ Engagements may indicate that subscription shows tend to be either stronger or weaker than your single-ticket productions — useful context for programming and pricing strategy.'
+      },
+      'kpi-peercap': {
+        title: 'Peer Avg % Cap',
+        what: 'The average seat fill rate at comparable venues — theatres of similar physical capacity to Bushnell — across the same filtered data. This is your national market benchmark for audience demand, letting you place your own venue\'s performance in context.',
+        how: 'Peer venues are identified using a size-similarity flag maintained in the peer definitions file. This tile computes average capacity paid across all engagements at those flagged peer venues within the current filter.',
+        look: 'If Bushnell\'s Avg % Cap Paid tracks closely with this number, your house is filling at the pace expected for your venue tier. If Bushnell lags peers, investigate whether programming mix, pricing, or local market conditions explain the gap. If Bushnell consistently leads peers, that is a meaningful signal of programming strength worth quantifying in budget conversations.'
+      },
+      'kpi-peergross': {
+        title: 'Peer Avg Gross',
+        what: 'The average gross revenue per engagement at comparable peer venues. Paired with peer capacity, this tells a more complete story — a peer venue may fill seats at the same rate but earn more or less per engagement depending on house size and pricing.',
+        how: 'The same set of size-matched peer venues used in Peer Avg % Cap. This tile averages their gross gross values across the filtered engagements.',
+        look: 'Compare this to your Total Gross ÷ Engagements to understand where Bushnell sits on a per-show basis relative to peers. If your per-engagement gross is lower than peers despite similar capacity fill, dig into pricing — average admission may be the differentiating factor.'
+      },
+      'chart-sg': {
+        title: 'Top 12 Shows — Total Gross',
+        what: 'Which shows generated the most total ticket revenue across the filtered period, ranked from highest to lowest. This gives you a fast read on which productions drove the most economic activity in your selection.',
+        how: 'All filtered engagement records are grouped by show title. Each show\'s gross gross values are summed across all weeks and venues, and the top 12 by total gross are displayed as horizontal bars. Bar length represents cumulative revenue.',
+        look: 'Total gross is heavily influenced by run length — a show with 30 weeks of data will naturally outgross a 5-week show, even if the shorter show averaged more per week. Use this chart to identify revenue leaders, then cross-reference with the Avg GG% of Potential chart to understand whether those leaders also performed efficiently, or simply ran longer.'
+      },
+      'chart-gp': {
+        title: 'Avg GG% of Potential',
+        what: 'For the same shows, this chart shifts from raw revenue to revenue efficiency — what percentage of each show\'s theoretical maximum was captured on average per engagement. It separates shows that simply ran longer from those that genuinely performed at or above expectation.',
+        how: 'For each show, gross gross is divided by gross potential for every engagement week, then those ratios are averaged across all of that show\'s filtered weeks. The result is an average efficiency percentage. Bars in teal indicate shows averaging at or above 100% of potential; bars in navy are below.',
+        look: 'A show that leads the previous chart but sits near the bottom of this one may be a long-running production that filled seats modestly. A show near the top here — especially in teal — indicates strong pricing and demand alignment, or dynamic pricing outperforming face value. These are the most compelling titles to flag for future booking consideration.'
+      },
+      'chart-wk': {
+        title: 'Weekly Gross Trend',
+        what: 'Revenue over time, week by week, showing both the actual weekly total and a smoothed trend line. This makes seasonal rhythms, growth or decline trajectories, and one-off spikes clearly visible without requiring any calculation on your part.',
+        how: 'All filtered engagements are grouped by their reporting week date. Gross revenue is summed per week across all venues and shows. A full calendar spine is drawn between the earliest and latest dates in the filter — weeks with no reporting show as zero, which is normal for gaps between League report cycles. An 8-week rolling average is overlaid to smooth week-to-week volatility.',
+        look: 'Read the moving average line, not individual bars, for direction. Persistent upward or downward movement in the average over 4–6 weeks is meaningful; single-week spikes are often explained by holidays, venue concentrations, or report timing. Look for structural seasonal patterns: pre-holiday peaks (November–December), spring peaks (March–May), and summer troughs (July–August) are consistent across most years.'
+      },
+      'chart-mc': {
+        title: '% Capacity Paid by Market',
+        what: 'Which cities are filling Broadway touring houses most effectively, ranked by average seat fill rate across the top 20 markets in your filter. This tells you where audience demand for touring Broadway is structurally strong and where it is softer.',
+        how: 'All filtered engagements are grouped by city. Average capacity paid (paid tickets ÷ total capacity) is computed per city. The top 20 cities by average capacity are displayed as vertical bars. Bars are color-coded: teal at or above 90%, amber 60–89%, rose below 60%.',
+        look: 'Top-tier markets like Chicago, Los Angeles, and Boston may appear here but have dynamics that don\'t transfer directly to mid-size markets. Pay particular attention to cities of comparable size to Hartford — those are your true analogues. A city consistently amber or rose warrants questions about whether the show mix, venue configuration, or local pricing is driving underperformance there relative to similarly sized markets.'
+      },
+      'chart-sc': {
+        title: 'Subscription vs Non-Subscription',
+        what: 'A side-by-side comparison of how subscription season engagements perform against non-subscription, single-ticket engagements — on both revenue and seat fill. Subscription packaging fundamentally changes the demand dynamic, and this chart surfaces that difference clearly.',
+        how: 'Every engagement record is tagged to indicate whether it was part of a venue\'s subscription series. This chart computes average gross revenue (left axis) and average capacity paid (right axis) separately for the two groups across your current filter, displayed as a grouped bar chart with dual axes.',
+        look: 'Subscription engagements often show higher capacity fill because the house is pre-sold to season ticket holders, but may show lower gross per engagement if subscription pricing involves bundled discounting. A large gap in capacity fill but similar gross between the two groups suggests pricing compression in the subscription bundle. If single-ticket engagements outperform on both measures, that raises questions about subscription pricing strategy or show mix.'
+      },
+      'rank-topgross': {
+        title: 'Top Grossing Shows',
+        what: 'The ten shows that generated the most cumulative gross revenue in the filtered period, with the ability to expand each show and see how revenue broke down by individual venue. This provides a granular view of which productions drove value and exactly where.',
+        how: 'Shows are ranked by their total summed gross gross across all filtered engagements. Clicking a show row expands to reveal each venue that hosted the show, with that venue\'s gross, average capacity paid, and number of reporting weeks.',
+        look: 'Expand the top performers to see whether their revenue is concentrated in one or two major markets or distributed broadly across many venues. A show concentrated in a single mega-market may look strong nationally but be a riskier programming bet for a mid-size market like Hartford. Broad geographic distribution of strong numbers indicates a show with wide demographic appeal.'
+      },
+      'rank-bottomgross': {
+        title: 'Bottom Grossing Shows',
+        what: 'The ten lowest-performing shows by cumulative gross revenue — the productions that struggled most to generate revenue in the filtered period. This list is as useful for programming decisions as the top list.',
+        how: 'Same methodology as Top Grossing Shows, but sorted ascending by total gross. Venue-level detail is available by expanding each row.',
+        look: 'Low cumulative gross is not always a warning sign — a short-run production with only 4 weeks of data will naturally appear here. Always check engagement count before drawing conclusions. Shows with substantial run time and still low gross are the ones that warrant closer examination. Check whether the weakness was concentrated in certain cities or spread broadly across all markets.'
+      },
+      'rank-wow': {
+        title: 'Week-over-Week Change',
+        what: 'A momentum table showing how each show\'s gross revenue changed between the two most recent reporting weeks in your filter. This is the dashboard\'s pulse check — which shows are accelerating, which are slowing, and by how much.',
+        how: 'The two most recent distinct reporting weeks in the filtered dataset are identified. For each show present in both weeks, total gross is summed across all venues, and the percentage change is computed: ((current week − prior week) ÷ prior week) × 100. Expanding a row shows the individual venue contributions in both weeks.',
+        look: 'Large positive swings often reflect opening week momentum, a holiday bump, or an expansion into additional venues. Large negative swings may signal closing weeks, soft demand, or a contraction of venues. This table is most useful when filtered to a specific show, season, or short date window — applying it to a broad multi-year filter blends too many different periods to be actionable.'
+      },
+      'rank-mktgross': {
+        title: 'Top Markets by Total Gross',
+        what: 'The ten highest-grossing cities in the filtered period — ranked by the total ticket revenue generated across all shows and weeks in each market. This shows where the money in Broadway touring is concentrated nationally.',
+        how: 'All filtered engagements are grouped by city. Gross gross is summed per city across all shows and weeks. The top 10 by total gross are ranked and displayed, each representing all reporting activity from that city within the filter.',
+        look: 'Major touring markets predictably dominate at scale. What is more useful for Bushnell is the tier just below — mid-size markets that may be more direct comparables. Filter by a specific show or tour type to make this ranking reflect the specific programming context most relevant to your planning decisions.'
+      },
+      'rank-mktcap': {
+        title: 'Markets by Avg Capacity',
+        what: 'The ten cities that most consistently filled seats as a percentage of capacity across all filtered shows and weeks. This separates markets where demand is structurally strong from markets that generate revenue primarily through volume or large venue size.',
+        how: 'Average capacity paid (paid tickets ÷ total capacity) is computed per city across all filtered engagements, then cities are ranked by that average. The engagement count shown under each city name indicates how many data points inform the average.',
+        look: 'Cities with high average capacity but not in the top gross list are often markets where mid-size venues are filling efficiently — that is a comparable profile to Bushnell. Cities in both lists are where demand and volume align. For the most relevant comparison, look for cities with similar engagement counts and venue configurations to Hartford.'
+      },
+      'rank-theatre-size': {
+        title: 'Capacity Utilization by Theatre Size',
+        what: 'How does venue size affect both seat fill and gross revenue? This breaks national touring performance into five capacity brackets, revealing whether larger venues fill proportionally to their size or whether mid-size venues outperform on a per-seat basis.',
+        how: 'Each engagement record includes a reported venue capacity. Records are sorted into five brackets: under 5,000 seats, 5,000–10,000, 10,000–15,000, 15,000–20,000, and over 20,000. Average capacity paid and average gross revenue are computed within each bracket and displayed as both a numerical summary grid and a dual-axis bar chart (left axis: % capacity, right axis: gross revenue).',
+        look: 'Bushnell\'s Mortensen Hall seats approximately 2,700 — firmly in the under-5,000 bracket. Knowing how that bracket performs on average nationally tells you what is structurally achievable for a venue of your size. If the under-5,000 bracket consistently outperforms larger brackets on % capacity, it confirms that intimate houses fill more reliably — a meaningful argument for programming decisions that match show scale to venue scale.'
+      },
+      'analytics-seasonality': {
+        title: 'Seasonality',
+        what: 'When during the year does Broadway touring revenue peak and trough? This chart maps average gross by time of year across all the fiscal years in your filter, normalized so you can read the structural rhythm independently of any one season\'s specific results.',
+        how: 'The dashboard uses a performing arts fiscal calendar running July through June (fiscal week 1 = first Sunday on or after July 1). All filtered engagements are grouped by their fiscal week or month number and averaged across all years in the filter to create a composite profile of a typical year. Toggle between weekly and monthly views — weekly shows more granularity, monthly is easier to read for presentations.',
+        look: 'Strong peaks typically appear in the pre-holiday window (November–December) and spring (March–May). Summer troughs (July–August) and post-holiday dips (January) are structurally consistent across years. Understanding these rhythms helps you evaluate programming decisions in context — a show booked for February should be measured against the February benchmark here, not the annual average.'
+      },
+      'analytics-yoy': {
+        title: 'Year over Year Comparison',
+        what: 'How does this season compare to last year, and the year before? This chart overlays multiple fiscal years on the same timeline so you can directly compare performance trajectories rather than just endpoint totals.',
+        how: 'Each fiscal year in the filtered data is plotted as its own line, aligned on the same fiscal calendar so July is always period 1. In weekly mode you can read week-by-week differences between years; in monthly mode the broad seasonal arc of each year is visible. Each year is shown in a distinct color.',
+        look: 'Years that start similarly but diverge mid-season often indicate a specific event — a breakout show, a pricing change, a market disruption. Years that end similarly despite different trajectories show resilience. Note that pandemic-affected years (2019–20, 2020–21) should be treated as structural outliers rather than reliable baselines. The most actionable question this chart answers: is this season tracking ahead or behind the best recent comparable year, and at what point did the lines diverge?'
+      },
+      'analytics-longevity': {
+        title: 'Show Longevity',
+        what: 'How many weeks each show appeared in Broadway League reporting — a direct measure of run duration. Longer-running shows have more weeks of data and generally represent sustained audience demand across their markets.',
+        how: 'For each show in the filtered dataset, the number of distinct reporting weeks it appeared in is counted. Shows are ranked by week count and the top 20 are displayed. This reflects how long shows maintained enough presence to keep reporting to the Broadway League — it is not a raw count of performances.',
+        look: 'Run duration is a proxy for market durability. Shows with 40 or more weeks have demonstrated multi-season staying power; those under 10 may have been limited runs or soft closures. When evaluating a show for booking, cross-referencing its longevity against its gross and capacity performance tells you whether it ran long because it was strong, or because it was extended contractually despite soft demand.'
+      },
+      'analytics-caprank': {
+        title: 'Top Shows by % Capacity',
+        what: 'Which shows most consistently filled seats as a percentage of venue capacity, regardless of gross revenue scale? This ranks shows by their average fill rate, surfacing productions with the strongest proven audience pull relative to house size.',
+        how: 'For each show with at least 3 weeks of reporting in the filtered data, average capacity paid is computed across all engagements. Shows are ranked from highest to lowest fill rate, with the top 15 displayed. The 3-week minimum filters out statistical noise from single-week outliers. Teal bars indicate shows averaging at or above 90% capacity; amber bars are below.',
+        look: 'This is among the most practically useful charts for programming decisions. High-capacity shows are proven seat-fillers — the market turned out reliably for them. Cross-reference with the Show Longevity chart: a show that appears at the top of both lists suggests a title with broad appeal and sustained demand. A show at the top here but short on longevity may have been a powerful but brief cultural moment — worth monitoring for a revival.'
+      },
+      'analytics-consistency': {
+        title: 'Most Consistent Shows',
+        what: 'Which shows delivered the most stable, predictable revenue week over week? Consistency is distinct from high performance — a consistently strong show is often more valuable for planning and budgeting than a volatile show that spikes high but is unpredictable.',
+        how: 'For each show with at least 5 weeks of reporting, the coefficient of variation (CV) is computed — standard deviation of weekly gross divided by mean weekly gross, expressed as a percentage. A lower CV means less week-to-week variance relative to the show\'s own average. Shows are ranked from lowest (most consistent) to highest CV, top 15 shown. Hover for CV%, average gross, and week count.',
+        look: 'Shows at the top of this list are your reliable performers — productions that deliver steadily without dramatic swings. This is especially valuable for subscription series planning, where revenue predictability supports season budgeting. The most desirable shows for Bushnell\'s purposes appear high across three charts: strong gross, high capacity fill, and high consistency — that combination is as close to a programming safe bet as touring Broadway data can identify.'
+      },
+      'analytics-noperf': {
+        title: 'No Performance Rate',
+        what: 'Of the weeks a show appeared in Broadway League reporting, what percentage were "dark" — weeks with no performances recorded? All productions have some dark weeks, but a high dark rate may indicate scheduling gaps, soft demand, or a routing pattern with frequent pauses in certain markets.',
+        how: 'Each engagement record is classified as either active (gross revenue reported) or dark (no engagement that week). Only shows that have both active and dark weeks in the data are included — shows that ran without interruption are excluded. A minimum of 3 active weeks is required. The dark rate = dark weeks ÷ (dark + active weeks). Shows are ranked from highest to lowest dark rate.',
+        look: 'A high dark rate is not automatically negative — some productions are designed as limited runs with intentional gaps between markets. But a show with unexpectedly frequent dark weeks may have had routing difficulties or demand challenges in certain cities. Compare against run duration: a show with 30 total weeks but a 40% dark rate had a very different operational profile than its longevity alone implies — useful context when setting expectations for a show with a similar historical routing pattern.'
+      },
+      'analytics-peergap': {
+        title: 'Bushnell vs Peer Gap',
+        what: 'Over time, how does the average seat fill rate at Bushnell-size venues compare to all other Broadway touring venues? This is the dashboard\'s ongoing competitive landscape view — tracking whether mid-size market venues are keeping pace with the broader touring industry or diverging from it.',
+        how: 'For each reporting week in the filtered data, engagements are split into two groups: venues flagged as similar in size and market type to Bushnell (the peer line), and all other reporting venues (the field line). Average capacity paid is computed for each group per week and plotted as overlaid lines. The gap between the two lines in any given period reflects how Bushnell-comparable venues are performing relative to the full national market.',
+        look: 'A persistent gap where the field outperforms peers indicates that mid-size markets are structurally weaker in the current period — important context before attributing local underperformance to local factors alone. If the lines track closely or if peers lead the field, mid-size markets are holding their own. Periods where the gap widens sharply often correspond to blockbuster shows that performed disproportionately in large markets, pulling the field average up while mid-size markets saw a more muted version of the same title.'
+      }
+    };
+
+    function showInfo(key) {
+      var item = INFO[key];
+      if (!item) return;
+      document.getElementById('infoModalTitle').textContent = item.title;
+      document.getElementById('infoWhat').textContent = item.what;
+      document.getElementById('infoHow').textContent = item.how;
+      document.getElementById('infoLook').textContent = item.look;
+      document.getElementById('infoModal').classList.add('open');
+      document.getElementById('infoModal').focus();
+    }
+
+    function closeInfo() {
+      document.getElementById('infoModal').classList.remove('open');
+    }
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeInfo();
+    });
+
+    document.getElementById('infoModal').addEventListener('click', function (e) {
+      if (e.target === this) closeInfo();
+    });
   </script>
   </body>
 </html>
