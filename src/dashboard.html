@@ -3565,37 +3565,26 @@
 
       let SEASON_MODE = 'week';
       let YOY_MODE = 'week';
+      const FM_LABELS = ['Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun'];
 
       function setSeasonMode(mode) {
         SEASON_MODE = mode;
         document.getElementById('btnSeasonWeek').classList.toggle('active', mode === 'week');
         document.getElementById('btnSeasonMonth').classList.toggle('active', mode === 'month');
-        renderAnalytics();
+        renderSeasonalityChart();
       }
 
       function setYoYMode(mode) {
         YOY_MODE = mode;
         document.getElementById('btnYoYWeek').classList.toggle('active', mode === 'week');
         document.getElementById('btnYoYMonth').classList.toggle('active', mode === 'month');
-        renderAnalytics();
+        renderYoYChart();
       }
 
-      function renderAnalytics() {
-        // ── Seasonality (Fiscal Year: Jul–Jun) ────────────────────────────────────
-        // ── CHART: Seasonality — Avg Gross by Fiscal Period (cSeasonality) ──────────
-        // Tab: Analytics | Type: Vertical bar
-        // Weekly mode (SEASON_MODE='week'): avg gross per fiscal week across all years
-        // Monthly mode (SEASON_MODE='month'): avg gross per fiscal month across all years
-        // Fiscal year = Jul 1 – Jun 30 | Fiscal week 1 = first Sunday on/after July 1
+      // ── CHART: Seasonality — Avg Gross by Fiscal Period (cSeasonality) ──────────
+      // Standalone render — called by setSeasonMode() and renderAnalytics()
+      function renderSeasonalityChart() {
         dc('sa');
-        // Fiscal month: Jul=1, Aug=2 ... Jun=12
-        const fiscalMonth = (mo) => ((mo - 7 + 12) % 12) + 1;
-        const fiscalYear = (d) => {
-          const y = parseInt(d.slice(0, 4)),
-            m = parseInt(d.slice(5, 7));
-          return m >= 7 ? y : y - 1;
-        };
-        const FM_LABELS = ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
         const fiscalWeek = (dateStr) => {
           const y = parseInt(dateStr.slice(0, 4));
           const mo = parseInt(dateStr.slice(5, 7));
@@ -3607,11 +3596,8 @@
           const diff = Math.round((dt - julSun) / (7 * 86400000));
           return diff >= 0 ? diff + 1 : 53 + diff + 1;
         };
-        // Quarter start fiscal months: Jul(1), Oct(4), Jan(7), Apr(10)
-        const fiscalQStarts = { 1: 'Jul', 4: 'Oct', 7: 'Jan', 10: 'Apr' };
 
         if (SEASON_MODE === 'week') {
-          // Fiscal week: ISO week offset so fiscal week 1 = week containing Jul 1
           const byFW = {};
           Object.values(CACHE.byFY).forEach((fy) => {
             Object.entries(fy.byFW).forEach(([fw, g]) => {
@@ -3619,11 +3605,8 @@
               byFW[fw].push(g);
             });
           });
-          const fwKeys = Object.keys(byFW)
-            .map(Number)
-            .sort((a, b) => a - b);
+          const fwKeys = Object.keys(byFW).map(Number).sort((a, b) => a - b);
           const fwAvg = fwKeys.map((fw) => byFW[fw].reduce((a, b) => a + b, 0) / byFW[fw].length);
-          // Quarter labels at weeks ~1(Jul), ~14(Oct), ~27(Jan), ~40(Apr)
           const fwQStarts = { 1: 'Jul', 14: 'Oct', 27: 'Jan', 40: 'Apr' };
           CHARTS.sa = new Chart(document.getElementById('cSeasonality'), {
             type: 'bar',
@@ -3687,16 +3670,12 @@
             },
           });
         }
+      }
 
-        // ── Year over Year — Fiscal Year (Jul–Jun) ───────────────────────────────
-        // ── CHART: Year-over-Year Gross Comparison (cYoY) ───────────────────────────
-        // Tab: Analytics | Type: Multi-line (one line per fiscal year)
-        // Weekly mode (YOY_MODE='week'): each fiscal year plotted by fiscal week number
-        // Monthly mode (YOY_MODE='month'): each fiscal year plotted by fiscal month
-        // NOTE: When only 1 fiscal year in filtered data, heading should read
-        // "Month-over-Month" not "Year-over-Year" — pending label fix
+      // ── CHART: Year-over-Year Gross Comparison (cYoY) ───────────────────────────
+      // Standalone render — called by setYoYMode() and renderAnalytics()
+      function renderYoYChart() {
         dc('yy');
-        // Get fiscal years represented in filtered data
         const fiscalYears = Object.keys(CACHE.byFY).sort();
         const palette = ['#003865', '#1A4E8A', '#6798b9', '#0A6B5E', '#ff9e1b', '#B0303A', '#6b6b6b'];
 
@@ -3704,9 +3683,8 @@
           const fwNums = [...Array(53).keys()].map((i) => i + 1);
           const yyDS = fiscalYears.map((fy, i) => {
             const byFW = CACHE.byFY[fy]?.byFW || {};
-            const label = fy;
             return {
-              label,
+              label: fy,
               data: fwNums.map((fw) => byFW[fw] || null),
               borderColor: palette[i % palette.length],
               backgroundColor: 'transparent',
@@ -3717,8 +3695,7 @@
               spanGaps: true,
             };
           });
-          // Quarter labels at fiscal weeks 1(Jul),14(Oct),27(Jan),40(Apr)
-          const fwQStarts2 = { 1: 'Jul', 14: 'Oct', 27: 'Jan', 40: 'Apr' };
+          const fwQStarts = { 1: 'Jul', 14: 'Oct', 27: 'Jan', 40: 'Apr' };
           CHARTS.yy = new Chart(document.getElementById('cYoY'), {
             type: 'line',
             data: { labels: fwNums.map((w) => `Wk ${w}`), datasets: yyDS },
@@ -3737,7 +3714,7 @@
               scales: {
                 x: {
                   grid: { color: CC.grid },
-                  ticks: { callback: (v, i) => fwQStarts2[i + 1] || '', maxRotation: 0, autoSkip: false },
+                  ticks: { callback: (v, i) => fwQStarts[i + 1] || '', maxRotation: 0, autoSkip: false },
                 },
                 y: { grid: { color: CC.grid }, ticks: { callback: (v) => fmt$(v) } },
               },
@@ -3746,10 +3723,9 @@
         } else {
           const yyDS = fiscalYears.map((fy, i) => {
             const byFM = CACHE.byFY[fy]?.byFM || {};
-            const label = fy;
             return {
-              label,
-              data: [...Array(12).keys()].map((i) => byFM[i + 1] || null),
+              label: fy,
+              data: [...Array(12).keys()].map((j) => byFM[j + 1] || null),
               borderColor: palette[i % palette.length],
               backgroundColor: 'transparent',
               fill: false,
@@ -3776,6 +3752,11 @@
             },
           });
         }
+      }
+
+      function renderAnalytics() {
+        renderSeasonalityChart();
+        renderYoYChart();
 
         // ── Show Longevity ────────────────────────────────────────────────────────
         // ── CHART: Show Longevity — Weeks on Tour (cLongevity) ──────────────────────
