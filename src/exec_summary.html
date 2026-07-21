@@ -620,42 +620,42 @@
     </header>
     <div class="kpi-strip">
       <div class="kpi-cell">
-        <div class="kpi-label">Current Season</div>
+        <div class="kpi-label">Current Season<button class="info-btn" onclick="showInfo('kpi-season')" aria-label="About Current Season">i</button></div>
         <div class="kpi-value" id="kSeason">—</div>
         <div class="kpi-sub">default planning lens</div>
       </div>
       <div class="kpi-cell">
-        <div class="kpi-label">Season Shows</div>
+        <div class="kpi-label">Season Shows<button class="info-btn" onclick="showInfo('kpi-shows')" aria-label="About Season Shows">i</button></div>
         <div class="kpi-value" id="kShows">—</div>
         <div class="kpi-sub">loaded from season plan</div>
       </div>
       <div class="kpi-cell">
-        <div class="kpi-label">Avg Fit Score</div>
+        <div class="kpi-label">Avg Fit Score<button class="info-btn" onclick="showInfo('kpi-fit')" aria-label="About Avg Fit Score">i</button></div>
         <div class="kpi-value" id="kFit">—</div>
         <div class="kpi-sub">legacy composite · see signals</div>
       </div>
       <div class="kpi-cell">
-        <div class="kpi-label">Avg Capacity</div>
+        <div class="kpi-label">Avg Capacity<button class="info-btn" onclick="showInfo('kpi-cap')" aria-label="About Avg Capacity">i</button></div>
         <div class="kpi-value" id="kCap">—</div>
         <div class="kpi-sub">tour records matched</div>
       </div>
       <div class="kpi-cell">
-        <div class="kpi-label">Peer Capacity</div>
+        <div class="kpi-label">Peer Capacity<button class="info-btn" onclick="showInfo('kpi-peercap')" aria-label="About Peer Capacity">i</button></div>
         <div class="kpi-value" id="kPeerCap">—</div>
         <div class="kpi-sub">size-matched peer venues</div>
       </div>
       <div class="kpi-cell">
-        <div class="kpi-label">Avg Gross</div>
+        <div class="kpi-label">Avg Gross<button class="info-btn" onclick="showInfo('kpi-gross')" aria-label="About Avg Gross">i</button></div>
         <div class="kpi-value" id="kGross">—</div>
         <div class="kpi-sub">per active record</div>
       </div>
       <div class="kpi-cell">
-        <div class="kpi-label">Strong Fits</div>
+        <div class="kpi-label">Strong Fits<button class="info-btn" onclick="showInfo('kpi-strong')" aria-label="About Strong Fits">i</button></div>
         <div class="kpi-value" id="kStrong">—</div>
         <div class="kpi-sub">above median fit</div>
       </div>
       <div class="kpi-cell">
-        <div class="kpi-label">Watch List</div>
+        <div class="kpi-label">Watch List<button class="info-btn" onclick="showInfo('kpi-watchlist')" aria-label="About Watch List">i</button></div>
         <div class="kpi-value" id="kWatch">—</div>
         <div class="kpi-sub">below median fit</div>
       </div>
@@ -2006,6 +2006,7 @@
         if (t === 'planning') renderPlanning();
         if (t === 'peers') renderPeers();
         if (t === 'reference') renderReference();
+        if (typeof injectInfoButtons === 'function') injectInfoButtons();
       }
 
       function renderReference() {
@@ -2092,6 +2093,7 @@
         renderPlanning();
         renderPeers();
         renderReference();
+        if (typeof injectInfoButtons === 'function') injectInfoButtons();
       }
 
       function seasonProfiles(id = ACTIVE_SEASON) {
@@ -2890,6 +2892,199 @@
       loadData();
     </script>
   <!-- Mobile Warning Modal -->
+  <!-- Info Modal — chart and KPI explanations -->
+  <div id="infoModal" role="dialog" aria-modal="true" aria-labelledby="infoModalTitle">
+    <div class="info-modal-box">
+      <div class="info-modal-head">
+        <div class="info-modal-title" id="infoModalTitle"></div>
+        <button class="info-modal-close" onclick="closeInfo()" aria-label="Close">&#x2715;</button>
+      </div>
+      <div class="info-modal-body">
+        <div>
+          <div class="info-modal-section-label">What this shows</div>
+          <div class="info-modal-text" id="infoWhat"></div>
+        </div>
+        <div>
+          <div class="info-modal-section-label">How it's calculated</div>
+          <div class="info-modal-text" id="infoHow"></div>
+        </div>
+        <div>
+          <div class="info-modal-section-label">What to look for</div>
+          <div class="info-modal-text" id="infoLook"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    /* ── Info Modal — content definitions ── */
+    const EXEC_INFO = {
+      'kpi-season': {
+        title: 'Current Season',
+        what: 'The Broadway season currently selected as the primary planning lens. Bushnell\'s Broadway season runs July through June, aligned with the Broadway League fiscal year.',
+        how: 'Set by the Season selector in the sidebar. Changing the season recalculates all KPIs, signal scores, and visualizations to reflect only the shows in that season\'s Bushnell schedule.',
+        look: 'Use the current season to evaluate shows in progress. Switch to prior seasons for retrospective analysis — how did last year\'s slate perform against national and peer benchmarks?'
+      },
+      'kpi-shows': {
+        title: 'Season Shows',
+        what: 'The number of Broadway productions on the Bushnell schedule for the selected season.',
+        how: 'Counted from the season definition in seasons.json. Each title is counted once regardless of the number of performances.',
+        look: 'Compare across seasons. A tightly curated slate of high-signal shows often performs better than a larger slate with more unproven titles.'
+      },
+      'kpi-fit': {
+        title: 'Avg Fit Score',
+        what: 'The average Planning Signal score across all scheduled shows in the selected season that have Broadway League touring data.',
+        how: 'Each show receives a Planning Signal score (0–100) combining Demand (40%), Revenue (25%), Peer Fit (25%), and Confidence (10%). This KPI averages those scores across all shows with sufficient data. Shows with no matching records are excluded from the average.',
+        look: 'A season-level average above 55 suggests a well-supported slate. Below 45 may indicate heavier reliance on unproven titles or shows with thin data. Always read the individual scores alongside the average.'
+      },
+      'kpi-cap': {
+        title: 'Avg Capacity',
+        what: 'The average paid attendance rate across all scheduled shows, measured nationally across all touring venues in the Broadway League feed.',
+        how: 'For each show, paid capacity is total paid tickets divided by total sellable seats, expressed as a percentage. This figure is averaged across all season shows that have data.',
+        look: 'Strong touring markets run 65–85% nationally. Above 90% signals breakout demand. Below 55% warrants a closer look at the show\'s commercial strength and market fit.'
+      },
+      'kpi-peercap': {
+        title: 'Peer Capacity',
+        what: 'The average paid capacity at venues similar in size to Bushnell — roughly 2,200–3,000 sellable seats — for the shows in the selected season.',
+        how: 'Peer venues are defined in peers.json. Capacity is computed from weeks where a peer venue reported data for each show, then averaged across all season shows.',
+        look: 'When peer capacity exceeds the national average, shows tend to do proportionally better in mid-size markets like Hartford. A consistent gap in the other direction suggests the slate skews toward larger venues.'
+      },
+      'kpi-gross': {
+        title: 'Avg Gross',
+        what: 'The average weekly gross revenue across all matching Broadway League records for the scheduled shows in this season.',
+        how: 'Weekly gross figures are taken directly from the Broadway League feed (Gross Grosses). The average is computed across all active engagement records for the season\'s shows — not just Bushnell records.',
+        look: 'This is a national reference point, not a Bushnell revenue projection. Use it to understand the revenue tier each show operates in nationally. Higher-grossing shows typically command higher guarantees and deal terms.'
+      },
+      'kpi-strong': {
+        title: 'Strong Fits',
+        what: 'The count of scheduled shows scoring at or above the season median Planning Signal — indicating well-supported demand, revenue, and peer fit across multiple data dimensions.',
+        how: 'The season median Planning Signal is computed across all scored shows. Any show at or above that median is counted as a Strong Fit.',
+        look: 'In a balanced season you\'d expect roughly half the shows here. A high count suggests a well-programmed slate. Fewer strong fits may mean the season leans on unproven titles or shows with limited touring history.'
+      },
+      'kpi-watchlist': {
+        title: 'Watch List',
+        what: 'Shows with a Planning Signal below the season median, or shows that have touring data but a signal that warrants closer review before finalizing programming decisions.',
+        how: 'Any show with Broadway League data and a score below the season median is placed on the Watch List. Shows with no data are excluded — they are unscored, not watchlisted.',
+        look: 'Watch List status is not a rejection. It means these shows need additional context: deal terms, local audience history, subscription role, and routing factors. A low national signal with strong local patron history may still be the right Bushnell booking.'
+      },
+      'fit-scores': {
+        title: 'Fit Scores',
+        what: 'A bar chart ranking each scheduled show by its Planning Signal score — a composite measure of how well national and peer touring evidence supports a Bushnell engagement.',
+        how: 'Each bar represents one show\'s Planning Signal (0–100), combining Demand (40%), Revenue (25%), Peer Fit (25%), and Confidence (10%). The chart is sorted high to low. The midpoint marks the season median.',
+        look: 'Shows well above the median are your anchors. Shows near or below the median need more investigation. A very short bar often reflects thin data (low Confidence) rather than weak demand — read the Confidence component before drawing conclusions.'
+      },
+      'tour-vs-peer': {
+        title: 'Tour vs Peer Capacity',
+        what: 'A side-by-side comparison of each show\'s national average paid capacity versus its average at Bushnell-size peer venues.',
+        how: 'Two bars are drawn per show: national average capacity across all venues, and peer average capacity at size-matched venues only. Both expressed as percentage of sellable seats filled by paid tickets.',
+        look: 'When peer capacity exceeds national, the show tends to overperform in mid-size markets — a positive signal for Bushnell. A significant gap in the other direction means the show draws better in larger venues and may underperform at Bushnell\'s scale.'
+      },
+      'planning-signal': {
+        title: 'Planning Signal',
+        what: 'A composite score (0–100) synthesizing a show\'s national touring demand, revenue efficiency, performance at Bushnell-size peer venues, and the strength of the underlying evidence.',
+        how: 'Four components are scored and weighted: Demand Signal (40%) — paid capacity, total capacity, and markets played; Revenue Signal (25%) — GG% of gross potential and average paid admission; Peer Fit Signal (25%) — capacity and consistency at peer venues; Confidence Signal (10%) — weeks of data, venue count, and recency. All components are normalized against the season median.',
+        look: 'Scores above 60 are well-supported across dimensions. Scores below 40 warrant caution or more investigation. Always check Confidence — a high score on two weeks of data means something very different than one built on thirty weeks.'
+      },
+      'season-cap': {
+        title: 'Season Capacity Comparison',
+        what: 'A chart comparing paid capacity rates across all shows in the selected season, giving a visual read of where each show sits relative to its peers on the season slate.',
+        how: 'Each bar or data point represents one show\'s average paid capacity from the Broadway League feed. Shows are displayed in season schedule order.',
+        look: 'Use this to spot the range of the season slate at a glance. A wide spread suggests some shows with strong demand propping up weaker ones. A tight cluster near a high value is the strongest possible signal for a well-programmed season.'
+      },
+      'candidate-fit': {
+        title: 'Candidate Fit Scores',
+        what: 'A table ranking future season candidates by their Planning Signal score, showing all four signal components and a plain-language read for each show.',
+        how: 'Each candidate is scored using the same Planning Signal methodology as current season shows. "Planning Read" distills the score into one of several categories: Strong, Promising, Mixed, Thin Data, or Caution. New-tour titles with no comparable Broadway League records are flagged NEW.',
+        look: 'High-signal shows with strong Confidence can move forward with greater certainty. New-tour titles and low-Confidence shows are strategic bets — evaluate them on artistic priority, marketing potential, and Bushnell audience history rather than feed data alone.'
+      },
+      'fit-distribution': {
+        title: 'Fit Distribution',
+        what: 'A histogram showing how Planning Signal scores are distributed across all candidates or season shows, revealing whether the slate skews strong, weak, or mixed.',
+        how: 'Scores are bucketed into ranges (0–20, 20–40, 40–60, 60–80, 80–100) and counted. Each bar height represents the number of shows in that score band.',
+        look: 'A distribution skewed right (60–100) means the slate is generally well-supported. A left-skewed distribution means most shows have weak signals or thin data. Use the shape to guide how many shows need additional due diligence before committing.'
+      },
+      'peer-gems': {
+        title: 'Peer-Strong Hidden Gems',
+        what: 'Shows where Bushnell-size venues outperform the national touring average by a meaningful margin — suggesting the title may do proportionally better in Hartford than its national numbers imply.',
+        how: 'The gap is calculated as peer average capacity minus national average capacity. Shows are sorted by gap size, descending. Only shows with sufficient peer venue data are included.',
+        look: 'These are high-upside candidates that national averages alone would underrate. Pair with local patron history, subscription role, and deal terms to assess. A show that consistently overperforms at peer venues is exactly the kind of fit that raw national data can miss.'
+      },
+      'caution-list': {
+        title: 'Caution List',
+        what: 'Shows where Bushnell-size venues underperform the national average — indicating the title may do proportionally worse in Hartford than its national numbers suggest.',
+        how: 'The same gap metric as Hidden Gems, sorted ascending. Shows where peer capacity is meaningfully below national capacity are listed here.',
+        look: 'A Caution List show is not automatically a bad booking — it may still fill the house at Bushnell. But it flags that larger markets absorb this title more efficiently. Consider routing timing: is Hartford getting the show early in the tour when demand is still building, or late when it may have peaked in larger markets?'
+      },
+      'sub-lift': {
+        title: 'Subscription Lift',
+        what: 'Shows where subscription venues achieve significantly higher paid capacity than non-subscription venues, indicating strong subscriber demand relative to single-ticket buyers.',
+        how: 'For each show, average capacity is computed separately for weeks reported by subscription venues and non-subscription venues. The lift is the difference (subscription minus non-subscription capacity).',
+        look: 'High subscription lift means the show is likely to perform well in Bushnell\'s subscriber-heavy model. Low or negative lift means the show depends more on single-ticket buyers — factor this into how aggressively you market the single-ticket window.'
+      },
+      'peer-distribution': {
+        title: 'Peer Capacity Distribution',
+        what: 'A histogram showing the spread of capacity rates across all peer venues for the selected shows, revealing how consistent peer performance is across comparable markets.',
+        how: 'Each peer venue\'s average capacity for the filtered shows is computed and plotted as a distribution. The x-axis is capacity percentage; bar height represents the number of peer venues in that range.',
+        look: 'A tight distribution means peer results are consistent — you can trust the average as a reliable Hartford proxy. A wide or bimodal distribution means some peers do very well while others struggle — Hartford\'s result could fall anywhere in that range, and you should investigate what drives the variation.'
+      },
+      'bushnell-vs-market': {
+        title: 'Bushnell Results vs Market',
+        what: 'A summary card showing how Bushnell\'s own engagement results compared to the national touring average and to Bushnell-size peer venues for each programmed show in a completed season.',
+        how: 'Bushnell\'s capacity and gross figures are drawn from fact sheets or matched Broadway League records tagged to the Bushnell engagement. The comparison is expressed as the difference (Bushnell minus national average, and Bushnell minus peer average) in percentage points.',
+        look: 'Shows where Bushnell beat both national and peer benchmarks are the strongest retrospective endorsements of a booking decision. Shows where Bushnell trailed peers are worth investigating — was it pricing, timing, marketing, or audience fit?'
+      }
+    };
+
+    /* ── Inject ⓘ buttons into dynamically-rendered card headers ── */
+    const EXEC_INFO_KEYS = {
+      'Fit Scores':                   'fit-scores',
+      'Tour vs Peer Capacity':        'tour-vs-peer',
+      'Planning Signal':              'planning-signal',
+      'Season Capacity Comparison':   'season-cap',
+      'Candidate Fit Scores':         'candidate-fit',
+      'Fit Distribution':             'fit-distribution',
+      'Peer-Strong Hidden Gems':      'peer-gems',
+      'Caution List':                 'caution-list',
+      'Subscription Lift':            'sub-lift',
+      'Peer Capacity Distribution':   'peer-distribution',
+      'Bushnell Results vs Market':   'bushnell-vs-market'
+    };
+
+    function injectInfoButtons() {
+      document.querySelectorAll('.card-hd').forEach(function(el) {
+        var text = el.textContent.trim();
+        var key = EXEC_INFO_KEYS[text];
+        if (key && !el.querySelector('.info-btn')) {
+          var btn = document.createElement('button');
+          btn.className = 'info-btn';
+          btn.setAttribute('onclick', "showInfo('" + key + "')");
+          btn.setAttribute('aria-label', 'About ' + text);
+          btn.textContent = 'i';
+          el.appendChild(btn);
+        }
+      });
+    }
+
+    function showInfo(key) {
+      var entry = EXEC_INFO[key];
+      if (!entry) return;
+      document.getElementById('infoModalTitle').textContent = entry.title;
+      document.getElementById('infoWhat').textContent = entry.what;
+      document.getElementById('infoHow').textContent = entry.how;
+      document.getElementById('infoLook').textContent = entry.look;
+      document.getElementById('infoModal').classList.add('open');
+    }
+
+    function closeInfo() {
+      document.getElementById('infoModal').classList.remove('open');
+    }
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeInfo();
+    });
+    document.getElementById('infoModal').addEventListener('click', function(e) {
+      if (e.target === this) closeInfo();
+    });
+  </script>
   <div id="mobileWarningModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
     <div style="background:#fff;border-radius:8px;padding:2rem;max-width:380px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.3);">
       <h2 style="margin:0 0 .75rem;font-size:1.25rem;">Desktop Recommended</h2>
