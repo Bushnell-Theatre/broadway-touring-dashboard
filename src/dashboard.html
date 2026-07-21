@@ -3069,7 +3069,7 @@
       </div>`
               : `<div style="padding:8px 12px 8px 32px;font-size:0.62rem;color:var(--ink3);font-style:italic;border-top:1px solid var(--rule2);">No venue detail available</div>`;
             return `<div class="rank-item" style="${hasBreakdown ? 'cursor:pointer;' : ''}" onclick="${hasBreakdown ? `toggleRankBreakdown('${rowId}')` : ''}" title="${hasBreakdown ? 'Click to see venue breakdown' : ''}">
-      <div class="rank-n ${i < 3 ? 'top' : ''}">${i + 1}</div>
+      <div class="rank-n ${i < 3 && d._rank == null ? 'top' : ''}">${d._rank != null ? d._rank : i + 1}</div>
       <div class="rank-body">
         <div class="rank-name">${d._label || d.show}${hasBreakdown ? ` <span style="font-size:0.6rem;color:var(--ink3);">▶</span>` : ''}</div>
         <div class="rank-detail">${labelFn(d)}</div>
@@ -3140,10 +3140,12 @@
           sgArr[0]?._val,
           showBreakdown,
         );
-        const sgBottomArr = Object.entries(sg)
-          .sort((a, b) => a[1] - b[1])
-          .slice(0, 10)
-          .map(([s, v]) => ({ _label: s, _val: v }));
+        const sgAllSorted = Object.entries(sg).sort((a, b) => a[1] - b[1]);
+        const sgTotal = sgAllSorted.length;
+        const sgBottomSlice = sgAllSorted.slice(0, 10);
+        const sgBottomArr = sgBottomSlice
+          .reverse()
+          .map(([s, v], i) => ({ _label: s, _val: v, _rank: sgTotal - (sgBottomSlice.length - 1 - i) }));
         mkRankList(
           'rShowGrossBottom',
           sgBottomArr,
@@ -4870,8 +4872,8 @@ async function processFile(file) {
       'rank-bottomgross': {
         title: 'Bottom Grossing Shows',
         what: 'The ten lowest-performing shows by cumulative gross revenue — the productions that struggled most to generate revenue in the filtered period. This list is as useful for programming decisions as the top list.',
-        how: 'Same methodology as Top Grossing Shows, but sorted ascending by total gross. Venue-level detail is available by expanding each row.',
-        look: 'Low cumulative gross is not always a warning sign — a short-run production with only 4 weeks of data will naturally appear here. Always check engagement count before drawing conclusions. Shows with substantial run time and still low gross are the ones that warrant closer examination. Check whether the weakness was concentrated in certain cities or spread broadly across all markets.'
+        how: 'Same methodology as Top Grossing Shows, but sorted ascending by total gross. Only shows that reported at least one week of gross revenue are included — shows present in the filter as dark or no-engagement weeks only are excluded, since they have no revenue to rank. The rank number shown (e.g., #47 of 50) reflects each show\'s position within the set of shows that actually reported grosses, not the total number of shows visible in the filter sidebar. Venue-level detail is available by expanding each row.',
+        look: 'Low cumulative gross is not always a warning sign — a short-run production with only a few weeks of data will naturally appear here. Always check engagement count before drawing conclusions. Shows with substantial run time and still low gross are the ones that warrant closer examination. Check whether the weakness was concentrated in certain cities or spread broadly across all markets.'
       },
       'rank-wow': {
         title: 'Week-over-Week Change',
