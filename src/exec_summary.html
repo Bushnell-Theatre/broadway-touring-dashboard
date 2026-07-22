@@ -2196,6 +2196,45 @@
           `<div class="section-divider"><h2>Executive Brief</h2><div class="section-divider-line"></div><div class="section-divider-meta">${season.name} · ${mode === 'past' ? 'completed-season performance lens' : 'real tour data lens'}</div></div><div class="explainer"><p><strong>How to read this page:</strong> ${mode === 'past' ? 'For completed seasons, the system reads each programmed title as a historical performance result: demand, revenue strength, peer-venue performance, sample depth, and subscription signal.' : 'The system scores each Bushnell season title by matching it to real tour records, then weighing demand, revenue strength, peer-venue performance, sample depth, and subscription signal. The result is a planning signal for leadership discussion — not a final programming recommendation.'}</p></div><div class="grid grid-2"><div class="callout ${avgCap >= 75 ? 'good' : avgCap < 65 ? 'warn' : ''}"><h3>${briefHeadline(avgFit, avgCap, peer, profiles)}</h3><p>${briefCopy(season, profiles, avgCap, peer)}</p></div><div class="card"><div class="card-hd">What to Watch</div><div class="rank-list"><div class="rank-item"><div class="rank-n top">1</div><div class="rank-body"><div class="rank-name">${mode === 'past' ? 'Strongest Result' : 'Strongest Fit'}: ${top ? top.show.title : '—'}</div><div class="rank-detail">Score ${top ? top.score : '—'} · ${top ? pct(top.metrics.cap) : '—'} avg capacity · confidence ${top ? confidenceLabel(top) : '—'}</div></div></div><div class="rank-item"><div class="rank-n">2</div><div class="rank-body"><div class="rank-name">${watch && watch.isFutureNewTour ? 'New-Tour Upside' : 'Needs Review'}: ${watch ? watch.show.title : '—'}</div><div class="rank-detail">${watch && watch.isFutureNewTour ? 'No historical records yet · exploratory confidence' : 'Score ' + (watch ? watch.score : '—') + ' · ' + (watch ? pct(watch.metrics.cap) : '—') + ' avg capacity · confidence ' + (watch ? confidenceLabel(watch) : '—')}</div></div></div><div class="rank-item"><div class="rank-n">3</div><div class="rank-body"><div class="rank-name">Peer Lens</div><div class="rank-detail">Peer venues are Bushnell-size comparators; season slate peer capacity averages ${pct(peer)}.</div></div></div></div></div>${ctxCard}${salesRiskCard}${mode === 'past' ? bushnellBriefCard(profiles, season.id) : ''}<div class="card full"><div class="card-hd">Planning Signal Model</div><div class="card-sub" style="margin-bottom:10px">Each show is evaluated across four separate signals. Demand and Revenue are always shown separately — they answer different questions.</div><div class="grid grid-4"><div class="note"><div class="note-hd">Demand Signal</div><div class="note-body">Do audiences want this title? Uses paid capacity, total capacity, markets played, peer attendance, and subscription lift. Occupancy is a demand measure, not a success measure on its own.</div></div><div class="note"><div class="note-hd">Revenue Signal</div><div class="note-body">Does demand convert to dollars? Uses GG% of Gross Potential and average admission, normalized to avoid large-market distortion. A title can have strong attendance and weak revenue.</div></div><div class="note"><div class="note-hd">Peer Signal</div><div class="note-body">How relevant is this to Bushnell-like conditions? Uses Bushnell-size venue behavior, peer sample size, and consistency. Separates national popularity from likely Hartford fit.</div></div><div class="note"><div class="note-hd">Confidence Signal</div><div class="note-body">How much evidence supports this read? Uses weeks reported, venue count, recency, and completeness. Low confidence does not mean bad — it means uncertainty.</div></div></div><div class="card-sub" style="margin-top:10px;border-top:1px solid var(--rule2);padding-top:8px;font-style:italic">Revenue Signal is not Net Profit. Deal terms, local expenses, presenter economics, and ancillary revenue are not included in this dashboard.</div></div><div class="card full"><div class="card-hd">Season Slate Read</div><div class="explainer" style="margin-bottom:10px"><p>The Planning Signal summarizes how a title appears to perform as a programming candidate, built from separate Demand, Revenue, Peer, and Confidence signals. <strong>Revenue Signal is not Net Profit</strong> — until deal terms, local expenses, and presenter economics are added, this dashboard speaks to revenue quality, not final profitability.</p></div><div class="mini-table-wrap"><table class="mini-table"><thead><tr><th>Show</th><th>Pkg</th><th class="num">Fit</th><th class="num">Tour Cap</th><th>Demand</th><th class="num">GG%</th><th>Revenue</th><th class="num">Peer Cap</th><th class="num">Avg Gross</th><th>Confidence</th><th>Planning Read</th></tr></thead><tbody>${dateOrdered.map((p) => rowHtml(p, mode)).join('')}</tbody></table></div></div><div class="card"><div class="card-hd">Fit Scores</div><canvas id="cBriefFit"></canvas></div><div class="card"><div class="card-hd">Tour vs Peer Capacity</div><canvas id="cBriefCap"></canvas></div><div class="card full" style="border-left:3px solid var(--rule)"><div class="card-hd" style="margin-bottom:10px">How to Use This Dashboard</div><div class="grid grid-2"><div class="note"><div class="note-hd">What the Planning Signal measures</div><div class="note-body">Four separate signals: <strong>Demand</strong> (did audiences show up?), <strong>Revenue</strong> (did demand convert to dollars?), <strong>Peer</strong> (how did comparable venues perform?), and <strong>Confidence</strong> (how much evidence exists?). The Fit Score is a legacy composite — the four signals provide the same information with greater transparency. <a onclick="showTab('reference')" href="#" style="color:var(--amber);text-decoration:none;font-weight:600">Full methodology &rarr;</a></div></div><div class="note"><div class="note-hd">What it does not include</div><div class="note-body">Deal terms, guarantees &amp; expense structure &nbsp;&middot;&nbsp; Local Bushnell audience history &nbsp;&middot;&nbsp; Artistic or mission priority &nbsp;&middot;&nbsp; Routing and availability &nbsp;&middot;&nbsp; Pre-sale pace &nbsp;&middot;&nbsp; Group or donor sales strategy &nbsp;&middot;&nbsp; Competing local events. These factors belong in the leadership conversation — this tool starts it.</div></div></div></div></div>`;
         chartFit(ranked, 'cBriefFit');
         chartCap(ranked, 'cBriefCap');
+
+        /* ── AI callout injection ──────────────────────────────────────────
+           Fetches both files in parallel. If a season_review entry exists
+           for this season, shows the amber retrospective (season complete).
+           Otherwise shows the teal weekly highlight if one exists.
+           Silent on any fetch error — the page renders normally either way. */
+        Promise.all([
+          fetch('data/season_review.json').then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; }),
+          fetch('data/exec_brief_highlight.json').then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; })
+        ]).then(function(results) {
+          var reviewData    = results[0];
+          var highlightData = results[1];
+          var reviewEntry    = reviewData    && reviewData[season.id];
+          var highlightEntry = highlightData && highlightData[season.id];
+          var el, label, color;
+          if (reviewEntry && reviewEntry.summary) {
+            color = 'var(--amber)';
+            label = 'Season Retrospective · ' + season.id;
+            el = document.createElement('div');
+            el.className = 'callout ai-highlight';
+            el.style.cssText = 'border-left-color:' + color + ';margin-bottom:16px;';
+            el.innerHTML =
+              '<div style="font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:' + color + ';margin-bottom:6px;">' + label + '</div>' +
+              '<p style="margin:0;"></p>';
+            el.querySelector('p').textContent = reviewEntry.summary;
+            document.getElementById('tab-brief').prepend(el);
+          } else if (highlightEntry && highlightEntry.summary) {
+            color = 'var(--teal)';
+            label = 'Weekly Intelligence · ' + highlightEntry.week_of;
+            el = document.createElement('div');
+            el.className = 'callout ai-highlight';
+            el.style.cssText = 'border-left-color:' + color + ';margin-bottom:16px;';
+            el.innerHTML =
+              '<div style="font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:' + color + ';margin-bottom:6px;">' + label + '</div>' +
+              '<p style="margin:0;"></p>';
+            el.querySelector('p').textContent = highlightEntry.summary;
+            document.getElementById('tab-brief').prepend(el);
+          }
+        });
       }
 
       function briefHeadline(avgFit, avgCap, peer, profiles = []) {
