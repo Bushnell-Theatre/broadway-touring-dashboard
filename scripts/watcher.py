@@ -4,10 +4,15 @@ Bushnell Center for the Performing Arts
 
 Monitors the Broadway League report uploads folder for new XLSX files.
 When a new file is detected:
-  1. Runs process_touring.py --append to update data.json
-  2. Runs scrape_shows.py to enrich any new show names in shows.json
-  3. Runs scrape_context.py to refresh context.json (weather + econ)
-  4. Commits updated files to GitHub and pushes
+  1.    Runs process_touring.py --append to update data.json
+  2.    Runs scrape_shows.py to enrich any new show names in shows.json
+  2.5.  Runs scrape_context.py to refresh context.json (weather + econ)
+  2.75. Runs generate_highlights.py to write AI weekly highlight blurbs
+  2.8.  Runs generate_season_review.py to write end-of-season AI retrospective
+  3.    Commits all updated files to GitHub and pushes
+
+Steps 2.75 and 2.8 are non-fatal: if either fails the pipeline logs a
+warning and continues to the git commit.
 
 Requirements:
     pip install watchdog
@@ -34,14 +39,19 @@ from watchdog.events import FileSystemEventHandler
 
 WATCH_FOLDER = r"C:\Users\rnunley\Bushnell Center for the Performing Arts\AI Taskforce Group-Testing-Development - Broadway League Report Uploads\reports"
 REPO_FOLDER = r"C:\Users\rnunley\OneDrive - Bushnell Center for the Performing Arts\Documents\GitHub\broadway-touring-dashboard"
-SCRIPT_PATH = os.path.join(REPO_FOLDER, "scripts", "process_touring.py")
-SCRAPE_PATH = os.path.join(REPO_FOLDER, "scripts", "scrape_shows.py")
-CONTEXT_PATH = os.path.join(REPO_FOLDER, "scripts", "scrape_context.py")
-DATA_JSON = os.path.join(REPO_FOLDER, "src", "data", "data.json")
-SEASONS_JSON = os.path.join(REPO_FOLDER, "src", "data", "seasons.json")
-SHOWS_JSON = os.path.join(REPO_FOLDER, "src", "data", "shows.json")
-CONTEXT_JSON = os.path.join(REPO_FOLDER, "src", "data", "context.json")
-LOG_FILE = os.path.join(os.path.dirname(__file__), "watcher.log")
+SCRIPT_PATH    = os.path.join(REPO_FOLDER, "scripts", "process_touring.py")
+SCRAPE_PATH    = os.path.join(REPO_FOLDER, "scripts", "scrape_shows.py")
+CONTEXT_PATH   = os.path.join(REPO_FOLDER, "scripts", "scrape_context.py")
+HIGHLIGHTS_PATH = os.path.join(REPO_FOLDER, "scripts", "generate_highlights.py")
+REVIEW_PATH    = os.path.join(REPO_FOLDER, "scripts", "generate_season_review.py")
+DATA_JSON      = os.path.join(REPO_FOLDER, "src", "data", "data.json")
+SEASONS_JSON   = os.path.join(REPO_FOLDER, "src", "data", "seasons.json")
+SHOWS_JSON     = os.path.join(REPO_FOLDER, "src", "data", "shows.json")
+CONTEXT_JSON   = os.path.join(REPO_FOLDER, "src", "data", "context.json")
+EXEC_HIGHLIGHT_JSON = os.path.join(REPO_FOLDER, "src", "data", "exec_brief_highlight.json")
+PROG_HIGHLIGHT_JSON = os.path.join(REPO_FOLDER, "src", "data", "programming_highlight.json")
+SEASON_REVIEW_JSON  = os.path.join(REPO_FOLDER, "src", "data", "season_review.json")
+LOG_FILE       = os.path.join(os.path.dirname(__file__), "watcher.log")
 
 # ── LOGGING ─────────────────────────────────────────────────────────────
 
@@ -228,12 +238,51 @@ def process_new_file(filepath):
             log.warning(ctx_result.stderr.strip())
     context_updated = ctx_result.returncode == 0
 
+    # Step 2.75: Generate AI weekly highlight blurbs
+    # Failure is non-fatal — logs a warning and pipeline continues.
+    log.info("Running: generate_highlights.py")
+    hl_result = subprocess.run(
+        ["python", HIGHLIGHTS_PATH],
+        capture_output=True, text=True, cwd=REPO_FOLDER
+    )
+    if hl_result.stdout:
+        for line in hl_result.stdout.strip().splitlines():
+            log.info(f"  {line}")
+    if hl_result.returncode != 0:
+        log.warning("generate_highlights.py failed — highlight files may be stale")
+        if hl_result.stderr:
+            log.warning(hl_result.stderr.strip())
+    exec_highlight_updated = hl_result.returncode == 0 and os.path.isfile(EXEC_HIGHLIGHT_JSON)
+    prog_highlight_updated = hl_result.returncode == 0 and os.path.isfile(PROG_HIGHLIGHT_JSON)
+
+    # Step 2.8: Generate AI end-of-season reviews (fires at most once per season)
+    # Failure is non-fatal — logs a warning and pipeline continues.
+    log.info("Running: generate_season_review.py")
+    rv_result = subprocess.run(
+        ["python", REVIEW_PATH],
+        capture_output=True, text=True, cwd=REPO_FOLDER
+    )
+    if rv_result.stdout:
+        for line in rv_result.stdout.strip().splitlines():
+            log.info(f"  {line}")
+    if rv_result.returncode != 0:
+        log.warning("generate_season_review.py failed — season_review.json may be stale")
+        if rv_result.stderr:
+            log.warning(rv_result.stderr.strip())
+    season_review_updated = rv_result.returncode == 0 and os.path.isfile(SEASON_REVIEW_JSON)
+
     # Step 3: Git add, commit, push
     files_to_add = ["src/data/data.json"]
     if shows_updated:
         files_to_add.append("src/data/shows.json")
     if context_updated:
         files_to_add.append("src/data/context.json")
+    if exec_highlight_updated:
+        files_to_add.append("src/data/exec_brief_highlight.json")
+    if prog_highlight_updated:
+        files_to_add.append("src/data/programming_highlight.json")
+    if season_review_updated:
+        files_to_add.append("src/data/season_review.json")
 
     log.info(f"Committing {', '.join(files_to_add)} to GitHub...")
     commit_msg = f"Weekly update: {fname} — {
