@@ -1298,6 +1298,27 @@
           .join('');
         chartFit(profiles, 'cBriefFit');
         chartCap(profiles, 'cBriefCap');
+
+        /* ── AI weekly highlight injection ─────────────────────────────────
+           Shows teal callout if an entry exists for the selected season.
+           Silent on any fetch error — page renders normally either way.   */
+        fetch('data/programming_highlight.json')
+          .then(function(r) { return r.ok ? r.json() : null; })
+          .then(function(h) {
+            if (!h) return;
+            var entry = h[season.id];
+            if (!entry || !entry.summary) return;
+            var color = 'var(--teal)';
+            var el = document.createElement('div');
+            el.className = 'callout ai-highlight';
+            el.style.cssText = 'border-left-color:' + color + ';margin-bottom:16px;';
+            el.innerHTML =
+              '<div style="font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:' + color + ';margin-bottom:6px;">Weekly Intelligence · ' + entry.week_of + '</div>' +
+              '<p style="margin:0;"></p>';
+            el.querySelector('p').textContent = entry.summary;
+            document.getElementById('tab-brief').prepend(el);
+          })
+          .catch(function() {});
       }
 
       function makeInsights(profiles) {

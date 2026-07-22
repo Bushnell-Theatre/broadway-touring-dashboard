@@ -1,0 +1,8 @@
+{
+  "2026-2027": {
+    "week_of": "2026-07-12",
+    "trigger": "wow_gross_change",
+    "summary": "[DRY RUN — API not called. Trigger payload above would be sent to claude-haiku-4-5-20251001.]",
+    "generated_at": "2026-07-22T20:08:35"
+  }
+}
