@@ -34,7 +34,7 @@ import logging
 import os
 import sys
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 # ── PATHS ─────────────────────────────────────────────────────────────────────
@@ -368,7 +368,7 @@ def write_highlight(out_path: Path, season_key: str, week_of: str,
         "week_of":      week_of,
         "trigger":      ",".join(sorted({t["type"] for t in triggers})),
         "summary":      summary,
-        "generated_at": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"),
+        "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S"),
     }
 
     with open(out_path, "w", encoding="utf-8") as f:
