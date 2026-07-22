@@ -2,7 +2,7 @@
 
 A plain-language guide to the data, the pipeline, and the four dashboard pages — written for anyone who needs to understand the system without reading the source code.
 
-*July 2026 · Broadway Touring Dashboard v5*
+*July 2026 · Broadway Touring Dashboard v5.3*
 
 ---
 
@@ -142,6 +142,36 @@ The Top and Bottom Grossing rankings aggregate **cumulative gross revenue by sho
 Only shows that actually reported at least one week of gross revenue appear in these rankings. Shows present in the data only as dark or no-engagement weeks are excluded because they have no revenue to rank. This is why the rank numbers on the Bottom list (e.g., **#47 of 50**) reflect position within the revenue-reporting set, not the total number of show names visible in the sidebar filter.
 
 The bottom list reads from least-bad (#41) to worst (#50) — the absolute lowest-grossing show appears at position 10, not position 1.
+
+---
+
+## AI-Generated Callouts
+
+Starting in July 2026, the Executive Summary and Programming pages display a small AI-generated blurb at the top of the Brief tab when there is something notable to flag. These callouts are generated automatically as part of the weekly data pipeline — no human writes them.
+
+### Weekly Intelligence (teal)
+
+After each new Broadway League report is processed, a script evaluates the data for hard-coded threshold events:
+
+- **Week-over-week gross change ≥ ±15%** for a Bushnell season show
+- **Paid capacity moving from one band to another** (low → mid, mid → high, etc.)
+- **A season show appearing or disappearing** from the national data
+- **An all-time gross or capacity record** for a Bushnell season show
+
+If any of these fire, the script sends only the aggregate data — show name, dollar figures, capacity percentages — to an AI model, which writes a 2–3 sentence plain-English summary. That summary is saved to a file the dashboard reads on next load.
+
+If no threshold trips, nothing happens: no AI call, no file write, no callout. The blurb only appears when the data actually said something.
+
+### Season Retrospective (amber)
+
+Once a season is complete (14 days after the last show closes), a separate script generates an end-of-season retrospective by comparing two things:
+
+1. The national touring signal that existed **before** the season began — what the data said at booking time
+2. The **actual** performance at peer venues (Bushnell-size comparable halls) during the season
+
+The resulting paragraph identifies which shows outperformed or underperformed their pre-season signal, and whether any patterns (subscription vs. add-on, market size, etc.) explain the gaps. It fires once per season and is never overwritten.
+
+Both callouts use only aggregate data. No patron, ticket-holder, or customer information is included in any AI prompt.
 
 ---
 

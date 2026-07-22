@@ -87,8 +87,8 @@ bump with a stale date is misleading.
 | Page | Current | Last meaningful change |
 |---|---|---|
 | dashboard.html | v5.0 | June 24, 2026 — initial production release |
-| programming.html | v5.2 | July 6, 2026 — Planning Signal redesign |
-| exec_summary.html | v5.2 | July 6, 2026 — Planning Signal redesign |
+| programming.html | v5.3 | July 22, 2026 — AI weekly highlight callout |
+| exec_summary.html | v5.3 | July 22, 2026 — AI weekly highlight + season retrospective callouts |
 | box_office.html | v2.1 | June 30, 2026 — venues.json integration |
 
 ---

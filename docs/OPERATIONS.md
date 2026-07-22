@@ -19,7 +19,7 @@ cd path/to/broadway-touring-dashboard
 python -m venv venv
 venv\Scripts\activate          # Windows
 
-pip install openpyxl requests watchdog python-dotenv
+pip install openpyxl requests watchdog python-dotenv anthropic
 pip install SPARQLWrapper       # optional — scrape_shows.py falls back gracefully without it
 ```
 
@@ -30,12 +30,14 @@ Create a `.env` file in the repo root (already gitignored):
 ```
 NOAA_CDO_TOKEN=your_noaa_token_here
 FRED_API_KEY=your_fred_key_here
+ANTHROPIC_API_KEY=your_anthropic_key_here
 ```
 
 - **NOAA token:** https://www.ncdc.noaa.gov/cdo-web/token — free, instant
 - **FRED key:** https://fred.stlouisfed.org/docs/api/api_key.html — free, instant
+- **Anthropic key:** https://console.anthropic.com — required for AI highlight and season review generation
 
-If either key is missing, `scrape_context.py` skips that source and logs a warning. The rest of the pipeline still runs.
+If NOAA or FRED keys are missing, `scrape_context.py` skips that source and logs a warning. If `ANTHROPIC_API_KEY` is missing, `generate_highlights.py` and `generate_season_review.py` log a warning and skip the file write — the dashboard shows no callout. The rest of the pipeline still runs in all cases.
 
 ---
 
@@ -88,10 +90,22 @@ python scripts/process_touring.py --append path\to\new_report.xlsx src\data\data
 # Stage 2: enrich show metadata (only new shows)
 python scripts/scrape_shows.py
 
-# Stage 3: refresh weather and economic context
+# Stage 2.5: refresh weather and economic context
 python scripts/scrape_context.py
 
-# Stage 4: validate
+# Stage 2.75: generate AI weekly highlight blurbs (requires ANTHROPIC_API_KEY)
+python scripts/generate_highlights.py
+
+# Stage 2.75 dry run — evaluate thresholds only, no API call
+python scripts/generate_highlights.py --dry-run
+
+# Stage 2.8: generate AI end-of-season reviews (fires once per season, 14 days after close)
+python scripts/generate_season_review.py
+
+# Stage 2.8 dry run
+python scripts/generate_season_review.py --dry-run
+
+# Stage 3: validate
 python scripts/validate_data.py --data src\data\data.json --out src\data\validation_report.json
 ```
 
@@ -106,9 +120,14 @@ python scripts/validate_data.py --data src\data\data.json --out src\data\validat
 | `src/data/seasons.json` | Edited manually | Season slates — confirmed and candidate shows |
 | `src/data/peers.json` | Edited manually | Peer venue metadata (Bushnell-size venues) |
 | `src/data/context.json` | `scrape_context.py` | Weekly weather and economic signals |
+| `src/data/exec_brief_highlight.json` | `generate_highlights.py` | Season-keyed AI weekly intelligence blurbs for exec_summary.html |
+| `src/data/programming_highlight.json` | `generate_highlights.py` | Season-keyed AI weekly intelligence blurbs for programming.html |
+| `src/data/season_review.json` | `generate_season_review.py` | Season-keyed AI end-of-season retrospectives; written once per season |
 | `src/data/validation_report.json` | `validate_data.py` | Data quality report, surfaced in Dashboard |
 
 **Note:** `shows.json` is not committed to the repo by default — it must be generated locally by running `scrape_shows.py`. If it is absent, the Programming page's Intelligence tab shows a message instead of show metadata. All other tabs function normally without it.
+
+The three AI output files (`exec_brief_highlight.json`, `programming_highlight.json`, `season_review.json`) are committed by `watcher.py` only when the scripts write new content. If the Anthropic API is unavailable, these files retain their last-written values and the dashboard continues to show the previous callout until the next successful run.
 
 ---
 
@@ -233,8 +252,9 @@ If you see stale behavior after a code change, hard-refresh (`Ctrl+Shift+R`) or 
 |---|---|---|
 | `NOAA_CDO_TOKEN` | `scrape_context.py` | NOAA Climate Data Online — storm event data for Hartford County |
 | `FRED_API_KEY` | `scrape_context.py` | FRED — consumer sentiment (UMCSENT) and CT unemployment (CTURN) |
+| `ANTHROPIC_API_KEY` | `generate_highlights.py`, `generate_season_review.py` | Anthropic API — used to call `claude-haiku-4-5-20251001` for AI summary generation |
 
-Neither variable is used by the browser frontend. They are only needed when running `scrape_context.py`.
+None of these variables are used by the browser frontend. They are only needed when running the respective scripts locally or via `watcher.py`.
 
 ---
 
@@ -247,8 +267,10 @@ Neither variable is used by the browser frontend. They are only needed when runn
 | `process_touring.py` | Reads XLSX reports, deduplicates, writes/appends `data.json` |
 | `scrape_shows.py` | Fetches show metadata from Wikidata, Wikipedia, DBpedia; writes `shows.json` |
 | `scrape_context.py` | Fetches NOAA weather and FRED economic data; writes `context.json` |
+| `generate_highlights.py` | Evaluates hard-coded thresholds against current-season data; calls Anthropic API if any trip; writes season-keyed `exec_brief_highlight.json` and `programming_highlight.json`. Supports `--dry-run`. |
+| `generate_season_review.py` | Fires once per season, 14 days after last show close; computes pre-season signal vs actual peer results; calls Anthropic API; writes `season_review.json`. Supports `--dry-run`. |
 | `validate_data.py` | Data quality checks; writes `validation_report.json` |
-| `watcher.py` | Watches OneDrive folder for new XLSX files; calls `run_pipeline.py` on detection |
+| `watcher.py` | Watches OneDrive folder for new XLSX files; runs all pipeline stages (1 → 2 → 2.5 → 2.75 → 2.8 → 3) on detection |
 | `dashboard_config.py` | Shared path constants used by all other scripts |
 | `compare_signals.js` | QA tool — prints Planning Signal scores for a given season |
 

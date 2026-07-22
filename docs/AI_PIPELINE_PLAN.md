@@ -4,7 +4,7 @@ Two separate pipeline steps. Feature 1 (weekly highlights) runs on every
 new XLSX ingestion. Feature 2 (end-of-season review) runs once per season,
 triggered by close-date passage. Neither blocks the data pipeline.
 
-*Status: PLAN — awaiting confirmation before any code is written.*
+*Status: COMPLETE — shipped July 22, 2026. All five steps deployed to production.*
 
 ---
 

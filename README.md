@@ -3,7 +3,7 @@
 A fully static web application that helps the Bushnell Center for the Performing Arts evaluate, compare, and plan Broadway touring productions. All data is preprocessed locally from Broadway League XLSX reports and hosted as static JSON on Azure Static Web Apps — no backend, no database, no build step.
 
 **Production:** https://white-pebble-01710020f.7.azurestaticapps.net  
-**Version:** v6.0 · June 25, 2026  
+**Version:** v5.3 · July 22, 2026  
 **Sponsor:** Stephanie Fried, COO — The Bushnell Center for the Performing Arts
 
 ---
@@ -26,9 +26,12 @@ A fully static web application that helps the Bushnell Center for the Performing
 Broadway League XLSX report
          │
          ▼
-   process_touring.py  ──►  src/data/data.json
-   scrape_shows.py     ──►  src/data/shows.json
-   scrape_context.py   ──►  src/data/context.json
+   process_touring.py       ──►  src/data/data.json
+   scrape_shows.py          ──►  src/data/shows.json
+   scrape_context.py        ──►  src/data/context.json
+   generate_highlights.py   ──►  src/data/exec_brief_highlight.json
+                                 src/data/programming_highlight.json
+   generate_season_review.py──►  src/data/season_review.json
          │
          ▼
    git push → main → Azure auto-deploy (~30 seconds)
@@ -37,7 +40,9 @@ Broadway League XLSX report
    Browser fetches JSON at runtime and renders everything
 ```
 
-The pipeline runs locally on the rnunley laptop. `watcher.py` can watch the OneDrive upload folder and trigger the pipeline automatically when a new report arrives.
+The pipeline runs locally on the rnunley laptop. `watcher.py` watches the OneDrive upload folder and triggers all pipeline stages automatically when a new report arrives.
+
+`generate_highlights.py` evaluates hard-coded thresholds (week-over-week gross change, capacity band crossings, show open/close, all-time records) and calls the Anthropic API only when a threshold trips. `generate_season_review.py` fires once per season, 14 days after the last show closes, and writes an AI retrospective comparing pre-season signal to actual peer-venue results.
 
 ---
 
@@ -65,7 +70,9 @@ Revenue (GG%) is the headline metric. Capacity is context, not the lead story.
 | [docs/OPERATIONS.md](docs/OPERATIONS.md) | Data pipeline: how to run when a new report arrives, how to add a show or season, deployment steps, environment variables |
 | [docs/DEVELOPER.md](docs/DEVELOPER.md) | Architecture, BTD namespace, shared modules, how to extend the signal model |
 | [docs/CHARTS.md](docs/CHARTS.md) | What each chart shows and why |
-| [docs/SERVER_MIGRATION_AND_EMAIL_INGESTION.md](docs/SERVER_MIGRATION_AND_EMAIL_INGESTION.md) | Planned: moving the pipeline to a dedicated box, switching report ingestion from SharePoint to a shared mailbox, and an AI-generated hub highlight via Anthropic Workload Identity Federation |
+| [docs/AI_PIPELINE_PLAN.md](docs/AI_PIPELINE_PLAN.md) | AI highlight pipeline — weekly trigger thresholds, season-end review logic, output format, dashboard injection |
+| [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md) | Plain-language system overview for non-technical stakeholders |
+| [docs/SERVER_MIGRATION_AND_EMAIL_INGESTION.md](docs/SERVER_MIGRATION_AND_EMAIL_INGESTION.md) | Planned: moving the pipeline to a dedicated box, switching report ingestion from SharePoint to a shared mailbox |
 | [SERVER_SETUP.md](SERVER_SETUP.md) | Setting up a dedicated server to run the data pipeline automatically |
 
 ---

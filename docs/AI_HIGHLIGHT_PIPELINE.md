@@ -4,7 +4,7 @@ Auto-generated weekly intelligence blurbs for the Executive Brief and
 Programming Brief tabs, triggered only by hard-coded data thresholds.
 No AI call fires unless at least one threshold trips.
 
-*Status: PLAN — awaiting confirmation before any code is written.*
+*Status: SUPERSEDED — replaced by `AI_PIPELINE_PLAN.md`, which added season-keyed output and the end-of-season review (Feature 2). See that document for the current implementation.*
 
 ---
 
