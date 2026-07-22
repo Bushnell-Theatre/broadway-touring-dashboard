@@ -167,10 +167,6 @@ def check_season_end(data_records: list, seasons: dict, existing_reviews: dict):
             continue
 
         latest_week = max(r["week_of"] for r in season_records)
-        if latest_week < last_close.isoformat():
-            log.info(f"  {season_key}: latest data week {latest_week} < last_close {last_close} — final data not yet ingested")
-            continue
-
         log.info(f"  {season_key}: QUALIFIES (last_close={last_close}, latest_week={latest_week}, {len(season_records)} records)")
         yield season_key, shows, season_records
 
