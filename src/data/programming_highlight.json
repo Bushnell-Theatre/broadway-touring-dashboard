@@ -1,8 +1,8 @@
 {
   "2026-2027": {
-    "week_of": "2026-07-12",
-    "trigger": "wow_gross_change",
-    "summary": "Hell's Kitchen posted exceptional week-over-week growth of 97% nationally, jumping from $895K to $1.76M for the week ending July 12, 2026, signaling robust demand across the touring circuit. This near-doubling of grosses suggests strong audience appetite for the show and may reflect increased marketing activity, favorable scheduling, or venue-level momentum in key markets. The data warrants continued monitoring of Hell's Kitchen's performance trajectory through the 2026-2027 season.",
-    "generated_at": "2026-07-22T21:07:23"
+    "week_of": "2026-07-19",
+    "trigger": "cap_band_crossing",
+    "summary": "Hell's Kitchen crossed into high-demand territory this week, with national paid capacity climbing from 87.2% to 90.2% as of July 19, 2026. This transition from the mid-range band signals strengthening audience interest in the title across touring markets. The momentum warrants continued monitoring to assess whether this represents sustained demand or temporary volatility.",
+    "generated_at": "2026-07-24T13:39:16"
   }
 }

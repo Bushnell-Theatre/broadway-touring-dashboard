@@ -1,8 +1,8 @@
 {
   "2026-2027": {
-    "week_of": "2026-07-12",
-    "trigger": "wow_gross_change",
-    "summary": "Hell's Kitchen posted a 97% week-over-week gross increase at peer venues during the week of July 12, rising from $895K to $1.76M — the strongest single-week gain on the current season slate. This surge suggests accelerating demand ahead of the show's Bushnell engagement.",
-    "generated_at": "2026-07-22T20:00:00"
+    "week_of": "2026-07-19",
+    "trigger": "cap_band_crossing",
+    "summary": "Hell's Kitchen advanced into high-demand territory this week, with paid capacity climbing 3 percentage points to 90.2%—crossing our internal threshold for strong performance among comparable venues. This shift suggests the show is resonating with audiences in our market segment. The data reflects booking momentum during the week of July 19, 2026, and warrants continued monitoring as we approach the performance window.",
+    "generated_at": "2026-07-24T13:39:14"
   }
 }
