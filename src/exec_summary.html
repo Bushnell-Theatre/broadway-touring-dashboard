@@ -1402,7 +1402,7 @@
       function scoreBadge(p) {
         const cls = p.isFutureNewTour ? 'neutral' : p.score == null ? 'neutral' : p.score >= SCORE_MED ? 'good' : 'warn';
         const lbl = scoreCellText(p);
-        const sub = p.isFutureNewTour || p.score == null ? '' : topPct(p.score) + ' nationally';
+        const sub = p.isFutureNewTour || p.score == null ? '' : topPct(p.score) + ' among peer venues';
         return (
           '<span class="status ' +
           cls +
