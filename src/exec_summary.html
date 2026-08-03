@@ -632,7 +632,7 @@
       <div class="kpi-cell">
         <div class="kpi-label">Avg Fit Score<button class="info-btn" onclick="showInfo('kpi-fit')" aria-label="About Avg Fit Score">i</button></div>
         <div class="kpi-value" id="kFit">—</div>
-        <div class="kpi-sub">legacy composite · see signals</div>
+        <div class="kpi-sub">peer cohort composite</div>
       </div>
       <div class="kpi-cell">
         <div class="kpi-label">Avg Capacity<button class="info-btn" onclick="showInfo('kpi-cap')" aria-label="About Avg Capacity">i</button></div>
@@ -2972,7 +2972,7 @@
       'kpi-fit': {
         title: 'Avg Fit Score',
         what: 'The average Planning Signal score across all scheduled shows in the selected season that have Broadway League touring data.',
-        how: 'Each show receives a Planning Signal score (0–100) combining Demand (40%), Revenue (25%), Peer Fit (25%), and Confidence (10%). This KPI averages those scores across all shows with sufficient data. Shows with no matching records are excluded from the average.',
+        how: 'Each show receives a Planning Signal score (0–100) built from four components: Demand, Revenue, Peer Fit, and Confidence. Demand and Revenue are anchored to Bushnell\'s three peer cohorts — size-matched venues, proximity markets (Northeast/New England), and comparable nonprofit PAC markets — weighted equally when data exists for each. Shows with no matching records are excluded from the average.',
         look: 'A season-level average above 55 suggests a well-supported slate. Below 45 may indicate heavier reliance on unproven titles or shows with thin data. Always read the individual scores alongside the average.'
       },
       'kpi-cap': {
@@ -3007,8 +3007,8 @@
       },
       'fit-scores': {
         title: 'Fit Scores',
-        what: 'A bar chart ranking each scheduled show by its Planning Signal score — a composite measure of how well national and peer touring evidence supports a Bushnell engagement.',
-        how: 'Each bar represents one show\'s Planning Signal (0–100), combining Demand (40%), Revenue (25%), Peer Fit (25%), and Confidence (10%). The chart is sorted high to low. The midpoint marks the season median.',
+        what: 'A bar chart ranking each scheduled show by its Planning Signal score — a composite measure of how well peer cohort evidence supports a Bushnell engagement.',
+        how: 'Each bar represents one show\'s Planning Signal (0–100). Demand and Revenue are scored against Bushnell\'s peer cohorts (size-matched, Northeast proximity, and comparable nonprofit PAC markets), with each cohort weighted equally. Peer Fit reflects performance consistency across those venues. Confidence reflects data depth. The chart is sorted high to low; the midpoint marks the season median.',
         look: 'Shows well above the median are your anchors. Shows near or below the median need more investigation. A very short bar often reflects thin data (low Confidence) rather than weak demand — read the Confidence component before drawing conclusions.'
       },
       'tour-vs-peer': {
@@ -3019,8 +3019,8 @@
       },
       'planning-signal': {
         title: 'Planning Signal',
-        what: 'A composite score (0–100) synthesizing a show\'s national touring demand, revenue efficiency, performance at Bushnell-size peer venues, and the strength of the underlying evidence.',
-        how: 'Four components are scored and weighted: Demand Signal (40%) — paid capacity, total capacity, and markets played; Revenue Signal (25%) — GG% of gross potential and average paid admission; Peer Fit Signal (25%) — capacity and consistency at peer venues; Confidence Signal (10%) — weeks of data, venue count, and recency. All components are normalized against the season median.',
+        what: 'A composite score (0–100) synthesizing how a show performs in Bushnell\'s peer cohort markets — size-matched venues, Northeast proximity markets, and comparable nonprofit PAC cities — plus the strength of the underlying evidence.',
+        how: 'Four components contribute: Demand Signal — paid capacity across all three peer cohort types, averaged equally when each has data, plus subscription lift; Revenue Signal — GG% of gross potential and average paid admission, again averaged across cohort types; Peer Fit Signal — capacity percentile rank within the peer pool; Confidence Signal — weeks of data, venue count, and recency. National data is retained as a reference but does not drive the composite score.',
         look: 'Scores above 60 are well-supported across dimensions. Scores below 40 warrant caution or more investigation. Always check Confidence — a high score on two weeks of data means something very different than one built on thirty weeks.'
       },
       'season-cap': {
