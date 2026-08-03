@@ -2,7 +2,11 @@
   'use strict';
   root.BTD = root.BTD || {};
   function key(record) { return String(record && record.theatre || '').trim() + '|' + String(record && record.city || '').trim(); }
-  function getMeta(record) { return (root.BTD.state && root.BTD.state.peerMeta || {})[key(record)] || null; }
+  function getMeta(record) {
+    var k = key(record);
+    var fromState = root.BTD.state && root.BTD.state.peerMeta && root.BTD.state.peerMeta[k];
+    return fromState || (root.PEER_META && root.PEER_META[k]) || null;
+  }
   function isPeerType(record, type) {
     if (!type) return true;
     if (type === 'size' && record && record.similar_bushnell) return true;
