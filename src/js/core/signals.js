@@ -96,83 +96,176 @@
     var all = records || root.BTD.state.all || [];
     var matched = rowsForShow(show, all);
     var rows = activeRows(matched);
+    // peerType retained for backward compat (used by legacy callers); scoring always uses all three types
     var peerType = options.peerType || 'size';
-    var peers = rows.filter(function (r) { return root.BTD.peers && root.BTD.peers.isPeerType(r, peerType); });
+
+    /* ── PEER POOLS ────────────────────────────────────────────────────────────
+     *
+     * All three peer cohort types are evaluated independently and then combined.
+     * A venue tagged in multiple types (e.g., Buell Theatre = size + market)
+     * contributes to each pool it belongs to; the deduplicated union is allPeers.
+     *
+     * Scoring weights (each type contributes equally when data exists):
+     *   size      — venues within ±10% of Bushnell sellable seats (2,450–2,994)
+     *   proximity — Northeast/New England markets (routing and audience overlap)
+     *   market    — nonprofit mid-sized PACs with subscription programming
+     *
+     * National data (paidCapacity, ggPctGp, etc.) is retained in the metrics
+     * object for reference but is NOT used in the composite score.
+     * ─────────────────────────────────────────────────────────────────────── */
+    function isPeer(r, type) { return !!(root.BTD.peers && root.BTD.peers.isPeerType(r, type)); }
+    var sizePeers      = rows.filter(function (r) { return isPeer(r, 'size'); });
+    var proximityPeers = rows.filter(function (r) { return isPeer(r, 'proximity'); });
+    var marketPeers    = rows.filter(function (r) { return isPeer(r, 'market'); });
+
+    // Deduplicated union — venues tagged in multiple types appear once
+    var peerKeys = {};
+    var allPeers = [];
+    [sizePeers, proximityPeers, marketPeers].forEach(function (pool) {
+      pool.forEach(function (r) {
+        var k = (r.week_of || '') + '|' + (r.theatre || '') + '|' + (r.city || '');
+        if (!peerKeys[k]) { peerKeys[k] = true; allPeers.push(r); }
+      });
+    });
+
+    // Legacy single-type peer array — backward compat only, not used in scoring
+    var peers = rows.filter(function (r) { return isPeer(r, peerType); });
+
     var bushnell = rows.filter(function (r) { return /bushnell|mortensen/i.test(String(r.theatre || '')) || /hartford/i.test(String(r.city || '')); });
-    var sub = rows.filter(function (r) { return normBool(r.on_sub); });
+    var sub    = rows.filter(function (r) { return normBool(r.on_sub); });
     var nonsub = rows.filter(function (r) { return !normBool(r.on_sub); });
 
-    var paidCapacity = avg(rows, 'cap_paid');
-    var totalCapacity = avg(rows, 'cap_total');
-    var grossGross = avg(rows, 'gross_gross');
-    var totalGross = sum(rows, 'gross_gross');
-    var grossPotential = avg(rows, 'gross_potential');
-    var ggPctGp = avg(rows, 'gg_pct_gp');
-    var avgAdmission = avg(rows, 'avg_adm');
-    var paidTix = sum(rows, 'paid_tix');
-    var totalTix = sum(rows, 'total_tix');
-    var venueSellable = avg(rows, 'venue_sellable');
+    /* ── NATIONAL METRICS — reference only, not used in scoring ── */
+    var paidCapacity        = avg(rows, 'cap_paid');
+    var totalCapacity       = avg(rows, 'cap_total');
+    var grossGross          = avg(rows, 'gross_gross');
+    var totalGross          = sum(rows, 'gross_gross');
+    var grossPotential      = avg(rows, 'gross_potential');
+    var ggPctGp             = avg(rows, 'gg_pct_gp');
+    var avgAdmission        = avg(rows, 'avg_adm');
+    var paidTix             = sum(rows, 'paid_tix');
+    var totalTix            = sum(rows, 'total_tix');
+    var venueSellable       = avg(rows, 'venue_sellable');
     var grossPerSellableSeat = grossGross != null && venueSellable ? grossGross / venueSellable : null;
-    var peerPaidCapacity = avg(peers, 'cap_paid');
-    var peerGgPctGp = avg(peers, 'gg_pct_gp');
-    var peerAvgAdmission = avg(peers, 'avg_adm');
-    var peerGross = avg(peers, 'gross_gross');
-    var bushnellCap = avg(bushnell, 'cap_paid');
-    var subAvgAdmission = avg(sub, 'avg_adm');
-    var nonsubAvgAdmission = avg(nonsub, 'avg_adm');
-    var subGgPctGp = avg(sub, 'gg_pct_gp');
-    var nonsubGgPctGp = avg(nonsub, 'gg_pct_gp');
-    var subCap = avg(sub, 'cap_paid');
-    var nonsubCap = avg(nonsub, 'cap_paid');
-    var venueCount = uniq(rows, function (r) { return (r.theatre || '') + '|' + (r.city || ''); });
-    var weekCount = uniq(rows, function (r) { return r.week_of; });
 
-    var demandDrivers = [];
-    var revenueDrivers = [];
-    var peerDrivers = [];
+    /* ── PER-TYPE PEER METRICS ── */
+    var sizePeerCap       = avg(sizePeers,      'cap_paid');
+    var sizePeerGg        = avg(sizePeers,      'gg_pct_gp');
+    var sizePeerAdm       = avg(sizePeers,      'avg_adm');
+    var sizePeerGross     = avg(sizePeers,      'gross_gross');
+    var proximityPeerCap  = avg(proximityPeers, 'cap_paid');
+    var proximityPeerGg   = avg(proximityPeers, 'gg_pct_gp');
+    var proximityPeerAdm  = avg(proximityPeers, 'avg_adm');
+    var proximityPeerGross = avg(proximityPeers, 'gross_gross');
+    var marketPeerCap     = avg(marketPeers,    'cap_paid');
+    var marketPeerGg      = avg(marketPeers,    'gg_pct_gp');
+    var marketPeerAdm     = avg(marketPeers,    'avg_adm');
+    var marketPeerGross   = avg(marketPeers,    'gross_gross');
+
+    /* ── COMBINED PEER METRICS (across deduplicated allPeers) ── */
+    var peerPaidCapacity  = avg(allPeers, 'cap_paid');
+    var peerGgPctGp       = avg(allPeers, 'gg_pct_gp');
+    var peerAvgAdmission  = avg(allPeers, 'avg_adm');
+    var peerGross         = avg(allPeers, 'gross_gross');
+
+    var bushnellCap       = avg(bushnell, 'cap_paid');
+    var subAvgAdmission   = avg(sub,      'avg_adm');
+    var nonsubAvgAdmission = avg(nonsub,  'avg_adm');
+    var subGgPctGp        = avg(sub,      'gg_pct_gp');
+    var nonsubGgPctGp     = avg(nonsub,   'gg_pct_gp');
+    var subCap            = avg(sub,      'cap_paid');
+    var nonsubCap         = avg(nonsub,   'cap_paid');
+    var venueCount        = uniq(rows, function (r) { return (r.theatre || '') + '|' + (r.city || ''); });
+    var weekCount         = uniq(rows, function (r) { return r.week_of; });
+
+    /* ── COHORT-ANCHORED SCORING ───────────────────────────────────────────────
+     *
+     * All three peer types (size, proximity, market) contribute equally to each
+     * signal when data exists for that type. Types with no records are excluded
+     * rather than penalized. This ensures a show is judged against venues the
+     * Bushnell actually competes with — not diluted by large-hall or primary-
+     * market tour stops.
+     *
+     * demandScore  — avg paid capacity % at each active peer type, plus sub lift.
+     *                Weights: size 1, proximity 1, market 1, sub lift 1 (equal,
+     *                null-aware average).
+     *
+     * revenueScore — GG%GP and avg admission at each active peer type, averaged
+     *                within type first, then across types.
+     *                Weights: size 1, proximity 1, market 1 (equal, null-aware).
+     *
+     * peerScore    — cross-type consistency and evidence breadth. High score means
+     *                strong performance AND data from multiple peer cohorts.
+     *
+     * confidenceScore — evidence depth: record count, venue diversity, peer
+     *                   coverage (combined), and unique weeks.
+     * ─────────────────────────────────────────────────────────────────────── */
+
+    // Build driver strings that document exactly which peer types contributed
+    var typesSeen = [];
+    if (sizePeers.length)      typesSeen.push('size (' + sizePeers.length + ' records)');
+    if (proximityPeers.length) typesSeen.push('proximity (' + proximityPeers.length + ' records)');
+    if (marketPeers.length)    typesSeen.push('market (' + marketPeers.length + ' records)');
+    var typesStr = typesSeen.length ? typesSeen.join(', ') : 'no peer records found';
+
+    var demandDrivers     = [];
+    var revenueDrivers    = [];
+    var peerDrivers       = [];
     var confidenceDrivers = [];
+
+    /* demandScore: paid capacity at each peer type, plus subscription lift */
     var demandScore = avgNonNull([
-      scaled(paidCapacity, 50, 100),
-      scaled(totalCapacity, 55, 102),
-      peerPaidCapacity == null ? null : scaled(peerPaidCapacity, 50, 100),
-      scaled(Math.log10(Math.max(1, paidTix || 0)), 3, 5.2),
+      sizePeerCap      != null ? scaled(sizePeerCap,      50, 100) : null,
+      proximityPeerCap != null ? scaled(proximityPeerCap, 50, 100) : null,
+      marketPeerCap    != null ? scaled(marketPeerCap,    50, 100) : null,
       subCap != null && nonsubCap != null ? scaled(subCap - nonsubCap, -10, 15) : null
     ]);
-    var revenueScore = avgNonNull([
-      scaled(ggPctGp, 55, 105),
-      scaled(avgAdmission, 45, 140),
-      scaled(grossPerSellableSeat, 20, 700),
-      peerGgPctGp == null ? null : scaled(peerGgPctGp, 55, 105),
-      percentile(avgAdmission, root.BTD.state.all || all, 'avg_adm')
+
+    /* revenueScore: GG%GP and admission, averaged per type, then across types */
+    var sizePeerRevScore      = avgNonNull([
+      sizePeerGg  != null ? scaled(sizePeerGg,  55, 105) : null,
+      sizePeerAdm != null ? scaled(sizePeerAdm, 45, 140) : null
     ]);
+    var proximityPeerRevScore = avgNonNull([
+      proximityPeerGg  != null ? scaled(proximityPeerGg,  55, 105) : null,
+      proximityPeerAdm != null ? scaled(proximityPeerAdm, 45, 140) : null
+    ]);
+    var marketPeerRevScore    = avgNonNull([
+      marketPeerGg  != null ? scaled(marketPeerGg,  55, 105) : null,
+      marketPeerAdm != null ? scaled(marketPeerAdm, 45, 140) : null
+    ]);
+    var revenueScore = avgNonNull([sizePeerRevScore, proximityPeerRevScore, marketPeerRevScore]);
+
+    /* peerScore: cross-type consistency and sample breadth */
     var peerScore = avgNonNull([
-      peerPaidCapacity == null ? null : scaled(peerPaidCapacity, 50, 100),
-      peerGgPctGp == null ? null : scaled(peerGgPctGp, 55, 105),
-      peerAvgAdmission == null ? null : scaled(peerAvgAdmission, 45, 140),
-      scaled(peers.length, 0, 24)
+      peerPaidCapacity != null ? scaled(peerPaidCapacity, 50, 100) : null,
+      peerGgPctGp      != null ? scaled(peerGgPctGp,      55, 105) : null,
+      scaled(allPeers.length, 0, 24)
     ]);
+
+    /* confidenceScore: evidence depth */
     var confidenceScore = avgNonNull([
-      scaled(rows.length, 0, 40),
-      scaled(venueCount, 0, 20),
-      scaled(peers.length, 0, 18),
-      scaled(weekCount, 0, 30)
+      scaled(rows.length,     0, 40),
+      scaled(venueCount,      0, 20),
+      scaled(allPeers.length, 0, 18),
+      scaled(weekCount,       0, 30)
     ]) || 0;
 
-    demandDrivers.push('Paid capacity, total capacity, ticket volume, peer attendance, and subscription lift.');
-    revenueDrivers.push('GG% of gross potential, average admission, gross per sellable seat, peer revenue, and revenue rank.');
-    peerDrivers.push('Bushnell-size or selected peer group capacity, revenue behavior, admission, and sample size.');
-    confidenceDrivers.push(rows.length + ' active records, ' + venueCount + ' venues, ' + weekCount + ' weeks, ' + peers.length + ' peer records.');
+    demandDrivers.push('Paid capacity at comparable venues — ' + typesStr + '. Each peer type contributes equally when data exists. Subscription vs. non-subscription capacity differential applied where available.');
+    revenueDrivers.push('GG% of gross potential and average admission at comparable venues — ' + typesStr + '. Averaged within each peer type, then across types equally.');
+    peerDrivers.push('Cross-type consistency: paid capacity and revenue efficiency across ' + allPeers.length + ' combined cohort records (' + typesStr + ').');
+    confidenceDrivers.push(rows.length + ' active records, ' + venueCount + ' venues, ' + weekCount + ' weeks, ' + allPeers.length + ' combined peer records (' + typesStr + ').');
 
     var showMeta = showMetaFor(show);
     var awards = showMeta.awards || {};
     var metaSignals = showMeta.signals || {};
     var media = metaSignals.media || {};
     var recognitionSignal = normalizeSignal(metaSignals.recognition || recognitionFromAwards(awards), 'Unknown');
-    var pressSignal = mediaSignal(media, 'press_awareness', 'Unknown');
-    var tourSignal = mediaSignal(media, 'tour_viability', 'Unknown');
-    var riskSignal = mediaSignal(media, 'reputation_risk', 'Unknown');
-    var audienceSignal = mediaSignal(media, 'audience_fit', 'Unknown');
-    var localSignal = mediaSignal(media, 'local_market', 'Unknown');
+    var pressSignal   = mediaSignal(media, 'press_awareness', 'Unknown');
+    var tourSignal    = mediaSignal(media, 'tour_viability',  'Unknown');
+    var riskSignal    = mediaSignal(media, 'reputation_risk', 'Unknown');
+    var audienceSignal = mediaSignal(media, 'audience_fit',   'Unknown');
+    var localSignal   = mediaSignal(media, 'local_market',    'Unknown');
 
     var isFutureNewTour = !!options.futureNewTour || (String(options.seasonId || '').indexOf('2026') === 0 && rows.length === 0);
     var planningRead = 'Exploratory';
@@ -185,16 +278,17 @@
     }
 
     var positive = [];
-    var caution = [];
-    if (paidCapacity >= 85) positive.push('Paid capacity is a strong demand signal.');
-    else if (paidCapacity != null && paidCapacity < 65) caution.push('Paid capacity is a soft demand signal.');
-    if (ggPctGp >= 85) positive.push('Gross potential performance indicates healthy revenue quality.');
-    else if (ggPctGp != null && ggPctGp < 70) caution.push('Revenue efficiency trails stronger planning candidates.');
-    if (peerPaidCapacity >= 80) positive.push('Comparable peer venues show strong attendance behavior.');
-    if (peerGgPctGp >= 80) positive.push('Comparable peer venues show useful revenue performance.');
-    if (paidCapacity >= 85 && ggPctGp != null && ggPctGp < 70) caution.push('Attendance is stronger than revenue yield; review pricing power and discounting.');
-    if (avgAdmission != null && percentile(avgAdmission, root.BTD.state.all || all, 'avg_adm') < 40) caution.push('Average admission trails much of the touring dataset.');
-    if (peers.length < 4) caution.push('Peer sample is limited; apply local judgment.');
+    var caution  = [];
+    // Explanations reference peer metrics, not national averages
+    if (peerPaidCapacity >= 85) positive.push('Paid capacity is strong across comparable peer venues (' + typesStr + ').');
+    else if (peerPaidCapacity != null && peerPaidCapacity < 65) caution.push('Paid capacity at comparable venues is a soft signal; review local factors.');
+    if (peerGgPctGp >= 85) positive.push('Revenue efficiency is strong across comparable peer venues.');
+    else if (peerGgPctGp != null && peerGgPctGp < 70) caution.push('Revenue efficiency trails peer venue benchmarks; review pricing and deal terms.');
+    if (sizePeerCap != null && sizePeerCap >= 80) positive.push('Similarly-sized halls show strong attendance for this show.');
+    if (proximityPeerCap != null && proximityPeerCap >= 80) positive.push('Northeast/New England regional markets show strong attendance for this show.');
+    if (marketPeerCap != null && marketPeerCap >= 80) positive.push('Comparable nonprofit PAC markets show strong attendance for this show.');
+    if (peerPaidCapacity >= 85 && peerGgPctGp != null && peerGgPctGp < 70) caution.push('Attendance at peer venues is strong but revenue yield is softer; review pricing power and discounting.');
+    if (allPeers.length < 4) caution.push('Combined peer sample is limited (' + allPeers.length + ' records); apply local judgment.');
     if (confidenceScore < 45) caution.push('Evidence depth is thin; treat the read as preliminary.');
     if (recognitionSignal.label === 'High') positive.push('Recognition signal is high based on award history.');
     else if (recognitionSignal.label === 'Moderate' || recognitionSignal.label === 'Limited') positive.push('Award recognition provides some additional context.');
@@ -205,43 +299,54 @@
     if (localSignal.label === 'Relevant') positive.push('Local-market relevance appears in curated public sources.');
     caution.push('Revenue Signal is revenue quality, not net profit; deal terms and local costs are not included.');
 
-    var demandSignal = signal(demandScore, demandDrivers);
-    var revenueSignal = signal(revenueScore, revenueDrivers);
-    var peerSignal = signal(peerScore, peerDrivers);
+    var demandSignal     = signal(demandScore,     demandDrivers);
+    var revenueSignal    = signal(revenueScore,    revenueDrivers);
+    var peerSignal       = signal(peerScore,       peerDrivers);
     var confidenceSignal = { value: Math.round(confidenceScore), label: confidenceLabel(confidenceScore, rows.length), drivers: confidenceDrivers };
     if (isFutureNewTour) {
-      demandSignal = { value: null, label: 'Exploratory', drivers: demandDrivers };
-      revenueSignal = { value: null, label: 'Exploratory', drivers: revenueDrivers };
-      peerSignal = { value: null, label: 'Exploratory', drivers: peerDrivers };
-      confidenceSignal = { value: 0, label: 'Exploratory', drivers: confidenceDrivers };
+      demandSignal     = { value: null, label: 'Exploratory', drivers: demandDrivers };
+      revenueSignal    = { value: null, label: 'Exploratory', drivers: revenueDrivers };
+      peerSignal       = { value: null, label: 'Exploratory', drivers: peerDrivers };
+      confidenceSignal = { value: 0,    label: 'Exploratory', drivers: confidenceDrivers };
     }
     var composite = Math.round(avgNonNull([demandScore, revenueScore, peerScore, confidenceScore]) || (isFutureNewTour ? 65 : 0));
-    var note = planningRead.indexOf('Demand Ahead') >= 0 ? 'Audience demand appears stronger than revenue quality; review pricing, discounting, and deal terms.' :
-      planningRead.indexOf('Revenue Ahead') >= 0 ? 'Revenue quality is promising but demand evidence is softer; review audience reach and marketing risk.' :
-      planningRead === 'Strong Candidate' ? 'Demand, revenue, peer, and confidence signals support leadership discussion.' :
+    var note = planningRead.indexOf('Demand Ahead') >= 0 ? 'Audience demand at comparable venues appears stronger than revenue quality; review pricing, discounting, and deal terms.' :
+      planningRead.indexOf('Revenue Ahead') >= 0 ? 'Revenue quality at comparable venues is promising but demand evidence is softer; review audience reach and marketing risk.' :
+      planningRead === 'Strong Candidate' ? 'Demand, revenue, peer cohort, and confidence signals support leadership discussion.' :
       rows.length ? 'Signals are mixed or limited; use this as a discussion prompt.' : 'Little or no touring evidence found in this dataset.';
 
     return {
       title: titleOf(show),
       show: typeof show === 'object' ? show : { title: titleOf(show), match: matchOf(show) },
-      records: { national: rows, peers: peers, bushnell: bushnell, subscription: sub, nonSubscription: nonsub },
+      records: { national: rows, peers: allPeers, bushnell: bushnell, subscription: sub, nonSubscription: nonsub },
       rows: rows,
       metrics: {
+        // National metrics — reference only, not used in composite score
         paidCapacity: paidCapacity, totalCapacity: totalCapacity, cap: paidCapacity,
         grossGross: grossGross, gross: grossGross, totalGross: totalGross,
         grossPotential: grossPotential, ggPctGp: ggPctGp, gg: ggPctGp,
         avgAdmission: avgAdmission, avgAdm: avgAdmission, adm: avgAdmission,
         grossPerSellableSeat: grossPerSellableSeat,
         paidTix: paidTix, totalTix: totalTix, venueSellable: venueSellable,
+        // Combined peer metrics (across all three types, deduplicated)
         peerPaidCapacity: peerPaidCapacity, peerCap: peerPaidCapacity,
         peerGgPctGp: peerGgPctGp, peerAvgAdmission: peerAvgAdmission, peerGross: peerGross,
+        // Bushnell and subscription metrics
         bushnellCap: bushnellCap, index: (bushnellCap != null && paidCapacity) ? (bushnellCap / paidCapacity) * 100 : null,
         subAvgAdmission: subAvgAdmission, nonsubAvgAdmission: nonsubAvgAdmission,
         subGgPctGp: subGgPctGp, nonsubGgPctGp: nonsubGgPctGp,
         subCap: subCap, nonsubCap: nonsubCap, nonSubCap: nonsubCap,
+        // Record counts
         recordCount: rows.length, count: rows.length, activeCount: rows.length,
         venueCount: venueCount, venues: venueCount, weekCount: weekCount, weeks: weekCount,
-        peerRecordCount: peers.length, peerCount: peers.length
+        peerRecordCount: allPeers.length, peerCount: allPeers.length
+      },
+      // Per-type breakdown — documents exactly which cohorts contributed and how
+      peerBreakdown: {
+        size:      { count: sizePeers.length,      cap: sizePeerCap,      gg: sizePeerGg,      adm: sizePeerAdm,      gross: sizePeerGross },
+        proximity: { count: proximityPeers.length, cap: proximityPeerCap, gg: proximityPeerGg, adm: proximityPeerAdm, gross: proximityPeerGross },
+        market:    { count: marketPeers.length,    cap: marketPeerCap,    gg: marketPeerGg,    adm: marketPeerAdm,    gross: marketPeerGross },
+        combined:  { count: allPeers.length,       cap: peerPaidCapacity, gg: peerGgPctGp,    adm: peerAvgAdmission, gross: peerGross }
       },
       signals: { demand: demandSignal, revenue: revenueSignal, peer: peerSignal, recognition: recognitionSignal, press: pressSignal, tour: tourSignal, risk: riskSignal, audience: audienceSignal, local: localSignal, confidence: confidenceSignal },
       awards: awards,
@@ -249,7 +354,7 @@
       planning: { read: isFutureNewTour ? 'Exploratory' : planningRead, note: note },
       explanation: { positive: positive, caution: caution },
       score: composite,
-      decomp: { canonical: true, demand: demandSignal.value, revenue: revenueSignal.value, peer: peerSignal.value, confidence: confidenceSignal.value },
+      decomp: { canonical: true, demand: demandSignal.value, revenue: revenueSignal.value, peer: peerSignal.value, confidence: confidenceSignal.value, peerTypes: typesStr },
       isFutureNewTour: isFutureNewTour
     };
   }
