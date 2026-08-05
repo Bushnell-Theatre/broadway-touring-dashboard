@@ -259,12 +259,12 @@ evidence, not how recently it was reported.
 
 Confidence label thresholds (from `confidenceLabel()` in `signals.js`):
 
-| Label | Score threshold |
-|---|---|
-| `High` | ≥ 65 |
-| `Moderate` | ≥ 45 |
-| `Low` | > 0 |
-| `Exploratory` | = 0 |
+| Label | Score range | Notes |
+|---|---|---|
+| `High` | ≥ 75 | |
+| `Moderate` | 45–74 | |
+| `Low` | 1–44 | |
+| `Exploratory` | 0 or no evidence | Also returned when `rowCount = 0` and `score ≤ 0` |
 
 #### Peer Fit inputs and the zero-record edge case
 
@@ -280,7 +280,7 @@ The sample-breadth term is always a non-negative integer, so it is never exclude
 by `avgNonNull()`. This creates two distinct low-evidence situations:
 
 - **Zero peer records:** The capacity and GG% inputs are null; `avgNonNull([null, null, 0])` = 0. Peer Fit = 0 and is **not** excluded from the composite average.
-- **Few peer records (≥ 1):** All three inputs contribute; Peer Fit is positive but low.
+- **One or more peer records:** Sample breadth contributes and capacity/GG% contribute when their underlying values are available.
 
 Peer Fit is the only component that can reach exactly 0 without being null. The
 composite score therefore does not exclude Peer Fit when evidence is thin — it

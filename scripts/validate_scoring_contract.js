@@ -3,11 +3,15 @@
  * validate_scoring_contract.js
  *
  * Validates the filter and evidence-boundary rules defined in
- * docs/SCORING_CONTRACT.md §"Filter taxonomy" without requiring a browser
- * context or signals.js to be loaded.
+ * docs/SCORING_CONTRACT.md §"Filter taxonomy".
  *
- * Tests the logic that lives in profileShowCanonical() in page-common.js and
- * verifies caller evidence-window compliance by inspecting source text.
+ * PRIMARY: Executes the real BTD.page.profileShowCanonical() implementation
+ * via a lightweight vm harness. Behavioral tests capture what the actual
+ * function passes to BTD.filters.apply and BTD.signals.profileShow.
+ *
+ * SUPPLEMENTARY: Static source-compliance checks verify that callers supply
+ * the required date cutoffs and that the contract document is internally
+ * consistent. These supplement—not substitute for—the vm harness.
  *
  * Run: node scripts/validate_scoring_contract.js
  *
@@ -17,6 +21,7 @@
 
 'use strict';
 
+const vm   = require('vm');
 const fs   = require('fs');
 const path = require('path');
 
@@ -41,311 +46,380 @@ function section(title) {
   console.log('─'.repeat(title.length));
 }
 
-/* ── Re-implementation of the filter-construction logic under test ────────── */
-/* Matches exactly what profileShowCanonical() does in page-common.js.         */
-
-function buildFilters(options, activeGlobals) {
-  options       = options || {};
-  activeGlobals = activeGlobals || {};
-  return {
-    tier:   options.tier   !== undefined ? options.tier   : (activeGlobals.tier   || ''),
-    sub:    options.sub    !== undefined ? options.sub    : (activeGlobals.sub    || ''),
-    peer:   '',   // display filter — always forced to neutral
-    equity: '',   // display filter — always forced to neutral
-    engage: ''    // display filter — always forced to neutral
-  };
-}
-
-/* ── Re-implementation of the date-boundary logic under test ─────────────── */
-
-function applyDateBounds(rows, dateFrom, dateTo) {
-  if (dateFrom) rows = rows.filter(function (r) { return r.week_of && r.week_of >= dateFrom; });
-  if (dateTo)   rows = rows.filter(function (r) { return r.week_of && r.week_of <= dateTo; });
-  return rows;
-}
-
-/* ── Helper: read source file as string ────────────────────────────────────── */
-
 function src(relPath) {
   return fs.readFileSync(path.join(__dirname, '..', relPath), 'utf8');
 }
 
 /* ══════════════════════════════════════════════════════════════════════════ */
-/*  SECTION 1: Filter construction — options.tier / options.sub override     */
+/*  VM HARNESS SETUP                                                          */
+/*                                                                            */
+/*  Stubs for BTD.filters.apply and BTD.signals.profileShow capture what      */
+/*  the real profileShowCanonical() passes to each collaborator.              */
+/*  The stubs apply enough filter logic for date-boundary tests to work.      */
 /* ══════════════════════════════════════════════════════════════════════════ */
 
-section('1. Filter construction — options.tier / options.sub override');
+var lastFilters       = null;  // {tier, sub, peer, equity, engage} passed to filters.apply
+var lastScorerRows    = null;  // rows[] received by signals.profileShow
+var lastScorerOptions = null;  // options received by signals.profileShow
 
-var activeGlobals = { tier: 'Primary', sub: '1', peer: 'size', equity: 'yes', engage: 'no' };
+/* Minimal BTD.filters.apply stub.
+ * Captures the filters object and applies basic tier/sub logic so that date
+ * filtering (which runs after this call) sees a realistic row set. Peer,
+ * equity, and engage are always expected to be '' — they are recorded but
+ * never used to filter, matching the canonical entry point's contract.     */
+function stubFiltersApply(rows, filters) {
+  lastFilters = {
+    tier:   filters.tier,
+    sub:    filters.sub,
+    peer:   filters.peer,
+    equity: filters.equity,
+    engage: filters.engage
+  };
+  return (rows || []).filter(function (r) {
+    if (filters.tier && r.tier !== filters.tier) return false;
+    if (filters.sub !== '' && filters.sub != null) {
+      if (String(r.on_sub) !== String(filters.sub)) return false;
+    }
+    // peer / equity / engage never filter in canonical calls
+    return true;
+  });
+}
 
-// 1a. explicit tier: '' overrides active global tier
-var f = buildFilters({ tier: '' }, activeGlobals);
-ok("explicit tier: '' overrides page global 'Primary'",
-   f.tier === '',
-   "got: " + JSON.stringify(f.tier));
+/* BTD.signals.profileShow stub.
+ * Captures rows and options so assertions can verify what the scorer received
+ * after all upstream filtering (tier/sub whitelist + date bounds) was applied. */
+function stubProfileShow(show, rows, options) {
+  lastScorerRows    = (rows || []).slice();
+  lastScorerOptions = Object.assign({}, options);
+  return {
+    score: 50,
+    planning:       { read: 'Discuss', note: '' },
+    signals: {
+      demand:     { value: 60, label: 'Moderate', drivers: [] },
+      revenue:    { value: 60, label: 'Moderate', drivers: [] },
+      peer:       { value: 60, label: 'Moderate', drivers: [] },
+      confidence: { value: 60, label: 'Moderate', drivers: [] }
+    },
+    decomp:         { canonical: true, demand: 60, revenue: 60, peer: 60, confidence: 60, peerTypes: '' },
+    isFutureNewTour: false
+  };
+}
 
-// 1b. explicit sub: '' overrides active global sub
-f = buildFilters({ sub: '' }, activeGlobals);
-ok("explicit sub: '' overrides page global '1'",
-   f.sub === '',
-   "got: " + JSON.stringify(f.sub));
+/* Stub window — page-common.js ends with })(window); so the IIFE receives
+ * this object as its `root`. Global filter state (ACTIVE_TIER etc.) is read
+ * from this object by activeFilters() inside the module.                    */
+var windowStub = {
+  BTD: {
+    filters: { apply: stubFiltersApply },
+    signals: { profileShow: stubProfileShow }
+    // BTD.state is intentionally absent — activeFilters() falls back to ACTIVE_* globals
+  },
+  ACTIVE_TIER:   '',
+  ACTIVE_SUB:    '',
+  ACTIVE_PEER:   '',
+  ACTIVE_EQUITY: '',
+  ACTIVE_ENGAGE: ''
+};
 
-// 1c. omitted tier inherits page global
-f = buildFilters({}, activeGlobals);
-ok("omitted options.tier inherits page global 'Primary'",
-   f.tier === 'Primary',
-   "got: " + JSON.stringify(f.tier));
+/* Install as Node.js global so `window` resolves inside vm.runInThisContext */
+global.window = windowStub;
 
-// 1d. omitted sub inherits page global
-f = buildFilters({}, activeGlobals);
-ok("omitted options.sub inherits page global '1'",
-   f.sub === '1',
-   "got: " + JSON.stringify(f.sub));
+/* Load and execute the real page-common.js into the Node.js global context.
+ * After this, global.window.BTD.page.profileShowCanonical is the real function. */
+try {
+  vm.runInThisContext(
+    fs.readFileSync(path.join(__dirname, '..', 'src/js/core/page-common.js'), 'utf8'),
+    { filename: 'page-common.js' }
+  );
+} catch (e) {
+  console.error('\n❌ FATAL: Failed to load page-common.js into vm context:');
+  console.error(e.message);
+  process.exit(1);
+}
 
-// 1e. explicit tier: 'Secondary' overrides 'Primary'
-f = buildFilters({ tier: 'Secondary' }, activeGlobals);
-ok("explicit tier: 'Secondary' overrides page global 'Primary'",
-   f.tier === 'Secondary',
-   "got: " + JSON.stringify(f.tier));
+var profileShowCanonical = global.window.BTD && global.window.BTD.page && global.window.BTD.page.profileShowCanonical;
+if (typeof profileShowCanonical !== 'function') {
+  console.error('\n❌ FATAL: BTD.page.profileShowCanonical is not a function after loading page-common.js');
+  process.exit(1);
+}
 
-// 1f. null options uses page globals (null !== undefined, so uses option value null)
-// Note: passing options.tier = null IS !== undefined, so it WOULD override to null.
-// The contract says callers pass '' not null, but verify behavior is predictable.
-f = buildFilters({ tier: null }, activeGlobals);
-ok("explicit tier: null is !== undefined, overrides to null (callers should use '' not null)",
-   f.tier === null,
-   "got: " + JSON.stringify(f.tier));
+/* Helper: set page-global filter state and reset capture variables.         */
+function setGlobals(g) {
+  global.window.ACTIVE_TIER   = g.tier   !== undefined ? g.tier   : '';
+  global.window.ACTIVE_SUB    = g.sub    !== undefined ? g.sub    : '';
+  global.window.ACTIVE_PEER   = g.peer   !== undefined ? g.peer   : '';
+  global.window.ACTIVE_EQUITY = g.equity !== undefined ? g.equity : '';
+  global.window.ACTIVE_ENGAGE = g.engage !== undefined ? g.engage : '';
+  lastFilters       = null;
+  lastScorerRows    = null;
+  lastScorerOptions = null;
+}
 
-/* ══════════════════════════════════════════════════════════════════════════ */
-/*  SECTION 2: Peer, Equity, Engage never reach scoring                      */
-/* ══════════════════════════════════════════════════════════════════════════ */
-
-section('2. Peer, Equity, Engage are always stripped to neutral value');
-
-var globalsWithAll = { tier: 'Primary', sub: '1', peer: 'proximity', equity: 'yes', engage: 'no' };
-
-// 2a. peer always ''
-f = buildFilters({}, globalsWithAll);
-ok("peer always '' regardless of global 'proximity'",
-   f.peer === '',
-   "got: " + JSON.stringify(f.peer));
-
-// 2b. equity always ''
-ok("equity always '' regardless of global 'yes'",
-   f.equity === '',
-   "got: " + JSON.stringify(f.equity));
-
-// 2c. engage always ''
-ok("engage always '' regardless of global 'no'",
-   f.engage === '',
-   "got: " + JSON.stringify(f.engage));
-
-// 2d. peer not overrideable by options
-f = buildFilters({ peer: 'market' }, globalsWithAll);
-ok("options.peer is ignored — peer is always ''",
-   f.peer === '',
-   "got: " + JSON.stringify(f.peer));
-
-// 2e. equity not overrideable by options
-f = buildFilters({ equity: 'yes' }, globalsWithAll);
-ok("options.equity is ignored — equity is always ''",
-   f.equity === '',
-   "got: " + JSON.stringify(f.equity));
-
-// 2f. engage not overrideable by options
-f = buildFilters({ engage: 'no' }, globalsWithAll);
-ok("options.engage is ignored — engage is always ''",
-   f.engage === '',
-   "got: " + JSON.stringify(f.engage));
-
-/* ══════════════════════════════════════════════════════════════════════════ */
-/*  SECTION 3: Date boundary — inclusive bounds, missing week_of exclusion   */
-/* ══════════════════════════════════════════════════════════════════════════ */
-
-section('3. Date boundary logic — inclusive bounds and missing week_of');
-
-var rows = [
-  { show: 'Test Show', week_of: '2024-07-01' },
-  { show: 'Test Show', week_of: '2024-12-01' },
-  { show: 'Test Show', week_of: '2025-06-30' },
-  { show: 'Test Show', week_of: '2025-07-01' },   // first day of next season
-  { show: 'Test Show', week_of: null },             // missing week_of
-  { show: 'Test Show', week_of: undefined },        // undefined week_of
-  { show: 'Test Show' }                             // no week_of key
+/* Canonical test-row set. Covers multiple tier values, subscription values,
+ * week_of values spanning two seasons, and null/missing week_of records.   */
+var testRows = [
+  { show: 'Test Show', week_of: '2024-07-01', tier: 'Primary',   on_sub: '1' },
+  { show: 'Test Show', week_of: '2024-12-01', tier: 'Secondary', on_sub: '0' },
+  { show: 'Test Show', week_of: '2025-06-30', tier: 'Primary',   on_sub: '0' },
+  { show: 'Test Show', week_of: '2025-07-01', tier: 'Primary',   on_sub: '1' }, // post-cutoff
+  { show: 'Test Show', week_of: null,          tier: 'Primary',   on_sub: '0' }, // null week_of
+  { show: 'Test Show', week_of: undefined,     tier: 'Secondary', on_sub: '1' }  // undefined week_of
 ];
 
-// 3a. dateTo is inclusive — the boundary date itself is included
-var bounded = applyDateBounds(rows, undefined, '2025-06-30');
-ok("dateTo '2025-06-30' is inclusive — record on that date is included",
-   bounded.some(function (r) { return r.week_of === '2025-06-30'; }),
-   "rows after dateTo: " + JSON.stringify(bounded.map(function (r) { return r.week_of; })));
-
-// 3b. dateTo excludes records after the boundary
-ok("dateTo '2025-06-30' excludes '2025-07-01'",
-   !bounded.some(function (r) { return r.week_of === '2025-07-01'; }),
-   "rows: " + JSON.stringify(bounded.map(function (r) { return r.week_of; })));
-
-// 3c. dateFrom is inclusive — the boundary date itself is included
-bounded = applyDateBounds(rows, '2024-07-01', undefined);
-ok("dateFrom '2024-07-01' is inclusive — record on that date is included",
-   bounded.some(function (r) { return r.week_of === '2024-07-01'; }),
-   "rows: " + JSON.stringify(bounded.map(function (r) { return r.week_of; })));
-
-// 3d. records with null week_of are excluded when any boundary is active
-bounded = applyDateBounds(rows, '2024-01-01', '2025-12-31');
-ok("records with null week_of are excluded when date bounds are active",
-   !bounded.some(function (r) { return r.week_of == null; }),
-   "rows: " + JSON.stringify(bounded.map(function (r) { return r.week_of; })));
-
-// 3e. records with undefined week_of are excluded when any boundary is active
-ok("records with undefined week_of are excluded when date bounds are active",
-   !bounded.some(function (r) { return r.week_of === undefined; }),
-   "rows: " + JSON.stringify(bounded.map(function (r) { return r.week_of; })));
-
-// 3f. records with missing week_of key are excluded when any boundary is active
-ok("records with no week_of property are excluded when date bounds are active",
-   !bounded.some(function (r) { return !('week_of' in r) || r.week_of == null; }),
-   "rows: " + JSON.stringify(bounded.map(function (r) { return r.week_of; })));
-
-// 3g. no bounds — all records pass (including those with null/missing week_of)
-bounded = applyDateBounds(rows, undefined, undefined);
-ok("no date bounds — all records pass (including null week_of)",
-   bounded.length === rows.length,
-   "expected " + rows.length + " rows, got " + bounded.length);
-
-// 3h. season + narrower range — intersection works correctly
-var seasonRows = rows.filter(function (r) {
-  if (!r.week_of) return false;
-  return r.week_of >= '2024-07-01' && r.week_of <= '2025-06-30';
-});
-var intersected = applyDateBounds(seasonRows, '2024-10-01', '2025-03-31');
-ok("season + narrower date range — intersection keeps only 2024-12-01",
-   intersected.length === 1 && intersected[0].week_of === '2024-12-01',
-   "rows: " + JSON.stringify(intersected.map(function (r) { return r.week_of; })));
-
 /* ══════════════════════════════════════════════════════════════════════════ */
-/*  SECTION 4: Caller source compliance — historical cutoff is wired         */
+/*  SECTION 1: VM harness — real profileShowCanonical behavior               */
 /* ══════════════════════════════════════════════════════════════════════════ */
 
-section('4. Caller source compliance — historical cutoff is wired in both pages');
+section('1. VM harness — real profileShowCanonical (actual page-common.js)');
 
-var programmingSource = src('src/programming.html');
-var execSource        = src('src/exec_summary.html');
+/* 1a. explicit tier: '' overrides active global 'Primary' */
+setGlobals({ tier: 'Primary', sub: '' });
+profileShowCanonical('Test Show', testRows, { tier: '' });
+ok("explicit tier: '' overrides page global 'Primary'",
+   lastFilters !== null && lastFilters.tier === '',
+   "lastFilters.tier: " + JSON.stringify(lastFilters && lastFilters.tier));
 
-// 4a. programming.html supplies dateTo for past seasons
-ok("programming.html: dateTo = season.end for past seasons",
-   programmingSource.includes('dateTo:   isPast ? season.end : undefined'),
-   "pattern not found in programming.html");
+/* 1b. explicit sub: '' overrides active global '1' */
+setGlobals({ tier: '', sub: '1' });
+profileShowCanonical('Test Show', testRows, { sub: '' });
+ok("explicit sub: '' overrides page global '1'",
+   lastFilters !== null && lastFilters.sub === '',
+   "lastFilters.sub: " + JSON.stringify(lastFilters && lastFilters.sub));
 
-// 4b. exec_summary.html supplies dateTo for past seasons
-ok("exec_summary.html: dateTo = season.end for past seasons",
-   execSource.includes('dateTo:   isPast ? season.end : undefined'),
-   "pattern not found in exec_summary.html");
+/* 1c. omitted options.tier inherits page global */
+setGlobals({ tier: 'Primary', sub: '' });
+profileShowCanonical('Test Show', testRows, {});
+ok("omitted options.tier inherits page global 'Primary'",
+   lastFilters !== null && lastFilters.tier === 'Primary',
+   "lastFilters.tier: " + JSON.stringify(lastFilters && lastFilters.tier));
 
-// 4c. programming.html does NOT apply dateFrom (intentional — all prior history).
-// Strips comment lines (* … and // …) before checking so the rationale comment
-// that explains the absence does not trigger a false positive.
-var progCodeLines = programmingSource.split('\n')
-  .filter(function (l) { var t = l.trim(); return !t.startsWith('*') && !t.startsWith('//'); });
-ok("programming.html: dateFrom is not applied (all prior touring history used)",
-   !progCodeLines.some(function (l) { return /dateFrom\s*:/.test(l); }),
-   "unexpected dateFrom code assignment found in programming.html");
+/* 1d. omitted options.sub inherits page global */
+setGlobals({ tier: '', sub: '1' });
+profileShowCanonical('Test Show', testRows, {});
+ok("omitted options.sub inherits page global '1'",
+   lastFilters !== null && lastFilters.sub === '1',
+   "lastFilters.sub: " + JSON.stringify(lastFilters && lastFilters.sub));
 
-// 4d. exec_summary.html does NOT apply dateFrom
-var execCodeLines = execSource.split('\n')
-  .filter(function (l) { var t = l.trim(); return !t.startsWith('*') && !t.startsWith('//'); });
-ok("exec_summary.html: dateFrom is not applied (all prior touring history used)",
-   !execCodeLines.some(function (l) { return /dateFrom\s*:/.test(l); }),
-   "unexpected dateFrom code assignment found in exec_summary.html");
+/* 1e. explicit tier: 'Secondary' overrides page global 'Primary' */
+setGlobals({ tier: 'Primary', sub: '' });
+profileShowCanonical('Test Show', testRows, { tier: 'Secondary' });
+ok("explicit tier: 'Secondary' overrides page global 'Primary'",
+   lastFilters !== null && lastFilters.tier === 'Secondary',
+   "lastFilters.tier: " + JSON.stringify(lastFilters && lastFilters.tier));
 
-// 4e. programming.html uses seasonMode to detect past seasons
-ok("programming.html: seasonMode() is used to detect past seasons",
-   programmingSource.includes("BTD.page.seasonMode(season.id) === 'past'"),
-   "seasonMode check not found in programming.html");
+/* 1f. peer is always '' regardless of page global */
+setGlobals({ tier: '', sub: '', peer: 'proximity' });
+profileShowCanonical('Test Show', testRows, {});
+ok("peer stripped to '' — page global 'proximity' never reaches scorer",
+   lastFilters !== null && lastFilters.peer === '',
+   "lastFilters.peer: " + JSON.stringify(lastFilters && lastFilters.peer));
 
-// 4f. exec_summary.html uses seasonMode to detect past seasons
-ok("exec_summary.html: seasonMode() is used to detect past seasons",
-   execSource.includes("seasonMode(season.id) === 'past'"),
-   "seasonMode check not found in exec_summary.html");
+/* 1g. equity is always '' regardless of page global */
+setGlobals({ tier: '', sub: '', equity: 'yes' });
+profileShowCanonical('Test Show', testRows, {});
+ok("equity stripped to '' — page global 'yes' never reaches scorer",
+   lastFilters !== null && lastFilters.equity === '',
+   "lastFilters.equity: " + JSON.stringify(lastFilters && lastFilters.equity));
+
+/* 1h. engage is always '' regardless of page global */
+setGlobals({ tier: '', sub: '', engage: 'no' });
+profileShowCanonical('Test Show', testRows, {});
+ok("engage stripped to '' — page global 'no' never reaches scorer",
+   lastFilters !== null && lastFilters.engage === '',
+   "lastFilters.engage: " + JSON.stringify(lastFilters && lastFilters.engage));
+
+/* 1i. dateTo is inclusive — boundary date itself reaches scorer */
+setGlobals({ tier: '', sub: '' });
+profileShowCanonical('Test Show', testRows, { dateTo: '2025-06-30' });
+ok("dateTo '2025-06-30' is inclusive — record on boundary date reaches scorer",
+   lastScorerRows !== null && lastScorerRows.some(function (r) { return r.week_of === '2025-06-30'; }),
+   "scorer week_of values: " + JSON.stringify((lastScorerRows || []).map(function (r) { return r.week_of; })));
+
+/* 1j. dateTo excludes records after the boundary */
+ok("dateTo '2025-06-30' excludes post-cutoff record '2025-07-01'",
+   lastScorerRows !== null && !lastScorerRows.some(function (r) { return r.week_of === '2025-07-01'; }),
+   "scorer week_of values: " + JSON.stringify((lastScorerRows || []).map(function (r) { return r.week_of; })));
+
+/* 1k. records with null week_of are excluded when dateTo is active */
+ok("null week_of record excluded when dateTo is active",
+   lastScorerRows !== null && !lastScorerRows.some(function (r) { return r.week_of == null; }),
+   "scorer week_of values: " + JSON.stringify((lastScorerRows || []).map(function (r) { return r.week_of; })));
+
+/* 1l. historical cutoff: all records reaching scorer are ≤ season.end */
+ok("historical cutoff '2025-06-30': all scorer rows have week_of ≤ cutoff",
+   lastScorerRows !== null &&
+   lastScorerRows.every(function (r) { return r.week_of && r.week_of <= '2025-06-30'; }),
+   "scorer week_of values: " + JSON.stringify((lastScorerRows || []).map(function (r) { return r.week_of; })));
+
+/* 1m. dateFrom is inclusive — boundary date itself reaches scorer */
+setGlobals({ tier: '', sub: '' });
+profileShowCanonical('Test Show', testRows, { dateFrom: '2024-07-01' });
+ok("dateFrom '2024-07-01' is inclusive — record on boundary date reaches scorer",
+   lastScorerRows !== null && lastScorerRows.some(function (r) { return r.week_of === '2024-07-01'; }),
+   "scorer week_of values: " + JSON.stringify((lastScorerRows || []).map(function (r) { return r.week_of; })));
+
+/* 1n. dateFrom + dateTo together — only the intersection reaches scorer.
+ * Window 2024-12-01 to 2024-12-31: exactly one record ('2024-12-01') falls
+ * inside. '2024-07-01' is before dateFrom; '2025-06-30' and '2025-07-01'
+ * are after dateTo; null/undefined week_of records are also excluded.      */
+setGlobals({ tier: '', sub: '' });
+profileShowCanonical('Test Show', testRows, { dateFrom: '2024-12-01', dateTo: '2024-12-31' });
+ok("dateFrom + dateTo intersection: only '2024-12-01' in [2024-12-01, 2024-12-31] reaches scorer",
+   lastScorerRows !== null &&
+   lastScorerRows.length === 1 &&
+   lastScorerRows[0].week_of === '2024-12-01',
+   "scorer week_of values: " + JSON.stringify((lastScorerRows || []).map(function (r) { return r.week_of; })));
+
+/* 1o. seasonId is forwarded to scorer options (not used as row filter) */
+setGlobals({ tier: '', sub: '' });
+profileShowCanonical('Test Show', testRows, { seasonId: '2024-2025' });
+ok("seasonId forwarded to scorer in options (not a row filter)",
+   lastScorerOptions !== null && lastScorerOptions.seasonId === '2024-2025',
+   "scorer options: " + JSON.stringify(lastScorerOptions));
+
+/* 1p. futureNewTour is forwarded to scorer options */
+setGlobals({ tier: '', sub: '' });
+profileShowCanonical('Test Show', testRows, { futureNewTour: true });
+ok("futureNewTour forwarded to scorer options",
+   lastScorerOptions !== null && lastScorerOptions.futureNewTour === true,
+   "scorer options: " + JSON.stringify(lastScorerOptions));
 
 /* ══════════════════════════════════════════════════════════════════════════ */
-/*  SECTION 5: page-common.js — explicit whitelist is in place               */
+/*  SECTION 2: Confidence label thresholds — sourced from signals.js         */
+/*                                                                            */
+/*  Reads the actual threshold values from signals.js so that any change to  */
+/*  confidenceLabel() immediately causes the contract-consistency check to   */
+/*  fail, surfacing the drift before it reaches a review.                    */
 /* ══════════════════════════════════════════════════════════════════════════ */
 
-section('5. page-common.js — explicit filter whitelist');
+section('2. Confidence thresholds — read from signals.js and verified against contract');
 
-var commonSource = src('src/js/core/page-common.js');
+var signalsSrc   = src('src/js/core/signals.js');
+var contractSrc  = src('docs/SCORING_CONTRACT.md');
 
-// 5a. peer forced to '' in profileShowCanonical
-ok("page-common.js: peer forced to '' in profileShowCanonical",
-   commonSource.includes("peer:   '',   // display filter"),
-   "peer: '' assignment not found");
+/* Extract the confidenceLabel() function body first to avoid matching the
+ * signal() function which also has a `return 'Moderate'` branch at >= 65. */
+var confLabelStart = signalsSrc.indexOf('function confidenceLabel');
+var confLabelEnd   = signalsSrc.indexOf('\n  function ', confLabelStart + 1);
+if (confLabelEnd === -1) confLabelEnd = signalsSrc.indexOf('\n}', confLabelStart + 1);
+var confLabelBody  = confLabelStart >= 0 ? signalsSrc.slice(confLabelStart, confLabelEnd) : '';
 
-// 5b. equity forced to '' in profileShowCanonical
-ok("page-common.js: equity forced to '' in profileShowCanonical",
-   commonSource.includes("equity: '',   // display filter"),
-   "equity: '' assignment not found");
+var highMatch = confLabelBody.match(/if\s*\(\s*score\s*>=\s*(\d+)\s*\)\s*return\s*'High'/);
+var modMatch  = confLabelBody.match(/if\s*\(\s*score\s*>=\s*(\d+)\s*\)\s*return\s*'Moderate'/);
 
-// 5c. engage forced to '' in profileShowCanonical
-ok("page-common.js: engage forced to '' in profileShowCanonical",
-   commonSource.includes("engage: ''    // display filter"),
-   "engage: '' assignment not found");
+var implHigh = highMatch ? parseInt(highMatch[1], 10) : null;
+var implMod  = modMatch  ? parseInt(modMatch[1],  10) : null;
 
-// 5d. options.tier override guard uses !== undefined
-ok("page-common.js: options.tier override uses !== undefined guard",
-   commonSource.includes("options.tier   !== undefined ? options.tier   : active.tier"),
-   "tier override pattern not found");
+ok("signals.js confidenceLabel High threshold is 75",
+   implHigh === 75,
+   "found: " + implHigh);
 
-// 5e. options.sub override guard uses !== undefined
-ok("page-common.js: options.sub override uses !== undefined guard",
-   commonSource.includes("options.sub    !== undefined ? options.sub    : active.sub"),
-   "sub override pattern not found");
+ok("signals.js confidenceLabel Moderate threshold is 45",
+   implMod === 45,
+   "found: " + implMod);
 
-/* ══════════════════════════════════════════════════════════════════════════ */
-/*  SECTION 6: Contract document — key invariants present                    */
-/* ══════════════════════════════════════════════════════════════════════════ */
+/* Verify the contract documents the same values the implementation uses      */
+ok("contract documents High threshold matching signals.js (" + implHigh + ")",
+   implHigh !== null && contractSrc.includes('| `High` | ≥ ' + implHigh),
+   "looking for: '| `High` | ≥ " + implHigh + "' in contract");
 
-section('6. SCORING_CONTRACT.md — key invariants documented');
+ok("contract documents Moderate threshold matching signals.js (" + implMod + ")",
+   implMod !== null && contractSrc.includes(implMod + '–'),
+   "looking for: '" + implMod + "–' (range start) in contract");
 
-var contractSource = src('docs/SCORING_CONTRACT.md');
-
-ok("contract: no recency component stated for Confidence",
-   contractSource.includes('no recency component'),
+ok("contract states no recency component for Confidence",
+   /no recency component/i.test(contractSrc),
    "no-recency statement not found");
 
-ok("contract: Confidence scaled ranges documented",
-   contractSource.includes('0 → 40 records') && contractSource.includes('0 → 30 weeks'),
-   "confidence scaled ranges not found");
+ok("contract documents all four Confidence scaled ranges",
+   contractSrc.includes('0 → 40 records') &&
+   contractSrc.includes('0 → 20 venues') &&
+   contractSrc.includes('0 → 18 records') &&
+   contractSrc.includes('0 → 30 weeks'),
+   "one or more confidence scaled ranges not found");
 
-// The contract uses markdown backticks around dateFrom so the phrase is
-// "`dateFrom` is intentionally absent" — test with a case-insensitive regex.
-ok("contract: dateFrom intentional absence documented",
-   /`dateFrom`.*intentionally absent/i.test(contractSource),
-   "dateFrom rationale not found");
+/* ══════════════════════════════════════════════════════════════════════════ */
+/*  SECTION 3: Static source compliance (supplementary)                      */
+/*                                                                            */
+/*  These checks verify that callers supply the required cutoffs and that     */
+/*  the contract document is internally consistent. They supplement the vm   */
+/*  harness — they do not substitute for it.                                 */
+/* ══════════════════════════════════════════════════════════════════════════ */
 
-// The contract uses markdown bold (**not**) so the literal text is
-// "**not** pre-rounding raw values" — search for the plain phrase without the bold markers.
-ok("contract: decomp described as not pre-rounding raw values",
-   /not\*?\*? pre-rounding raw values/.test(contractSource),
-   "decomp description not found");
+section('3. Caller source compliance (supplementary — static checks)');
 
-ok("contract: three score types defined (Baseline / Context-filtered / Scenario)",
-   contractSource.includes('Baseline Planning Signal') &&
-   contractSource.includes('Context-filtered Planning Signal') &&
-   contractSource.includes('Scenario score'),
-   "score-type taxonomy not found");
+var programmingSrc = src('src/programming.html');
+var execSrc        = src('src/exec_summary.html');
+var commonSrc      = src('src/js/core/page-common.js');
+
+ok("programming.html: dateTo = season.end wired for past seasons",
+   programmingSrc.includes('dateTo:   isPast ? season.end : undefined'),
+   "pattern not found");
+
+ok("exec_summary.html: dateTo = season.end wired for past seasons",
+   execSrc.includes('dateTo:   isPast ? season.end : undefined'),
+   "pattern not found");
+
+ok("programming.html: dateFrom absent from code (intentional — all prior history)",
+   !programmingSrc.split('\n')
+     .filter(function (l) { var t = l.trim(); return !t.startsWith('*') && !t.startsWith('//'); })
+     .some(function (l) { return /dateFrom\s*:/.test(l); }),
+   "unexpected dateFrom code assignment found");
+
+ok("exec_summary.html: dateFrom absent from code",
+   !execSrc.split('\n')
+     .filter(function (l) { var t = l.trim(); return !t.startsWith('*') && !t.startsWith('//'); })
+     .some(function (l) { return /dateFrom\s*:/.test(l); }),
+   "unexpected dateFrom code assignment found");
+
+ok("page-common.js: options.tier !== undefined guard in profileShowCanonical",
+   commonSrc.includes("options.tier   !== undefined ? options.tier   : active.tier"),
+   "tier override guard not found");
+
+ok("page-common.js: options.sub !== undefined guard in profileShowCanonical",
+   commonSrc.includes("options.sub    !== undefined ? options.sub    : active.sub"),
+   "sub override guard not found");
+
+ok("page-common.js: peer forced to '' in whitelist",
+   commonSrc.includes("peer:   '',   // display filter"),
+   "peer whitelist not found");
+
+ok("page-common.js: equity forced to '' in whitelist",
+   commonSrc.includes("equity: '',   // display filter"),
+   "equity whitelist not found");
+
+ok("page-common.js: engage forced to '' in whitelist",
+   commonSrc.includes("engage: ''    // display filter"),
+   "engage whitelist not found");
+
+section('4. Contract document invariants (supplementary)');
+
+ok("contract: three score types (Baseline / Context-filtered / Scenario)",
+   contractSrc.includes('Baseline Planning Signal') &&
+   contractSrc.includes('Context-filtered Planning Signal') &&
+   contractSrc.includes('Scenario score'),
+   "score-type taxonomy incomplete");
 
 ok("contract: UI disclosure required for context-filtered score",
-   contractSource.includes('UI disclosure is required') || contractSource.includes('disclosure'),
+   contractSrc.includes('UI disclosure is required'),
    "disclosure requirement not found");
 
-// Category 3 heading still legitimately says "Post-calculation analytical".
-// The fix required was only for Category 4 — verify Category 4 does not
-// say "post-calculation" and does say "before aggregation".
-ok("contract: Category 4 says 'before aggregation', not 'post-calculation'",
-   /Category 4[^#]*before aggregation/s.test(contractSource) &&
-   !/Category 4[^#]*post-calculation/s.test(contractSource),
+ok("contract: dateFrom intentional absence documented",
+   /`dateFrom`.*intentionally absent/i.test(contractSrc),
+   "dateFrom rationale not found");
+
+ok("contract: decomp described as not pre-rounding",
+   /not\*?\*? pre-rounding raw values/.test(contractSrc),
+   "decomp description not found");
+
+ok("contract: Category 4 says 'before aggregation' not 'post-calculation'",
+   /Category 4[^#]*before aggregation/s.test(contractSrc) &&
+   !/Category 4[^#]*post-calculation/s.test(contractSrc),
    "Category 4 wording not corrected");
+
+ok("contract: few-peer wording uses 'One or more peer records'",
+   contractSrc.includes('One or more peer records'),
+   "few-peer wording not updated");
 
 /* ══════════════════════════════════════════════════════════════════════════ */
 /*  SUMMARY                                                                  */
@@ -357,8 +431,4 @@ console.log('  Passed: ' + passed);
 console.log('  Failed: ' + failed);
 console.log('═'.repeat(60));
 
-if (failed > 0) {
-  process.exit(1);
-} else {
-  process.exit(0);
-}
+process.exit(failed > 0 ? 1 : 0);
