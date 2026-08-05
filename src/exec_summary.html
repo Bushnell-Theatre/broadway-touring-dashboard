@@ -1698,38 +1698,39 @@
         return r;
       }
 
+      /* ── profile ─────────────────────────────────────────────────────────────
+       *
+       * Returns the canonical profile for a show per SCORING_CONTRACT.md.
+       * Score and planning read come exclusively from BTD.page.profileShowCanonical(),
+       * which calls BTD.signals.profileShow() with all three peer cohort types.
+       *
+       * The peer-type display filter is intentionally excluded from scoring —
+       * it controls tables and charts, not the Planning Signal composite.
+       *
+       * p.signal is set to null: the legacy utils.js signal object (national/peer
+       * percentile composites) is no longer computed. renderSignalCard() is being
+       * redesigned in Phase 3 to read from p.signals and p.planning directly.
+       * ─────────────────────────────────────────────────────────────────────── */
       function profile(show) {
-        const rows = applyFilters(matchRows(show));
-        const peer = rows.filter((d) => isPeerType(d, 'size'));
-        const sub = rows.filter((d) => d.on_sub === 1);
-        const nonsub = rows.filter((d) => d.on_sub === 0);
-        const active = rows.filter(isUsableRecord);
-        const m = {
-          count: rows.length,
-          activeCount: active.length,
-          gross: avg(active.map((d) => d.gross_gross)),
-          totalGross: sum(active.map((d) => d.gross_gross)),
-          cap: avg(active.map((d) => d.cap_paid)),
-          gg: avg(active.map((d) => d.gg_pct_gp)),
-          adm: avg(active.map((d) => d.avg_adm)),
-          peerCap: avg(peer.map((d) => d.cap_paid)),
-          peerGross: avg(peer.map((d) => d.gross_gross)),
-          subCap: avg(sub.map((d) => d.cap_paid)),
-          nonSubCap: avg(nonsub.map((d) => d.cap_paid)),
-          weeks: new Set(active.map((d) => d.week_of)).size,
-          venues: new Set(active.map((d) => d.theatre + '|' + d.city)).size,
-        };
-        const isFutureNewTour = ACTIVE_SEASON === '2026-2027' && m.count === 0;
-        const signal = planningSignal(rows, ALL, ACTIVE_PEER);
-        const score = signal ? signal.national.composite : null;
-        return {
-          show,
-          rows,
-          metrics: m,
-          signal,
-          score,
-          isFutureNewTour,
-        };
+        const allRows = matchRows(show);
+        const p = BTD.page.profileShowCanonical(show, allRows, {
+          seasonId: ACTIVE_SEASON
+        });
+        /* Attach row/metric helpers for non-scoring display (charts, tables).
+         * These fields are presentation-only and are not part of the scoring contract. */
+        p.rows           = allRows;
+        p.rawDisplay     = (() => {
+          const active = allRows.filter(isUsableRecord);
+          return {
+            count: allRows.length, cap: avg(active.map((d) => d.cap_paid)),
+            gg: avg(active.map((d) => d.gg_pct_gp)), adm: avg(active.map((d) => d.avg_adm)),
+            gross: avg(active.map((d) => d.gross_gross)), totalGross: sum(active.map((d) => d.gross_gross))
+          };
+        })();
+        /* Explicitly null — legacy utils.js signal object removed per contract.
+         * renderSignalCard() will be rebuilt in Phase 3. */
+        p.signal = null;
+        return p;
       }
 
       function weekContext(weekOf) {
