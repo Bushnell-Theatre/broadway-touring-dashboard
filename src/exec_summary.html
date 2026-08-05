@@ -1429,7 +1429,10 @@
       function scoreBadge(p) {
         const cls = p.isFutureNewTour ? 'neutral' : p.score == null ? 'neutral' : p.score >= SCORE_MED ? 'good' : 'warn';
         const lbl = scoreCellText(p);
-        const sub = p.isFutureNewTour || p.score == null ? '' : topPct(p.score) + ' among peer venues';
+        /* Use the canonical Planning Read from the profile where available.
+         * Avoids expressing the score as a false percentile rank — the score
+         * is a 0-100 composite index, not an empirical rank in a distribution. */
+        const sub = p.isFutureNewTour || p.score == null ? '' : (p.planning && p.planning.read ? p.planning.read : scoreBand(p.score));
         return (
           '<span class="status ' +
           cls +
@@ -1441,10 +1444,17 @@
       }
 
       /* ── Planning Signal Card helpers ── */
-      function topPct(pct) {
-        if (pct == null) return '—';
-        var top = 100 - pct;
-        return top <= 1 ? 'top 1%' : 'top ' + top + '%';
+
+      /* Return the qualitative band label for a Planning Signal score (0–100).
+       * These thresholds match the label() function in signals.js.
+       * Do NOT use arithmetic on the score to imply a percentile rank —
+       * the score is a fixed-range composite index, not an empirical distribution. */
+      function scoreBand(score) {
+        if (score == null) return '—';
+        if (score >= 80) return 'Strong';
+        if (score >= 65) return 'Moderate';
+        if (score >= 45) return 'Soft';
+        return 'Weak';
       }
 
       function scoreColor(pct) {
@@ -1465,13 +1475,13 @@
 
         $('sigNatComposite').textContent = nat.composite != null ? nat.composite : '—';
         $('sigNatComposite').style.color = scoreColor(nat.composite);
-        $('sigNatSub').textContent = nat.composite != null ? topPct(nat.composite) + ' nationally' : 'No data';
+        $('sigNatSub').textContent = nat.composite != null ? scoreBand(nat.composite) + ' signal nationally' : 'No data';
 
         var peerLabel = sig.activePeerType || 'size';
         $('sigPeerLabel').textContent = 'Peer (' + peerLabel.charAt(0).toUpperCase() + peerLabel.slice(1) + ')';
         $('sigPeerComposite').textContent = peer.composite != null ? peer.composite : '—';
         $('sigPeerComposite').style.color = scoreColor(peer.composite);
-        $('sigPeerSub').textContent = peer.composite != null ? topPct(peer.composite) + ' peer group' : 'No peer data';
+        $('sigPeerSub').textContent = peer.composite != null ? scoreBand(peer.composite) + ' signal peer group' : 'No peer data';
 
         $('sigDemandMetric').textContent = rm.cap != null ? rm.cap.toFixed(1) + '%' : '—';
         $('sigDemandFill').style.width = (nat.demand != null ? nat.demand : 0) + '%';
