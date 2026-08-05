@@ -174,6 +174,23 @@ All dashboards also fetch:
 
 ---
 
+## Documentation Alignment — Required on Every Change
+
+Any change to a script, pipeline behavior, scoring formula, or data file schema must be reflected in the relevant documentation file before the work is considered done. Check each one that applies:
+
+| Change type | Documents to update |
+|---|---|
+| Script behavior (watcher, pipeline, caching) | `docs/OPERATIONS.md` — Scripts Reference table and Troubleshooting |
+| Scoring formula or Planning Signal methodology | `SCORING.md` |
+| Data file schema (new/renamed field) | `skills/btd-project/references/data-sources.md` |
+| How the system works at a high level | `docs/HOW_IT_WORKS.md` |
+| AI pipeline (highlights, season review) | `docs/AI_HIGHLIGHT_PIPELINE.md` |
+| Box office model calculations | `skills/btd-project/references/box-office-model.md` |
+
+Do not commit a behavior change without updating the matching doc in the same branch. If you are unsure which doc applies, ask.
+
+---
+
 ## What Requires Human Confirmation Before Proceeding
 
 - Any change that affects more than one HTML file simultaneously
