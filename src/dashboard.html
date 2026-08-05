@@ -2407,15 +2407,23 @@
         const checked = [...document.querySelectorAll('.sCb:checked')].map((c) => c.value);
 
         FILTERED = ALL_DATA.filter((d) => {
-          if (ACTIVE_SEASONS.size === 0 && window._DATE_RANGE) {
-            if (d.week_of < window._DATE_RANGE.start || d.week_of > window._DATE_RANGE.end) return false;
-          }
-          if (ACTIVE_TIER && d.tier !== ACTIVE_TIER) return false;
-          if (ACTIVE_SUB !== '' && String(d.on_sub) !== ACTIVE_SUB) return false;
+          // Season filter: include only records whose fiscal year is in the selected set.
+          // When no season is selected, all fiscal years pass this gate.
           if (ACTIVE_SEASONS.size > 0) {
             const fy = getFiscalYear(d.week_of);
             if (!fy || !ACTIVE_SEASONS.has(fy)) return false;
           }
+
+          // Custom date range: intersects with the season window when both are active.
+          // A selected season narrows to that fiscal year; the custom range narrows further.
+          // When only a custom range is supplied (no season selected), it is the sole boundary.
+          // A visible custom date range is NEVER silently ignored — it always applies.
+          if (window._DATE_RANGE) {
+            if (d.week_of < window._DATE_RANGE.start || d.week_of > window._DATE_RANGE.end) return false;
+          }
+
+          if (ACTIVE_TIER && d.tier !== ACTIVE_TIER) return false;
+          if (ACTIVE_SUB !== '' && String(d.on_sub) !== ACTIVE_SUB) return false;
           if (ACTIVE_PEER && !isPeerType(d, ACTIVE_PEER)) return false;
           if (ACTIVE_EQUITY === 'yes' && !d.non_equity) return false;
           if (ACTIVE_EQUITY === 'no' && d.non_equity) return false;
