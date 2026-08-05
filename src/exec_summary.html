@@ -1714,10 +1714,19 @@
       function profile(show) {
         const allRows = matchRows(show);
         const season  = SEASONS.find((s) => s.id === ACTIVE_SEASON);
-        /* For past seasons, pass dateTo = season.end so that records published
-         * after the season closed cannot influence its retrospective score.
-         * Current and future seasons use no upper boundary — all available
-         * records contribute to the planning signal. */
+        /* Evidence boundary — date limits per SCORING_CONTRACT.md §"Category 1":
+         *
+         *   dateTo: For past seasons, season.end is the evaluation cutoff. Records
+         *   published after the season closed must not influence its historical score.
+         *   Current and future seasons use no upper bound — all evidence as of the
+         *   latest imported XLSX report contributes to the planning signal.
+         *
+         *   dateFrom: Intentionally absent. The evidence model uses all prior touring
+         *   history, not just records within the Bushnell season window. Records from
+         *   earlier seasons at peer venues are legitimate evidence of national
+         *   performance. Restricting to only the Bushnell window would discard
+         *   relevant prior data and reduce scoring reliability.
+         */
         const isPast  = season && seasonMode(season.id) === 'past';
         const p = BTD.page.profileShowCanonical(show, allRows, {
           seasonId: ACTIVE_SEASON,

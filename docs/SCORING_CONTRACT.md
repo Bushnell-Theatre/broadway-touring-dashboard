@@ -67,10 +67,20 @@ explicit whitelist; all others are forced to their neutral/off value.
 | `dateFrom` | `undefined` | Earliest `week_of` date to include (ISO string) |
 | `dateTo` | `undefined` | Latest `week_of` date to include (ISO string) |
 
-**Date boundaries are required for historical integrity.** For past seasons,
-callers must pass `options.dateTo = season.end` to prevent records published
-after the season closed from leaking into retrospective scoring. Current and
-future seasons pass no upper date boundary.
+**`dateTo` is required for past seasons.** Callers must pass
+`options.dateTo = season.end` to prevent records published after the season
+closed from leaking into retrospective scoring.
+
+**`dateTo` for current and future seasons:** No upper boundary is applied. The
+score reflects all evidence available as of the most recent data pull. This is
+the intended "as-of" boundary: the latest imported XLSX report.
+
+**`dateFrom` is intentionally absent from all current callers.** The evidence
+model uses all prior touring history for a show — records from seasons before
+the Bushnell booking window are legitimate evidence about how the show performs
+nationally at peer venues. Restricting records to the Bushnell season window
+would discard relevant prior data and reduce scoring reliability. No lower bound
+is applied unless a caller has an explicit reason to exclude earlier history.
 
 Callers may supply `options.tier` and `options.sub` explicitly to override
 page globals — required for test harnesses, batch scoring, and any context
@@ -103,31 +113,65 @@ change any score. Pages apply them after `profileShowCanonical()` returns.
 | Cap% range (`fCapMin` / `fCapMax`) | Records by paid capacity percentage |
 | Performance count range (`fPerfMin` / `fPerfMax`) | Records by performances per week |
 
-### Category 4 — Dashboard exploratory (Dashboard only, post-calculation)
+### Category 4 — Dashboard exploratory (Dashboard only, before aggregation)
 
 These filters exist only in `dashboard.html` for record-level exploration.
-They never feed into a Planning Signal score because the Dashboard does not
-display one.
+They apply **before** Dashboard KPI aggregation and chart rendering — the KPI
+strip, rankings, charts, and analytics tabs all reflect the filtered record set.
 
-| Filter | What it narrows |
+They are **outside the Planning Signal pipeline** because the Dashboard does not
+compute or display a Planning Signal score. The distinction is not timing within
+the Dashboard; it is that no Planning Signal depends on them.
+
+| Filter | What it filters |
 |---|---|
 | Venue (`fVenue`) | Records at a specific theatre |
 | City (`fCity`) | Records in a specific city |
 | Show selection (checkbox list) | Visible show rows |
-| Season / date intersection | Week-of boundaries (see Dashboard fix) |
+| Season / date intersection | Week-of boundaries (before KPI aggregation) |
 
 ---
 
-## Canonical vs filtered score distinction
+## Score types
 
-A **canonical score** is produced by `profileShowCanonical()` with only
-evidence-boundary filters active. This is what appears in Planning Signal UI.
+Three types of score may exist in the system. They answer different questions
+and must be rendered differently.
 
-A **filtered/scenario score** is produced when a caller intentionally applies
-non-standard evidence (for example, "what if we score only Primary-tier venues?").
-If a page ever needs to display a scenario score alongside the canonical one,
-it must label it explicitly as a scenario. Unlabeled scenario scores are
-prohibited — they are indistinguishable from canonical scores to the reader.
+### Baseline Planning Signal
+
+Produced by `profileShowCanonical()` with `tier: ''` and `sub: ''` (the neutral
+values — all records included, no evidence filter active). This is the default
+display. The score reflects all available touring history up to the date boundary.
+
+The baseline appears when the user has not set a tier or subscription filter.
+
+### Context-filtered Planning Signal
+
+Produced by `profileShowCanonical()` with `tier` or `sub` drawn from page-global
+filter state. This is still a **canonical score** from the same entry point and
+methodology — tier and subscription are authorized evidence-boundary filters.
+However, the evidence set is narrowed, so the score may differ from the baseline.
+
+**UI disclosure is required.** When a context-filtered score is displayed, the
+evidence context must be visible (for example: a badge reading "Primary tier only"
+or "Subscribers only"). Without disclosure, a context-filtered score is
+indistinguishable from the baseline.
+
+This disclosure requirement is a Phase 3 UI task. Until Phase 3 is complete,
+pages should avoid displaying a context-filtered score in any context where the
+active evidence boundary cannot be communicated to the reader.
+
+### Scenario score
+
+A score produced with any **non-standard** evidence boundary — one that is not
+`tier`, `sub`, or `date` — is a scenario score. Scenario scores must be labeled
+explicitly as such. Unlabeled scenario scores are prohibited.
+
+Example: "What does the score look like using only Primary-tier venues?" — Using
+`tier: 'Primary'` is a **context-filtered** score (tier is authorized), not a
+scenario. It requires disclosure, not a scenario label. A scenario would be
+something like scoring only venues within 50 miles of Hartford — not an
+authorized evidence filter in this contract.
 
 ---
 
@@ -163,24 +207,84 @@ p.signals.demand.drivers    — string[] explaining what data contributed
 
 | Component | Field | What it measures |
 |---|---|---|
-| Demand | `p.signals.demand` | Paid capacity at peer cohort venues + subscription lift |
-| Revenue | `p.signals.revenue` | GG% of gross potential + avg admission at peer cohorts |
-| Peer Fit | `p.signals.peer` | Cross-cohort consistency and evidence breadth |
-| Confidence | `p.signals.confidence` | Active record count, distinct venue count, combined peer-record count, distinct reporting-week count |
+| Demand | `p.signals.demand` | Paid capacity at peer cohort venues + subscription lift differential |
+| Revenue | `p.signals.revenue` | GG% of gross potential + avg admission, per peer cohort type |
+| Peer Fit | `p.signals.peer` | Cross-cohort capacity, revenue efficiency, and sample breadth |
+| Confidence | `p.signals.confidence` | Evidence depth: record volume, venue diversity, peer coverage, week span |
 
-**Cohort-input null handling:** Each component (Demand, Revenue) is computed
-from up to three cohort inputs (size, proximity, market). A cohort with no
-records for the show contributes a null input, which is excluded from the
-`avgNonNull()` average. The remaining cohort inputs still produce a component
-value — a missing cohort is excluded, not penalized.
+#### Demand inputs (4 total)
 
-**Peer Fit exception:** Peer Fit includes `scaled(allPeers.length, 0, 24)` as
-one of its inputs. When no peer records exist, this term evaluates to `0`
-rather than `null`. Peer Fit can therefore reach `0` rather than `null` when
-evidence is absent; it is not excluded from the composite average in that case.
+Demand is `avgNonNull()` of these four inputs:
 
-A show with records in only one cohort type still produces valid Demand and
-Revenue components from that cohort.
+| Input | Scaled range | Notes |
+|---|---|---|
+| Size-peer paid capacity | 50 % → 100 % | Null when no size-peer records |
+| Proximity-peer paid capacity | 50 % → 100 % | Null when no proximity-peer records |
+| Market-peer paid capacity | 50 % → 100 % | Null when no market-peer records |
+| Subscription lift (`subCap − nonsubCap`) | −10 pp → +15 pp | Null when either sub or nonsub capacity is unavailable |
+
+A cohort with no records contributes a `null` input. `avgNonNull()` excludes null
+inputs, so the remaining cohorts still produce a valid Demand value. A show with
+records in only one cohort type produces a valid Demand component from that cohort
+alone.
+
+#### Revenue inputs (3 per-type inputs, each averaging 2 metrics)
+
+Revenue is `avgNonNull()` of one input per peer type:
+
+| Per-type input | Metrics averaged (each optional) | Scaled ranges |
+|---|---|---|
+| Size-peer revenue | GG% of gross potential + avg admission | GG%: 55 % → 105 %; Adm: $45 → $140 |
+| Proximity-peer revenue | GG% + avg admission | Same |
+| Market-peer revenue | GG% + avg admission | Same |
+
+A cohort with no records contributes a null per-type input, excluded from
+`avgNonNull()`. A show with data in only one peer type still produces a Revenue
+component.
+
+#### Confidence inputs (4 total — no recency component)
+
+Confidence is `avgNonNull()` of these four inputs, forced to `|| 0` so the result
+is always a non-negative integer (never null):
+
+| Input | Variable | Scaled range | Notes |
+|---|---|---|---|
+| Active record count | `rows.length` | 0 → 40 records | All matched records after evidence filters |
+| Distinct venue count | `venueCount` | 0 → 20 venues | Unique theatre + city combinations |
+| Combined peer-record count | `allPeers.length` | 0 → 18 records | Deduplicated union of all three cohort types |
+| Distinct reporting-week count | `weekCount` | 0 → 30 weeks | Unique `week_of` values |
+
+There is **no recency component.** Confidence measures breadth and volume of
+evidence, not how recently it was reported.
+
+Confidence label thresholds (from `confidenceLabel()` in `signals.js`):
+
+| Label | Score threshold |
+|---|---|
+| `High` | ≥ 65 |
+| `Moderate` | ≥ 45 |
+| `Low` | > 0 |
+| `Exploratory` | = 0 |
+
+#### Peer Fit inputs and the zero-record edge case
+
+Peer Fit is `avgNonNull()` of three inputs:
+
+| Input | Scaled range | Notes |
+|---|---|---|
+| Combined-peer paid capacity | 50 % → 100 % | Null when no peer records |
+| Combined-peer GG% | 55 % → 105 % | Null when no peer records |
+| Sample breadth (`allPeers.length`) | 0 → 24 records | **Always non-null** — evaluates to 0 when no peers |
+
+The sample-breadth term is always a non-negative integer, so it is never excluded
+by `avgNonNull()`. This creates two distinct low-evidence situations:
+
+- **Zero peer records:** The capacity and GG% inputs are null; `avgNonNull([null, null, 0])` = 0. Peer Fit = 0 and is **not** excluded from the composite average.
+- **Few peer records (≥ 1):** All three inputs contribute; Peer Fit is positive but low.
+
+Peer Fit is the only component that can reach exactly 0 without being null. The
+composite score therefore does not exclude Peer Fit when evidence is thin — it
+receives a zero contribution.
 
 ### Reference metrics (national — not scored)
 
@@ -203,15 +307,21 @@ be derived from them.
 | `p.metrics.peerGgPctGp` | Combined peer avg GG% |
 | `p.metrics.peerCount` | Combined peer record count |
 
-### Verification
+### Verification (`p.decomp`)
 
-| Field | Notes |
-|---|---|
-| `p.decomp.demand` | Demand component value — verification copy of `p.signals.demand.value` (already rounded) |
-| `p.decomp.revenue` | Revenue component value — verification copy of `p.signals.revenue.value` (already rounded) |
-| `p.decomp.peer` | Peer fit component value — verification copy of `p.signals.peer.value` (already rounded) |
-| `p.decomp.confidence` | Confidence component value — verification copy of `p.signals.confidence.value` (already rounded) |
-| `p.decomp.peerTypes` | String listing which cohort types contributed data |
+`p.decomp` duplicates already-rounded signal component values for debugging
+purposes. These fields are **not** pre-rounding raw values — they are equal to
+the corresponding `p.signals.*.value` fields. Do not derive scores from
+`p.decomp`; use `p.signals.*` and `p.score` directly.
+
+| Field | Value | Notes |
+|---|---|---|
+| `p.decomp.demand` | Equal to `p.signals.demand.value` | Already rounded integer |
+| `p.decomp.revenue` | Equal to `p.signals.revenue.value` | Already rounded integer |
+| `p.decomp.peer` | Equal to `p.signals.peer.value` | Already rounded integer |
+| `p.decomp.confidence` | Equal to `p.signals.confidence.value` | Already rounded integer |
+| `p.decomp.peerTypes` | String | Cohort types that contributed data (e.g. "size, proximity") |
+| `p.decomp.canonical` | `true` | Internal sentinel; always `true` from `signals.js` |
 
 ---
 
