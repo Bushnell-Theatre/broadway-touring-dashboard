@@ -2131,13 +2131,6 @@
 
       // ── PLANNING SIGNAL CARD ─────────────────────────────────────────────────────
 
-      /* Map a component label to a fill percentage for the bar.
-       * These are display-only heuristics — bars are relative guides, not scores. */
-      function sigFillPct(label) {
-        var map = { Strong: 85, Moderate: 62, Soft: 38, Weak: 15, Exploratory: 0 };
-        return (map[label] != null ? map[label] : 0) + '%';
-      }
-
       /* Populate the canonical Planning Signal card from a profile object.
        *
        * Reads:
@@ -2145,11 +2138,13 @@
        *   p.planning.read      — Planning Read string, displayed directly
        *   p.planning.note      — interpretation sentence
        *   BTD.page.planningSignals(p) — component labels via shared adapter
+       *   p.signals.*.value    — canonical bar widths (0–100 integer or null)
        *   p.metrics.paidCapacity / ggPctGp / count / venueCount — national ref
        *
        * Context-filter disclosure: shown when ACTIVE_TIER or ACTIVE_SUB is set.
-       * Season Position: shown only when p.score != null.
-       * Null-score: score cell shows "Exploratory"; no season position badge. */
+       * Season Position: three states — above / at / below season median.
+       * Null-score: score cell shows "Exploratory"; no season position badge.
+       * Null component value: Exploratory badge, zero-width bar, no numeric shown. */
       function renderSignalCard(p) {
         var el = $('signalCard');
         if (!el) return;
@@ -2168,13 +2163,23 @@
         /* ── Interpretation ── */
         $('sigInterpretation').textContent = (p && p.planning && p.planning.note) || '';
 
-        /* ── Season Position — derived from p.score vs season median;
-         *    omitted entirely when score is null (avoids misleading comparison) ── */
+        /* ── Season Position — three-state comparison (not binary):
+         *    above:  p.score > SCORE_MED  → teal
+         *    at:     p.score === SCORE_MED → neutral
+         *    below:  p.score < SCORE_MED  → rose
+         *    Omitted entirely when score is null. ── */
         var posEl = $('sigSeasonPos');
         if (hasScore) {
-          var above = p.score >= SCORE_MED;
-          posEl.textContent = (above ? '▲ Above season median' : '▼ Below season median');
-          posEl.style.color = above ? 'var(--teal)' : 'var(--rose)';
+          if (p.score > SCORE_MED) {
+            posEl.textContent = '▲ Above season median';
+            posEl.style.color = 'var(--teal)';
+          } else if (p.score < SCORE_MED) {
+            posEl.textContent = '▼ Below season median';
+            posEl.style.color = 'var(--rose)';
+          } else {
+            posEl.textContent = '◆ At season median';
+            posEl.style.color = 'var(--ink3)';
+          }
           posEl.style.display = '';
         } else {
           posEl.textContent = '';
@@ -2195,16 +2200,35 @@
           badge.style.display = 'none';
         }
 
-        /* ── Component signals via BTD.page.planningSignals() ── */
+        /* ── Component signals ──
+         *    Labels come from BTD.page.planningSignals() (shared adapter).
+         *    Bar widths come from p.signals.*.value (canonical 0–100 integer or null).
+         *    The numeric value is displayed alongside the label badge when > 0.
+         *    A null or 0 value → zero-width bar + badge only, no numeric shown.
+         *    NOTE: Peer Fit value can reach exactly 0 with zero peer records —
+         *    that is a measured score (not null) but still displays no number. ── */
         var sig = BTD.page.planningSignals(p);
-        $('sigDemandBar').style.width    = sigFillPct(sig.demand);
-        $('sigDemandLabel').innerHTML    = signalBadge(sig.demand);
-        $('sigRevenueBar').style.width   = sigFillPct(sig.revenue);
-        $('sigRevenueLabel').innerHTML   = signalBadge(sig.revenue);
-        $('sigPeerFitBar').style.width   = sigFillPct(sig.peer);
-        $('sigPeerFitLabel').innerHTML   = signalBadge(sig.peer);
-        $('sigConfBar').style.width      = sigFillPct(sig.confidence);
-        $('sigConfLabel').innerHTML      = signalBadge(sig.confidence);
+        var rawSig = (p && p.signals) || {};
+
+        /* Render one component row: bar width + badge + optional numeric value. */
+        function sigCompRender(barId, badgeId, label, value) {
+          /* Bar: canonical value as percentage (null/0 → zero-width) */
+          $(barId).style.width = (value != null && value > 0 ? value : 0) + '%';
+          /* Numeric: shown only when value > 0 (null and 0 display badge only) */
+          var valHtml = (value != null && value > 0)
+            ? '<span class="sig-comp-val">' + value + '</span> '
+            : '';
+          $(badgeId).innerHTML = valHtml + signalBadge(label);
+        }
+
+        sigCompRender('sigDemandBar',  'sigDemandLabel',  sig.demand,
+          rawSig.demand     ? rawSig.demand.value     : null);
+        sigCompRender('sigRevenueBar', 'sigRevenueLabel', sig.revenue,
+          rawSig.revenue    ? rawSig.revenue.value    : null);
+        sigCompRender('sigPeerFitBar', 'sigPeerFitLabel', sig.peer,
+          rawSig.peer       ? rawSig.peer.value       : null);
+        sigCompRender('sigConfBar',    'sigConfLabel',    sig.confidence,
+          rawSig.confidence ? rawSig.confidence.value : null);
 
         /* ── National reference strip — unscored, displayed for context ── */
         var m = p && p.metrics;

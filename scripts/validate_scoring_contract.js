@@ -727,6 +727,94 @@ ok("exec_summary.html: renderSignalCard displays p.planning.read via sigPlanning
    planningReadReadDirectly(execSrc3),
    "exec_summary.html renderSignalCard does not read p.planning.read into sigPlanningRead");
 
+// 10. sigFillPct is removed — bar widths must use canonical p.signals.*.value.
+// The fixed label→percentage map was a Phase 3 bug; it must not appear anywhere.
+function sigFillPctPresent(s) {
+  return s.includes('function sigFillPct') || s.includes('sigFillPct(');
+}
+ok("programming.html: sigFillPct is absent (removed in Phase 3 corrections)",
+   !sigFillPctPresent(progSrc3),
+   "programming.html still contains sigFillPct — must be removed; use p.signals.*.value for bar widths");
+ok("exec_summary.html: sigFillPct is absent (removed in Phase 3 corrections)",
+   !sigFillPctPresent(execSrc3),
+   "exec_summary.html still contains sigFillPct — must be removed; use p.signals.*.value for bar widths");
+
+// 11. Canonical component values appear in renderSignalCard.
+// Bar widths must come from p.signals.*.value (via rawSig.demand.value etc.).
+function canonicalValuesUsed(s) {
+  var start = s.indexOf('function renderSignalCard');
+  if (start < 0) return false;
+  var body = s.slice(start, start + 4000);
+  return body.includes('rawSig.demand.value') &&
+         body.includes('rawSig.revenue.value') &&
+         body.includes('rawSig.peer.value') &&
+         body.includes('rawSig.confidence.value');
+}
+ok("programming.html: renderSignalCard uses rawSig.*.value for component bar widths",
+   canonicalValuesUsed(progSrc3),
+   "programming.html renderSignalCard missing rawSig.demand/revenue/peer/confidence.value — must use canonical values, not fixed label map");
+ok("exec_summary.html: renderSignalCard uses rawSig.*.value for component bar widths",
+   canonicalValuesUsed(execSrc3),
+   "exec_summary.html renderSignalCard missing rawSig.demand/revenue/peer/confidence.value — must use canonical values, not fixed label map");
+
+// 12. Numeric component value is rendered via sig-comp-val span.
+// The class must appear inside renderSignalCard (written by sigCompRender).
+function sigCompValPresent(s) {
+  var start = s.indexOf('function renderSignalCard');
+  if (start < 0) return false;
+  var body = s.slice(start, start + 4000);
+  return body.includes('sig-comp-val');
+}
+ok("programming.html: sig-comp-val span rendered in renderSignalCard for numeric component values",
+   sigCompValPresent(progSrc3),
+   "programming.html renderSignalCard missing sig-comp-val span — numeric component value must be displayed alongside badge");
+ok("exec_summary.html: sig-comp-val span rendered in renderSignalCard for numeric component values",
+   sigCompValPresent(execSrc3),
+   "exec_summary.html renderSignalCard missing sig-comp-val span — numeric component value must be displayed alongside badge");
+
+// 13. Season Position is three-state (above / at / below), not binary.
+// Must contain: p.score > SCORE_MED, p.score < SCORE_MED, and "At season median".
+// Must NOT contain the old binary "p.score >= SCORE_MED" as the sole condition.
+function seasonPosThreeState(s) {
+  var start = s.indexOf('function renderSignalCard');
+  if (start < 0) return false;
+  var body = s.slice(start, start + 4000);
+  return (
+    body.includes('p.score > SCORE_MED') &&
+    body.includes('p.score < SCORE_MED') &&
+    body.includes('At season median')
+  );
+}
+function seasonPosBinaryBug(s) {
+  /* Flag the old two-state pattern: "p.score >= SCORE_MED" used as the
+   * Season Position condition (not as the composite score color guard). */
+  var start = s.indexOf('function renderSignalCard');
+  if (start < 0) return false;
+  var body = s.slice(start, start + 4000);
+  /* The composite-score color guard also uses >= but on a different variable
+   * (scoreEl.style.color). We scope to lines that set posEl (the season pos). */
+  return /p\.score\s*>=\s*SCORE_MED/.test(body) &&
+    !body.includes('p.score > SCORE_MED');
+}
+ok("programming.html: Season Position is three-state (above / at / below season median)",
+   seasonPosThreeState(progSrc3),
+   "programming.html renderSignalCard Season Position missing three-state logic — need p.score > SCORE_MED, p.score < SCORE_MED, and 'At season median'");
+ok("exec_summary.html: Season Position is three-state (above / at / below season median)",
+   seasonPosThreeState(execSrc3),
+   "exec_summary.html renderSignalCard Season Position missing three-state logic — need p.score > SCORE_MED, p.score < SCORE_MED, and 'At season median'");
+ok("programming.html: old binary Season Position bug (>= SCORE_MED) is absent",
+   !seasonPosBinaryBug(progSrc3),
+   "programming.html renderSignalCard still uses 'p.score >= SCORE_MED' for Season Position — equality must route to 'At season median' state");
+ok("exec_summary.html: old binary Season Position bug (>= SCORE_MED) is absent",
+   !seasonPosBinaryBug(execSrc3),
+   "exec_summary.html renderSignalCard still uses 'p.score >= SCORE_MED' for Season Position — equality must route to 'At season median' state");
+
+// 14. sig-comp-val is defined in styles.css.
+const stylesSrc = fs.readFileSync(path.join(__dirname, '..', 'src', 'css', 'styles.css'), 'utf8');
+ok("styles.css: .sig-comp-val class is defined",
+   stylesSrc.includes('.sig-comp-val'),
+   "styles.css missing .sig-comp-val class definition — required for numeric component value display");
+
 /* ══════════════════════════════════════════════════════════════════════════ */
 /*  SUMMARY                                                                  */
 /* ══════════════════════════════════════════════════════════════════════════ */
