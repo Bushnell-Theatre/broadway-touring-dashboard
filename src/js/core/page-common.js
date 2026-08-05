@@ -90,26 +90,54 @@
    *
    * Sole entry point for the canonical Planning Signal score per SCORING_CONTRACT.md.
    *
-   * Evidence filters (tier, subscription) are applied before scoring because they
-   * define the record set being analyzed. The peer-type display filter is explicitly
-   * stripped: it is a UI selector that controls tables and charts, not an evidence
-   * boundary. signals.js always evaluates all three configured cohort types (size,
-   * proximity, market) independently from whatever records it receives.
+   * EVIDENCE FILTERS — only these two define what records are analyzed:
+   *   tier  — Broadway League market tier (Primary / Secondary)
+   *   sub   — subscription vs non-subscription records
    *
-   * Clones activeFilters() before mutation to avoid corrupting shared filter state.
+   * The following are explicitly excluded from the scoring evidence boundary:
+   *   peer   — display selector for tables/charts; signals.js evaluates all
+   *             three cohort types (size, proximity, market) independently
+   *   equity — display toggle; does not define what evidence to score
+   *   engage — display toggle; does not define what evidence to score
+   *
+   * DATE BOUNDARIES — optional, for historical evaluation integrity:
+   *   options.dateFrom — ISO date string; exclude records before this date
+   *   options.dateTo   — ISO date string; exclude records on or after this date
+   *
+   * For past seasons, callers MUST supply dateTo = season.end to prevent
+   * later-season records from leaking into historical scoring. Without dateTo,
+   * a show that appeared in multiple seasons is scored using all available
+   * records, including evidence that did not exist when the season ran.
+   *
+   * Clones activeFilters() before constructing the permitted set — does not
+   * mutate shared filter state.
    *
    * Options forwarded to signals.js:
-   *   seasonId      — used by signals.js for futureNewTour detection
-   *   futureNewTour — explicit override; when true, all components are Exploratory
+   *   seasonId      — used for futureNewTour detection only (not record filtering)
+   *   futureNewTour — explicit override; when true, components are Exploratory
    *                   and score is null
    *
    * ─────────────────────────────────────────────────────────────────────────── */
   function profileShowCanonical(show, allRows, options) {
     options = options || {};
-    // Clone before mutating — do not alter the shared activeFilters() state
-    var filters = Object.assign({}, activeFilters(), { peer: '' });
-    var filteredRows = applyStandardFilters(allRows || matchRows(show), filters);
-    return root.BTD.signals.profileShow(show, filteredRows, {
+
+    // Build the permitted evidence filter set — whitelist only, no mutation of shared state
+    var active = activeFilters();
+    var filters = {
+      tier:   active.tier,
+      sub:    active.sub,
+      peer:   '',   // display filter — excluded from evidence boundary
+      equity: '',   // display filter — excluded from evidence boundary
+      engage: ''    // display filter — excluded from evidence boundary
+    };
+
+    var rows = applyStandardFilters(allRows || matchRows(show), filters);
+
+    // Apply date boundaries when provided — required for historical season integrity
+    if (options.dateFrom) rows = rows.filter(function (r) { return r.week_of && r.week_of >= options.dateFrom; });
+    if (options.dateTo)   rows = rows.filter(function (r) { return r.week_of && r.week_of <= options.dateTo; });
+
+    return root.BTD.signals.profileShow(show, rows, {
       seasonId:      options.seasonId,
       futureNewTour: options.futureNewTour
     });

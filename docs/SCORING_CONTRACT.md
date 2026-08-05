@@ -45,10 +45,20 @@ is the sole scoring authority. No page may call `planningSignal()` from
 inline.
 
 The shared entry point for page use is **`BTD.page.profileShowCanonical(show,
-allRows, options)`** in `js/core/page-common.js`. It applies evidence filters
-(season, tier, subscription) before passing records to `signals.js`, but
-explicitly strips the peer-type display filter so the canonical score always
-evaluates all three configured cohort types (size, proximity, market).
+allRows, options)`** in `js/core/page-common.js`. It constructs an explicit
+whitelist of permitted evidence filters before passing records to `signals.js`:
+
+| Filter | Role | Included in evidence boundary |
+|---|---|---|
+| `tier` | Broadway League market tier | ✓ Yes |
+| `sub` | Subscription vs non-subscription | ✓ Yes |
+| `peer` | Peer-type display selector | ✗ No — display only |
+| `equity` | Equity/non-equity display toggle | ✗ No — display only |
+| `engage` | Engagement/dark display toggle | ✗ No — display only |
+
+For past seasons, callers must also pass `options.dateTo = season.end` to
+prevent records published after the season closed from leaking into
+retrospective scoring. Current and future seasons pass no upper date boundary.
 
 ---
 
@@ -87,12 +97,21 @@ p.signals.demand.drivers    — string[] explaining what data contributed
 | Demand | `p.signals.demand` | Paid capacity at peer cohort venues + subscription lift |
 | Revenue | `p.signals.revenue` | GG% of gross potential + avg admission at peer cohorts |
 | Peer Fit | `p.signals.peer` | Cross-cohort consistency and evidence breadth |
-| Confidence | `p.signals.confidence` | Record count, venue diversity, recency |
+| Confidence | `p.signals.confidence` | Active record count, distinct venue count, combined peer-record count, distinct reporting-week count |
 
-Component values are **null** when a cohort has no data for the show.
-A null component is excluded from the composite average — it is not penalized
-to zero. A show with data in only one cohort type still produces a valid score
-from that cohort.
+**Cohort-input null handling:** Each component (Demand, Revenue) is computed
+from up to three cohort inputs (size, proximity, market). A cohort with no
+records for the show contributes a null input, which is excluded from the
+`avgNonNull()` average. The remaining cohort inputs still produce a component
+value — a missing cohort is excluded, not penalized.
+
+**Peer Fit exception:** Peer Fit includes `scaled(allPeers.length, 0, 24)` as
+one of its inputs. When no peer records exist, this term evaluates to `0`
+rather than `null`. Peer Fit can therefore reach `0` rather than `null` when
+evidence is absent; it is not excluded from the composite average in that case.
+
+A show with records in only one cohort type still produces valid Demand and
+Revenue components from that cohort.
 
 ### Reference metrics (national — not scored)
 
@@ -119,11 +138,11 @@ be derived from them.
 
 | Field | Notes |
 |---|---|
-| `p.decomp.demand` | Raw demand component value before rounding |
-| `p.decomp.revenue` | Raw revenue component value |
-| `p.decomp.peer` | Raw peer fit component value |
-| `p.decomp.confidence` | Raw confidence component value |
-| `p.decomp.peerTypes` | String listing which cohort types contributed |
+| `p.decomp.demand` | Demand component value — verification copy of `p.signals.demand.value` (already rounded) |
+| `p.decomp.revenue` | Revenue component value — verification copy of `p.signals.revenue.value` (already rounded) |
+| `p.decomp.peer` | Peer fit component value — verification copy of `p.signals.peer.value` (already rounded) |
+| `p.decomp.confidence` | Confidence component value — verification copy of `p.signals.confidence.value` (already rounded) |
+| `p.decomp.peerTypes` | String listing which cohort types contributed data |
 
 ---
 

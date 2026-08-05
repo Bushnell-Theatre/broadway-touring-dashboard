@@ -1713,13 +1713,20 @@
        * ─────────────────────────────────────────────────────────────────────── */
       function profile(show) {
         const allRows = matchRows(show);
+        const season  = SEASONS.find((s) => s.id === ACTIVE_SEASON);
+        /* For past seasons, pass dateTo = season.end so that records published
+         * after the season closed cannot influence its retrospective score.
+         * Current and future seasons use no upper boundary — all available
+         * records contribute to the planning signal. */
+        const isPast  = season && seasonMode(season.id) === 'past';
         const p = BTD.page.profileShowCanonical(show, allRows, {
-          seasonId: ACTIVE_SEASON
+          seasonId: ACTIVE_SEASON,
+          dateTo:   isPast ? season.end : undefined
         });
         /* Attach row/metric helpers for non-scoring display (charts, tables).
          * These fields are presentation-only and are not part of the scoring contract. */
-        p.rows           = allRows;
-        p.rawDisplay     = (() => {
+        p.rows       = allRows;
+        p.rawDisplay = (() => {
           const active = allRows.filter(isUsableRecord);
           return {
             count: allRows.length, cap: avg(active.map((d) => d.cap_paid)),
