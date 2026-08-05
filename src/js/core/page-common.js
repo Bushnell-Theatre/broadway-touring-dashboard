@@ -86,6 +86,35 @@
     return root.BTD.signals.profileShow(show, filteredRows, Object.assign({ peerType: activeFilters().peer || 'size' }, options));
   }
 
+  /* ── profileShowCanonical ────────────────────────────────────────────────────
+   *
+   * Sole entry point for the canonical Planning Signal score per SCORING_CONTRACT.md.
+   *
+   * Evidence filters (tier, subscription) are applied before scoring because they
+   * define the record set being analyzed. The peer-type display filter is explicitly
+   * stripped: it is a UI selector that controls tables and charts, not an evidence
+   * boundary. signals.js always evaluates all three configured cohort types (size,
+   * proximity, market) independently from whatever records it receives.
+   *
+   * Clones activeFilters() before mutation to avoid corrupting shared filter state.
+   *
+   * Options forwarded to signals.js:
+   *   seasonId      — used by signals.js for futureNewTour detection
+   *   futureNewTour — explicit override; when true, all components are Exploratory
+   *                   and score is null
+   *
+   * ─────────────────────────────────────────────────────────────────────────── */
+  function profileShowCanonical(show, allRows, options) {
+    options = options || {};
+    // Clone before mutating — do not alter the shared activeFilters() state
+    var filters = Object.assign({}, activeFilters(), { peer: '' });
+    var filteredRows = applyStandardFilters(allRows || matchRows(show), filters);
+    return root.BTD.signals.profileShow(show, filteredRows, {
+      seasonId:      options.seasonId,
+      futureNewTour: options.futureNewTour
+    });
+  }
+
   function contextForWeek(weekOf) { return root.BTD.context && root.BTD.context.forWeek ? root.BTD.context.forWeek(weekOf) : (root.CONTEXT && root.CONTEXT[weekOf]) || null; }
   function contextForDate(isoDate) { return root.BTD.context && root.BTD.context.forDate ? root.BTD.context.forDate(isoDate) : null; }
   function contextBadge(value) { return root.BTD.context && root.BTD.context.badge ? root.BTD.context.badge(value) : ''; }
@@ -302,7 +331,7 @@
     scoreCellText: scoreCellText, scoreBadge: scoreBadge,
     planningSignals: planningSignals, signalBadge: signalBadge, signalRow: signalRow, whyThisRead: whyThisRead,
     confidenceLabel: confidenceLabel, confidenceText: confidenceText,
-    matchRows: matchRows, activeFilters: activeFilters, applyStandardFilters: applyStandardFilters, profileShow: profileShow,
+    matchRows: matchRows, activeFilters: activeFilters, applyStandardFilters: applyStandardFilters, profileShow: profileShow, profileShowCanonical: profileShowCanonical,
     profileAtDate: profileAtDate, profileInRange: profileInRange, bushnellRowsForSeason: bushnellRowsForSeason,
     contextForWeek: contextForWeek, contextForDate: contextForDate, contextBadge: contextBadge, contextTooltip: contextTooltip, preShowWindow: preShowWindow,
     rankItems: rankItems, setFilterValue: setFilterValue, setFilterButton: setFilterButton, hydrateCoreState: hydrateCoreState,
