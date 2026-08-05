@@ -463,6 +463,10 @@ select:focus, input:focus { outline: 2px solid var(--amber); outline-offset: 2px
 .faq-grid { display: grid; grid-template-columns: 200px 1fr; gap: 8px 20px; }
 .faq-grid dt { font-size: 0.65rem; font-weight: 700; color: var(--ink); padding-top: 2px; }
 .faq-grid dd { font-size: 0.65rem; color: var(--ink2); margin: 0; line-height: 1.55; }
+/* Rich HTML inside a faq-grid dd — paragraphs, tables, bold */
+.faq-grid dd p { margin: 0 0 6px; }
+.faq-grid dd p:last-child { margin-bottom: 0; }
+.faq-grid dd strong { color: var(--ink); }
 
 /* ── EMPTY STATE ────────────────────────────────────────────────────────────── */
 .empty { padding: 24px; color: var(--ink3); font-size: .72rem; text-align: center; background: var(--bg); border: 1px dashed var(--rule); }
