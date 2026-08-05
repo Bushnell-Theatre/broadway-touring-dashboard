@@ -1406,14 +1406,14 @@
           (p) => p.metrics.peerCap != null && p.metrics.cap != null && p.metrics.peerCap > p.metrics.cap + 3,
         ).length;
         if (best) {
-          const _bs = planningSignals(best);
+          const _bs = BTD.page.planningSignals(best);
           out.push({
             title: `${best.show.title} — strongest Planning Signal`,
             text: `Planning Read: ${_bs.planningRead}. Demand: ${_bs.demand}, Revenue: ${_bs.revenue}. ${pct(best.metrics.cap, 1)} avg capacity across matching tour records.`,
           });
         }
         if (soft) {
-          const _ss = planningSignals(soft);
+          const _ss = BTD.page.planningSignals(soft);
           out.push({
             title: `${soft.show.title} — review before committing`,
             text: `Planning Read: ${_ss.planningRead}. Demand: ${_ss.demand}, Revenue: ${_ss.revenue}. Compare peer venue behavior and confidence level before treating as a reliable Bushnell fit.`,
@@ -1443,7 +1443,7 @@
 
       function showCard(p, active, idx) {
         const k = p.score != null && p.score >= SCORE_MED ? 'good' : 'warn';
-        const _sig = planningSignals(p);
+        const _sig = BTD.page.planningSignals(p);
         return `<div class="show-card ${active ? 'active' : ''}" data-idx="${idx}"><div class="show-name">${p.show.title}</div><div style="font-size:.6rem;color:var(--ink3);margin:4px 0"><strong>Planning Read:</strong> ${_sig.planningRead}</div>${signalRow(_sig)}<div class="metric-row" style="margin-top:8px"><div class="metric"><div class="val">${pct(p.metrics.cap, 0)}</div><div class="lbl">Demand Cap</div></div><div class="metric"><div class="val">${pct(p.metrics.gg, 0)}</div><div class="lbl">Revenue GG%</div></div><div class="metric"><div class="val ${k}">${p.score != null ? p.score : '—'}</div><div class="lbl">Nat. Signal</div></div></div></div>`;
       }
 
@@ -1456,7 +1456,7 @@
       }
 
       function detailHtml(p) {
-        var _sig = planningSignals(p);
+        var _sig = BTD.page.planningSignals(p);
         var m = p.metrics;
         var rows = p.rows
           .filter(function (d) {
@@ -1683,7 +1683,7 @@
           `<div class="section-divider"><h2>Future Planning</h2><div class="section-divider-line"></div><div class="section-divider-meta">${future.name} candidate read</div></div><div class="grid grid-3"><div class="card full"><div class="card-hd">Planning Signal — Candidates</div><table class="mini-table"><thead><tr><th>Candidate</th><th>Engagement</th><th class="num">Fit</th><th class="num">Cap</th><th>Demand</th><th class="num">GG%</th><th>Revenue</th><th class="num">Peer Cap</th><th>Confidence</th><th>Planning Read</th></tr></thead><tbody>${profiles
             .map((p) => {
               const k = p.score != null && p.score >= SCORE_MED ? 'good' : 'warn';
-              return ((_ps = planningSignals(p)) =>
+              return ((_ps = BTD.page.planningSignals(p)) =>
                 `<tr><td>${p.show.title}</td><td>${(() => {
                   const _fsPl = _factsheets[p.show.title];
                   const _spPl =
@@ -2209,77 +2209,6 @@
         // Pool info
         $('sigPoolInfo').textContent =
           'National: ' + sig.poolSizes.national + ' records · Peer: ' + sig.poolSizes.peer + ' · Matched: ' + rm.count;
-      }
-
-      // ── PLANNING SIGNAL LABELS ─────────────────────────────────────────────────────
-      function planningSignals(p) {
-        if (!p || !p.metrics || p.metrics.count === 0)
-          return {
-            demand: 'Insufficient',
-            revenue: 'Insufficient',
-            peer: 'Insufficient',
-            confidence: confidenceLabel(p),
-            planningRead: 'Needs Review',
-            interpretation: 'No matched tour records. Treat as exploratory.',
-          };
-        const m = p.metrics;
-        let demand = 'Insufficient';
-        if (m.cap != null) {
-          demand = m.cap >= 85 ? 'Strong' : m.cap >= 70 ? 'Moderate' : m.cap >= 55 ? 'Soft' : 'Weak';
-        }
-        let revenue = 'Insufficient';
-        if (m.gg != null) {
-          const admBonus = m.adm != null && m.adm >= 80 ? 1 : m.adm != null && m.adm < 55 ? -1 : 0;
-          const ggBand = m.gg >= 90 ? 3 : m.gg >= 75 ? 2 : m.gg >= 60 ? 1 : 0;
-          const rs = ggBand + admBonus;
-          revenue = rs >= 3 ? 'Strong' : rs === 2 ? 'Moderate' : rs === 1 ? 'Soft' : 'Weak';
-        }
-        let peer = 'Insufficient';
-        if (m.peerCap != null) {
-          peer = m.peerCap >= 85 ? 'Strong' : m.peerCap >= 70 ? 'Moderate' : m.peerCap >= 55 ? 'Soft' : 'Weak';
-        }
-        const confidence = confidenceLabel(p);
-        const sigNums = {
-          Strong: 3,
-          Moderate: 2,
-          Soft: 1,
-          Weak: 0,
-          Insufficient: 0,
-          Exploratory: 1,
-        };
-        const composite = (sigNums[demand] || 0) + (sigNums[revenue] || 0) + (sigNums[peer] || 0);
-        const planningRead =
-          composite >= 8
-            ? 'Strong Candidate'
-            : composite >= 6
-              ? 'Good Candidate'
-              : composite >= 4
-                ? 'Mixed'
-                : composite >= 2
-                  ? 'Watch'
-                  : 'Needs Review';
-        let interpretation = '';
-        if (demand === 'Strong' && revenue === 'Strong')
-          interpretation = 'Strong attendance and strong revenue efficiency. Solid planning candidate.';
-        else if (demand === 'Strong' && (revenue === 'Soft' || revenue === 'Weak'))
-          interpretation =
-            'Strong attendance, but revenue efficiency trails demand. Review pricing power and deal terms before treating as a top financial opportunity.';
-        else if ((demand === 'Soft' || demand === 'Weak') && revenue === 'Strong')
-          interpretation =
-            'Revenue efficiency is promising but attendance signals are softer. May indicate a premium-priced, lower-volume model.';
-        else if (demand === 'Moderate' && revenue === 'Moderate')
-          interpretation = 'Solid across both demand and revenue. Review peer data and confidence level.';
-        else if (confidence === 'Low' || confidence === 'None')
-          interpretation = 'Limited evidence available. Treat signals as directional only.';
-        else interpretation = 'Mixed signals. Review individual metrics before drawing conclusions.';
-        return {
-          demand,
-          revenue,
-          peer,
-          confidence,
-          planningRead,
-          interpretation,
-        };
       }
 
       function signalBadge(label) {

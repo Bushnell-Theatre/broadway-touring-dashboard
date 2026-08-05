@@ -421,6 +421,71 @@ ok("contract: few-peer wording uses 'One or more peer records'",
    contractSrc.includes('One or more peer records'),
    "few-peer wording not updated");
 
+/* ── Section 5 — Phase 2: inline planningSignals() eliminated ────────────── */
+
+section('5. Phase 2: inline planningSignals() eliminated from both pages');
+
+// programmingSrc and execSrc are already loaded in Section 3.
+
+ok("programming.html: no inline function planningSignals declaration",
+   !programmingSrc.includes('function planningSignals'),
+   "found 'function planningSignals' in programming.html — inline definition must be deleted");
+
+ok("exec_summary.html: no inline function planningSignals declaration",
+   !execSrc.includes('function planningSignals'),
+   "found 'function planningSignals' in exec_summary.html — inline definition must be deleted");
+
+// Unqualified call: planningSignals( not preceded by BTD.page.
+// The negative-lookahead pattern is: find planningSignals( where the preceding
+// non-whitespace characters are NOT "BTD.page.". We strip BTD.page. calls first
+// then check for any remaining bare calls.
+function hasBareCall(htmlSrc) {
+  var stripped = htmlSrc.replace(/BTD\.page\.planningSignals\s*\(/g, '__QUALIFIED__');
+  return /\bplanningSignals\s*\(/.test(stripped);
+}
+
+ok("programming.html: no unqualified planningSignals( call sites",
+   !hasBareCall(programmingSrc),
+   "found unqualified planningSignals( in programming.html — must be BTD.page.planningSignals(");
+
+ok("exec_summary.html: no unqualified planningSignals( call sites",
+   !hasBareCall(execSrc),
+   "found unqualified planningSignals( in exec_summary.html — must be BTD.page.planningSignals(");
+
+// Inline demand scoring: the band-sum pattern used by the old Model 3
+// (cap >= 85 ? 'Strong' combined with band-sum composite arithmetic).
+// These patterns should only appear if someone reimplemented the old model.
+function hasInlineDemandScoring(htmlSrc) {
+  return /cap\s*>=\s*85\s*\?\s*['"]Strong['"]/.test(htmlSrc) &&
+         /sigNums\s*=\s*\{/.test(htmlSrc);
+}
+
+ok("programming.html: no inline demand-band scoring (old Model 3)",
+   !hasInlineDemandScoring(programmingSrc),
+   "found old cap>=85 band-sum pattern in programming.html — inline scoring must be removed");
+
+ok("exec_summary.html: no inline demand-band scoring (old Model 3)",
+   !hasInlineDemandScoring(execSrc),
+   "found old cap>=85 band-sum pattern in exec_summary.html — inline scoring must be removed");
+
+// Planning Read must not be invented inline — only BTD.page.planningSignals()
+// or BTD.signals.signalLabels() may produce it. Check for the old composite
+// threshold strings ('Strong Candidate', 'Good Candidate') in contexts other
+// than the contract document or signal-badge/display rendering.
+// We check that the old composite-read assignment pattern is gone.
+function hasInlinePlanningRead(htmlSrc) {
+  // Old pattern: planningRead = composite >= 8 ? 'Strong Candidate' : ...
+  return /planningRead\s*=\s*\n?\s*composite\s*>=/.test(htmlSrc);
+}
+
+ok("programming.html: no inline composite planningRead assignment",
+   !hasInlinePlanningRead(programmingSrc),
+   "found inline 'planningRead = composite >= ...' in programming.html");
+
+ok("exec_summary.html: no inline composite planningRead assignment",
+   !hasInlinePlanningRead(execSrc),
+   "found inline 'planningRead = composite >= ...' in exec_summary.html");
+
 /* ══════════════════════════════════════════════════════════════════════════ */
 /*  SUMMARY                                                                  */
 /* ══════════════════════════════════════════════════════════════════════════ */

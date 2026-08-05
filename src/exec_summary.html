@@ -1506,78 +1506,6 @@
           'National: ' + sig.poolSizes.national + ' records · Peer: ' + sig.poolSizes.peer + ' · Matched: ' + rm.count;
       }
 
-      // ── PLANNING SIGNAL MODEL ─────────────────────────────────────────────────────
-      function planningSignals(p) {
-        if (!p || p.isFutureNewTour)
-          return {
-            demand: 'Exploratory',
-            revenue: 'Exploratory',
-            peer: 'Exploratory',
-            confidence: 'Exploratory',
-            planningRead: 'Exploratory',
-            interpretation:
-              'New tour or no historical records in this feed. Treat as strategic bet. Validate with comparable titles, pre-sale indicators, and mission fit.',
-          };
-        const m = p.metrics;
-        let demand = 'Insufficient';
-        if (m.cap != null) {
-          demand = m.cap >= 85 ? 'Strong' : m.cap >= 70 ? 'Moderate' : m.cap >= 55 ? 'Soft' : 'Weak';
-        }
-        let revenue = 'Insufficient';
-        if (m.gg != null) {
-          const admBonus = m.adm != null && m.adm >= 80 ? 1 : m.adm != null && m.adm < 55 ? -1 : 0;
-          const ggBand = m.gg >= 90 ? 3 : m.gg >= 75 ? 2 : m.gg >= 60 ? 1 : 0;
-          const rs = ggBand + admBonus;
-          revenue = rs >= 3 ? 'Strong' : rs === 2 ? 'Moderate' : rs === 1 ? 'Soft' : 'Weak';
-        }
-        let peer = 'Insufficient';
-        if (m.peerCap != null) {
-          peer = m.peerCap >= 85 ? 'Strong' : m.peerCap >= 70 ? 'Moderate' : m.peerCap >= 55 ? 'Soft' : 'Weak';
-        }
-        const confidence = confidenceLabel(p);
-        const sigNums = {
-          Strong: 3,
-          Moderate: 2,
-          Soft: 1,
-          Weak: 0,
-          Insufficient: 0,
-          Exploratory: 1,
-        };
-        const composite = (sigNums[demand] || 0) + (sigNums[revenue] || 0) + (sigNums[peer] || 0);
-        const planningRead =
-          composite >= 8
-            ? 'Strong Candidate'
-            : composite >= 6
-              ? 'Good Candidate'
-              : composite >= 4
-                ? 'Mixed'
-                : composite >= 2
-                  ? 'Watch'
-                  : 'Needs Review';
-        let interpretation = '';
-        if (demand === 'Strong' && revenue === 'Strong')
-          interpretation = 'Strong attendance and strong revenue efficiency. Solid planning candidate.';
-        else if (demand === 'Strong' && (revenue === 'Soft' || revenue === 'Weak'))
-          interpretation =
-            'Strong attendance, but revenue efficiency trails demand. Review pricing power and deal terms before treating as a top financial opportunity.';
-        else if ((demand === 'Soft' || demand === 'Weak') && revenue === 'Strong')
-          interpretation =
-            'Revenue efficiency is promising but attendance signals are softer. May indicate a premium-priced, lower-volume model.';
-        else if (demand === 'Moderate' && revenue === 'Moderate')
-          interpretation = 'Solid across both demand and revenue. Review peer data and confidence level.';
-        else if (confidence === 'Low' || confidence === 'None')
-          interpretation = 'Limited evidence available. Treat signals as directional only.';
-        else interpretation = 'Mixed signals. Review individual metrics before drawing conclusions.';
-        return {
-          demand,
-          revenue,
-          peer,
-          confidence,
-          planningRead,
-          interpretation,
-        };
-      }
-
       function signalBadge(label) {
         const map = {
           Strong: 'good',
@@ -2025,7 +1953,7 @@
             .map((p) => {
               const cls = p.isFutureNewTour ? 'neutral' : p.score == null ? 'neutral' : p.score >= SCORE_MED ? 'good' : 'warn';
               const scoreLabel = p.isFutureNewTour ? 'NEW' : p.score;
-              return ((_fs = planningSignals(p)) =>
+              return ((_fs = BTD.page.planningSignals(p)) =>
                 `<tr><td>${p.show.title}<br><span style="color:var(--ink3);font-size:.58rem">${dateLine(p.show)}</span></td><td>${p.show.sub ? 'Sub' : 'Add-on'}</td><td class="num"><span class="status ${cls}">${scoreLabel}</span></td><td class="num">${pct(p.metrics.cap)}</td><td>${signalBadge(_fs.demand)}</td><td class="num">${pct(p.metrics.gg)}</td><td>${signalBadge(_fs.revenue)}</td><td class="num">${pct(p.metrics.peerCap)}</td><td class="num">${p.metrics.count}</td><td>${signalBadge(_fs.confidence)}</td><td>${_fs.planningRead}</td></tr>`)();
             })
             .join(
@@ -2330,7 +2258,7 @@
       }
 
       function rowHtml(p, mode = seasonMode()) {
-        const _sig = planningSignals(p);
+        const _sig = BTD.page.planningSignals(p);
         return `<tr><td>${p.show.title}${contextBadgeForDate(p.show.open)}<br><span style="color:var(--ink3);font-size:.58rem">${dateLine(p.show)}</span></td><td>${p.show.sub ? 'Sub' : 'Add-on'}</td><td class="num">${scoreBadge(p)}</td><td class="num">${pct(p.metrics.cap)}</td><td class="num">${signalBadge(_sig.demand)}</td><td class="num">${pct(p.metrics.gg)}</td><td class="num">${signalBadge(_sig.revenue)}</td><td class="num">${pct(p.metrics.peerCap)}</td><td class="num">${fmt$(p.metrics.gross)}</td><td>${signalBadge(_sig.confidence)}</td><td>${_sig.planningRead}</td></tr>`;
       }
 
@@ -2387,7 +2315,7 @@
               : 'Current programming performance';
         const scoreLabel = scoreLabelForMode(mode);
         $('tab-current').innerHTML =
-          `<div class="section-divider"><h2>${title}</h2><div class="section-divider-line"></div><div class="section-divider-meta">${season.name} · ${meta}</div></div><div class="explainer"><p><strong>${mode === 'past' ? 'Retrospective lens:' : 'Planning lens:'}</strong> ${mode === 'past' ? 'For completed seasons, the index is read as a performance result: what happened in the touring data, how strong the title looked, and what lessons it provides for future programming.' : 'For current and future seasons, the score is directional and should be paired with pricing, timing, subscription role, and local audience knowledge.'}</p></div><div class="grid grid-3">${rows.map((p) => `<div class="show-card" onclick="selectCurrent('${esc(p.show.title)}')"><div class="show-name">${p.show.title}</div><div class="card-sub" style="margin-bottom:8px">${dateLine(p.show)}</div><div class="metric-row"><div class="metric"><div class="val ${p.isFutureNewTour ? 'neutral' : p.score == null ? 'neutral' : p.score >= SCORE_MED ? 'good' : 'warn'}">${scoreCellText(p)}</div><div class="lbl">${scoreLabel}</div></div><div class="metric"><div class="val">${pct(p.metrics.cap, 0)}</div><div class="lbl">Demand Cap</div></div><div class="metric"><div class="val">${pct(p.metrics.gg, 0)}</div><div class="lbl">Revenue GG%</div></div></div>${((_s = planningSignals(p)) => `<div style="font-size:.52rem;color:var(--ink3);margin-top:6px">Planning Read: <strong>${_s.planningRead}</strong></div>${signalRow(_s)}`)()}<div class="card-sub" style="margin-top:6px;margin-bottom:0">${p.metrics.count} matched records · ${p.metrics.venues} venues · peer cap ${pct(p.metrics.peerCap)}</div></div>`).join('')}</div><div class="grid grid-2" style="margin-top:18px"><div class="card"><div class="card-hd">Selected Show Detail</div><div id="currentDetail">${rows[0] ? detailHtml(rows[0], mode) : '<div class="empty">No matching show records.</div>'}</div><div class="signal-card" id="signalCard" style="display:none"><div class="signal-header"><div class="signal-title">Planning Signal</div><div class="signal-composites"><div class="signal-composite"><div class="signal-composite-label">National (3yr)</div><div class="signal-composite-score" id="sigNatComposite">—</div><div class="signal-composite-sub" id="sigNatSub"></div></div><div class="signal-composite"><div class="signal-composite-label" id="sigPeerLabel">Peer</div><div class="signal-composite-score" id="sigPeerComposite">—</div><div class="signal-composite-sub" id="sigPeerSub"></div></div></div></div><div class="signal-components"><div class="signal-component"><div class="signal-comp-label">Demand</div><div class="signal-comp-metric" id="sigDemandMetric">—</div><div class="signal-comp-bar"><div class="signal-comp-fill" id="sigDemandFill" style="width:0%"></div></div><div class="signal-comp-pcts"><span id="sigDemandNat">—</span> / <span id="sigDemandPeer">—</span></div></div><div class="signal-component"><div class="signal-comp-label">Revenue</div><div class="signal-comp-metric" id="sigRevenueMetric">—</div><div class="signal-comp-bar"><div class="signal-comp-fill" id="sigRevenueFill" style="width:0%"></div></div><div class="signal-comp-pcts"><span id="sigRevenueNat">—</span> / <span id="sigRevenuePeer">—</span></div></div><div class="signal-component"><div class="signal-comp-label">Peer Fit</div><div class="signal-comp-metric" id="sigPeerFitMetric">—</div><div class="signal-comp-bar"><div class="signal-comp-fill" id="sigPeerFitFill" style="width:0%"></div></div><div class="signal-comp-pcts"><span id="sigPeerFitNat">—</span> / <span id="sigPeerFitPeer">—</span></div></div><div class="signal-component"><div class="signal-comp-label">Confidence</div><div class="signal-comp-metric" id="sigConfMetric">—</div><div class="signal-comp-bar"><div class="signal-comp-fill signal-comp-fill--neutral" id="sigConfFill" style="width:0%"></div></div><div class="signal-comp-pcts"><span id="sigConfNat">—</span></div></div></div><div class="signal-footer"><span>Equal-weight composite — components averaged when data exists</span><span id="sigPoolInfo"></span></div></div></div><div class="card"><div class="card-hd">Season Capacity Comparison</div><canvas id="cCurrentCap"></canvas></div></div>`;
+          `<div class="section-divider"><h2>${title}</h2><div class="section-divider-line"></div><div class="section-divider-meta">${season.name} · ${meta}</div></div><div class="explainer"><p><strong>${mode === 'past' ? 'Retrospective lens:' : 'Planning lens:'}</strong> ${mode === 'past' ? 'For completed seasons, the index is read as a performance result: what happened in the touring data, how strong the title looked, and what lessons it provides for future programming.' : 'For current and future seasons, the score is directional and should be paired with pricing, timing, subscription role, and local audience knowledge.'}</p></div><div class="grid grid-3">${rows.map((p) => `<div class="show-card" onclick="selectCurrent('${esc(p.show.title)}')"><div class="show-name">${p.show.title}</div><div class="card-sub" style="margin-bottom:8px">${dateLine(p.show)}</div><div class="metric-row"><div class="metric"><div class="val ${p.isFutureNewTour ? 'neutral' : p.score == null ? 'neutral' : p.score >= SCORE_MED ? 'good' : 'warn'}">${scoreCellText(p)}</div><div class="lbl">${scoreLabel}</div></div><div class="metric"><div class="val">${pct(p.metrics.cap, 0)}</div><div class="lbl">Demand Cap</div></div><div class="metric"><div class="val">${pct(p.metrics.gg, 0)}</div><div class="lbl">Revenue GG%</div></div></div>${((_s = BTD.page.planningSignals(p)) => `<div style="font-size:.52rem;color:var(--ink3);margin-top:6px">Planning Read: <strong>${_s.planningRead}</strong></div>${signalRow(_s)}`)()}<div class="card-sub" style="margin-top:6px;margin-bottom:0">${p.metrics.count} matched records · ${p.metrics.venues} venues · peer cap ${pct(p.metrics.peerCap)}</div></div>`).join('')}</div><div class="grid grid-2" style="margin-top:18px"><div class="card"><div class="card-hd">Selected Show Detail</div><div id="currentDetail">${rows[0] ? detailHtml(rows[0], mode) : '<div class="empty">No matching show records.</div>'}</div><div class="signal-card" id="signalCard" style="display:none"><div class="signal-header"><div class="signal-title">Planning Signal</div><div class="signal-composites"><div class="signal-composite"><div class="signal-composite-label">National (3yr)</div><div class="signal-composite-score" id="sigNatComposite">—</div><div class="signal-composite-sub" id="sigNatSub"></div></div><div class="signal-composite"><div class="signal-composite-label" id="sigPeerLabel">Peer</div><div class="signal-composite-score" id="sigPeerComposite">—</div><div class="signal-composite-sub" id="sigPeerSub"></div></div></div></div><div class="signal-components"><div class="signal-component"><div class="signal-comp-label">Demand</div><div class="signal-comp-metric" id="sigDemandMetric">—</div><div class="signal-comp-bar"><div class="signal-comp-fill" id="sigDemandFill" style="width:0%"></div></div><div class="signal-comp-pcts"><span id="sigDemandNat">—</span> / <span id="sigDemandPeer">—</span></div></div><div class="signal-component"><div class="signal-comp-label">Revenue</div><div class="signal-comp-metric" id="sigRevenueMetric">—</div><div class="signal-comp-bar"><div class="signal-comp-fill" id="sigRevenueFill" style="width:0%"></div></div><div class="signal-comp-pcts"><span id="sigRevenueNat">—</span> / <span id="sigRevenuePeer">—</span></div></div><div class="signal-component"><div class="signal-comp-label">Peer Fit</div><div class="signal-comp-metric" id="sigPeerFitMetric">—</div><div class="signal-comp-bar"><div class="signal-comp-fill" id="sigPeerFitFill" style="width:0%"></div></div><div class="signal-comp-pcts"><span id="sigPeerFitNat">—</span> / <span id="sigPeerFitPeer">—</span></div></div><div class="signal-component"><div class="signal-comp-label">Confidence</div><div class="signal-comp-metric" id="sigConfMetric">—</div><div class="signal-comp-bar"><div class="signal-comp-fill signal-comp-fill--neutral" id="sigConfFill" style="width:0%"></div></div><div class="signal-comp-pcts"><span id="sigConfNat">—</span></div></div></div><div class="signal-footer"><span>Equal-weight composite — components averaged when data exists</span><span id="sigPoolInfo"></span></div></div></div><div class="card"><div class="card-hd">Season Capacity Comparison</div><canvas id="cCurrentCap"></canvas></div></div>`;
         chartCap(rows, 'cCurrentCap');
         if (rows[0]) renderSignalCard(rows[0]);
       }
@@ -2402,7 +2330,7 @@
       }
 
       function detailHtml(p, mode = seasonMode()) {
-        const _psig = planningSignals(p);
+        const _psig = BTD.page.planningSignals(p);
         const recent = [...p.rows].sort((a, b) => (b.week_of || '').localeCompare(a.week_of || '')).slice(0, 8);
         const label = scoreLabelForMode(mode);
         const withCap = recent.filter((r) => r.cap_paid != null);
@@ -2576,7 +2504,7 @@
           );
         })()}${(() => {
           // Why this read drawer
-          const _sig = planningSignals(p);
+          const _sig = BTD.page.planningSignals(p);
           let _wh = '<div style="margin-top:14px"><div class="card-hd" style="margin-bottom:6px">Why this read?</div>';
           _wh += whyThisRead(p, _sig);
           _wh += '</div>';
@@ -2635,7 +2563,7 @@
             .map((p) => {
               const cls = p.isFutureNewTour ? 'neutral' : p.score == null ? 'neutral' : p.score >= SCORE_MED ? 'good' : 'warn';
               const scoreLabel = p.isFutureNewTour ? 'NEW' : p.score;
-              ((_fs = planningSignals(p)) =>
+              ((_fs = BTD.page.planningSignals(p)) =>
                 `<tr><td>${p.show.title}<br><span style="color:var(--ink3);font-size:.58rem">${dateLine(p.show)}</span></td><td>${p.show.sub ? 'Sub' : 'Add-on'}</td><td class="num">${(() => {
                   const _fsData = _factsheets[p.show.title];
                   return _fsData && _fsData.splitPointGross
