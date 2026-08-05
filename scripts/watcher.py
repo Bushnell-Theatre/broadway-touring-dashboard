@@ -288,11 +288,15 @@ def process_new_file(filepath):
     commit_msg = f"Weekly update: {fname} — {
         datetime.now().strftime('%Y-%m-%d %H:%M')}"
 
+    # Always commit to dev — never directly to main.
+    # Checkout dev first so the commit lands on the right branch regardless
+    # of what branch the repo happened to be on when the watcher fired.
     add_cmd = ["git", "-C", REPO_FOLDER, "add"] + files_to_add
     git_commands = [
+        ["git", "-C", REPO_FOLDER, "checkout", "dev"],
         add_cmd,
         ["git", "-C", REPO_FOLDER, "commit", "-m", commit_msg],
-        ["git", "-C", REPO_FOLDER, "push"],
+        ["git", "-C", REPO_FOLDER, "push", "origin", "dev"],
     ]
 
     for cmd in git_commands:
