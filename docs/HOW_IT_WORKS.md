@@ -1,186 +1,176 @@
 # How the Broadway Touring Intelligence Dashboard Works
 
-A plain-language guide to the data, the pipeline, and the four dashboard pages — written for anyone who needs to understand the system without reading the source code.
+A plain-language guide to the current product: what it helps users do, what evidence it uses, and what its conclusions do and do not mean.
 
-*July 2026 · Broadway Touring Dashboard v5.3*
-
----
-
-## The Big Picture
-
-Every week, Broadway touring productions report their box office results to the **Broadway League** — the national trade association for the touring industry. That data covers every major market in the country: how much each show grossed, how many seats it sold, and what percentage of its capacity it filled.
-
-The Bushnell receives this data in the form of Excel spreadsheets. A script converts those spreadsheets into a single structured data file that all four dashboard pages read from. When you open a dashboard, it pulls that file, applies any filters you've set, and draws everything you see — the charts, the rankings, the KPI tiles — in real time, right in your browser.
-
-No database. No login. No server-side processing. The intelligence lives in the data file; the dashboards are the lens.
+*Status: In development · August 2026*
 
 ---
 
-## Step 1 — Where the Data Comes From
+## The product in one sentence
 
-The Broadway League publishes weekly touring data as Excel files. These files contain one row per show per week per venue — every market the show played, what it earned, and how full the house was. A single file may cover hundreds of shows and thousands of venue-weeks going back years.
+The dashboard turns Broadway League weekly touring reports into searchable market evidence that Bushnell staff can use when discussing productions, peer performance, and season planning.
 
-```
-Broadway League Excel Files
-        ↓
-process_touring.py   (Python script run by IT)
-        ↓
-data.json            (single structured file read by all four dashboards)
-        ↓
-Dashboard Pages      (charts, rankings, and KPIs built in your browser)
-```
-
-> **Who runs the pipeline?** IT (Randale) runs `process_touring.py` when new Broadway League data arrives. The dashboards update automatically once the new `data.json` is deployed — no manual work required on the dashboard side.
+It is a decision-support tool, not a forecast or automated booking system.
 
 ---
 
-## Step 2 — What's in the Data
+## The three active experiences
 
-Each record in `data.json` represents **one show, at one venue, for one week**. The current dataset contains roughly 10,900 such records spanning several touring seasons. Here are the most important fields in plain terms:
-
-| Field | Plain-language meaning |
-|---|---|
-| `gross_gross` | **Total ticket revenue** reported by the touring production for that week at that venue. This is what the tour earned — not what the presenter kept. |
-| `gross_potential` | **Maximum possible revenue** if every seat sold at full price for every performance. Used as the denominator in efficiency calculations. |
-| `gg_pct_gp` | **Revenue efficiency** — gross earned as a percentage of gross potential. Can exceed 100% when dynamic pricing pushes tickets above face value. |
-| `cap_paid` | **Paid capacity percentage** — paid tickets sold divided by total sellable seats. The most reliable measure of audience demand. |
-| `on_sub` | **Subscription flag** — whether this particular week was part of the venue's subscriber package. For multi-week runs, individual weeks may differ (one week sub, others not). |
-| `tier` | **Market size** — the Broadway League's classification of the market (Primary = major cities, Secondary = mid-size markets like Hartford). |
-| `similar_bushnell` | **Peer venue flag** — marks venues with seat counts close to Bushnell's Mortensen Hall (~2,700 seats). Used to build peer comparisons that reflect Hartford-scale conditions. |
-| `no_engagement` | **Dark week** — the show was scheduled but did not play (road dark, layoff). These records are kept so gap analysis works correctly, but they are excluded from revenue and capacity calculations. |
-
-Three other files support the dashboards alongside `data.json`:
-
-- **`seasons.json`** — Bushnell's own season show list
-- **`peers.json`** — peer venue comparison group definitions
-- **`venues.json`** — physical seat counts for Bushnell's own halls, used by the Box Office scenario tool
-
----
-
-## Step 3 — The Four Dashboard Pages
-
-Each page reads the same underlying data but is designed for a different question and a different audience.
+All three experiences use the same underlying data but emphasize different questions.
 
 ### Sales Intelligence Dashboard
-**Primary users: Tom, Programming Staff**
 
-The broadest view. Shows top and bottom grossing productions, week-over-week momentum, market capacity, subscription vs. non-subscription performance, and multi-season trends. Built for ongoing market monitoring.
+**Audience:** sales and analytics
+
+Use it to explore touring records, show history, market performance, subscription behavior, and peer benchmarks. This is the broadest analytical view.
 
 ### Programming
-**Primary users: Tom, Programming Staff**
 
-Show-by-show analysis for booking decisions. Generates a Planning Signal score for each candidate title, combining demand, revenue efficiency, peer performance, and data confidence into a single comparable rating.
+**Audience:** programming
+
+Use it to review Bushnell season slates and candidate titles, compare productions, inspect Planning Signal components, and see the evidence and cautions behind a planning read.
 
 ### Executive Summary
-**Primary users: Stephanie, Leadership**
 
-Season retrospective and strategic overview. Compares Bushnell's results against the peer market, surfaces subscription lift, identifies hidden gems and shows that underperform in mid-size venues.
+**Audience:** leadership
 
-### Box Office Scenario Model
-**Primary users: Brandon, Box Office**
+Use it for a condensed view of season performance, candidate signals, peer context, and notable changes.
 
-Revenue projection tool specific to Bushnell's own halls. Models different pricing and hold configurations for upcoming shows using Mortensen Hall's actual section-by-section seat counts.
+The Development Hub is the entry point to these experiences. The former Box Office scenario model is suspended and is not an active experience, even though its files remain in the repository.
 
 ---
 
-## Filters and What They Do
+## Where the data comes from
 
-Every dashboard loads the full dataset on open, then applies a chain of filters based on what you've selected in the sidebar. All charts and rankings update instantly — no page reloads.
+The Broadway League supplies Excel reports. Local Python scripts convert those reports to static JSON files used by the website.
 
-Filters chain together: selecting **Season 26–27** narrows to that season's weeks; adding **Sub Only** further narrows to subscription engagements within that season. The KPI tiles at the top always reflect the current filtered selection.
+```text
+Broadway League XLSX
+        |
+        v
+Local processing and validation
+        |
+        v
+Static JSON committed to GitHub
+        |
+        v
+Azure Static Web Apps
+        |
+        v
+Browser calculations, charts, tables, and explanations
+```
 
-| Filter | What it does |
+There is no production database or application backend. Azure serves static files, and the browser performs the interactive filtering and analysis.
+
+The Python scripts and optional file watcher run on a local machine. They do not run continuously in Azure, and the local `python -m http.server` command is only a preview server.
+
+---
+
+## The primary evidence
+
+Each usable record in `src/data/data.json` represents one show at one venue for one reporting week.
+
+Common fields include:
+
+| Field | Meaning |
 |---|---|
-| **Season** | Filters by Broadway fiscal year (July–June). Multiple seasons can be selected simultaneously. |
-| **Tier** | Primary (large markets) or Secondary (mid-size markets). Secondary includes Hartford — useful for isolating comparable-market behavior. |
-| **Subscription** | Filters to weeks tagged as subscription (Sub) or non-subscription (Non-Sub) engagements. For shows with multi-week runs, this operates week-by-week — not show-by-show. |
-| **Peer Venues** | Narrows to venues whose seat count is similar to Bushnell's (Size), geographically nearby (Proximity), or in comparable regional markets (Market). |
-| **Engagement** | Filters between weeks with actual performance data (Performed) and dark/no-engagement weeks. "All" includes both. |
+| `gross_gross` | Tour-reported ticket gross for the week; not Bushnell net revenue |
+| `gross_potential` | Reported maximum possible gross for the engagement |
+| `gg_pct_gp` | Gross as a percentage of gross potential |
+| `cap_paid` | Paid tickets as a percentage of sellable capacity |
+| `avg_adm` | Average paid admission |
+| `on_sub` | Whether the reported week was part of a subscription engagement |
+| `tier` | Broadway League market classification |
+| `no_engagement` | A reported week without performance data |
+
+Supporting files define Bushnell seasons, curated peer cohorts, optional show metadata, context, validation results, and generated summaries.
 
 ---
 
-## Key Calculations in Plain Terms
+## Peer comparisons
 
-### Total Gross
-`Sum of gross_gross across all filtered weeks`
+The product uses three overlapping peer ideas:
 
-The total ticket revenue reported across every week included in your current filter. This is the tour's number, not Bushnell's presenter share.
+- venues of comparable size
+- geographically relevant Northeast/New England markets
+- comparable nonprofit PAC/mid-size market environments
 
-### Average % Capacity Paid
-`Average of cap_paid across all filtered weeks`
+These definitions come from curated metadata in `peers.json`. They are analytical choices, not Broadway League classifications. A venue can belong to more than one cohort.
 
-How full houses were, on average, across your filter. The most reliable demand signal because it's independent of pricing strategy.
-
-### Average % of Gross Potential
-`Average of gg_pct_gp across all filtered weeks`
-
-Revenue efficiency — how close each show came to capturing its theoretical maximum revenue. Values above 100% occur when dynamic pricing pushes tickets above face value. Both are kept in the data because the Broadway League reports them this way.
-
-### Average Paid Admission
-`gross_gross ÷ paid_tix`
-
-The effective price per ticket actually paid, after any discounting, subscription bundling, or dynamic pricing. A practical proxy for what the market was willing to spend.
-
-### Subscription Lift
-`avg cap_paid (on_sub = true) − avg cap_paid (on_sub = false)`
-
-How much fuller houses were during subscription weeks compared to non-subscription weeks for the same show. Positive lift means the subscription package drove stronger attendance. Negative lift means single-ticket demand exceeded the subscriber base.
-
-### Planning Signal
-`Weighted composite of demand, revenue, peer, and confidence scores`
-
-Used on the Programming and Executive Summary pages. Combines four independent signals — how much audiences want the show nationally, how well demand converts to revenue, how the show performs in Bushnell-size venues specifically, and how much data exists to support the conclusion. A show with a high signal and low confidence should be read differently than one with high signal and high confidence.
-
-> **What the dashboard does not include:** deal terms, presenter guarantees, local Bushnell expenses, marketing costs, ancillary revenue, or routing availability. Revenue Signal is not Net Profit. All financial figures are the touring production's reported gross — not what the Bushnell retains.
+National figures remain useful context, but the Planning Signal is anchored in the available peer-cohort records.
 
 ---
 
-## How Rankings Are Built
+## Planning Signal
 
-The Top and Bottom Grossing rankings aggregate **cumulative gross revenue by show** across all filtered weeks, then rank them highest to lowest (top list) or lowest to highest (bottom list).
+The Planning Signal combines four components:
 
-Only shows that actually reported at least one week of gross revenue appear in these rankings. Shows present in the data only as dark or no-engagement weeks are excluded because they have no revenue to rank. This is why the rank numbers on the Bottom list (e.g., **#47 of 50**) reflect position within the revenue-reporting set, not the total number of show names visible in the sidebar filter.
+- **Demand:** paid capacity at available peer cohorts, with subscription/non-subscription capacity difference when both exist
+- **Revenue:** GG% of gross potential and average paid admission at available peer cohorts
+- **Peer:** combined peer-pool capacity, revenue efficiency, and sample breadth
+- **Confidence:** depth of evidence across records, venues, peer records, and reporting weeks
 
-The bottom list reads from least-bad (#41) to worst (#50) — the absolute lowest-grossing show appears at position 10, not position 1.
+The current numeric score is the equal average of the four available components. The component inputs are converted to 0–100 using fixed ranges in the code. The score is not a probability or forecast.
 
----
+Some pages compare shows with the median score for the selected Bushnell season. That comparison helps users read a slate, but it does not change how each show's underlying numeric score is calculated.
 
-## AI-Generated Callouts
+If a future new tour has no matching records, the product withholds the numeric score and displays `—`/Exploratory rather than inventing evidence.
 
-Starting in July 2026, the Executive Summary and Programming pages display a small AI-generated blurb at the top of the Brief tab when there is something notable to flag. These callouts are generated automatically as part of the weekly data pipeline — no human writes them.
-
-### Weekly Intelligence (teal)
-
-After each new Broadway League report is processed, a script evaluates the data for hard-coded threshold events:
-
-- **Week-over-week gross change ≥ ±15%** for a Bushnell season show
-- **Paid capacity moving from one band to another** (low → mid, mid → high, etc.)
-- **A season show appearing or disappearing** from the national data
-- **An all-time gross or capacity record** for a Bushnell season show
-
-If any of these fire, the script sends only the aggregate data — show name, dollar figures, capacity percentages — to an AI model, which writes a 2–3 sentence plain-English summary. That summary is saved to a file the dashboard reads on next load.
-
-If no threshold trips, nothing happens: no AI call, no file write, no callout. The blurb only appears when the data actually said something.
-
-### Season Retrospective (amber)
-
-Once a season is complete (14 days after the last show closes), a separate script generates an end-of-season retrospective by comparing two things:
-
-1. The national touring signal that existed **before** the season began — what the data said at booking time
-2. The **actual** performance at peer venues (Bushnell-size comparable halls) during the season
-
-The resulting paragraph identifies which shows outperformed or underperformed their pre-season signal, and whether any patterns (subscription vs. add-on, market size, etc.) explain the gaps. It fires once per season and is never overwritten.
-
-Both callouts use only aggregate data. No patron, ticket-holder, or customer information is included in any AI prompt.
+For the exact formulas, ranges, and edge cases, see [../SCORING.md](../SCORING.md).
 
 ---
 
-## Where It Lives and How It Updates
+## How to interpret the output
 
-The dashboards are hosted on **Microsoft Azure Static Web Apps**, connected directly to the GitHub repository. When a change is pushed to the `main` branch, Azure automatically deploys the update — typically within 30 seconds. No server restarts, no FTP uploads.
+Use the dashboard to ask:
 
-The deployment follows a three-step process: development work happens on a feature branch, then merges to a staging branch (`dev`) for review, then to `main` for production. This means changes are always reviewed before they go live.
+- What touring evidence exists for this production?
+- How did it perform in contexts selected as relevant to the Bushnell?
+- Do demand and revenue quality tell the same story?
+- Is the evidence deep enough to support a confident discussion?
+- What additional local, financial, artistic, or routing information is still needed?
 
-All four dashboard pages, the shared stylesheet, and all data files live in the same repository. A version number displayed on each page reflects the last meaningful feature addition — bug fixes and data updates do not increment the version.
+Do not read the output as:
 
-> **The data is live from Azure.** Each dashboard first attempts to load `data.json` from the Azure-hosted URL. If that fails (no internet, for example), it falls back to a local copy. This means the dashboards work offline in a pinch, but will show the last-synced data rather than the current one.
+- expected Bushnell sales or profit
+- a recommended guarantee or deal
+- proof that one show is artistically preferable
+- an automatic booking priority
+- a complete explanation of why a show performed as it did
+
+Revenue Signal describes gross revenue quality in the available touring evidence. It does not include presenter economics.
+
+---
+
+## Filters and summaries
+
+The Sales Intelligence Dashboard filters the full touring dataset and updates its KPIs, tables, and charts in the browser. Programming and Executive Summary focus on season slates and show profiles.
+
+Averages and rankings answer different questions. Cumulative gross favors titles with more reported engagements; capacity and GG% describe different aspects of performance; confidence reflects evidence depth rather than show quality. Users should retain the current filters and sample size when interpreting any result.
+
+---
+
+## Generated callouts
+
+The repository contains optional local scripts that evaluate threshold events and may generate short summaries for Programming and Executive Summary. These are presentation layers over aggregate touring data.
+
+The underlying calculations and records remain the evidence. A generated callout does not change a Planning Signal and should not be treated as a separate analytical model.
+
+If the required API is unavailable, generation can be skipped and previously written output can remain in place. Data currency and callout currency are therefore not necessarily the same.
+
+---
+
+## Current limitations
+
+The product does not currently incorporate:
+
+- Bushnell deal terms or presenter costs
+- Bushnell patron and ticketing history
+- routing and availability
+- technical feasibility
+- artistic and mission priorities
+- local marketing conditions or competitive events
+- score recency/time decay
+- a continuously hosted ingestion service
+
+The active experiences are explicitly in development. Their value is making touring evidence easier to inspect and discuss while keeping these limitations visible.
