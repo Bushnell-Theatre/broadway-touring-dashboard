@@ -1,176 +1,218 @@
-# Planning Signal — Methodology Reference
+# Planning Signal — Implemented Methodology
 
-**Version:** 2026-08
-**Source:** `src/js/core/signals.js` → `score()` function
-**Purpose:** Auditable reference for the current Planning Signal implementation.
-This document supersedes the previous `SCORING.md` (version 2026-06), which described
-an additive base-50 formula that is no longer in use.
-
-**Status:** This dashboard is in active development. Formulas, weights, and thresholds
-may change as the team validates the model against real booking outcomes.
+**Source of truth:** `src/js/core/signals.js`, especially `profileShow()`  
+**Status:** In development  
+**Purpose:** Describe what the current code calculates. This document is descriptive, not a separate model specification.
 
 ---
 
-## What the Score Represents
+## What the Planning Signal is
 
-The **Planning Signal** is a 0–100 composite index reflecting how a Broadway touring
-production performs in venues and markets comparable to the Bushnell — not the national
-touring average. It is a planning discussion tool, not a box-office forecast.
+The Planning Signal is a 0–100 directional index built from Broadway League touring evidence at venues and markets selected as relevant to the Bushnell.
 
-- **Above season median** — Well-supported by peer cohort evidence across demand,
-  revenue, and data depth dimensions.
-- **Below season median** — Warrants closer review; may indicate demand risk, thin data,
-  or a show that skews toward larger markets.
-- **`—` (no score)** — No matching Broadway League records exist. Score is withheld
-  entirely; displaying a fabricated number would imply evidence that isn't there.
+It is intended to support a planning conversation. It is not:
 
-Thresholds are **relative to the season median**, not fixed percentages. A show above
-median is stronger given the actual touring market for that season.
+- a Bushnell sales or profit forecast
+- a booking recommendation
+- a measure of artistic value
+- a substitute for deal terms, routing, local history, or judgment
+
+A higher score means the implemented component calculations found stronger peer-market evidence and/or deeper supporting data. It does not mean the show will achieve that percentage of any business result.
 
 ---
 
-## The Three Peer Cohorts
+## Record matching and exclusions
 
-Every show is evaluated against venues in up to three groups:
+The model first matches touring records to a show using normalized names and aliases. Records without performance data are excluded from the active scoring rows.
 
-| Cohort | Definition |
+National metrics are calculated and displayed as reference context, but the composite score is built from curated peer cohorts.
+
+---
+
+## Peer cohorts
+
+A matched record can belong to one or more peer cohorts defined in `src/data/peers.json` and hydrated at runtime:
+
+| Cohort | Intended meaning |
 |---|---|
-| **Size** | Venues within ±10% of Bushnell's sellable capacity (2,450–2,994 seats) |
-| **Proximity** | Northeast / New England markets — Hartford's booking circuit |
-| **Market** | Nonprofit PACs anchoring mid-size metro markets (600K–2.5M population) with subscription programming |
+| Size | Venues with capacity comparable to Bushnell |
+| Proximity | Northeast/New England markets relevant to Hartford's routing context |
+| Market | Comparable nonprofit PAC and mid-size market context |
 
-A venue may belong to multiple cohorts. Each cohort that has data for a show
-contributes equally to the Demand and Revenue scores.
+The model evaluates each cohort separately where described below. A deduplicated union of all peer records is also used for the Peer and Confidence components. If a record belongs to multiple cohorts, it can contribute to each cohort-specific calculation but appears once in the combined pool.
 
----
-
-## The Four Score Components
-
-### 1. Demand Signal (40% weight)
-
-**What it measures:** How full are the seats at venues like ours?
-
-Paid capacity % is computed separately for each cohort type that has records for the show.
-The three results are averaged equally (`avgNonNull` — cohort types with no data are excluded,
-so remaining types carry equal weight automatically). Subscription lift is also applied:
-the gap between subscription-week and non-subscription-week capacity, weighted at 0.08.
-
-```
-demandScore = avgNonNull([sizeCap, proximityCap, marketCap]) + subscriptionLift
-```
-
-### 2. Revenue Signal (25% weight)
-
-**What it measures:** Does demand convert to money at comparable venues?
-
-GG% of gross potential and average paid admission, computed per cohort and averaged equally
-across the types that have records.
-
-```
-revenueScore = avgNonNull([sizeGG, proximityGG, marketGG],
-                           [sizeAdm, proximityAdm, marketAdm])
-```
-
-### 3. Peer Fit Signal (25% weight)
-
-**What it measures:** Where does this show rank within the combined peer pool?
-
-Percentile rank of the show's capacity within the combined peer dataset (all three cohort
-types merged). A show at the 80th percentile of peer venues scores 80 on this component.
-
-```
-peerScore = percentile(showCap, allPeerCaps) × 100
-```
-
-### 4. Confidence Signal (10% weight)
-
-**What it measures:** How much evidence backs this up?
-
-Derived from weeks of data, distinct venue count, and recency. A show with 34 peer records
-scores much higher here than one with 4. Low confidence is uncertainty — not a negative
-signal about the title.
+Missing cohorts are excluded rather than filled with zero.
 
 ---
 
-## Composite Formula
+## Scaling function
 
+Most source metrics are converted to a 0–100 value using a fixed linear range:
+
+```text
+scaled(value, low, high) = clamp((value - low) / (high - low) * 100, 0, 100)
 ```
-Planning Signal = weightedAverage(
-  Demand   × 0.40,
-  Revenue  × 0.25,
-  Peer Fit × 0.25,
-  Confidence × 0.10
+
+These are fixed implementation ranges, not season-relative percentiles.
+
+| Input | Low | High |
+|---|---:|---:|
+| Paid capacity | 50 | 100 |
+| Subscription capacity difference | -10 | 15 |
+| GG% of gross potential | 55 | 105 |
+| Average paid admission | 45 | 140 |
+| Overall records | 0 | 40 |
+| Distinct venues | 0 | 20 |
+| Combined peer records for Confidence | 0 | 18 |
+| Distinct reporting weeks | 0 | 30 |
+| Combined peer records for Peer breadth | 0 | 24 |
+
+Values below the low point clamp to 0; values above the high point clamp to 100.
+
+---
+
+## Components
+
+### Demand
+
+For each available peer cohort, average paid capacity is scaled from 50–100%. When both subscription and non-subscription records exist, their capacity difference is scaled from -10 to +15 points.
+
+```text
+Demand = averageAvailable(
+  scaled(size peer capacity, 50, 100),
+  scaled(proximity peer capacity, 50, 100),
+  scaled(market peer capacity, 50, 100),
+  scaled(subscription capacity - non-subscription capacity, -10, 15)
 )
 ```
 
-Clamped to [0, 100], rounded to nearest integer.
+Important: subscription lift is currently an equal fourth input when available. It is not an 8% adjustment.
 
-**Cohort types with no data for a show are excluded from their component averages.**
-A show with only size-cohort data still gets a Demand score — it's just based on size peers
-alone. The other cohort types are not filled with zeros.
+### Revenue
+
+Within each peer cohort, GG% of gross potential and average paid admission are scaled and averaged. The available cohort results are then averaged equally.
+
+```text
+cohort revenue = averageAvailable(
+  scaled(cohort GG%GP, 55, 105),
+  scaled(cohort average admission, 45, 140)
+)
+
+Revenue = averageAvailable(
+  size cohort revenue,
+  proximity cohort revenue,
+  market cohort revenue
+)
+```
+
+Revenue quality is not net profit.
+
+### Peer
+
+The Peer component measures combined peer-pool performance and evidence breadth:
+
+```text
+Peer = averageAvailable(
+  scaled(combined peer paid capacity, 50, 100),
+  scaled(combined peer GG%GP, 55, 105),
+  scaled(combined peer record count, 0, 24)
+)
+```
+
+This is not a percentile rank. It combines two performance measures with sample breadth.
+
+### Confidence
+
+```text
+Confidence = averageAvailable(
+  scaled(active record count, 0, 40),
+  scaled(distinct venue count, 0, 20),
+  scaled(combined peer record count, 0, 18),
+  scaled(distinct reporting week count, 0, 30)
+)
+```
+
+Confidence does not currently include a recency calculation.
+
+The displayed confidence label is based on this score:
+
+| Score | Label |
+|---:|---|
+| 75 or higher | High |
+| 45–74 | Moderate |
+| 1–44 | Low |
+| 0 or no evidence | Exploratory |
 
 ---
 
-## Special Cases
+## Composite
 
-### Future New Tours — Score withheld (`null`)
+The current implementation uses an equal, null-aware average:
 
-If a show has no matching records in `data.json` and is identified as a future new tour,
-all four component scores are set to `null` and the composite is `null`. The UI displays
-`—` in score cells and labels confidence as *Exploratory*.
+```text
+Planning Signal = round(averageAvailable(
+  Demand,
+  Revenue,
+  Peer,
+  Confidence
+))
+```
 
-**Rationale:** No touring evidence exists. Displaying a number — even a modest one —
-implies evidence that isn't there. A `—` is honest; a fabricated midpoint is not.
+When all four components are present, each contributes 25%. The code does **not** currently implement Demand 40%, Revenue 25%, Peer 25%, and Confidence 10%.
 
-### Zero Records, Not a New Tour — Score = 0
-
-A show in a past season that produced no feed match gets a score of 0 with confidence
-labeled *None*. This is rare and typically indicates a match failure.
+The fixed component scaling described above creates the numeric score. Some pages also compare scores with the median score of the selected season for display, ranking, or narrative purposes. That season median does not rescale or redefine the underlying score.
 
 ---
 
-## Confidence Levels
+## Planning Read
 
-| Label | Condition |
+The text read is determined separately from the composite:
+
+| Implemented condition | Read |
 |---|---|
-| **High** | ≥ 12 matched records across ≥ 6 distinct venues |
-| **Medium** | 5–11 matched records |
-| **Low** | 1–4 matched records |
-| **Exploratory** | Future new tour — no records |
-| **None** | Zero records, not a new tour |
+| Demand ≥ 75, Revenue ≥ 70, Confidence ≥ 45 | Strong Candidate |
+| Demand ≥ 75 and Revenue < 60 | Mixed: Demand Ahead of Revenue |
+| Revenue ≥ 75 and Demand < 60 | Upside: Revenue Ahead of Demand |
+| Demand ≥ 60 or Revenue ≥ 60 | Discuss |
+| Otherwise, with matched records | Watch |
+| No matched records | Exploratory |
+
+The read is therefore not a direct label for score bands, and it is not season-relative.
 
 ---
 
-## What the Score Does Not Include
+## New tours and zero-record cases
 
-- Deal terms, guarantees, or split structures
-- Local Bushnell expenses, labor, or marketing costs
-- Bushnell audience history (subscription response, group sales, patron feedback)
+A future new tour with no matched performance records receives:
+
+- null Demand, Revenue, and Peer components
+- Confidence value 0 with an Exploratory label
+- null composite
+- `—` in numeric score displays
+
+A zero-record show not identified as a future new tour receives a composite of 0. This usually warrants checking title matching or season metadata rather than interpreting it as measured weak performance.
+
+---
+
+## Inputs not included
+
+- Bushnell deal terms, guarantees, or splits
+- Local expenses, labor, marketing costs, or ancillary revenue
+- Bushnell subscription response or patron history
 - Routing, availability, or technical requirements
 - Artistic priority, mission fit, or donor value
-- Competing local events or calendar factors
+- Local calendar conflicts
+- A time-decay or recency factor
 
-**Revenue Signal is not Net Profit.** The score reflects revenue quality in peer markets,
-not the economics of a specific Bushnell engagement.
-
----
-
-## Data Sources
-
-| Field | Source |
-|---|---|
-| `cap_paid`, `gg_pct_gp`, `avg_adm`, `gross_gross` | Broadway League weekly reports (`data.json`) |
-| `on_sub` | Broadway League subscription flag |
-| Show metadata (`sub`, `open`, `close`) | Bushnell season programming (`seasons.json`) |
-| Peer venue classifications | `peers.json` — curated list with `peer_types[]` per venue |
-| Peer metadata at runtime | `window.PEER_META` (hydrated by `page-common.js` from `peers.json`) |
+Awards, media, audience-fit, and local-market metadata may appear as contextual signals and explanatory text. They do not enter the current Planning Signal composite.
 
 ---
 
-## Change Log
+## Change record
 
 | Date | Change |
 |---|---|
-| 2026-08 | Rewrote to reflect peer-cohort formula; removed old base-50 additive formula; changed new-tour default from 65 to null |
-| 2026-06 | Added score decomposition display; added subscriber lift; documented additive formula |
-| 2026-05 | Initial fit score formula deployed |
+| 2026-08-05 | Reconciled documentation to the implemented peer-cohort model: equal composite averaging, fixed scaling ranges, equal subscription input, non-percentile Peer component, and no recency input |
+| 2026-08 | Changed future new-tour scores from a fabricated midpoint to null and expanded peer-cohort scoring |
+| 2026-06 | Added score decomposition and subscription context |
+| 2026-05 | Initial Fit Score implementation |
