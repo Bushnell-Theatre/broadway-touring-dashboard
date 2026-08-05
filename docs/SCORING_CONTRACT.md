@@ -45,20 +45,89 @@ is the sole scoring authority. No page may call `planningSignal()` from
 inline.
 
 The shared entry point for page use is **`BTD.page.profileShowCanonical(show,
-allRows, options)`** in `js/core/page-common.js`. It constructs an explicit
-whitelist of permitted evidence filters before passing records to `signals.js`:
+allRows, options)`** in `js/core/page-common.js`.
 
-| Filter | Role | Included in evidence boundary |
+---
+
+## Filter taxonomy
+
+Filters in the BTD pages fall into four distinct categories. Only
+**evidence-boundary** filters may be applied before canonical scoring.
+
+### Category 1 — Evidence boundary (applied before `signals.js`)
+
+These filters define which records constitute the evidence set for this show.
+Changing them changes the score. `profileShowCanonical()` applies them via an
+explicit whitelist; all others are forced to their neutral/off value.
+
+| Filter | Neutral value | Role |
 |---|---|---|
-| `tier` | Broadway League market tier | ✓ Yes |
-| `sub` | Subscription vs non-subscription | ✓ Yes |
-| `peer` | Peer-type display selector | ✗ No — display only |
-| `equity` | Equity/non-equity display toggle | ✗ No — display only |
-| `engage` | Engagement/dark display toggle | ✗ No — display only |
+| `tier` | `''` (all tiers) | Broadway League market tier (Primary / Secondary) |
+| `sub` | `''` (all records) | Subscription vs non-subscription records |
+| `dateFrom` | `undefined` | Earliest `week_of` date to include (ISO string) |
+| `dateTo` | `undefined` | Latest `week_of` date to include (ISO string) |
 
-For past seasons, callers must also pass `options.dateTo = season.end` to
-prevent records published after the season closed from leaking into
-retrospective scoring. Current and future seasons pass no upper date boundary.
+**Date boundaries are required for historical integrity.** For past seasons,
+callers must pass `options.dateTo = season.end` to prevent records published
+after the season closed from leaking into retrospective scoring. Current and
+future seasons pass no upper date boundary.
+
+Callers may supply `options.tier` and `options.sub` explicitly to override
+page globals — required for test harnesses, batch scoring, and any context
+where page-global filter state is unavailable or incorrect.
+
+### Category 2 — Display-only (never applied before `signals.js`)
+
+These filters control which records are shown in tables and charts for context.
+They do not change the score. `profileShowCanonical()` strips them to their
+neutral value before passing records to `signals.js`.
+
+| Filter | Neutral value | What it controls |
+|---|---|---|
+| `peer` | `''` | Which peer-type column is highlighted in tables/charts |
+| `equity` | `''` | Equity/non-equity display toggle |
+| `engage` | `''` | Engagement/dark display toggle |
+
+**Critical:** Applying peer-type, equity, or engagement filters before scoring
+silently changes the evidence set and produces a different score when the user
+switches views. This is the exact error the canonical entry point prevents.
+
+### Category 3 — Post-calculation analytical (applied after `signals.js`)
+
+These filters narrow the displayed result set for exploration. They do not
+change any score. Pages apply them after `profileShowCanonical()` returns.
+
+| Filter | What it narrows |
+|---|---|
+| Gross range (`fGrossMin` / `fGrossMax`) | Records by weekly gross |
+| Cap% range (`fCapMin` / `fCapMax`) | Records by paid capacity percentage |
+| Performance count range (`fPerfMin` / `fPerfMax`) | Records by performances per week |
+
+### Category 4 — Dashboard exploratory (Dashboard only, post-calculation)
+
+These filters exist only in `dashboard.html` for record-level exploration.
+They never feed into a Planning Signal score because the Dashboard does not
+display one.
+
+| Filter | What it narrows |
+|---|---|
+| Venue (`fVenue`) | Records at a specific theatre |
+| City (`fCity`) | Records in a specific city |
+| Show selection (checkbox list) | Visible show rows |
+| Season / date intersection | Week-of boundaries (see Dashboard fix) |
+
+---
+
+## Canonical vs filtered score distinction
+
+A **canonical score** is produced by `profileShowCanonical()` with only
+evidence-boundary filters active. This is what appears in Planning Signal UI.
+
+A **filtered/scenario score** is produced when a caller intentionally applies
+non-standard evidence (for example, "what if we score only Primary-tier venues?").
+If a page ever needs to display a scenario score alongside the canonical one,
+it must label it explicitly as a scenario. Unlabeled scenario scores are
+prohibited — they are indistinguishable from canonical scores to the reader.
 
 ---
 

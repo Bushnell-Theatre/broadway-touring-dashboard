@@ -90,42 +90,46 @@
    *
    * Sole entry point for the canonical Planning Signal score per SCORING_CONTRACT.md.
    *
-   * EVIDENCE FILTERS — only these two define what records are analyzed:
-   *   tier  — Broadway League market tier (Primary / Secondary)
-   *   sub   — subscription vs non-subscription records
+   * EVIDENCE CONTEXT — all options below are part of the evidence contract:
    *
-   * The following are explicitly excluded from the scoring evidence boundary:
+   *   options.tier     — Broadway League market tier (Primary / Secondary).
+   *                      When supplied, overrides the page-global ACTIVE_TIER.
+   *                      Required for test harnesses and batch scoring where
+   *                      page-global state is unavailable.
+   *
+   *   options.sub      — Subscription filter ('0', '1', or '').
+   *                      When supplied, overrides the page-global ACTIVE_SUB.
+   *
+   *   options.dateFrom — ISO date string; exclude records before this date.
+   *
+   *   options.dateTo   — ISO date string; exclude records after this date.
+   *                      For past seasons, callers MUST supply dateTo = season.end
+   *                      to prevent post-season records from leaking into
+   *                      historical scoring.
+   *
+   * DISPLAY FILTERS — explicitly excluded from the evidence boundary:
    *   peer   — display selector for tables/charts; signals.js evaluates all
    *             three cohort types (size, proximity, market) independently
    *   equity — display toggle; does not define what evidence to score
    *   engage — display toggle; does not define what evidence to score
    *
-   * DATE BOUNDARIES — optional, for historical evaluation integrity:
-   *   options.dateFrom — ISO date string; exclude records before this date
-   *   options.dateTo   — ISO date string; exclude records on or after this date
+   * OPTIONS FORWARDED TO signals.js (not evidence filters):
+   *   options.seasonId      — futureNewTour detection only (not record filtering)
+   *   options.futureNewTour — when true, components are Exploratory, score is null
    *
-   * For past seasons, callers MUST supply dateTo = season.end to prevent
-   * later-season records from leaking into historical scoring. Without dateTo,
-   * a show that appeared in multiple seasons is scored using all available
-   * records, including evidence that did not exist when the season ran.
-   *
-   * Clones activeFilters() before constructing the permitted set — does not
-   * mutate shared filter state.
-   *
-   * Options forwarded to signals.js:
-   *   seasonId      — used for futureNewTour detection only (not record filtering)
-   *   futureNewTour — explicit override; when true, components are Exploratory
-   *                   and score is null
+   * Does not mutate shared filter state. options.tier / options.sub override
+   * page globals; all other global filter state is ignored.
    *
    * ─────────────────────────────────────────────────────────────────────────── */
   function profileShowCanonical(show, allRows, options) {
     options = options || {};
 
-    // Build the permitted evidence filter set — whitelist only, no mutation of shared state
+    // Evidence filter set — explicit whitelist per SCORING_CONTRACT.md §"Filter taxonomy"
+    // options.tier / options.sub take priority over page globals when supplied.
     var active = activeFilters();
     var filters = {
-      tier:   active.tier,
-      sub:    active.sub,
+      tier:   options.tier   !== undefined ? options.tier   : active.tier,
+      sub:    options.sub    !== undefined ? options.sub    : active.sub,
       peer:   '',   // display filter — excluded from evidence boundary
       equity: '',   // display filter — excluded from evidence boundary
       engage: ''    // display filter — excluded from evidence boundary
@@ -133,7 +137,8 @@
 
     var rows = applyStandardFilters(allRows || matchRows(show), filters);
 
-    // Apply date boundaries when provided — required for historical season integrity
+    // Date boundaries — required for historical season integrity.
+    // dateFrom: lower bound (inclusive); dateTo: upper bound (inclusive).
     if (options.dateFrom) rows = rows.filter(function (r) { return r.week_of && r.week_of >= options.dateFrom; });
     if (options.dateTo)   rows = rows.filter(function (r) { return r.week_of && r.week_of <= options.dateTo; });
 
