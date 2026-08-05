@@ -480,8 +480,8 @@
       .mini-table {
         min-width: 720px;
       }
-      #tab-reference .mini-table {
-        min-width: 680px;
+      .help-drawer-body .mini-table {
+        min-width: 680px; /* page-specific — keep mini-tables from collapsing in the help drawer */
       }
 
       /* Layout defaults for normal executive desktop. */
@@ -770,7 +770,11 @@
           <div class="nav-tab" onclick="showTab('history')">History</div>
           <div class="nav-tab" onclick="showTab('planning')">Planning</div>
           <div class="nav-tab" onclick="showTab('peers')">Peers</div>
-          <div class="nav-tab" onclick="showTab('reference')">Reference</div>
+          <!-- Help & FAQ drawer trigger — right-aligned, not a navigation tab -->
+          <button class="help-faq-btn" onclick="openHelpDrawer()" aria-label="Open Help and FAQ">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M6.25 6.1c.2-.95 1.05-1.6 2-.1.5.8-.1 1.4-.8 1.9C6.9 8.4 6.8 9 7 9.5"/><circle cx="8" cy="11.5" r=".6" fill="currentColor" stroke="none"/></svg>
+            Help &amp; FAQ
+          </button>
         </nav>
         <main>
           <section class="panel active" id="tab-brief"></section>
@@ -778,10 +782,18 @@
           <section class="panel" id="tab-history"></section>
           <section class="panel" id="tab-planning"></section>
           <section class="panel" id="tab-peers"></section>
-          <section class="panel" id="tab-reference"></section>
         </main>
       </div>
     </div>
+    <!-- Help & FAQ right-side drawer -->
+    <div class="help-drawer-backdrop" id="helpDrawerBackdrop" onclick="closeHelpDrawer()"></div>
+    <aside class="help-drawer" id="helpDrawer" role="complementary" aria-label="Help and FAQ">
+      <div class="help-drawer-hd">
+        <h2>Help &amp; FAQ</h2>
+        <button class="help-drawer-close" onclick="closeHelpDrawer()" aria-label="Close help panel">&#x2715;</button>
+      </div>
+      <div class="help-drawer-body" id="refContent"></div>
+    </aside>
     <footer class="footer">
       <div>
         THE BUSHNELL CENTER FOR THE PERFORMING ARTS · BROADWAY TOURING EXEC SUMMARY ·
@@ -1328,11 +1340,11 @@
         dataCurrency:
           'Data reflects Broadway League reports uploaded to this system. The most recent report date is shown in the masthead.',
         peerDef:
-          'Peers classified by type: Size (±10% of Bushnell sellable seats, 2,450–2,994), Proximity (Northeast/New England), Market (comparable nonprofit mid-sized city PACs), Extended (±15% range).',
+          'Peers are classified into three scoring cohorts. Size: venues within ±10% of Bushnell\'s sellable capacity (2,450–2,994 seats). Proximity: Northeast and New England markets — Hartford\'s booking circuit and regional touring peers. Market: nonprofit PACs anchoring mid-sized metro markets (600K–2.5M population) with subscription programming comparable to the Bushnell model. A venue may belong to multiple cohorts — Buell Theatre Denver is both Size and Market; Boston Opera House is both Size and Proximity. Each cohort that has data for a show contributes equally to that show\'s Demand and Revenue scores.',
         meaningfulPeers:
           'Venues with 10+ reporting weeks and average gross within 50% of the Bushnell average are considered meaningful comparators and receive full synopses on the Peer Venues tab.',
         peerBenchmark:
-          'Peer comparisons show how Bushnell gross and capacity performance compares to similar venues presenting the same touring productions.',
+          'Peer cohort comparisons reflect how a show performs in rooms and markets like Bushnell\'s — not the national average, which includes large-hall venues that inflate or deflate results for mid-size presenters. When peer capacity exceeds national, the show tends to overperform in mid-size markets. When peer trails national, the show skews toward larger venues.',
         weeklyTrend: 'Total gross across all filtered venues by report week.',
         eightWeekMA: 'Rolling 8-week moving average overlaid on the weekly gross chart.',
         seasonality: 'Average gross by fiscal period (July–June) across all years in the filter.',
@@ -1340,6 +1352,8 @@
         ggPctChart:
           'Teal bars indicate shows averaging at or above 100% of gross potential. Navy bars indicate below potential.',
         mktCapChart: 'Average paid capacity utilization by city. Color coded: green 90%+, amber 60–89%, red below 60%.',
+        fitScore:
+          'A composite score (0–100) reflecting how a show performs in Bushnell\'s peer cohort markets — not the national touring pool. Demand and Revenue are scored against three peer cohort types (Size, Proximity, Market), averaged equally across whichever types have data for that show. Peer Fit ranks the show within the combined peer dataset. Confidence reflects evidence depth. A score of 73 means strong peer-cohort support across those dimensions. National data is visible in the metrics columns for context but does not drive the score.',
       };
       let ALL = [],
         CHARTS = {},
@@ -1997,7 +2011,7 @@
         document
           .querySelectorAll('.nav-tab')
           .forEach((n, i) =>
-            n.classList.toggle('active', ['brief', 'current', 'history', 'planning', 'peers', 'reference'][i] === t),
+            n.classList.toggle('active', ['brief', 'current', 'history', 'planning', 'peers'][i] === t),
           );
         document.querySelectorAll('.panel').forEach((p) => p.classList.remove('active'));
         $('tab-' + t).classList.add('active');
@@ -2005,9 +2019,24 @@
         if (t === 'history') renderHistory();
         if (t === 'planning') renderPlanning();
         if (t === 'peers') renderPeers();
-        if (t === 'reference') renderReference();
         if (typeof injectInfoButtons === 'function') injectInfoButtons();
       }
+
+      /* ── HELP & FAQ DRAWER ── */
+      function openHelpDrawer() {
+        renderReference(); /* ensure content is fresh */
+        $('helpDrawer').classList.add('open');
+        $('helpDrawerBackdrop').classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+      function closeHelpDrawer() {
+        $('helpDrawer').classList.remove('open');
+        $('helpDrawerBackdrop').classList.remove('open');
+        document.body.style.overflow = '';
+      }
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeHelpDrawer();
+      });
 
       function renderReference() {
         const section = (title, items) =>
@@ -2029,7 +2058,7 @@
 
         const missingFactorsHtml = `<div class="method-card full"><h3>Missing Factors — Not Yet in This Dashboard</h3><div class="grid grid-3" style="margin-top:8px"><div class="note"><div class="note-hd">Financial Deal Structure</div><div class="note-body">Guarantee · split terms / overages · estimated local expenses · labor cost · marketing spend · expected net contribution · breakeven attendance · pricing plan · presenter share · ancillary revenue</div></div><div class="note"><div class="note-hd">Local Bushnell History</div><div class="note-body">Previous Bushnell engagement · attendance · gross · subscription response · single-ticket response · group sales · patron feedback · operational issues · renewal impact · first-time buyer impact</div></div><div class="note"><div class="note-hd">Audience Segmentation</div><div class="note-body">Subscribers · single-ticket buyers · first-time buyers · lapsed buyers · group sales · students / education · donors · geographic or demographic segments</div></div><div class="note"><div class="note-hd">Competitive / Local Calendar</div><div class="note-body">Major concerts · sports events · holidays · school breaks · competing performing arts · major civic events · parking / traffic disruption · local festivals · major news or election disruptions</div></div><div class="note"><div class="note-hd">Routing and Availability</div><div class="note-body">First national tour vs. later tour · equity / non-equity · likely routing region · available weeks · minimum engagement length · technical requirements · load-in complexity · dark-week and holiday-week suitability</div></div><div class="note"><div class="note-hd">Strategic Value</div><div class="note-body">Audience development · mission fit · donor value · brand value · education / community value · season balance. Strategic judgment is kept separate from the Planning Signal and should not be blended into Demand or Revenue scores.</div></div></div></div>`;
 
-        $('tab-reference').innerHTML =
+        $('refContent').innerHTML =
           `<div class="section-divider"><h2>Methodology &amp; Definitions</h2><div class="section-divider-line"></div><div class="section-divider-meta">How leadership should read the scoring</div></div>${dqHtml}<div class="grid grid-2">${planningSignalHtml}${meansHtml}${missingFactorsHtml}<div class="method-card"><h3>Confidence Levels</h3><table class="mini-table"><tbody><tr><td><strong>High</strong></td><td>Many weeks, many venues, peer data available.</td></tr><tr><td><strong>Medium</strong></td><td>Enough national data, limited peer data.</td></tr><tr><td><strong>Low</strong></td><td>Sparse touring history or few comparable venues.</td></tr><tr><td><strong>Exploratory</strong></td><td>New title or little/no touring data.</td></tr></tbody></table></div><div class="method-card"><h3>What Are Peers?</h3><p>Peers are classified by type: Size (±10% of Bushnell sellable capacity, 2,450–2,994 seats), Proximity (Northeast/New England markets), Market (comparable nonprofit mid-sized city PACs), and Extended Size (±15% range). A venue may carry multiple classifications.</p><ul><li>Use peer capacity to judge likely room fit.</li><li>Use national capacity to understand overall title demand.</li><li>Use the gap between them to find Hartford-like opportunities and risks.</li></ul></div><div class="method-card full"><h3>Executive Use Guidance</h3><p>This tool is strongest when used as a common language for programming, marketing, and finance. For future seasons, a strong Planning Signal suggests a title has measurable touring support. For previous seasons, the same index should be read retrospectively: a strong result documents what worked, while a softer result asks the team what affected demand, pricing, timing, subscription positioning, or mission rationale. The dashboard should not replace leadership judgment — it should make that judgment clearer and better documented.</p></div></div><div class="section-divider" style="margin-top:28px"><h2>Help &amp; FAQ</h2><div class="section-divider-line"></div><div class="section-divider-meta">Common questions and definitions</div></div><div style="padding:0 4px">${[
             section('Data Source', [
               ['Broadway League', HELP_TEXT.broadwayLeague],
@@ -2062,6 +2091,9 @@
               ['Meaningful Peers', HELP_TEXT.meaningfulPeers],
               ['Benchmarking', HELP_TEXT.peerBenchmark],
             ]),
+            section('Planning Tools', [
+              ['Planning Signal (Fit Score)', HELP_TEXT.fitScore],
+            ]),
             section('Charts & Analytics', [
               ['Weekly Gross Trend', HELP_TEXT.weeklyTrend],
               ['8-Week Trend', HELP_TEXT.eightWeekMA],
@@ -2092,7 +2124,6 @@
         renderHistory();
         renderPlanning();
         renderPeers();
-        renderReference();
         if (typeof injectInfoButtons === 'function') injectInfoButtons();
       }
 
