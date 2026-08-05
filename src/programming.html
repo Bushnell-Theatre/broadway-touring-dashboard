@@ -860,7 +860,7 @@
         CURRENT_PROFILES = [],
         HISTORY_PROFILES = [],
         CONTEXT = {},
-        SCORE_MED = 50;
+        SCORE_MED = 50; // updated to actual season median after profiles are computed in renderAll()
       let ACTIVE_TIER = '',
         ACTIVE_SUB = '',
         ACTIVE_PEER = '',
@@ -1199,13 +1199,16 @@
         }
         const profiles = seasonShows().shows.map(showProfile);
         const active = profiles.filter((p) => p.metrics.count > 0);
+        // Update the season median from actual computed scores so all above/below
+        // median comparisons reflect the real distribution, not a hardcoded 50.
+        SCORE_MED = median(profiles.map((p) => p.score).filter((s) => s != null)) || 50;
         $('kSeason').textContent = STATE.season.slice(2).replace('-20', '-');
         $('kScheduled').textContent = profiles.length;
         $('kTourCap').textContent = pct(avg(active.map((p) => p.metrics.cap)), 0);
         $('kPeerCap').textContent = pct(avg(active.map((p) => p.metrics.peerCap)), 0);
         $('kIndex').textContent = num(avg(active.map((p) => p.metrics.index)), 0);
-        $('kHighFit').textContent = profiles.filter((p) => p.score != null && p.score >= 50).length;
-        $('kWatch').textContent = profiles.filter((p) => (p.score == null || p.score < 50) && p.metrics.count > 0).length;
+        $('kHighFit').textContent = profiles.filter((p) => p.score != null && p.score >= SCORE_MED).length;
+        $('kWatch').textContent = profiles.filter((p) => (p.score == null || p.score < SCORE_MED) && p.metrics.count > 0).length;
         if (STATE.season === '2026-2027') updateFactsheetKPIs();
         renderActive();
       }
@@ -1300,8 +1303,8 @@
       function renderBrief() {
         const season = seasonShows();
         const profiles = season.shows.map(showProfile).sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
-        const high = profiles.filter((p) => p.score != null && p.score >= 50).slice(0, 3);
-        const watch = profiles.filter((p) => (p.score == null || p.score < 50) && p.metrics.count > 0).slice(0, 3);
+        const high = profiles.filter((p) => p.score != null && p.score >= SCORE_MED).slice(0, 3);
+        const watch = profiles.filter((p) => (p.score == null || p.score < SCORE_MED) && p.metrics.count > 0).slice(0, 3);
         const withData = profiles.filter((p) => p.metrics.count > 0);
         const avgIndex = avg(withData.map((p) => p.metrics.index));
         let status = 'Needs More Hartford Data',
@@ -1406,7 +1409,7 @@
       }
 
       function showCard(p, active, idx) {
-        const k = p.score != null && p.score >= 50 ? 'good' : 'warn';
+        const k = p.score != null && p.score >= SCORE_MED ? 'good' : 'warn';
         const _sig = planningSignals(p);
         return `<div class="show-card ${active ? 'active' : ''}" data-idx="${idx}"><div class="show-name">${p.show.title}</div><div style="font-size:.6rem;color:var(--ink3);margin:4px 0"><strong>Planning Read:</strong> ${_sig.planningRead}</div>${signalRow(_sig)}<div class="metric-row" style="margin-top:8px"><div class="metric"><div class="val">${pct(p.metrics.cap, 0)}</div><div class="lbl">Demand Cap</div></div><div class="metric"><div class="val">${pct(p.metrics.gg, 0)}</div><div class="lbl">Revenue GG%</div></div><div class="metric"><div class="val ${k}">${p.score != null ? p.score : '—'}</div><div class="lbl">Nat. Signal</div></div></div></div>`;
       }
@@ -1646,7 +1649,7 @@
         $('tab-planning').innerHTML =
           `<div class="section-divider"><h2>Future Planning</h2><div class="section-divider-line"></div><div class="section-divider-meta">${future.name} candidate read</div></div><div class="grid grid-3"><div class="card full"><div class="card-hd">Planning Signal — Candidates</div><table class="mini-table"><thead><tr><th>Candidate</th><th>Engagement</th><th class="num">Fit</th><th class="num">Cap</th><th>Demand</th><th class="num">GG%</th><th>Revenue</th><th class="num">Peer Cap</th><th>Confidence</th><th>Planning Read</th></tr></thead><tbody>${profiles
             .map((p) => {
-              const k = p.score != null && p.score >= 50 ? 'good' : 'warn';
+              const k = p.score != null && p.score >= SCORE_MED ? 'good' : 'warn';
               return ((_ps = planningSignals(p)) =>
                 `<tr><td>${p.show.title}</td><td>${(() => {
                   const _fsPl = _factsheets[p.show.title];
@@ -1681,7 +1684,7 @@
 
       function planningRead(p) {
         if (p.metrics.count < 3) return 'Insufficient tour history; use comparable titles.';
-        if (p.score != null && p.score >= 50) return 'Above-median signal — strong planning candidate.';
+        if (p.score != null && p.score >= SCORE_MED) return 'Above-median signal — strong planning candidate.';
         return 'Below-median signal — review pricing, timing, and subscription support.';
       }
 
@@ -2090,7 +2093,7 @@
 
       function scoreBadge(p) {
         if (p.score == null) return '<span class="status neutral">—</span>';
-        var cls = p.score >= 50 ? 'good' : 'warn';
+        var cls = p.score >= SCORE_MED ? 'good' : 'warn';
         /* Use the canonical Planning Read from the profile where available.
          * Avoids expressing the score as a false percentile rank — the score
          * is a 0-100 composite index, not an empirical rank in a distribution. */
