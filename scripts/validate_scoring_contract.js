@@ -486,6 +486,121 @@ ok("exec_summary.html: no inline composite planningRead assignment",
    !hasInlinePlanningRead(execSrc),
    "found inline 'planningRead = composite >= ...' in exec_summary.html");
 
+// Stale user-facing methodology content checks.
+// These target methodology/help copy that asserts behaviour the implementation
+// no longer has. Each pattern is scoped to avoid rejecting innocuous editorial
+// phrases (e.g. "needs review" as a verb phrase).
+
+// Confidence recency: reject any <td>, <p>, or formula line that describes
+// Confidence inputs and mentions "recency". We strip JS comments first.
+function stripJsComments(s) {
+  // Remove // line comments and /* block comments */ — avoids false positives
+  // on developer notes like "Avoids expressing the score as a false percentile rank".
+  return s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*/g, '');
+}
+
+var progNoComments = stripJsComments(programmingSrc);
+var execNoComments = stripJsComments(execSrc);
+
+// Recency in Confidence descriptions — reject only when recency appears as a
+// listed input (e.g. ", recency", "and recency", "recency, ", "recency and ").
+// "No recency component" in corrected text must NOT trigger this check.
+function confidenceClaimsRecency(src) {
+  var noComments = stripJsComments(src);
+  // Match "recency" as a list item — preceded or followed by ", " or "and ".
+  // Does NOT match "No recency" or "no recency" (explicit correction text).
+  // Matches: ", recency" | "recency," | "and recency" — all "recency as input" forms.
+  // Does NOT match "No recency component" (no leading comma or "and").
+  return /(?:,\s*recency\b|recency\s*,|\band\s+recency\b)/gi.test(noComments);
+}
+
+ok("programming.html: Confidence description does not claim recency as an input",
+   !confidenceClaimsRecency(programmingSrc),
+   "found 'Confidence ... recency' in user-facing content — Confidence has no recency input");
+
+ok("exec_summary.html: Confidence description does not claim recency as an input",
+   !confidenceClaimsRecency(execSrc),
+   "found 'Confidence ... recency' in user-facing content — Confidence has no recency input");
+
+// Peer Fit as percentile rank — reject HTML content asserting this.
+// JS comment lines are stripped first; the phrase only appears in stale help copy.
+function peerFitClaimsPercentile(src) {
+  var noComments = stripJsComments(src);
+  return /Peer\s+Fit[^<]{0,200}percentile/gi.test(noComments) ||
+         /percentile\s+rank[^<]{0,100}peer\s+(pool|dataset)/gi.test(noComments);
+}
+
+ok("programming.html: Peer Fit description does not claim percentile rank",
+   !peerFitClaimsPercentile(programmingSrc),
+   "found Peer Fit percentile-rank claim in programming.html — Peer Fit uses capacity/GG/breadth");
+
+ok("exec_summary.html: Peer Fit description does not claim percentile rank",
+   !peerFitClaimsPercentile(execSrc),
+   "found Peer Fit percentile-rank claim in exec_summary.html — Peer Fit uses capacity/GG/breadth");
+
+// Old Model 3 Planning Read labels in user-facing content.
+// "Good Candidate" only appears in old Model 3; not a canonical read.
+// "Needs Review" as a canonical Planning Read — match the pattern
+//   "Planning Read.*Needs Review" or in the old formula line.
+// Editorial uses like "Needs Review: Show Title" are not Planning Read claims.
+function hasOldPlanningReadLabel(src, label) {
+  // Match the label inside a Planning Read formula or description context.
+  // Formula pattern: "Planning Read = ... <label>" or "planningRead: '<label>'"
+  var formulaPattern = new RegExp('Planning Read[^<]{0,200}' + label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+  return formulaPattern.test(src);
+}
+
+ok("programming.html: Planning Read list does not include 'Good Candidate' (old Model 3)",
+   !hasOldPlanningReadLabel(programmingSrc, 'Good Candidate'),
+   "found 'Planning Read ... Good Candidate' in programming.html — canonical reads do not include this label");
+
+ok("exec_summary.html: Planning Read list does not include 'Good Candidate' (old Model 3)",
+   !hasOldPlanningReadLabel(execSrc, 'Good Candidate'),
+   "found 'Planning Read ... Good Candidate' in exec_summary.html — canonical reads do not include this label");
+
+ok("programming.html: Planning Read list does not include 'Needs Review' as a canonical label",
+   !hasOldPlanningReadLabel(programmingSrc, 'Needs Review'),
+   "found 'Planning Read ... Needs Review' in programming.html — not a canonical Planning Read");
+
+ok("exec_summary.html: Planning Read list does not include 'Needs Review' as a canonical label",
+   !hasOldPlanningReadLabel(execSrc, 'Needs Review'),
+   "found 'Planning Read ... Needs Review' in exec_summary.html — not a canonical Planning Read");
+
+// Demand using total capacity or markets played as scored inputs.
+// Match in content near "Demand Signal" descriptions.
+function demandClaimsObsoleteInputs(src) {
+  var noComments = stripJsComments(src);
+  return /Demand[^<]{0,200}total capacity/gi.test(noComments) ||
+         /Demand[^<]{0,200}markets played/gi.test(noComments);
+}
+
+ok("programming.html: Demand description does not claim total capacity or markets played as inputs",
+   !demandClaimsObsoleteInputs(programmingSrc),
+   "found obsolete Demand inputs (total capacity / markets played) in programming.html");
+
+ok("exec_summary.html: Demand description does not claim total capacity or markets played as inputs",
+   !demandClaimsObsoleteInputs(execSrc),
+   "found obsolete Demand inputs (total capacity / markets played) in exec_summary.html");
+
+// Fixed percentage weights — the old 40/25/25/10 model.
+// Match content asserting the score uses fixed weights (e.g. "40%", "25%").
+// Must avoid matching the SCORING_CONTRACT.md deprecation schedule.
+function claimsFixedWeights(src) {
+  var noComments = stripJsComments(src);
+  // Look for fixed weight claims near scoring language.
+  // "40%" or "SIGNAL_WEIGHTS" in HTML content (not in the contract doc).
+  return /SIGNAL_WEIGHTS/g.test(noComments) ||
+         /weighted.*40%|40%.*weighted/gi.test(noComments);
+}
+
+ok("programming.html: no fixed percentage weight claims (old 40/25/25/10 model)",
+   !claimsFixedWeights(programmingSrc),
+   "found fixed-weight claim in programming.html — the score uses equal-weight averaging, not SIGNAL_WEIGHTS");
+
+ok("exec_summary.html: no fixed percentage weight claims (old 40/25/25/10 model)",
+   !claimsFixedWeights(execSrc),
+   "found fixed-weight claim in exec_summary.html — the score uses equal-weight averaging, not SIGNAL_WEIGHTS");
+
 /* ══════════════════════════════════════════════════════════════════════════ */
 /*  SUMMARY                                                                  */
 /* ══════════════════════════════════════════════════════════════════════════ */
