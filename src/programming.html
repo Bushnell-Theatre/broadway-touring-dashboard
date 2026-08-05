@@ -944,9 +944,6 @@
        * The peer-type display filter is intentionally excluded from scoring —
        * it controls tables and charts, not the Planning Signal composite.
        *
-       * p.signal is set to null: the legacy utils.js signal object (national/peer
-       * percentile composites) is no longer computed. renderSignalCard() is being
-       * redesigned in Phase 3 to read from p.signals and p.planning directly.
        * ─────────────────────────────────────────────────────────────────────── */
       function showProfile(show, options) {
         var allRows = matchRows(show);
@@ -974,9 +971,6 @@
         profile.rows            = allRows;
         profile.rawDisplay      = rowMetric(allRows);
         profile.filteredDisplay = rowMetric(applyFilters(allRows));
-        /* Explicitly null — legacy utils.js signal object removed per contract.
-         * renderSignalCard() will be rebuilt in Phase 3. */
-        profile.signal = null;
         return profile;
       }
 
@@ -1432,7 +1426,7 @@
         CURRENT_PROFILES = profiles;
         const shows = season.shows.map((s) => s.title);
         $('tab-season').innerHTML =
-          `<div class="section-divider"><h2>Season Performance</h2><div class="section-divider-line"></div><div class="section-divider-meta">Show scorecards · ${season.name}</div></div><div class="grid grid-4">${profiles.map((p, i) => showCard(p, i === 0, i)).join('')}</div><div class="grid grid-2" style="margin-top:18px;align-items:start"><div class="card"><div class="card-hd">Selected Show Detail</div><div id="currentDetail"></div><div class="signal-card" id="signalCard" style="display:none"><div class="signal-header"><div class="signal-title">Planning Signal</div><div class="signal-composites"><div class="signal-composite"><div class="signal-composite-label">National (3yr)</div><div class="signal-composite-score" id="sigNatComposite">—</div><div class="signal-composite-sub" id="sigNatSub"></div></div><div class="signal-composite"><div class="signal-composite-label" id="sigPeerLabel">Peer</div><div class="signal-composite-score" id="sigPeerComposite">—</div><div class="signal-composite-sub" id="sigPeerSub"></div></div></div></div><div class="signal-components"><div class="signal-component"><div class="signal-comp-label">Demand</div><div class="signal-comp-metric" id="sigDemandMetric">—</div><div class="signal-comp-bar"><div class="signal-comp-fill" id="sigDemandFill" style="width:0%"></div></div><div class="signal-comp-pcts"><span id="sigDemandNat">—</span> / <span id="sigDemandPeer">—</span></div></div><div class="signal-component"><div class="signal-comp-label">Revenue</div><div class="signal-comp-metric" id="sigRevenueMetric">—</div><div class="signal-comp-bar"><div class="signal-comp-fill" id="sigRevenueFill" style="width:0%"></div></div><div class="signal-comp-pcts"><span id="sigRevenueNat">—</span> / <span id="sigRevenuePeer">—</span></div></div><div class="signal-component"><div class="signal-comp-label">Peer Fit</div><div class="signal-comp-metric" id="sigPeerFitMetric">—</div><div class="signal-comp-bar"><div class="signal-comp-fill" id="sigPeerFitFill" style="width:0%"></div></div><div class="signal-comp-pcts"><span id="sigPeerFitNat">—</span> / <span id="sigPeerFitPeer">—</span></div></div><div class="signal-component"><div class="signal-comp-label">Confidence</div><div class="signal-comp-metric" id="sigConfMetric">—</div><div class="signal-comp-bar"><div class="signal-comp-fill signal-comp-fill--neutral" id="sigConfFill" style="width:0%"></div></div><div class="signal-comp-pcts"><span id="sigConfNat">—</span></div></div></div><div class="signal-footer"><span>Equal-weight composite — components averaged when data exists</span><span id="sigPoolInfo"></span></div></div></div><div class="card"><div class="card-hd">Signal Breakdown</div><canvas id="cCurrent"></canvas></div></div><div class="section-divider" style="margin-top:28px"><h2>Show Intel</h2><div class="section-divider-line"></div><div class="section-divider-meta">Production history and buzz for ${season.name}</div></div><div class="explainer"><p><strong>Purpose:</strong> this section surfaces Broadway production history, Tony recognition, and critical context for current season shows. Use it to normalize Planning Signal scores against show-level factors that raw capacity data cannot capture — a new tour, a major revival, or a Tony sweep all affect demand in ways the feed alone will not explain.</p></div><div class="grid grid-2"><div class="card full"><div class="card-hd">Current Season Show Metadata</div><table class="mini-table"><thead><tr><th>Show</th><th>Opened</th><th class="num">Tony Wins</th><th class="num">Nominations</th><th>Composer</th><th>Notes</th></tr></thead><tbody id="intelTableBody"><tr><td colspan="6" class="empty">Loading show metadata...</td></tr></tbody></table></div></div><div class="card"><div class="card-hd">Selected Show</div><div id="intelDetail"><div class="empty">Select a show from the table above.</div></div></div><div class="card"><div class="card-hd">Tony Recognition</div><canvas id="cIntelTony" class="small-canvas"></canvas></div></div>`;
+          `<div class="section-divider"><h2>Season Performance</h2><div class="section-divider-line"></div><div class="section-divider-meta">Show scorecards · ${season.name}</div></div><div class="grid grid-4">${profiles.map((p, i) => showCard(p, i === 0, i)).join('')}</div><div class="grid grid-2" style="margin-top:18px;align-items:start"><div class="card"><div class="card-hd">Selected Show Detail</div><div id="currentDetail"></div><div class="signal-card" id="signalCard"><div class="signal-header"><div class="signal-title">Planning Signal</div><span class="signal-ctx-badge" id="sigContextBadge" style="display:none"></span></div><div class="signal-score-row"><div class="signal-score-num" id="sigCompositeScore">—</div><div style="flex:1"><div class="signal-planning-read" id="sigPlanningRead">—</div><div class="signal-season-pos" id="sigSeasonPos" style="display:none"></div></div></div><div class="signal-interpretation" id="sigInterpretation"></div><div class="signal-components"><div class="signal-component"><div class="signal-comp-label">Demand</div><div class="signal-comp-bar"><div class="signal-comp-fill" id="sigDemandBar" style="width:0%"></div></div><div class="signal-comp-badge" id="sigDemandLabel"></div></div><div class="signal-component"><div class="signal-comp-label">Revenue</div><div class="signal-comp-bar"><div class="signal-comp-fill" id="sigRevenueBar" style="width:0%"></div></div><div class="signal-comp-badge" id="sigRevenueLabel"></div></div><div class="signal-component"><div class="signal-comp-label">Peer Fit</div><div class="signal-comp-bar"><div class="signal-comp-fill" id="sigPeerFitBar" style="width:0%"></div></div><div class="signal-comp-badge" id="sigPeerFitLabel"></div></div><div class="signal-component"><div class="signal-comp-label">Confidence</div><div class="signal-comp-bar"><div class="signal-comp-fill signal-comp-fill--neutral" id="sigConfBar" style="width:0%"></div></div><div class="signal-comp-badge" id="sigConfLabel"></div></div></div><div class="signal-nat-strip"><div class="signal-nat-ref-label">National reference — not scored</div><div class="signal-nat-values"><span>Tour Cap <strong id="sigNatCap">—</strong></span><span>GG% <strong id="sigNatGg">—</strong></span><span id="sigNatDepth"></span></div></div></div></div><div class="card"><div class="card-hd">Signal Breakdown</div><canvas id="cCurrent"></canvas></div></div><div class="section-divider" style="margin-top:28px"><h2>Show Intel</h2><div class="section-divider-line"></div><div class="section-divider-meta">Production history and buzz for ${season.name}</div></div><div class="explainer"><p><strong>Purpose:</strong> this section surfaces Broadway production history, Tony recognition, and critical context for current season shows. Use it to normalize Planning Signal scores against show-level factors that raw capacity data cannot capture — a new tour, a major revival, or a Tony sweep all affect demand in ways the feed alone will not explain.</p></div><div class="grid grid-2"><div class="card full"><div class="card-hd">Current Season Show Metadata</div><table class="mini-table"><thead><tr><th>Show</th><th>Opened</th><th class="num">Tony Wins</th><th class="num">Nominations</th><th>Composer</th><th>Notes</th></tr></thead><tbody id="intelTableBody"><tr><td colspan="6" class="empty">Loading show metadata...</td></tr></tbody></table></div></div><div class="card"><div class="card-hd">Selected Show</div><div id="intelDetail"><div class="empty">Select a show from the table above.</div></div></div><div class="card"><div class="card-hd">Tony Recognition</div><canvas id="cIntelTony" class="small-canvas"></canvas></div></div>`;
         document
           .querySelectorAll('.show-card')
           .forEach((c) => c.addEventListener('click', () => selectCurrent(+c.dataset.idx)));
@@ -2127,88 +2121,98 @@
       function scoreBadge(p) {
         if (p.score == null) return '<span class="status neutral">—</span>';
         var cls = p.score >= SCORE_MED ? 'good' : 'warn';
-        /* Use the canonical Planning Read from the profile where available.
-         * Avoids expressing the score as a false percentile rank — the score
-         * is a 0-100 composite index, not an empirical rank in a distribution. */
-        var sub = p.planning && p.planning.read ? p.planning.read : scoreBand(p.score);
+        /* Display the canonical Planning Read directly — no derivation in page code. */
+        var sub = p.planning && p.planning.read ? p.planning.read : '';
         return (
           '<span class="status ' + cls + '">' + p.score + '</span>' +
-          '<div style="font-size:.52rem;color:var(--ink3);margin-top:2px">' + sub + '</div>'
+          (sub ? '<div style="font-size:.52rem;color:var(--ink3);margin-top:2px">' + sub + '</div>' : '')
         );
       }
 
       // ── PLANNING SIGNAL CARD ─────────────────────────────────────────────────────
 
-      /* Return the qualitative band label for a Planning Signal score (0–100).
-       * These thresholds match the label() function in signals.js.
-       * Do NOT use arithmetic on the score to imply a percentile rank —
-       * the score is a fixed-range composite index, not an empirical distribution. */
-      function scoreBand(score) {
-        if (score == null) return '—';
-        if (score >= 80) return 'Strong';
-        if (score >= 65) return 'Moderate';
-        if (score >= 45) return 'Soft';
-        return 'Weak';
+      /* Map a component label to a fill percentage for the bar.
+       * These are display-only heuristics — bars are relative guides, not scores. */
+      function sigFillPct(label) {
+        var map = { Strong: 85, Moderate: 62, Soft: 38, Weak: 15, Exploratory: 0 };
+        return (map[label] != null ? map[label] : 0) + '%';
       }
 
-      /* Color for a Planning Signal score */
-      function scoreColor(pct) {
-        if (pct == null) return 'var(--ink3)';
-        return pct >= 75 ? 'var(--teal)' : pct >= 50 ? 'var(--amber)' : 'var(--rose)';
-      }
-
-      /* Populate the persistent signal card from a profile object */
+      /* Populate the canonical Planning Signal card from a profile object.
+       *
+       * Reads:
+       *   p.score              — composite 0–100 (null = Exploratory)
+       *   p.planning.read      — Planning Read string, displayed directly
+       *   p.planning.note      — interpretation sentence
+       *   BTD.page.planningSignals(p) — component labels via shared adapter
+       *   p.metrics.paidCapacity / ggPctGp / count / venueCount — national ref
+       *
+       * Context-filter disclosure: shown when ACTIVE_TIER or ACTIVE_SUB is set.
+       * Season Position: shown only when p.score != null.
+       * Null-score: score cell shows "Exploratory"; no season position badge. */
       function renderSignalCard(p) {
         var el = $('signalCard');
         if (!el) return;
-        if (!p || !p.signal) {
-          el.style.display = 'none';
-          return;
+
+        /* ── Composite score ── */
+        var hasScore = p && p.score != null;
+        var scoreEl = $('sigCompositeScore');
+        scoreEl.textContent = hasScore ? p.score : 'Exploratory';
+        scoreEl.style.color = hasScore
+          ? (p.score >= SCORE_MED ? 'var(--teal)' : 'var(--rose)')
+          : 'var(--ink3)';
+
+        /* ── Planning Read — displayed directly from p.planning.read ── */
+        $('sigPlanningRead').textContent = (p && p.planning && p.planning.read) || 'Exploratory';
+
+        /* ── Interpretation ── */
+        $('sigInterpretation').textContent = (p && p.planning && p.planning.note) || '';
+
+        /* ── Season Position — derived from p.score vs season median;
+         *    omitted entirely when score is null (avoids misleading comparison) ── */
+        var posEl = $('sigSeasonPos');
+        if (hasScore) {
+          var above = p.score >= SCORE_MED;
+          posEl.textContent = (above ? '▲ Above season median' : '▼ Below season median');
+          posEl.style.color = above ? 'var(--teal)' : 'var(--rose)';
+          posEl.style.display = '';
+        } else {
+          posEl.textContent = '';
+          posEl.style.display = 'none';
         }
-        var sig  = p.signal;
-        var nat  = sig.national;
-        var peer = sig.peer;
-        var rm   = sig.rawMetrics;
 
-        el.style.display = 'block';
+        /* ── Context-filter disclosure ──
+         *    Shown when tier or subscription filter narrows the evidence set.
+         *    Baseline (no filter) shows no badge. ── */
+        var badge = $('sigContextBadge');
+        var ctxParts = [];
+        if (ACTIVE_TIER) ctxParts.push(ACTIVE_TIER + ' tier only');
+        if (ACTIVE_SUB !== '') ctxParts.push(ACTIVE_SUB === '1' ? 'Subscribers only' : 'Non-subscribers only');
+        if (ctxParts.length) {
+          badge.textContent = 'Context: ' + ctxParts.join(' · ');
+          badge.style.display = 'inline-block';
+        } else {
+          badge.style.display = 'none';
+        }
 
-        // Composite scores
-        $('sigNatComposite').textContent = nat.composite != null ? nat.composite : '—';
-        $('sigNatComposite').style.color = scoreColor(nat.composite);
-        $('sigNatSub').textContent = nat.composite != null ? scoreBand(nat.composite) + ' signal nationally' : 'No data';
+        /* ── Component signals via BTD.page.planningSignals() ── */
+        var sig = BTD.page.planningSignals(p);
+        $('sigDemandBar').style.width    = sigFillPct(sig.demand);
+        $('sigDemandLabel').innerHTML    = signalBadge(sig.demand);
+        $('sigRevenueBar').style.width   = sigFillPct(sig.revenue);
+        $('sigRevenueLabel').innerHTML   = signalBadge(sig.revenue);
+        $('sigPeerFitBar').style.width   = sigFillPct(sig.peer);
+        $('sigPeerFitLabel').innerHTML   = signalBadge(sig.peer);
+        $('sigConfBar').style.width      = sigFillPct(sig.confidence);
+        $('sigConfLabel').innerHTML      = signalBadge(sig.confidence);
 
-        var peerLabel = sig.activePeerType || 'size';
-        $('sigPeerLabel').textContent = 'Peer (' + peerLabel.charAt(0).toUpperCase() + peerLabel.slice(1) + ')';
-        $('sigPeerComposite').textContent = peer.composite != null ? peer.composite : '—';
-        $('sigPeerComposite').style.color = scoreColor(peer.composite);
-        $('sigPeerSub').textContent = peer.composite != null ? scoreBand(peer.composite) + ' signal peer group' : 'No peer data';
-
-        // Demand row
-        $('sigDemandMetric').textContent = rm.cap != null ? rm.cap.toFixed(1) + '%' : '—';
-        $('sigDemandFill').style.width = (nat.demand != null ? nat.demand : 0) + '%';
-        $('sigDemandNat').textContent = nat.demand != null ? nat.demand : '—';
-        $('sigDemandPeer').textContent = peer.demand != null ? peer.demand : '—';
-
-        // Revenue row
-        $('sigRevenueMetric').textContent = rm.gg != null ? rm.gg.toFixed(1) + '%' : '—';
-        $('sigRevenueFill').style.width = (nat.revenue != null ? nat.revenue : 0) + '%';
-        $('sigRevenueNat').textContent = nat.revenue != null ? nat.revenue : '—';
-        $('sigRevenuePeer').textContent = peer.revenue != null ? peer.revenue : '—';
-
-        // Peer Fit row
-        $('sigPeerFitMetric').textContent = rm.peerCap != null ? rm.peerCap.toFixed(1) + '%' : '—';
-        $('sigPeerFitFill').style.width = (nat.peerFit != null ? nat.peerFit : 0) + '%';
-        $('sigPeerFitNat').textContent = nat.peerFit != null ? nat.peerFit : '—';
-        $('sigPeerFitPeer').textContent = peer.peerFit != null ? peer.peerFit : '—';
-
-        // Confidence row
-        $('sigConfMetric').textContent = nat.confidence != null ? nat.confidence : '—';
-        $('sigConfFill').style.width = (nat.confidence != null ? nat.confidence : 0) + '%';
-        $('sigConfNat').textContent = nat.confidence != null ? nat.confidence : '—';
-
-        // Pool info
-        $('sigPoolInfo').textContent =
-          'National: ' + sig.poolSizes.national + ' records · Peer: ' + sig.poolSizes.peer + ' · Matched: ' + rm.count;
+        /* ── National reference strip — unscored, displayed for context ── */
+        var m = p && p.metrics;
+        $('sigNatCap').textContent   = m && m.paidCapacity != null ? pct(m.paidCapacity, 1) : '—';
+        $('sigNatGg').textContent    = m && m.ggPctGp     != null ? pct(m.ggPctGp, 1)      : '—';
+        $('sigNatDepth').textContent = m
+          ? ((m.count || 0) + ' records · ' + (m.venueCount || 0) + ' venues')
+          : '';
       }
 
       function signalBadge(label) {
@@ -2570,7 +2574,7 @@
         title: 'Planning Signal',
         what: 'A composite score (0–100) synthesizing how a show performs in Bushnell\'s peer cohort markets — size-matched venues, Northeast proximity markets, and comparable nonprofit PAC cities — plus the strength of the underlying evidence.',
         how: 'Four components contribute: Demand Signal — paid capacity across all three peer cohort types, averaged equally when each has data, plus subscription lift; Revenue Signal — GG% of gross potential and average paid admission, averaged across cohort types; Peer Fit Signal — combined peer-pool paid capacity, GG% efficiency, and sample breadth; Confidence Signal — active record count, venue count, peer-record count, and reporting-week count. No recency component. National data is retained as a reference but does not drive the composite score.',
-        look: 'Scores above 60 are well-supported across multiple dimensions. Scores below 40 warrant caution or more investigation. Always read the Confidence component — a high score built on two weeks of data means something different than one built on thirty weeks.'
+        look: 'Compare the score against the season median — a show above median is a stronger fit signal for this season\'s touring market. The Planning Read gives the qualitative interpretation. Always check Confidence — a score built on two weeks of data means something very different than one built on thirty weeks.'
       },
       'signal-breakdown': {
         title: 'Signal Breakdown',

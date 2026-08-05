@@ -486,24 +486,34 @@ select:focus, input:focus { outline: 2px solid var(--amber); outline-offset: 2px
  * Shared across dashboard.html, programming.html, exec_summary.html.
  * Extracted from inline styles — single source of truth.
  * ────────────────────────────────────────────────────────────────────────── */
+/* ── Planning Signal card — canonical composite panel (Phase 3) ── */
 .signal-card { margin-top: 14px; border: 1px solid var(--rule); border-radius: 3px; overflow: hidden; }
-.signal-header { padding: 10px 14px; background: var(--bg2); border-bottom: 1px solid var(--rule); }
-.signal-title { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink3); margin-bottom: 8px; }
-.signal-composites { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.signal-composite { background: #fff; border: 1px solid var(--rule2); border-radius: 3px; padding: 8px 10px; }
-.signal-composite-label { font-size: 0.52rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink3); margin-bottom: 3px; }
-.signal-composite-score { font-family: var(--serif); font-size: 1.4rem; font-weight: 700; line-height: 1; }
-.signal-composite-sub { font-size: 0.58rem; color: var(--ink3); margin-top: 3px; }
+.signal-header { padding: 8px 14px; background: var(--bg2); border-bottom: 1px solid var(--rule); display: flex; align-items: center; gap: 8px; }
+.signal-title { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink3); }
+/* Context-filter disclosure badge — shown only when tier or sub filter is active */
+.signal-ctx-badge { font-size: 0.5rem; padding: 2px 7px; border-radius: 3px; background: rgba(217,148,0,.12); color: var(--amber); font-weight: 700; letter-spacing: 0.05em; white-space: nowrap; }
+/* Score + Planning Read row */
+.signal-score-row { display: flex; align-items: center; gap: 14px; padding: 10px 14px 0; }
+.signal-score-num { font-family: var(--serif); font-size: 1.8rem; font-weight: 700; line-height: 1; min-width: 40px; text-align: center; }
+.signal-planning-read { font-size: 0.72rem; font-weight: 700; color: var(--ink); line-height: 1.3; }
+/* Season position — visually distinct from Planning Read */
+.signal-season-pos { font-size: 0.54rem; color: var(--ink3); margin-top: 3px; font-style: normal; }
+/* One-sentence interpretation from p.planning.note */
+.signal-interpretation { padding: 5px 14px 2px; font-size: 0.57rem; color: var(--ink2); font-style: italic; min-height: 0; }
+/* Component rows — label | bar | badge */
 .signal-components { padding: 8px 14px 4px; }
-.signal-component { display: grid; grid-template-columns: 70px 46px 1fr 68px; align-items: center; gap: 7px; padding: 5px 0; border-bottom: 1px solid var(--rule2); }
+.signal-component { display: grid; grid-template-columns: 68px 1fr auto; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--rule2); }
 .signal-component:last-child { border-bottom: none; }
 .signal-comp-label { font-size: 0.58rem; font-weight: 700; color: var(--ink); text-transform: uppercase; letter-spacing: 0.04em; }
-.signal-comp-metric { font-size: 0.58rem; color: var(--ink3); text-align: right; font-family: var(--mono); white-space: nowrap; }
 .signal-comp-bar { height: 5px; background: var(--rule2); border-radius: 4px; overflow: hidden; }
 .signal-comp-fill { height: 100%; background: var(--teal); border-radius: 4px; transition: width 0.3s; }
 .signal-comp-fill--neutral { background: var(--amber); }
-.signal-comp-pcts { font-size: 0.55rem; color: var(--ink3); white-space: nowrap; text-align: right; }
-.signal-footer { padding: 6px 14px; background: var(--bg2); border-top: 1px solid var(--rule); font-size: 0.52rem; color: var(--ink3); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.signal-comp-badge { font-size: 0.54rem; text-align: right; white-space: nowrap; }
+/* National reference strip — clearly labeled as unscored */
+.signal-nat-strip { padding: 7px 14px 10px; border-top: 1px solid var(--rule2); margin-top: 4px; background: var(--bg2); }
+.signal-nat-ref-label { font-size: 0.48rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--ink3); font-weight: 700; margin-bottom: 5px; }
+.signal-nat-values { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.57rem; color: var(--ink2); }
+.signal-nat-values strong { font-family: var(--mono); color: var(--ink); }
 
 /* ── RESPONSIVE BREAKPOINTS ──────────────────────────────────────────────────
  * Canonical breakpoints for all BTD pages. Minimum supported: iPad (768px).

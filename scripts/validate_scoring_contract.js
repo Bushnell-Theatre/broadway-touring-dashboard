@@ -601,6 +601,132 @@ ok("exec_summary.html: no fixed percentage weight claims (old 40/25/25/10 model)
    !claimsFixedWeights(execSrc),
    "found fixed-weight claim in exec_summary.html — the score uses equal-weight averaging, not SIGNAL_WEIGHTS");
 
+/* ── Section 6 — Phase 3: canonical signal card (no legacy markup) ───────── */
+
+section('6. Phase 3: canonical signal card — legacy removed, contract fields used');
+
+// Re-read sources fresh (they may have been updated this run).
+var progSrc3 = src('src/programming.html');
+var execSrc3 = src('src/exec_summary.html');
+
+// 1. No p.signal reads — the legacy utils.js signal object is gone.
+// Match "p.signal" when followed by a property access or assignment.
+// Avoid matching "p.signals" (the canonical signals object).
+function readsLegacySignal(s) {
+  // "p.signal." or "p.signal =" or "p.signal)" — but NOT "p.signals."
+  return /\bp\.signal(?!s)[\s.=)]/g.test(stripJsComments(s));
+}
+ok("programming.html: no reads from p.signal (legacy utils.js object)",
+   !readsLegacySignal(progSrc3),
+   "found p.signal access in programming.html — legacy signal object was removed");
+ok("exec_summary.html: no reads from p.signal (legacy utils.js object)",
+   !readsLegacySignal(execSrc3),
+   "found p.signal access in exec_summary.html — legacy signal object was removed");
+
+// 2. No scoreBand() calls — the old qualitative band function is gone.
+ok("programming.html: scoreBand() function not declared",
+   !stripJsComments(progSrc3).includes('function scoreBand'),
+   "found function scoreBand in programming.html — must be removed");
+ok("exec_summary.html: scoreBand() function not declared",
+   !stripJsComments(execSrc3).includes('function scoreBand'),
+   "found function scoreBand in exec_summary.html — must be removed");
+
+ok("programming.html: scoreBand() not called",
+   !stripJsComments(progSrc3).includes('scoreBand('),
+   "found scoreBand( call in programming.html — legacy path must be removed");
+ok("exec_summary.html: scoreBand() not called",
+   !stripJsComments(execSrc3).includes('scoreBand('),
+   "found scoreBand( call in exec_summary.html — legacy path must be removed");
+
+// 3. No legacy National/Peer composite score IDs in markup.
+// The old card had sigNatComposite, sigPeerComposite, sigPeerLabel (composite header).
+ok("programming.html: no legacy sigNatComposite element",
+   !progSrc3.includes('sigNatComposite'),
+   "found sigNatComposite in programming.html — old National composite markup must be removed");
+ok("exec_summary.html: no legacy sigNatComposite element",
+   !execSrc3.includes('sigNatComposite'),
+   "found sigNatComposite in exec_summary.html — old National composite markup must be removed");
+ok("programming.html: no legacy sigPeerComposite element",
+   !progSrc3.includes('sigPeerComposite'),
+   "found sigPeerComposite in programming.html — old Peer composite markup must be removed");
+ok("exec_summary.html: no legacy sigPeerComposite element",
+   !execSrc3.includes('sigPeerComposite'),
+   "found sigPeerComposite in exec_summary.html — old Peer composite markup must be removed");
+
+// 4. Shared planning-signal adapter is used in renderSignalCard.
+// Both pages must call BTD.page.planningSignals() inside the signal card renderer.
+ok("programming.html: renderSignalCard uses BTD.page.planningSignals()",
+   progSrc3.includes('BTD.page.planningSignals(p)'),
+   "renderSignalCard in programming.html does not call BTD.page.planningSignals(p)");
+ok("exec_summary.html: renderSignalCard uses BTD.page.planningSignals()",
+   execSrc3.includes('BTD.page.planningSignals(p)'),
+   "renderSignalCard in exec_summary.html does not call BTD.page.planningSignals(p)");
+
+// 5. National reference strip with "not scored" disclosure is present.
+ok("programming.html: national reference strip labeled 'not scored'",
+   progSrc3.includes('National reference — not scored'),
+   "programming.html missing 'National reference — not scored' label in signal card");
+ok("exec_summary.html: national reference strip labeled 'not scored'",
+   execSrc3.includes('National reference — not scored'),
+   "exec_summary.html missing 'National reference — not scored' label in signal card");
+
+// 6. Context-filter disclosure logic: checks ACTIVE_TIER and ACTIVE_SUB near sigContextBadge.
+// Both variables must appear in the same renderSignalCard function as the badge element.
+function hasContextDisclosure(s) {
+  // Find renderSignalCard body (from "function renderSignalCard" to the closing brace).
+  var start = s.indexOf('function renderSignalCard');
+  if (start < 0) return false;
+  var body = s.slice(start, start + 3000); // generous slice
+  return body.includes('sigContextBadge') &&
+         body.includes('ACTIVE_TIER') &&
+         body.includes('ACTIVE_SUB');
+}
+ok("programming.html: context-filter disclosure checks ACTIVE_TIER and ACTIVE_SUB",
+   hasContextDisclosure(progSrc3),
+   "programming.html renderSignalCard missing context-filter disclosure (sigContextBadge + ACTIVE_TIER + ACTIVE_SUB)");
+ok("exec_summary.html: context-filter disclosure checks ACTIVE_TIER and ACTIVE_SUB",
+   hasContextDisclosure(execSrc3),
+   "exec_summary.html renderSignalCard missing context-filter disclosure (sigContextBadge + ACTIVE_TIER + ACTIVE_SUB)");
+
+// 7. Planning Read and Season Position are separate elements.
+// Card must contain both sigPlanningRead and sigSeasonPos as distinct IDs.
+ok("programming.html: Planning Read (sigPlanningRead) and Season Position (sigSeasonPos) are separate elements",
+   progSrc3.includes('sigPlanningRead') && progSrc3.includes('sigSeasonPos'),
+   "programming.html missing sigPlanningRead or sigSeasonPos element in signal card");
+ok("exec_summary.html: Planning Read (sigPlanningRead) and Season Position (sigSeasonPos) are separate elements",
+   execSrc3.includes('sigPlanningRead') && execSrc3.includes('sigSeasonPos'),
+   "exec_summary.html missing sigPlanningRead or sigSeasonPos element in signal card");
+
+// 8. Null score is not coerced to zero in renderSignalCard.
+// The function must test "p.score != null" (or equivalent) before using the score.
+// Reject patterns that would silently coerce null to 0: "p.score || 0" or "p.score ?? 0".
+function nullScoreCoerced(s) {
+  var start = s.indexOf('function renderSignalCard');
+  if (start < 0) return false;
+  var body = s.slice(start, start + 3000);
+  return /p\.score\s*\|\|\s*0/.test(body) || /p\.score\s*\?\?\s*0/.test(body);
+}
+ok("programming.html: null score not coerced to zero in renderSignalCard",
+   !nullScoreCoerced(progSrc3),
+   "found 'p.score || 0' or 'p.score ?? 0' in renderSignalCard — null must show 'Exploratory', not zero");
+ok("exec_summary.html: null score not coerced to zero in renderSignalCard",
+   !nullScoreCoerced(execSrc3),
+   "found 'p.score || 0' or 'p.score ?? 0' in renderSignalCard — null must show 'Exploratory', not zero");
+
+// 9. renderSignalCard reads p.planning.read directly (no scoreBand fallback for display).
+function planningReadReadDirectly(s) {
+  var start = s.indexOf('function renderSignalCard');
+  if (start < 0) return false;
+  var body = s.slice(start, start + 3000);
+  return body.includes('p.planning') && body.includes('sigPlanningRead');
+}
+ok("programming.html: renderSignalCard displays p.planning.read via sigPlanningRead",
+   planningReadReadDirectly(progSrc3),
+   "programming.html renderSignalCard does not read p.planning.read into sigPlanningRead");
+ok("exec_summary.html: renderSignalCard displays p.planning.read via sigPlanningRead",
+   planningReadReadDirectly(execSrc3),
+   "exec_summary.html renderSignalCard does not read p.planning.read into sigPlanningRead");
+
 /* ══════════════════════════════════════════════════════════════════════════ */
 /*  SUMMARY                                                                  */
 /* ══════════════════════════════════════════════════════════════════════════ */
