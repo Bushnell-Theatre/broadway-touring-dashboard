@@ -309,7 +309,9 @@
       peerSignal       = { value: null, label: 'Exploratory', drivers: peerDrivers };
       confidenceSignal = { value: 0,    label: 'Exploratory', drivers: confidenceDrivers };
     }
-    var composite = Math.round(avgNonNull([demandScore, revenueScore, peerScore, confidenceScore]) || (isFutureNewTour ? 65 : 0));
+    /* Future new tours have no scored components — composite is null, not a fabricated number.
+     * The UI displays '—' for null scores. Shows with zero records but no new-tour flag get 0. */
+    var composite = isFutureNewTour ? null : Math.round(avgNonNull([demandScore, revenueScore, peerScore, confidenceScore]) || 0);
     var note = planningRead.indexOf('Demand Ahead') >= 0 ? 'Audience demand at comparable venues appears stronger than revenue quality; review pricing, discounting, and deal terms.' :
       planningRead.indexOf('Revenue Ahead') >= 0 ? 'Revenue quality at comparable venues is promising but demand evidence is softer; review audience reach and marketing risk.' :
       planningRead === 'Strong Candidate' ? 'Demand, revenue, peer cohort, and confidence signals support leadership discussion.' :
