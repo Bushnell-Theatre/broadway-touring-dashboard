@@ -3961,9 +3961,9 @@
       "summary": null
     },
     "economic": {
-      "consumer_confidence": 44.8,
+      "consumer_confidence": 49.5,
       "ct_unemployment": 4.9,
-      "confidence_trend": "stable",
+      "confidence_trend": "rising",
       "source_month": "2026-06"
     }
   },
@@ -3974,9 +3974,9 @@
       "summary": null
     },
     "economic": {
-      "consumer_confidence": 44.8,
+      "consumer_confidence": 49.5,
       "ct_unemployment": 4.9,
-      "confidence_trend": "stable",
+      "confidence_trend": "rising",
       "source_month": "2026-06"
     }
   },
@@ -3987,9 +3987,9 @@
       "summary": null
     },
     "economic": {
-      "consumer_confidence": 44.8,
+      "consumer_confidence": 49.5,
       "ct_unemployment": 4.9,
-      "confidence_trend": "stable",
+      "confidence_trend": "rising",
       "source_month": "2026-06"
     }
   },
@@ -4000,9 +4000,9 @@
       "summary": null
     },
     "economic": {
-      "consumer_confidence": 44.8,
+      "consumer_confidence": 49.5,
       "ct_unemployment": 4.9,
-      "confidence_trend": "stable",
+      "confidence_trend": "rising",
       "source_month": "2026-06"
     }
   },
@@ -4013,7 +4013,7 @@
       "summary": null
     },
     "economic": {
-      "consumer_confidence": 44.8,
+      "consumer_confidence": 49.5,
       "ct_unemployment": 4.9,
       "confidence_trend": "stable",
       "source_month": "2026-07"
@@ -4026,7 +4026,7 @@
       "summary": null
     },
     "economic": {
-      "consumer_confidence": 44.8,
+      "consumer_confidence": 49.5,
       "ct_unemployment": 4.9,
       "confidence_trend": "stable",
       "source_month": "2026-07"
@@ -4039,7 +4039,20 @@
       "summary": null
     },
     "economic": {
-      "consumer_confidence": 44.8,
+      "consumer_confidence": 49.5,
+      "ct_unemployment": 4.9,
+      "confidence_trend": "stable",
+      "source_month": "2026-07"
+    }
+  },
+  "2026-07-26": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 49.5,
       "ct_unemployment": 4.9,
       "confidence_trend": "stable",
       "source_month": "2026-07"
