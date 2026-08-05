@@ -156,14 +156,23 @@ def list_storm_event_files():
 def download_year(year, url):
     """
     Return raw gzip bytes for a storm events year file, using disk cache.
-    Current and prior year are always re-downloaded (data gets updated).
+
+    NOAA encodes the publish date in the filename itself, e.g.:
+        StormEvents_details-ftp_v1.0_d2026_c20260731.csv.gz
+                                              ^^^^^^^^ publish date
+
+    list_storm_event_files() always resolves the LATEST filename per year from
+    the NOAA directory listing before this function is called. So if the file
+    already exists on disk, it IS the current NOAA version — no re-download
+    needed. When NOAA publishes a revised file the name changes, the new path
+    won't exist in cache, and we fetch it automatically. Old filenames for the
+    same year are left in cache/ but are harmless (just takes disk space).
     """
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     fname = url.split("/")[-1]
     cache_path = CACHE_DIR / fname
-    current_year = date.today().year
 
-    if cache_path.exists() and year < current_year - 1:
+    if cache_path.exists():
         return cache_path.read_bytes()
 
     print(f"  Downloading {year} storm events...")
