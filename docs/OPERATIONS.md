@@ -266,7 +266,7 @@ None of these variables are used by the browser frontend. They are only needed w
 | `run_pipeline.py` | **Manual entry point** — chains all pipeline stages with `--append`, `--rebuild`, or `--validate-only` flags |
 | `process_touring.py` | Reads XLSX reports, deduplicates, writes/appends `data.json` |
 | `scrape_shows.py` | Fetches show metadata from Wikidata, Wikipedia, DBpedia; writes `shows.json` |
-| `scrape_context.py` | Fetches NOAA weather and FRED economic data; writes `context.json` |
+| `scrape_context.py` | Fetches NOAA weather and FRED economic data; writes `context.json`. NOAA bulk CSV files are cached in `scripts/cache/storm_events/` by filename — when NOAA publishes a revised file the name changes and the new file is fetched automatically; no re-download occurs if the filename hasn't changed. FRED data is fetched fresh on every run (small JSON, no cache). |
 | `generate_highlights.py` | Evaluates hard-coded thresholds against current-season data; calls Anthropic API if any trip; writes season-keyed `exec_brief_highlight.json` and `programming_highlight.json`. Supports `--dry-run`. |
 | `generate_season_review.py` | Fires once per season, 14 days after last show close; computes pre-season signal vs actual peer results; calls Anthropic API; writes `season_review.json`. Supports `--dry-run`. |
 | `validate_data.py` | Data quality checks; writes `validation_report.json` |
@@ -279,6 +279,8 @@ None of these variables are used by the browser frontend. They are only needed w
 ## Troubleshooting
 
 **Watcher didn't fire.** The watcher requires `start_watcher.bat` to be running. If the window was closed or the laptop was asleep, run the pipeline manually with `run_pipeline.py --append`.
+
+**Storm event data looks stale or missing for a recent week.** NOAA periodically revises its bulk CSV files. The watcher uses the filename to detect a new version — if NOAA published a correction but the filename didn't change (rare), the cached file will be used. To force a re-fetch for a specific year, delete the corresponding `.csv.gz` file from `scripts/cache/storm_events/` and re-run `scrape_context.py`.
 
 **`scrape_shows.py` returns sparse Tony data.** The Wikidata SPARQL endpoint has been rate-limiting aggressively. The script falls back to the REST API and Wikipedia, but Tony data may be incomplete. Re-run later with `--force` to backfill once the outage resolves.
 
