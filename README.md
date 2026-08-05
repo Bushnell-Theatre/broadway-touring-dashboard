@@ -1,117 +1,122 @@
 # Broadway Touring Intelligence Dashboard
 
-A fully static web application that helps the Bushnell Center for the Performing Arts evaluate, compare, and plan Broadway touring productions. All data is preprocessed locally from Broadway League XLSX reports and hosted as static JSON on Azure Static Web Apps — no backend, no database, no build step.
+A static decision-support application for exploring Broadway League touring performance and supporting Bushnell programming conversations.
+
+The project does **not** forecast Bushnell profit or make booking decisions. It organizes reported touring results, compares productions across curated peer cohorts, and exposes the evidence behind a directional **Planning Signal**.
 
 **Production:** https://white-pebble-01710020f.7.azurestaticapps.net  
-**Version:** v5.3 · July 22, 2026  
+**Status:** In development  
 **Sponsor:** Stephanie Fried, COO — The Bushnell Center for the Performing Arts
 
 ---
 
-## Pages
+## What the product does
 
-| Page | Audience | Purpose |
+The application supports three active experiences built on the same touring dataset:
+
+| Experience | Intended audience | Primary use |
 |---|---|---|
-| [Hub](src/index.html) | All | Navigation and version info |
-| [Programming](src/programming.html) | Programming team | Working view — show-by-show signal analysis, planning candidates |
-| [Executive Summary](src/exec_summary.html) | Leadership | High-level season read, KPIs, watchlist |
-| [Dashboard](src/dashboard.html) | Operations / QA | Raw data, charts, analytics, peer benchmarks |
-| [Box Office](src/box_office.html) | Brandon (Box Office) | Scenario modeler — per-performance pricing, holds, gross projections |
+| [Sales Intelligence Dashboard](src/dashboard.html) | Sales and analytics | Explore weekly touring results, show history, markets, subscription behavior, and peer benchmarks |
+| [Programming](src/programming.html) | Programming | Review current and candidate shows, inspect the evidence behind their Planning Signals, and compare peer performance |
+| [Executive Summary](src/exec_summary.html) | Leadership | Review a concise season-level view of performance, candidates, and notable signals |
+| [Development Hub](src/index.html) | All internal users | Choose an experience and see data currency/version information |
+
+The former Box Office scenario model remains in the repository, but its work is suspended and it is not presented as an active product experience.
+
+All active pages are in development. They are different views of the same evidence, not production/demonstration versions of one another.
 
 ---
 
-## How It Works
+## What the product does not do
 
-```
-Broadway League XLSX report
-         │
-         ▼
-   process_touring.py       ──►  src/data/data.json
-   scrape_shows.py          ──►  src/data/shows.json
-   scrape_context.py        ──►  src/data/context.json
-   generate_highlights.py   ──►  src/data/exec_brief_highlight.json
-                                 src/data/programming_highlight.json
-   generate_season_review.py──►  src/data/season_review.json
-         │
-         ▼
-   git push → main → Azure auto-deploy (~30 seconds)
-         │
-         ▼
-   Browser fetches JSON at runtime and renders everything
-```
+The application does not currently include:
 
-The pipeline runs locally on the rnunley laptop. `watcher.py` watches the OneDrive upload folder and triggers all pipeline stages automatically when a new report arrives.
+- Bushnell deal terms, guarantees, splits, labor, marketing costs, or ancillary revenue
+- A prediction of Bushnell sales, gross, or profit
+- Routing, availability, technical feasibility, artistic priority, mission fit, or donor value
+- Patron-level, ticket-holder, or customer data
+- A database or application backend
+- A continuously running cloud ingestion service
 
-`generate_highlights.py` evaluates hard-coded thresholds (week-over-week gross change, capacity band crossings, show open/close, all-time records) and calls the Anthropic API only when a threshold trips. `generate_season_review.py` fires once per season, 14 days after the last show closes, and writes an AI retrospective comparing pre-season signal to actual peer-venue results.
+Broadway League gross is tour-reported ticket revenue, not Bushnell net revenue. The Planning Signal is a discussion aid, not a recommendation engine or forecast.
 
 ---
 
-## Evaluation Model
+## Data and calculations
 
-Every show is evaluated on four signals:
+The browser loads static JSON files and calculates the interface at runtime.
 
-| Signal | What it measures |
+- `src/data/data.json` is the primary dataset. Each usable record represents a show at a venue for a reporting week.
+- `src/data/seasons.json` defines Bushnell season slates and candidates.
+- `src/data/peers.json` defines three curated peer cohorts: venue size, geographic proximity, and comparable market/PAC.
+- Optional enrichment and generated summary files add context but do not replace the primary touring evidence.
+
+The Planning Signal is derived from four components:
+
+| Component | Implemented meaning |
 |---|---|
-| **Demand** | Paid capacity — how full the venue was |
-| **Revenue** | GG% (gross as % of gross potential) — how much of the available gross was captured |
-| **Peer** | How the show performed at Bushnell-size peer venues nationally |
-| **Confidence** | Sample depth — how many records back the scores |
+| Demand | Scaled paid capacity in each available peer cohort, plus subscription/non-subscription capacity difference when available |
+| Revenue | Scaled GG% of gross potential and average paid admission within available peer cohorts |
+| Peer | Combined peer-pool capacity, revenue efficiency, and sample breadth |
+| Confidence | Overall record count, venue count, peer-record count, and reporting-week count |
 
-These roll up into a **Planning Signal** score (0–100) with a read label: **Strong Candidate / Discuss / Watch / Exploratory.**
+The numeric Planning Signal is currently the **equal average** of the four available component scores. It is not a weighted 40/25/25/10 formula. Fixed ranges in `src/js/core/signals.js` scale source metrics to 0–100. Page-level comparisons may use the selected season median, but that median does not define the underlying numeric score.
 
-Revenue (GG%) is the headline metric. Capacity is context, not the lead story.
+Future new tours with no matching performance records receive no numeric score (`—`) and are labeled Exploratory.
+
+See [SCORING.md](SCORING.md) for the exact implemented calculation and limitations.
+
+---
+
+## How data reaches the application
+
+```text
+Broadway League XLSX report
+        |
+        v
+Local Python processing
+        |
+        v
+Static JSON files in src/data/
+        |
+        v
+Git commit and push
+        |
+        v
+Azure Static Web Apps deployment
+        |
+        v
+Browser loads JSON and renders the selected experience
+```
+
+The Python processing tools run locally; they are not part of the production website. The local HTTP server described below is also only a preview server. Azure serves the production application as static files.
+
+The repository also contains optional local automation for watching an upload folder, refreshing enrichment/context data, generating threshold-triggered summaries, validating data, and publishing updates. Those operational mechanics are documented separately because they are not the product itself.
 
 ---
 
 ## Documentation
 
-| Document | Contents |
+| Document | Purpose |
 |---|---|
-| [docs/OPERATIONS.md](docs/OPERATIONS.md) | Data pipeline: how to run when a new report arrives, how to add a show or season, deployment steps, environment variables |
-| [docs/DEVELOPER.md](docs/DEVELOPER.md) | Architecture, BTD namespace, shared modules, how to extend the signal model |
-| [docs/CHARTS.md](docs/CHARTS.md) | What each chart shows and why |
-| [docs/AI_PIPELINE_PLAN.md](docs/AI_PIPELINE_PLAN.md) | AI highlight pipeline — weekly trigger thresholds, season-end review logic, output format, dashboard injection |
-| [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md) | Plain-language system overview for non-technical stakeholders |
-| [docs/SERVER_MIGRATION_AND_EMAIL_INGESTION.md](docs/SERVER_MIGRATION_AND_EMAIL_INGESTION.md) | Planned: moving the pipeline to a dedicated box, switching report ingestion from SharePoint to a shared mailbox |
-| [SERVER_SETUP.md](SERVER_SETUP.md) | Setting up a dedicated server to run the data pipeline automatically |
+| [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md) | Plain-language product and data guide |
+| [SCORING.md](SCORING.md) | Exact implemented Planning Signal methodology |
+| [docs/CHARTS.md](docs/CHARTS.md) | Chart definitions and intended interpretation |
+| [docs/OPERATIONS.md](docs/OPERATIONS.md) | Local ingestion, validation, and deployment procedures |
+| [docs/DEVELOPER.md](docs/DEVELOPER.md) | Front-end architecture and extension guidance |
+| [docs/AI_PIPELINE_PLAN.md](docs/AI_PIPELINE_PLAN.md) | Design notes for generated highlight and retrospective features |
+| [docs/SERVER_MIGRATION_AND_EMAIL_INGESTION.md](docs/SERVER_MIGRATION_AND_EMAIL_INGESTION.md) | Planned migration work, not current production behavior |
+| [SERVER_SETUP.md](SERVER_SETUP.md) | Dedicated-server setup guidance, not current production architecture |
 
 ---
 
-## Quick Start — Local Preview
+## Local preview
 
 ```bash
 cd src
 python -m http.server 8765
 ```
 
-Then open:
-- http://127.0.0.1:8765/
-- http://127.0.0.1:8765/programming.html
-- http://127.0.0.1:8765/exec_summary.html
-- http://127.0.0.1:8765/dashboard.html
+Open http://127.0.0.1:8765/. This server is for local preview only.
 
----
-
-## Quick Start — Update Data After a New Report
-
-```bash
-# Activate virtual environment (first time: python -m venv venv)
-venv\Scripts\activate           # Windows
-source venv/bin/activate        # Mac/Linux
-
-# Append new report
-python scripts/process_touring.py --append path/to/new_report.xlsx src/data/data.json
-
-# Update show metadata (only processes new shows)
-python scripts/scrape_shows.py
-
-# Update weather and economic context
-python scripts/scrape_context.py
-
-# Commit and push to deploy
-git add src/data/
-git commit -m "Data update — week of YYYY-MM-DD"
-git push origin main
-```
-
-Full details: [docs/OPERATIONS.md](docs/OPERATIONS.md)
+For data-update procedures, prerequisites, and deployment details, use [docs/OPERATIONS.md](docs/OPERATIONS.md).
