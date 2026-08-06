@@ -22,6 +22,10 @@ src/
 │
 ├── js/
 │   ├── utils.js            Legacy global helpers (loaded on all pages)
+│   │                       Note: scoring functions (planningSignal, SIGNAL_WEIGHTS,
+│   │                       percentileRank, confidenceScore, threeYearCutoff) were
+│   │                       removed in Phase 4 of the signals-consolidation refactor.
+│   │                       The canonical scorer is BTD.signals.profileShow() in signals.js.
 │   │
 │   ├── core/               Shared modules — all attach to window.BTD
 │   │   ├── config.js           Constants, thresholds, and data URL defaults
@@ -122,37 +126,53 @@ Each file opens with `window.BTD = window.BTD || {}` before adding its sub-names
 
 ## Planning Signal Model
 
-The canonical model lives in `src/js/core/signals.js`. Call it as:
+The canonical model lives in `src/js/core/signals.js`. Pages call it via the shared
+entry point in `page-common.js`:
 
 ```javascript
+var profile = BTD.page.profileShowCanonical(show, allRows, options);
+// Direct call (non-page code only):
 var profile = BTD.signals.profileShow(show, records, peers, context, config);
 ```
 
-Returns:
+Returns (contract-compliant shape — see `docs/SCORING_CONTRACT.md`):
 
 ```javascript
 {
   show: { title, season, status },
   metrics: {
-    gross,      // avg weekly gross ($)
-    gg,         // avg GG% of gross potential
-    cap,        // avg paid capacity %
-    peerCap,    // avg capacity at Bushnell-size peer venues
-    index,      // Bushnell index vs national cap (Hartford records only)
-    count,      // number of weekly records matched
-    weeks       // number of reporting weeks
+    gross,        // avg weekly gross ($)
+    gg,           // avg GG% of gross potential
+    cap,          // avg paid capacity %
+    peerCap,      // avg capacity at Bushnell-size peer venues
+    index,        // Bushnell index vs national cap (Hartford records only)
+    count,        // number of weekly records matched
+    weeks,        // number of reporting weeks
+    paidCapacity, // alias for cap (used in signal card national strip)
+    ggPctGp,      // alias for gg
+    venueCount    // distinct peer venues in the matched pool
   },
   signals: {
-    demand,     // 0–100
-    revenue,    // 0–100
-    peer,       // 0–100
-    confidence  // 0–100
+    demand:     { value, label, drivers },  // value: 0–100 or null
+    revenue:    { value, label, drivers },
+    peer:       { value, label, drivers },  // value === 0 means zero peer records
+    confidence: { value, label, drivers }
   },
-  score,        // 0–100 Planning Signal composite
-  read,         // "Strong Candidate" | "Discuss" | "Watch" | "Exploratory"
-  isFutureNewTour  // true if no historical records exist yet
+  score,          // 0–100 composite integer or null (null = no evidence)
+  planning: {
+    read,         // "Strong Candidate" | "Mixed: Demand Ahead of Revenue" |
+                  // "Upside: Revenue Ahead of Demand" | "Discuss" | "Watch" | "Exploratory"
+    note          // one-sentence interpretation string (may be '')
+  },
+  decomp,         // { demand, revenue, peer, confidence } raw pre-scale values
+  isFutureNewTour // true if no historical records exist yet
 }
 ```
+
+**Note:** The top-level `read` field was removed. Use `p.planning.read`. The flat
+`signals.demand` (numeric) shape was replaced with `signals.demand.value` + `.label`
++ `.drivers`. Pages that call `BTD.page.planningSignals(profile)` receive only
+label strings and do not need to access `p.signals` directly.
 
 ### Signal thresholds
 

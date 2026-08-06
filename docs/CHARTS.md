@@ -10,7 +10,7 @@ Each chart is described below: what it shows, what the axes mean, how to read it
 
 **What it shows:** A horizontal bar chart ranking every show on the current season slate by its Planning Signal score (0–100). Bars are color-coded: green for Strong Candidate, neutral for Discuss/Watch, amber for Exploratory.
 
-**How to read it:** Longer bar = stronger combined signal across Demand, Revenue, Peer, and Confidence. The score is relative to the season median — a show scoring 70 in a strong year means something different than 70 in a weak year.
+**How to read it:** Longer bar = stronger combined signal across Demand, Revenue, Peer, and Confidence. The score is a fixed-range index (0–100) built from peer-cohort scaling — the same show always scores the same regardless of who else is on the slate. The Season Position badge (shown on the Planning Signal card) is the comparative element that places a show relative to the season median.
 
 **What it supports:** A quick visual ranking of the full slate. Use it to see at a glance which shows have the strongest combined case and which are speculative.
 
