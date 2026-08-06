@@ -132,31 +132,34 @@ entry point in `page-common.js`:
 ```javascript
 var profile = BTD.page.profileShowCanonical(show, allRows, options);
 // Direct call (non-page code only):
-var profile = BTD.signals.profileShow(show, records, peers, context, config);
+var profile = BTD.signals.profileShow(show, records, options);
 ```
 
 Returns (contract-compliant shape — see `docs/SCORING_CONTRACT.md`):
 
 ```javascript
 {
-  show: { title, season, status },
+  title,          // normalized show title string (top-level)
+  show,           // original show object passed in; if show was a string,
+                  //   { title: titleOf(show), match: matchOf(show) }
+                  //   Do not assume a normalized { title, season, status } shape.
   metrics: {
-    gross,        // avg weekly gross ($)
-    gg,           // avg GG% of gross potential
-    cap,          // avg paid capacity %
-    peerCap,      // avg capacity at Bushnell-size peer venues
+    gross,        // avg weekly gross ($) — alias: grossGross
+    gg,           // avg GG% of gross potential — alias: ggPctGp
+    cap,          // avg paid capacity % — alias: paidCapacity
+    peerCap,      // avg capacity across all peer types (deduplicated union)
     index,        // Bushnell index vs national cap (Hartford records only)
-    count,        // number of weekly records matched
-    weeks,        // number of reporting weeks
-    paidCapacity, // alias for cap (used in signal card national strip)
-    ggPctGp,      // alias for gg
-    venueCount    // distinct peer venues in the matched pool
+    count,        // number of weekly records matched — alias: recordCount
+    weeks,        // number of reporting weeks — alias: weekCount
+    venueCount    // distinct venues in the national matched pool
   },
   signals: {
     demand:     { value, label, drivers },  // value: 0–100 or null
     revenue:    { value, label, drivers },
     peer:       { value, label, drivers },  // value === 0 means zero peer records
     confidence: { value, label, drivers }
+    // signals also includes recognition, press, tour, risk, audience, local
+    // (each { value, label, drivers }) — used for supplementary display only
   },
   score,          // 0–100 composite integer or null (null = no evidence)
   planning: {
@@ -164,7 +167,15 @@ Returns (contract-compliant shape — see `docs/SCORING_CONTRACT.md`):
                   // "Upside: Revenue Ahead of Demand" | "Discuss" | "Watch" | "Exploratory"
     note          // one-sentence interpretation string (may be '')
   },
-  decomp,         // { demand, revenue, peer, confidence } raw pre-scale values
+  decomp: {
+    canonical,    // always true — marks this as the canonical scorer's output
+    demand,       // rounded demand component value (same as p.signals.demand.value)
+    revenue,      // rounded revenue component value
+    peer,         // rounded peer component value
+    confidence,   // rounded confidence component value
+    peerTypes     // string describing which cohort types contributed, e.g.
+                  //   "size (5 records), proximity (3 records)"
+  },
   isFutureNewTour // true if no historical records exist yet
 }
 ```
@@ -173,6 +184,10 @@ Returns (contract-compliant shape — see `docs/SCORING_CONTRACT.md`):
 `signals.demand` (numeric) shape was replaced with `signals.demand.value` + `.label`
 + `.drivers`. Pages that call `BTD.page.planningSignals(profile)` receive only
 label strings and do not need to access `p.signals` directly.
+
+`decomp` values duplicate the rounded component signal values — they are not raw
+pre-scale inputs. Use `p.signals.*.value` for the same data; `decomp` is retained
+for debugging and logging.
 
 ### Signal thresholds
 
