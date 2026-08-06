@@ -978,6 +978,83 @@ VERSION_PAGES.forEach(function (p) {
 });
 
 /* ══════════════════════════════════════════════════════════════════════════ */
+/*  SECTION 10 — Post-merge reconciliation invariants                        */
+/*                                                                            */
+/*  Guards for four items identified in the post-merge reconciliation:       */
+/*   a) SCORING_CONTRACT.md documents three-state Season Position.           */
+/*   b) SCORING_CONTRACT.md no longer calls disclosure a Phase 3 future task.*/
+/*   c) SCORING_CONTRACT.md distinguishes null stored / Exploratory UI / dash.*/
+/*   d) HTML pageVersion/pageDate fallbacks match versions.json.             */
+/*   e) programming.html <title> contains no hardcoded version string.       */
+/* ══════════════════════════════════════════════════════════════════════════ */
+
+section('10. Post-merge reconciliation invariants');
+
+// contractSrc already loaded at Section 2 (line 298).
+
+// a-1. SCORING_CONTRACT.md documents all three Season Position states.
+ok("SCORING_CONTRACT.md: Season Position documents 'Above season median' state",
+   contractSrc.includes('Above season median'),
+   "SCORING_CONTRACT.md missing 'Above season median' — Season Position must document three states");
+ok("SCORING_CONTRACT.md: Season Position documents 'At season median' state",
+   contractSrc.includes('At season median'),
+   "SCORING_CONTRACT.md missing 'At season median' — Season Position must document three states");
+ok("SCORING_CONTRACT.md: Season Position documents 'Below season median' state",
+   contractSrc.includes('Below season median'),
+   "SCORING_CONTRACT.md missing 'Below season median' — Season Position must document three states");
+ok("SCORING_CONTRACT.md: Season Position documents null/hidden state",
+   contractSrc.includes('null score has no season position') ||
+   contractSrc.includes('hidden') && contractSrc.includes('null'),
+   "SCORING_CONTRACT.md must document that null score hides the Season Position element");
+
+// a-2. Old binary >= Season Position code is absent from SCORING_CONTRACT.md.
+ok("SCORING_CONTRACT.md: old binary >= Season Position code is absent",
+   !/p\.score\s*>=\s*SCORE_MED\s*\?/.test(contractSrc),
+   "SCORING_CONTRACT.md still contains the old binary p.score >= SCORE_MED Season Position — must be three-state");
+
+// b. 'Phase 3 UI task' stale language is absent from SCORING_CONTRACT.md.
+ok("SCORING_CONTRACT.md: stale 'Phase 3 UI task' language is absent",
+   !contractSrc.includes('Phase 3 UI task'),
+   "SCORING_CONTRACT.md still calls disclosure a 'Phase 3 UI task' — Phase 3 is complete; update to past tense");
+
+// c. SCORING_CONTRACT.md distinguishes null stored, Exploratory UI, and dash.
+ok("SCORING_CONTRACT.md: null score Exploratory presentation documented",
+   contractSrc.includes('Exploratory') && contractSrc.includes('sigCompositeScore'),
+   "SCORING_CONTRACT.md must document that null score renders as 'Exploratory' in the signal card");
+ok("SCORING_CONTRACT.md: null score em-dash formatter presentation documented",
+   contractSrc.includes('—') && contractSrc.includes('fmt') || contractSrc.includes('pct()'),
+   "SCORING_CONTRACT.md must document that numeric formatters render null metric values as em-dash");
+
+// d. HTML pageVersion fallback text matches versions.json for scored pages.
+// Extract the fallback text from id="pageVersion">...<
+function extractFallback(htmlSrc, id) {
+  var m = new RegExp('id="' + id + '">([^<]+)<').exec(htmlSrc);
+  return m ? m[1].trim() : null;
+}
+var progFallbackVer  = extractFallback(progSrc3,  'pageVersion');
+var execFallbackVer  = extractFallback(execSrc3,  'pageVersion');
+var progFallbackDate = extractFallback(progSrc3,  'pageDate');
+var execFallbackDate = extractFallback(execSrc3,  'pageDate');
+
+ok("programming.html: pageVersion fallback matches versions.json",
+   progFallbackVer === versionsJson.programming.version,
+   "programming.html pageVersion fallback (" + progFallbackVer + ") does not match versions.json (" + versionsJson.programming.version + ")");
+ok("exec_summary.html: pageVersion fallback matches versions.json",
+   execFallbackVer === versionsJson.exec_summary.version,
+   "exec_summary.html pageVersion fallback (" + execFallbackVer + ") does not match versions.json (" + versionsJson.exec_summary.version + ")");
+ok("programming.html: pageDate fallback matches versions.json",
+   progFallbackDate === versionsJson.programming.date,
+   "programming.html pageDate fallback (" + progFallbackDate + ") does not match versions.json (" + versionsJson.programming.date + ")");
+ok("exec_summary.html: pageDate fallback matches versions.json",
+   execFallbackDate === versionsJson.exec_summary.date,
+   "exec_summary.html pageDate fallback (" + execFallbackDate + ") does not match versions.json (" + versionsJson.exec_summary.date + ")");
+
+// e. programming.html <title> must not contain a hardcoded version string (vX.Y).
+ok("programming.html: <title> contains no hardcoded version string",
+   !/<title>[^<]*v\d+\.\d+[^<]*<\/title>/.test(progSrc3),
+   "programming.html <title> contains a hardcoded version string — version strings must come from versions.json, not the <title> tag");
+
+/* ══════════════════════════════════════════════════════════════════════════ */
 /*  SUMMARY                                                                  */
 /* ══════════════════════════════════════════════════════════════════════════ */
 

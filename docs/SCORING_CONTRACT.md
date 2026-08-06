@@ -157,9 +157,10 @@ evidence context must be visible (for example: a badge reading "Primary tier onl
 or "Subscribers only"). Without disclosure, a context-filtered score is
 indistinguishable from the baseline.
 
-This disclosure requirement is a Phase 3 UI task. Until Phase 3 is complete,
-pages should avoid displaying a context-filtered score in any context where the
-active evidence boundary cannot be communicated to the reader.
+This disclosure requirement was implemented in Phase 3 (signals-consolidation).
+Both `programming.html` and `exec_summary.html` display a context badge
+(`id="sigContextBadge"`) when `ACTIVE_TIER` or `ACTIVE_SUB` is non-empty,
+and hide the badge when both are at their neutral values.
 
 ### Scenario score
 
@@ -183,6 +184,20 @@ authorized evidence filter in this contract.
 |---|---|---|
 | `p.score` | `integer 0–100` or `null` | `null` for new tours — never a fabricated zero |
 | `p.isFutureNewTour` | `boolean` | When `true`: score is `null`, all components are Exploratory |
+
+#### Null score presentation
+
+A null `p.score` must not be coerced to zero. Three distinct presentations exist:
+
+| Context | Null renders as | Notes |
+|---|---|---|
+| Canonical signal card (`id="sigCompositeScore"`) | Text `"Exploratory"` | Season Position element is also hidden |
+| Numeric reference metrics (tables, reference strips) | `—` (em-dash) | Via `pct()` / `fmt$()` formatters — applies to null metric fields, not the score itself |
+| Season Position badge (`id="sigSeasonPos"`) | Hidden (`display: none`) | No position label is shown when there is no score to compare |
+
+These presentations are intentionally distinct. A `—` in a reference-metric column
+is a formatter output for a missing data point. `"Exploratory"` in the signal card
+means the show has no scorable touring evidence. Do not conflate them.
 
 ### Planning Read (fixed thresholds — not season-relative)
 
@@ -353,9 +368,19 @@ comparative presentation label derived after all profiles are scored:
 // Computed once after all season profiles are built
 SCORE_MED = median(profiles.map(p => p.score).filter(s => s != null)) || 50;
 
-// Applied per profile in UI rendering
-var position = p.score >= SCORE_MED ? 'Above season median' : 'Below season median';
+// Applied per profile in UI rendering — three states plus null
+if (p.score != null) {
+  if (p.score > SCORE_MED)      position = '▲ Above season median';
+  else if (p.score < SCORE_MED) position = '▼ Below season median';
+  else                           position = '◆ At season median';
+  // show the position element
+} else {
+  // hide the position element — null score has no season position
+}
 ```
+
+Season Position has three states (Above / At / Below) plus a hidden null state.
+A score exactly equal to the median routes to "At season median" — **not** "Above."
 
 Season Position and Planning Read must be **visually distinct** in the UI —
 they answer different questions and must never be conflated or displayed
