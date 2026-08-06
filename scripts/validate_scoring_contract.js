@@ -816,6 +816,70 @@ ok("styles.css: .sig-comp-val class is defined",
    "styles.css missing .sig-comp-val class definition — required for numeric component value display");
 
 /* ══════════════════════════════════════════════════════════════════════════ */
+/*  SECTION 7 — Phase 4 removal guards (utils.js)                           */
+/*                                                                            */
+/*  These checks constitute the automated removal coverage that the          */
+/*  SCORING_CONTRACT.md deprecation schedule originally required before      */
+/*  deleting planningSignal() and SIGNAL_WEIGHTS. They fail immediately if   */
+/*  either symbol — or any of the four private helpers that served the       */
+/*  deprecated model — is reintroduced in utils.js or called from any page. */
+/*                                                                            */
+/*  Rationale for satisfying the former "Phase 5 contract tests pass" gate   */
+/*  in Phase 4 is documented in SCORING_CONTRACT.md §"Removal gate           */
+/*  reconciliation (Phase 4)".                                               */
+/* ══════════════════════════════════════════════════════════════════════════ */
+
+section('7. Phase 4: utils.js Model 1 symbols permanently absent');
+
+const utilsSrc      = fs.readFileSync(path.join(__dirname, '..', 'src', 'js', 'utils.js'), 'utf8');
+const utilsStripped = stripJsComments(utilsSrc);
+
+// 1. SIGNAL_WEIGHTS must not be re-declared as a live variable in utils.js.
+// Tombstone comment references to the name are allowed; live declarations are not.
+ok("utils.js: SIGNAL_WEIGHTS not re-declared (Phase 4 guard)",
+   !/\b(?:var|let|const)\s+SIGNAL_WEIGHTS\s*=/.test(utilsStripped),
+   "utils.js re-declares SIGNAL_WEIGHTS — must remain removed (Model 1 weight constants)");
+
+// 2. planningSignal() must not be re-declared as a function in utils.js.
+ok("utils.js: planningSignal() not re-declared (Phase 4 guard)",
+   !/\bfunction\s+planningSignal\b/.test(utilsStripped) &&
+   !/\bplanningSignal\s*=\s*function\b/.test(utilsStripped),
+   "utils.js re-declares planningSignal — must remain removed (Model 1 entry point)");
+
+// 3. The private percentileRank() from Model 1 must not be re-declared in utils.js.
+// BTD.metrics.percentileRank in metrics.js is a different implementation and is permitted.
+ok("utils.js: function percentileRank() not re-declared (Phase 4 guard — private Model 1 helper)",
+   !/\bfunction\s+percentileRank\b/.test(utilsStripped),
+   "utils.js re-declares percentileRank — the private Model 1 helper must remain removed");
+
+// 4. The recency-based confidenceScore() from Model 1 must not be re-declared.
+// The local variable 'confidenceScore' in signals.js is a different thing and is permitted.
+ok("utils.js: function confidenceScore() not re-declared (Phase 4 guard — recency-based Model 1 helper)",
+   !/\bfunction\s+confidenceScore\b/.test(utilsStripped),
+   "utils.js re-declares confidenceScore — the recency-based Model 1 helper must remain removed");
+
+// 5. threeYearCutoff() must not be re-declared.
+ok("utils.js: function threeYearCutoff() not re-declared (Phase 4 guard)",
+   !/\bfunction\s+threeYearCutoff\b/.test(utilsStripped),
+   "utils.js re-declares threeYearCutoff — the Model 1 helper must remain removed");
+
+// 6. No page may call planningSignal() (no 's') — the Model 1 entry point.
+// This is distinct from planningSignals() (with 's') which is the Model 3 inline.
+// Section 3 covers planningSignals (Model 3); this guard covers planningSignal (Model 1).
+function callsPlanningSignalModel1(src) {
+  var stripped = stripJsComments(src);
+  /* Match "planningSignal(" but not "planningSignals(" (the Model 3 function).
+   * Negative character class: planningSignal followed by ( but not by s+( */
+  return /\bplanningSignal\s*\(/.test(stripped.replace(/\bplanningSignals\s*\(/g, '__MODEL3__'));
+}
+ok("programming.html: planningSignal() (Model 1) not called (Phase 4 guard)",
+   !callsPlanningSignalModel1(progSrc3),
+   "programming.html calls planningSignal() — this is the removed Model 1 entry point in utils.js");
+ok("exec_summary.html: planningSignal() (Model 1) not called (Phase 4 guard)",
+   !callsPlanningSignalModel1(execSrc3),
+   "exec_summary.html calls planningSignal() — this is the removed Model 1 entry point in utils.js");
+
+/* ══════════════════════════════════════════════════════════════════════════ */
 /*  SUMMARY                                                                  */
 /* ══════════════════════════════════════════════════════════════════════════ */
 

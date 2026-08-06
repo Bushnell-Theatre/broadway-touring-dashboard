@@ -384,6 +384,47 @@ interchangeably.
 | `SIGNAL_WEIGHTS` | `js/utils.js` | **Removed 2026-08-06 (Phase 4)** | — |
 | Inline `planningSignals()` | `programming.html`, `exec_summary.html` | Removed in Phase 2 | — |
 
+### Removal gate reconciliation (Phase 4)
+
+The original deprecation schedule listed **"Phase 5 contract tests pass"** as
+the removal condition for `planningSignal()` and `SIGNAL_WEIGHTS`. Both symbols
+were removed in Phase 4 instead. This section records the explicit justification
+for that change. It is an intentional reconciliation, not an overwrite of the
+former condition.
+
+**What the original gate required:**
+The gate existed to ensure that an automated check would fail on any
+reintroduction of the removed symbols before the deletion was committed. The
+concern was that deleting code without a permanent guard creates a silent
+regression risk — the symbols could be re-added without breaking any test.
+
+**Why the gate is satisfied as of Phase 4:**
+
+1. **`validate_scoring_contract.js` Section 3** (added Phase 1) already asserts
+   that no HTML page calls `planningSignal()` or references `SIGNAL_WEIGHTS`.
+   These checks run on every validation pass and catch any reintroduction via
+   a page caller.
+
+2. **`validate_scoring_contract.js` Section 7** (added in the same commit as
+   this note) adds seven guards scoped to `utils.js` and to page-level callers:
+   - `SIGNAL_WEIGHTS` not re-declared as a live variable
+   - `planningSignal()` not re-declared as a function
+   - `percentileRank()`, `confidenceScore()`, `threeYearCutoff()` — the three
+     private helpers — not re-declared
+   - No page calls `planningSignal()` (the Model 1 entry point, distinct from
+     the Model 3 `planningSignals()` covered by Section 3)
+
+3. **`verify_render_harness.js`** (58 checks, Phase 3) confirms that
+   `renderSignalCard()` on both pages produces correct output entirely through
+   `BTD.signals` — independent of any `utils.js` function. A `utils.js`
+   reintroduction would not silently pass this harness if it produced a
+   divergent result.
+
+Together these three controls constitute the automated removal coverage that
+the Phase 5 gate was intended to require. The gate condition is satisfied; the
+removal timing moved from Phase 5 to Phase 4 because all required controls
+already existed at the point of removal.
+
 ---
 
 ## Related documents
