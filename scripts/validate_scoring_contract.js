@@ -939,6 +939,45 @@ ok("DEVELOPER.md: decomp described as rounded canonical component values",
    "DEVELOPER.md lost the rounded-canonical-values description for decomp — must match implementation");
 
 /* ══════════════════════════════════════════════════════════════════════════ */
+/*  SECTION 9 — CLAUDE.md current-versions table matches versions.json       */
+/*                                                                            */
+/*  versions.json is the single source of truth for page versions. CLAUDE.md */
+/*  carries a "Current versions" table that must stay in sync. This section  */
+/*  parses both files and checks that each page's version string appears in  */
+/*  the CLAUDE.md table. A mismatch fails immediately so the next version    */
+/*  bump can't silently leave the table stale.                               */
+/* ══════════════════════════════════════════════════════════════════════════ */
+
+section('9. CLAUDE.md current-versions table matches versions.json');
+
+const versionsJson = JSON.parse(src('src/data/versions.json'));
+const claudeSrc    = src('CLAUDE.md');
+
+// The four pages tracked in versions.json; label is how they appear in CLAUDE.md.
+const VERSION_PAGES = [
+  { key: 'dashboard',    label: 'dashboard.html'    },
+  { key: 'programming',  label: 'programming.html'  },
+  { key: 'exec_summary', label: 'exec_summary.html' },
+  { key: 'box_office',   label: 'box_office.html'   },
+];
+
+VERSION_PAGES.forEach(function (p) {
+  var entry = versionsJson[p.key];
+  if (!entry) {
+    ok('CLAUDE.md versions table: ' + p.label + ' entry present in versions.json',
+       false, 'versions.json is missing the ' + p.key + ' key');
+    return;
+  }
+  var version = entry.version; // e.g. "v6.0"
+  // Check that the CLAUDE.md table row for this page includes the version string.
+  // The table row format is: | page.html | vX.Y | ... |
+  var rowPattern = new RegExp('\\|\\s*' + p.label.replace('.', '\\.') + '\\s*\\|[^|]*' + version.replace('.', '\\.'));
+  ok('CLAUDE.md versions table: ' + p.label + ' shows ' + version,
+     rowPattern.test(claudeSrc),
+     'CLAUDE.md current-versions table for ' + p.label + ' does not match versions.json (' + version + ')');
+});
+
+/* ══════════════════════════════════════════════════════════════════════════ */
 /*  SUMMARY                                                                  */
 /* ══════════════════════════════════════════════════════════════════════════ */
 
