@@ -882,39 +882,61 @@ ok("exec_summary.html: planningSignal() (Model 1) not called (Phase 4 guard)",
 /* ══════════════════════════════════════════════════════════════════════════ */
 /*  SECTION 8 — DEVELOPER.md return-shape invariants (Phase 5)               */
 /*                                                                            */
-/*  These guards ensure the three corrections documented in Phase 5 do not   */
-/*  silently regress: correct 3-param direct signature, top-level `title`,   */
-/*  and decomp.canonical marker.                                              */
+/*  Each correction is guarded on BOTH sides:                                 */
+/*   • signals.js — implementation still matches what the doc describes.      */
+/*   • DEVELOPER.md — the document actually contains the correct text.        */
 /*                                                                            */
-/*  Each check reads signals.js directly so the docs can't drift again       */
-/*  without the validator failing.                                            */
+/*  A one-sided check only catches implementation drift; it cannot catch      */
+/*  the doc reverting to stale content independently.                         */
 /* ══════════════════════════════════════════════════════════════════════════ */
 
 section('8. DEVELOPER.md return-shape invariants (Phase 5)');
 
-// 1. profileShow direct signature is 3-param: (show, records, options).
-//    The old docs showed 5 params (show, records, peers, context, config).
-//    Guard: signals.js must declare the function with exactly 3 parameters.
-//    Regex matches: function profileShow(show, records, options)
+const developerSrc = src('docs/DEVELOPER.md');
+
+/* ── 1. profileShow 3-param signature ──────────────────────────────────── */
+// Implementation side: signals.js declares the function with 3 params.
 ok("signals.js: profileShow declared with 3-param signature (show, records, options)",
    /function\s+profileShow\s*\(\s*show\s*,\s*records\s*,\s*options\s*\)/.test(signalsSrc),
    "signals.js profileShow signature has changed — DEVELOPER.md must be updated to match");
 
-// 2. `title` is a top-level field in the return object.
-//    The old docs showed show: { title, season, status } implying title was nested.
-//    Guard: signals.js must contain the concrete implementation pattern
-//    `title: titleOf(show)` (the assignment that produces the top-level title field).
-//    The return block is multiline with nested objects, so we match the
-//    literal expression rather than trying to traverse the block with a regex.
+// Documentation side: DEVELOPER.md contains the correct 3-param call.
+ok("DEVELOPER.md: documents profileShow with 3-param signature (show, records, options)",
+   developerSrc.includes('BTD.signals.profileShow(show, records, options)'),
+   "DEVELOPER.md reverted to old signature — must document BTD.signals.profileShow(show, records, options)");
+
+// Documentation side: the obsolete 5-param signature is absent.
+ok("DEVELOPER.md: obsolete 5-param signature (show, records, peers, context, config) is absent",
+   !developerSrc.includes('profileShow(show, records, peers, context, config)'),
+   "DEVELOPER.md contains the old 5-param profileShow signature — must be (show, records, options)");
+
+/* ── 2. title as top-level field ───────────────────────────────────────── */
+// Implementation side: signals.js return assigns title: titleOf(show).
 ok("signals.js: profileShow return object has top-level `title:` field",
    /\btitle\s*:\s*titleOf\s*\(\s*show\s*\)/.test(signalsSrc),
    "signals.js profileShow return object lost top-level `title:` field — DEVELOPER.md must be updated");
 
-// 3. `decomp` contains `canonical: true` — it is NOT raw pre-scale data.
-//    Guard: signals.js decomp object must include the `canonical:` key.
+// Documentation side: DEVELOPER.md documents title as top-level.
+// The canonical marker is the comment '// normalized show title string (top-level)'.
+ok("DEVELOPER.md: title documented as top-level field (not nested under show)",
+   developerSrc.includes('normalized show title string (top-level)'),
+   "DEVELOPER.md lost the top-level title annotation — must document title as a top-level field, not nested under show");
+
+/* ── 3. decomp contains canonical rounded values, not raw pre-scale data ─ */
+// Implementation side: signals.js decomp object includes the canonical: key.
 ok("signals.js: decomp object includes `canonical:` marker (rounded component values, not raw)",
    /decomp\s*:\s*\{[^}]*\bcanonical\s*:/.test(signalsSrc),
    "signals.js decomp object lost `canonical:` marker — description in DEVELOPER.md must match implementation");
+
+// Documentation side: 'raw pre-scale values' description is absent.
+ok("DEVELOPER.md: decomp not described as 'raw pre-scale values'",
+   !developerSrc.includes('raw pre-scale values'),
+   "DEVELOPER.md reverted to describing decomp as 'raw pre-scale values' — must describe rounded canonical component values");
+
+// Documentation side: decomp is described as rounded canonical values.
+ok("DEVELOPER.md: decomp described as rounded canonical component values",
+   developerSrc.includes('rounded demand component value'),
+   "DEVELOPER.md lost the rounded-canonical-values description for decomp — must match implementation");
 
 /* ══════════════════════════════════════════════════════════════════════════ */
 /*  SUMMARY                                                                  */
