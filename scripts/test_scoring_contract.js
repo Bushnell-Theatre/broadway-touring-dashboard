@@ -10,8 +10,8 @@
  *   npm test
  *
  * Suites:
- *   validate_scoring_contract.js  — static source checks (97 checks)
- *   verify_render_harness.js      — DOM-stub behavioral checks (58 checks)
+ *   validate_scoring_contract.js  — static source checks
+ *   verify_render_harness.js      — DOM-stub behavioral checks
  *
  * ─────────────────────────────────────────────────────────────────────────── */
 
