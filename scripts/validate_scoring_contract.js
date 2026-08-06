@@ -1055,6 +1055,56 @@ ok("programming.html: <title> contains no hardcoded version string",
    "programming.html <title> contains a hardcoded version string — version strings must come from versions.json, not the <title> tag");
 
 /* ══════════════════════════════════════════════════════════════════════════ */
+/*  SECTION 11 — index.html version card invariants                          */
+/*                                                                            */
+/*  index.html cards must not carry hard-coded version/date strings.         */
+/*  versions.json is the sole source of displayed versions; the loader       */
+/*  replaces each ver-<key> span on load. Static fallback text must be       */
+/*  neutral ("Loading…") so a fetch failure does not surface stale data.     */
+/* ══════════════════════════════════════════════════════════════════════════ */
+
+section('11. index.html version card invariants');
+
+const indexSrc = src('src/index.html');
+
+// Active ver-* elements that must exist in index.html and carry no hardcoded version.
+// box_office is suspended (commented out) — excluded from active checks.
+const ACTIVE_CARD_KEYS = ['dashboard', 'programming', 'exec_summary'];
+
+ACTIVE_CARD_KEYS.forEach(function (key) {
+  var id = 'ver-' + key;
+
+  // 1. The ver-<key> span exists (and is not commented out).
+  // Match the element outside an HTML comment block.
+  var strippedComments = indexSrc.replace(/<!--[\s\S]*?-->/g, '');
+  ok('index.html: id="ver-' + key + '" element present (not commented out)',
+     strippedComments.includes('id="ver-' + key + '"'),
+     'index.html is missing an active id="ver-' + key + '" span — required for versions.json loader');
+
+  // 2. The ver-<key> span contains no hardcoded version string (vX.Y pattern).
+  //    Extract the text between >…< for this element and check it is version-free.
+  var spanPattern = new RegExp('id="ver-' + key + '"[^>]*>([^<]*)<');
+  var spanMatch = spanPattern.exec(strippedComments);
+  var fallbackText = spanMatch ? spanMatch[1].trim() : '';
+  ok('index.html: ver-' + key + ' fallback contains no hardcoded version string',
+     !/v\d+\.\d+/.test(fallbackText),
+     'index.html ver-' + key + ' fallback contains hardcoded version "' + fallbackText + '" — use a neutral placeholder like "Loading…"');
+});
+
+// 3. The versions.json loader is present and iterates over the active card keys.
+ok("index.html: versions.json loader fetches 'data/versions.json'",
+   indexSrc.includes("fetch('data/versions.json')"),
+   "index.html is missing the versions.json fetch — loader is required to populate ver-* spans");
+
+ok("index.html: versions.json loader references 'programming' key",
+   /ver-.*programming|programming.*ver-|'programming'/.test(indexSrc),
+   "index.html versions.json loader does not reference the 'programming' card key");
+
+ok("index.html: versions.json loader references 'exec_summary' key",
+   /ver-.*exec_summary|exec_summary.*ver-|'exec_summary'/.test(indexSrc),
+   "index.html versions.json loader does not reference the 'exec_summary' card key");
+
+/* ══════════════════════════════════════════════════════════════════════════ */
 /*  SUMMARY                                                                  */
 /* ══════════════════════════════════════════════════════════════════════════ */
 
