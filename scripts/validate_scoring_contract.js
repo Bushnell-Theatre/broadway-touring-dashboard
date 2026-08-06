@@ -880,6 +880,43 @@ ok("exec_summary.html: planningSignal() (Model 1) not called (Phase 4 guard)",
    "exec_summary.html calls planningSignal() — this is the removed Model 1 entry point in utils.js");
 
 /* ══════════════════════════════════════════════════════════════════════════ */
+/*  SECTION 8 — DEVELOPER.md return-shape invariants (Phase 5)               */
+/*                                                                            */
+/*  These guards ensure the three corrections documented in Phase 5 do not   */
+/*  silently regress: correct 3-param direct signature, top-level `title`,   */
+/*  and decomp.canonical marker.                                              */
+/*                                                                            */
+/*  Each check reads signals.js directly so the docs can't drift again       */
+/*  without the validator failing.                                            */
+/* ══════════════════════════════════════════════════════════════════════════ */
+
+section('8. DEVELOPER.md return-shape invariants (Phase 5)');
+
+// 1. profileShow direct signature is 3-param: (show, records, options).
+//    The old docs showed 5 params (show, records, peers, context, config).
+//    Guard: signals.js must declare the function with exactly 3 parameters.
+//    Regex matches: function profileShow(show, records, options)
+ok("signals.js: profileShow declared with 3-param signature (show, records, options)",
+   /function\s+profileShow\s*\(\s*show\s*,\s*records\s*,\s*options\s*\)/.test(signalsSrc),
+   "signals.js profileShow signature has changed — DEVELOPER.md must be updated to match");
+
+// 2. `title` is a top-level field in the return object.
+//    The old docs showed show: { title, season, status } implying title was nested.
+//    Guard: signals.js must contain the concrete implementation pattern
+//    `title: titleOf(show)` (the assignment that produces the top-level title field).
+//    The return block is multiline with nested objects, so we match the
+//    literal expression rather than trying to traverse the block with a regex.
+ok("signals.js: profileShow return object has top-level `title:` field",
+   /\btitle\s*:\s*titleOf\s*\(\s*show\s*\)/.test(signalsSrc),
+   "signals.js profileShow return object lost top-level `title:` field — DEVELOPER.md must be updated");
+
+// 3. `decomp` contains `canonical: true` — it is NOT raw pre-scale data.
+//    Guard: signals.js decomp object must include the `canonical:` key.
+ok("signals.js: decomp object includes `canonical:` marker (rounded component values, not raw)",
+   /decomp\s*:\s*\{[^}]*\bcanonical\s*:/.test(signalsSrc),
+   "signals.js decomp object lost `canonical:` marker — description in DEVELOPER.md must match implementation");
+
+/* ══════════════════════════════════════════════════════════════════════════ */
 /*  SUMMARY                                                                  */
 /* ══════════════════════════════════════════════════════════════════════════ */
 
