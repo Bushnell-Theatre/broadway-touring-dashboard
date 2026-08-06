@@ -380,8 +380,8 @@ interchangeably.
 
 | Symbol | Location | Status | Remove when |
 |---|---|---|---|
-| `planningSignal()` | `js/utils.js` | Deprecated 2026-08-05 | Phase 5 contract tests pass |
-| `SIGNAL_WEIGHTS` | `js/utils.js` | Deprecated 2026-08-05 | Phase 5 contract tests pass |
+| `planningSignal()` | `js/utils.js` | **Removed 2026-08-06 (Phase 4)** | — |
+| `SIGNAL_WEIGHTS` | `js/utils.js` | **Removed 2026-08-06 (Phase 4)** | — |
 | Inline `planningSignals()` | `programming.html`, `exec_summary.html` | Removed in Phase 2 | — |
 
 ---
