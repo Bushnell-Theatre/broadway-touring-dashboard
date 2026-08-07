@@ -1,8 +1,8 @@
 {
   "2026-2027": {
-    "week_of": "2026-07-19",
-    "trigger": "cap_band_crossing",
-    "summary": "Hell's Kitchen advanced into high-demand territory this week, with paid capacity climbing 3 percentage points to 90.2%—crossing our internal threshold for strong performance among comparable venues. This shift suggests the show is resonating with audiences in our market segment. The data reflects booking momentum during the week of July 19, 2026, and warrants continued monitoring as we approach the performance window.",
-    "generated_at": "2026-07-24T13:39:14"
+    "week_of": "2026-08-02",
+    "trigger": "show_closes",
+    "summary": "Hell's Kitchen, which had maintained a consistent touring presence for 26 weeks through late July 2026, has exited the Broadway League tracking data this week. This exit likely indicates the tour has concluded its run or significantly contracted its venue schedule. For the Bushnell's 2026-2027 season planning, this suggests closer monitoring of our touring slate's stability, particularly as we approach the confirmed booking window.",
+    "generated_at": "2026-08-07T13:01:56"
   }
 }

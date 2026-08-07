@@ -1,8 +1,8 @@
 {
   "2026-2027": {
-    "week_of": "2026-07-19",
-    "trigger": "cap_band_crossing",
-    "summary": "Hell's Kitchen crossed into high-demand territory this week, with national paid capacity climbing from 87.2% to 90.2% as of July 19, 2026. This transition from the mid-range band signals strengthening audience interest in the title across touring markets. The momentum warrants continued monitoring to assess whether this represents sustained demand or temporary volatility.",
-    "generated_at": "2026-07-24T13:39:16"
+    "week_of": "2026-08-02",
+    "trigger": "show_closes,wow_gross_change",
+    "summary": "Two significant shifts emerged in this week's Broadway League data: Hell's Kitchen experienced a sharp 47% gross decline ($1.71M to $911K for the week ending August 2nd), while The Outsiders exited the tracking dataset entirely after a 45-week run. These movements suggest potential softening in national touring demand during early August, though the Hell's Kitchen decline may reflect typical summer audience fluctuations rather than fundamental market weakness.",
+    "generated_at": "2026-08-07T13:01:58"
   }
 }
