@@ -45,11 +45,24 @@ If NOAA or FRED keys are missing, `scrape_context.py` skips that source and logs
 
 ### Automatic (recommended on Windows)
 
-Double-click `scripts/start_watcher.bat`. It opens a terminal window, checks that Python and watchdog are installed, and starts the watcher. Drop a new `.xlsx` file into the designated OneDrive upload folder — the watcher detects it, runs all three pipeline stages, and commits and pushes automatically.
+Double-click `scripts/start_watcher.bat`. It opens a terminal window, checks that Python and watchdog are installed, and starts the watcher.
+
+**On startup the watcher scans the watch folder** for any XLSX files whose week is not yet in `data.json` and processes them automatically — this catches reports that arrived while the watcher was down. When the scan is finished the log prints a clear summary line and flips to live mode:
+
+```
+============================================================
+Startup scan complete — 2026-08-07 09:03:12 | 285 file(s) checked | 1 processed | 284 already current | 0 unreadable
+Watcher is now LIVE — listening for new files.
+============================================================
+```
+
+Wait for this line before concluding the watcher is ready. Everything above it is the catch-up scan, not a hang.
+
+Once live, drop a new `.xlsx` file into the designated OneDrive upload folder — the watcher detects it, runs all pipeline stages, and commits and pushes automatically.
 
 Keep the window open while the watcher is running. Close it or press `Ctrl+C` to stop.
 
-The watcher requires the laptop to be on and logged in. If the machine is off or asleep when a report arrives, run the pipeline manually (below).
+The watcher requires the laptop to be on and logged in. Because the watcher is not running on a dedicated server, check the log on startup to confirm any reports that arrived since last run have been caught up.
 
 ### Manual — single command
 
@@ -270,7 +283,7 @@ None of these variables are used by the browser frontend. They are only needed w
 | `generate_highlights.py` | Evaluates hard-coded thresholds against current-season data; calls Anthropic API if any trip; writes season-keyed `exec_brief_highlight.json` and `programming_highlight.json`. Supports `--dry-run`. |
 | `generate_season_review.py` | Fires once per season, 14 days after last show close; computes pre-season signal vs actual peer results; calls Anthropic API; writes `season_review.json`. Supports `--dry-run`. |
 | `validate_data.py` | Data quality checks; writes `validation_report.json` |
-| `watcher.py` | Watches OneDrive folder for new XLSX files; runs all pipeline stages (1 → 2 → 2.5 → 2.75 → 2.8 → 3) on detection |
+| `watcher.py` | Watches OneDrive folder for new XLSX files; runs all pipeline stages (1 → 2 → 2.5 → 2.75 → 2.8 → 3) on detection. On startup, scans the folder for any reports missed while the watcher was down and processes them before going live. Handles OneDrive's `on_modified` sync pattern in addition to `on_created`. |
 | `dashboard_config.py` | Shared path constants used by all other scripts |
 | `compare_signals.js` | QA tool — prints Planning Signal scores for a given season |
 
@@ -278,7 +291,9 @@ None of these variables are used by the browser frontend. They are only needed w
 
 ## Troubleshooting
 
-**Watcher didn't fire.** The watcher requires `start_watcher.bat` to be running. If the window was closed or the laptop was asleep, run the pipeline manually with `run_pipeline.py --append`.
+**Watcher didn't fire on a new file.** First check that the watcher is running and has printed `Watcher is now LIVE` — everything before that line is the startup scan, not a hang. If the watcher was closed or the laptop was asleep when the file arrived, restart the watcher — the startup scan will detect and process any missed files automatically. Only fall back to `run_pipeline.py --append` if the startup scan does not pick up the file (e.g. the file is in the wrong folder or the week date cannot be read from the sheet names).
+
+**Watcher appears to stop responding after startup.** With 285+ files in the watch folder the startup scan takes about 2 minutes to open and inspect every workbook. This is normal and expected — the watcher is not frozen. Wait for the `Watcher is now LIVE` summary line before concluding something is wrong.
 
 **Storm event data looks stale or missing for a recent week.** NOAA periodically revises its bulk CSV files. The watcher uses the filename to detect a new version — if NOAA published a correction but the filename didn't change (rare), the cached file will be used. To force a re-fetch for a specific year, delete the corresponding `.csv.gz` file from `scripts/cache/storm_events/` and re-run `scrape_context.py`.
 
