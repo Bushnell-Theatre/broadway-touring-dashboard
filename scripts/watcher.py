@@ -14,6 +14,26 @@ When a new file is detected:
 Steps 2.75 and 2.8 are non-fatal: if either fails the pipeline logs a
 warning and continues to the git commit.
 
+Startup behaviour
+-----------------
+On launch the watcher scans the watch folder for any XLSX files whose
+week_of date is not yet in data.json and processes them automatically.
+This catches files that arrived while the watcher was down. The log
+prints a summary line when the scan is complete so you can confirm the
+watcher has gone live:
+
+    Startup scan complete — 2026-08-07 09:03:12 | 285 file(s) checked |
+    1 processed | 284 already current | 0 unreadable
+    Watcher is now LIVE — listening for new files.
+
+OneDrive compatibility
+----------------------
+OneDrive-synced folders do not always fire on_created when a file
+syncs from the cloud — they often fire on_modified on a placeholder
+instead. The handler responds to on_created, on_modified, and on_moved
+and deduplicates by (path, mtime) so each unique file version is
+processed exactly once.
+
 Requirements:
     pip install watchdog
 
@@ -152,7 +172,7 @@ def enrich_new_shows():
         import importlib.util
         spec = importlib.util.spec_from_file_location(
             "scrape_shows", SCRAPE_PATH)
-        scrape = importlib.util.load_from_spec(spec)
+        scrape = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(scrape)
     except Exception as e:
         log.error(f"Could not import scrape_shows.py: {e}")
@@ -178,7 +198,7 @@ def enrich_new_shows():
             record = scrape.enrich_show(entry, season)
             existing[entry["name"]] = record
         except Exception as e:
-            log.error(f"  Failed to enrich '{show}': {e}")
+            log.error(f"  Failed to enrich '{entry['name']}': {e}")
 
     try:
         with open(SHOWS_JSON, "w", encoding="utf-8") as f:
@@ -316,27 +336,153 @@ def process_new_file(filepath):
 # ── FILE SYSTEM HANDLER ─────────────────────────────────────────────────
 
 class XLSXHandler(FileSystemEventHandler):
-    def __init__(self):
-        self._seen = set()
+    """
+    Watches for new XLSX files in the reports folder.
+
+    OneDrive-synced folders often do NOT fire on_created when a file syncs
+    from the cloud — they fire on_modified on a placeholder instead. To
+    handle this reliably we respond to on_created, on_modified, AND
+    on_moved, then deduplicate with a seen-set keyed by (path, mtime) so
+    a legitimate re-upload of a revised file is still picked up.
+    """
+
+    def __init__(self, already_processed: set):
+        # Seed with files that existed at startup (already processed or
+        # intentionally skipped during the startup scan).
+        self._seen = set(already_processed)
+
+    def _candidate(self, path):
+        fname = os.path.basename(path)
+        if not path.lower().endswith('.xlsx'):
+            return
+        if fname.startswith('~'):
+            return  # Office temp file
+        try:
+            mtime = os.path.getmtime(path)
+        except OSError:
+            return
+        key = (path, round(mtime))
+        if key not in self._seen:
+            self._seen.add(key)
+            process_new_file(path)
 
     def on_created(self, event):
-        if event.is_directory:
-            return
-        path = event.src_path
-        if path.lower().endswith('.xlsx') and not os.path.basename(path).startswith('~'):
-            if path not in self._seen:
-                self._seen.add(path)
-                process_new_file(path)
+        if not event.is_directory:
+            self._candidate(event.src_path)
+
+    def on_modified(self, event):
+        # OneDrive fires modified (not created) when syncing a new file
+        # from the cloud. We treat it like created — dedup via (path, mtime).
+        if not event.is_directory:
+            self._candidate(event.src_path)
 
     def on_moved(self, event):
-        # Handles files moved/renamed into the watch folder
-        if event.is_directory:
-            return
-        path = event.dest_path
-        if path.lower().endswith('.xlsx') and not os.path.basename(path).startswith('~'):
-            if path not in self._seen:
-                self._seen.add(path)
-                process_new_file(path)
+        # Handles files renamed/moved into the watch folder
+        if not event.is_directory:
+            self._candidate(event.dest_path)
+
+
+# ── STARTUP SCAN ────────────────────────────────────────────────────────
+
+def startup_scan():
+    """
+    On startup, check the watch folder for any XLSX files whose week_of
+    is not yet represented in data.json. Process any that are missing.
+
+    This catches files that arrived while the watcher was down.
+    Returns the set of (path, mtime) keys for all files found, so the
+    handler can seed its seen-set and won't reprocess them.
+    """
+    seen_keys = set()
+
+    if not os.path.isdir(WATCH_FOLDER):
+        return seen_keys
+
+    # Load the weeks already in data.json
+    known_weeks = set()
+    if os.path.isfile(DATA_JSON):
+        try:
+            with open(DATA_JSON, encoding='utf-8') as f:
+                existing = json.load(f)
+            records = existing if isinstance(existing, list) else existing.get('records', [])
+            known_weeks = {r.get('week_of') for r in records if r.get('week_of')}
+        except Exception as e:
+            log.warning(f"Startup scan: could not read data.json: {e}")
+
+    import openpyxl
+    import re
+
+    def extract_week(filepath):
+        """Extract week_of from sheet names in the workbook."""
+        try:
+            wb = openpyxl.load_workbook(filepath, read_only=True, data_only=True)
+            for sname in wb.sheetnames:
+                m = re.search(r'(\d{1,2})[-_](\d{1,2})[-_](\d{2,4})', sname)
+                if m:
+                    mm, dd, yy = m.group(1).zfill(2), m.group(2).zfill(2), m.group(3)
+                    if len(yy) == 2:
+                        yy = '20' + yy
+                    return f"{yy}-{mm}-{dd}"
+        except Exception:
+            pass
+        return None
+
+    xlsx_files = [
+        os.path.join(WATCH_FOLDER, f)
+        for f in os.listdir(WATCH_FOLDER)
+        if f.lower().endswith('.xlsx') and not f.startswith('~')
+    ]
+
+    if not xlsx_files:
+        log.info("Startup scan: no XLSX files in watch folder.")
+        return seen_keys
+
+    log.info(f"Startup scan: found {len(xlsx_files)} XLSX file(s) in watch folder.")
+
+    n_processed = 0
+    n_skipped = 0
+    n_unreadable = 0
+
+    for fpath in xlsx_files:
+        try:
+            mtime = os.path.getmtime(fpath)
+        except OSError:
+            continue
+        key = (fpath, round(mtime))
+        seen_keys.add(key)
+
+        week = extract_week(fpath)
+        fname = os.path.basename(fpath)
+
+        if week is None:
+            log.info(f"Startup scan: {fname} — could not determine week, skipping.")
+            n_unreadable += 1
+        elif week in known_weeks:
+            log.info(f"Startup scan: {fname} — week {week} already in data.json, skipping.")
+            n_skipped += 1
+        else:
+            log.info(f"Startup scan: {fname} — week {week} NOT in data.json, processing now.")
+            process_new_file(fpath)
+            n_processed += 1
+            # Re-read known_weeks so a multi-file catch-up doesn't double-process
+            try:
+                with open(DATA_JSON, encoding='utf-8') as f:
+                    existing = json.load(f)
+                records = existing if isinstance(existing, list) else existing.get('records', [])
+                known_weeks = {r.get('week_of') for r in records if r.get('week_of')}
+            except Exception:
+                pass
+
+    log.info("=" * 60)
+    log.info(
+        f"Startup scan complete — {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | "
+        f"{len(xlsx_files)} file(s) checked | "
+        f"{n_processed} processed | {n_skipped} already current | {n_unreadable} unreadable"
+    )
+    log.info("Watcher is now LIVE — listening for new files.")
+    log.info("=" * 60)
+
+    return seen_keys
 
 
 # ── MAIN ────────────────────────────────────────────────────────────────
@@ -357,7 +503,11 @@ def main():
     log.info(f"Repo:     {REPO_FOLDER}")
     log.info("=" * 60)
 
-    handler = XLSXHandler()
+    # Scan for any files that arrived while the watcher was down
+    already_processed = startup_scan()
+
+    # Pass seen keys to handler so it doesn't reprocess startup files
+    handler = XLSXHandler(already_processed)
     observer = Observer()
     observer.schedule(handler, WATCH_FOLDER, recursive=False)
     observer.start()
