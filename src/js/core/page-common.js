@@ -358,6 +358,74 @@
   }
 
 
+  /* ── Date Range Toggle — shared across all three dashboard pages ──────────
+   *
+   * All three pages use identical "Time Range" sidebar HTML with:
+   *   input[name="dateMode"]  — radios with values "season" and "range"
+   *   id="modeSeason-panel"   — container for season pills
+   *   id="modeRange-panel"    — container for date inputs
+   *   id="fDateFrom"          — date input (from)
+   *   id="fDateTo"            — date input (to)
+   *
+   * The shared state is window._DATE_RANGE = { start, end } | null.
+   * When set, each page's render function filters by date range instead
+   * of the active season.
+   *
+   * Usage on each page:
+   *   <input … onchange="BTD.page.onDateModeChange(renderAll)">
+   *   <input id="fDateFrom" … oninput="BTD.page.onDateRangeChange(renderAll)">
+   *   <input id="fDateTo"   … oninput="BTD.page.onDateRangeChange(renderAll)">
+   *   <button … onclick="BTD.page.onDateRangeChange(renderAll)">Apply</button>
+   * ─────────────────────────────────────────────────────────────────────── */
+
+  function onDateRangeChange(renderFn) {
+    var fromEl = root.document && root.document.getElementById('fDateFrom');
+    var toEl   = root.document && root.document.getElementById('fDateTo');
+    var from = fromEl ? fromEl.value : '';
+    var to   = toEl   ? toEl.value   : '';
+    if (from || to) {
+      root._DATE_RANGE = {
+        start: snapToSunday(from || '2000-01-01', 'back'),
+        end:   snapToSunday(to   || '2099-12-31', 'forward')
+      };
+    } else {
+      root._DATE_RANGE = null;
+    }
+    if (typeof renderFn === 'function') renderFn();
+  }
+
+  function onDateModeChange(renderFn) {
+    var checked = root.document && root.document.querySelector('input[name="dateMode"]:checked');
+    var mode = checked ? checked.value : 'season';
+    var seasonPanel = root.document && root.document.getElementById('modeSeason-panel');
+    var rangePanel  = root.document && root.document.getElementById('modeRange-panel');
+    if (seasonPanel) seasonPanel.style.display = mode === 'season' ? '' : 'none';
+    if (rangePanel)  rangePanel.style.display  = mode === 'range'  ? '' : 'none';
+    if (mode === 'season') {
+      // Switching back to Season — clear any active date range so season filter takes over
+      root._DATE_RANGE = null;
+      var fromEl = root.document && root.document.getElementById('fDateFrom');
+      var toEl   = root.document && root.document.getElementById('fDateTo');
+      if (fromEl) fromEl.value = '';
+      if (toEl)   toEl.value   = '';
+      if (typeof renderFn === 'function') renderFn();
+    }
+    // Switching to Date Range — do nothing until user enters dates and hits Apply
+  }
+
+  function resetDateMode(renderFn) {
+    /* Resets the sidebar radio back to Season and clears any active date range.
+       Call from each page's resetFilters() function. */
+    root._DATE_RANGE = null;
+    var fromEl = root.document && root.document.getElementById('fDateFrom');
+    var toEl   = root.document && root.document.getElementById('fDateTo');
+    if (fromEl) fromEl.value = '';
+    if (toEl)   toEl.value   = '';
+    var seasonRadio = root.document && root.document.getElementById('modeSeason');
+    if (seasonRadio) { seasonRadio.checked = true; onDateModeChange(null); }
+    if (typeof renderFn === 'function') renderFn();
+  }
+
   root.BTD.page = {
     esc: esc, short: short, norm: norm, bySeasonDate: bySeasonDate, dateLine: dateLine,
     seasonStartYear: seasonStartYear, seasonMode: seasonMode, scoreLabelForMode: scoreLabelForMode, readLabelForMode: readLabelForMode,
@@ -371,6 +439,7 @@
     normalizeDashboardRows: normalizeDashboardRows, normalizeDashboardSeasons: normalizeDashboardSeasons,
     renderDashboardSeasonPills: renderDashboardSeasonPills, attachHelpTooltips: attachHelpTooltips,
     snapToSunday: snapToSunday, fiscalWeek: fiscalWeek,
+    onDateRangeChange: onDateRangeChange, onDateModeChange: onDateModeChange, resetDateMode: resetDateMode,
     seasonCalloutClass: seasonCalloutClass, seasonHeadline: seasonHeadline, seasonSummaryCopy: seasonSummaryCopy
   };
 })(window);
