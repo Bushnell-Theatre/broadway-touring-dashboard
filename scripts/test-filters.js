@@ -655,6 +655,15 @@ console.log('\n── Suite 10: Opportunity Engine uses canonical metrics ──
     dev.includes('npm test'));
   assert('DEVELOPER documents node scripts/test-filters.js',
     dev.includes('test-filters.js'));
+  assert('DEVELOPER states npm test runs all three validation programs',
+    dev.includes('npm test') &&
+    dev.includes('validate_scoring_contract.js') &&
+    dev.includes('verify_render_harness.js') &&
+    dev.includes('test-filters.js'));
+  assert('DEVELOPER test table includes Suite 11',
+    /\| 11 \|[\s\S]{0,160}documentation/i.test(dev));
+  assert('DEVELOPER contains no stale 10-suite or 89-assertion totals',
+    !/Runs 10 suites/i.test(dev) && !/89 assertions/i.test(dev));
   assert('DEVELOPER documents BTD.filters.apply() dateFrom/dateTo contract',
     dev.includes('dateFrom') && dev.includes('dateTo'));
   assert('DEVELOPER documents isValidISODate',
@@ -694,6 +703,10 @@ console.log('\n── Suite 10: Opportunity Engine uses canonical metrics ──
     charts.includes('Canonical'));
   assert('CHARTS document includes "Display Evidence" data source labels',
     charts.includes('Display Evidence'));
+  assert('CHARTS describes the canonical evidence window',
+    charts.includes('canonical evidence window'));
+  assert('CHARTS does not claim canonical charts use unrestricted full available evidence',
+    !charts.includes('Canonical charts always reflect the full available evidence'));
   assert('CHARTS states Season Show Fit is Canonical',
     /Season Show Fit[\s\S]{0,200}Canonical/.test(charts));
   assert('CHARTS states Capacity: Tour vs Peer follows Display Evidence',
