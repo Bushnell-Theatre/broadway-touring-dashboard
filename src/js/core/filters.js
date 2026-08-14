@@ -18,6 +18,10 @@
       if ((engage === 'performed' || engage === 'no') && d.no_engagement) return false;
       if ((engage === 'no_performance' || engage === 'yes') && !d.no_engagement) return false;
       if (opts.season && fiscalYear(d.week_of) !== opts.season) return false;
+      // Date range filter — takes priority over season when both are supplied.
+      // Dates are ISO strings (YYYY-MM-DD); week_of is compared lexicographically.
+      if (opts.dateFrom && d.week_of && d.week_of < opts.dateFrom) return false;
+      if (opts.dateTo   && d.week_of && d.week_of > opts.dateTo)   return false;
       return true;
     });
   }
