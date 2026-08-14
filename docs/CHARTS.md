@@ -10,7 +10,7 @@ Each chart is described below: what it shows, what the axes mean, how to read it
 >
 > Charts on the Programming and Executive Summary pages draw from one of two sources:
 >
-> - **Canonical** — derived from `p.metrics` or `p.signals`, which are produced by `BTD.page.profileShowCanonical()` and **do not change** when the Display Evidence date scope changes. Canonical charts always reflect the full available evidence.
+> - **Canonical** — derived from `p.metrics` or `p.signals`, which are produced by `BTD.page.profileShowCanonical()` and **do not change** when the Display Evidence date scope changes. Canonical charts reflect the governing canonical evidence window: completed seasons stop at `season.end`, while current and future seasons use eligible evidence as defined by the scoring contract.
 > - **Display Evidence** — derived from `p.filteredDisplay`, which reflects only the records in the current Display Evidence window ("All available data" or a custom date range). These charts update when the pill is changed.
 >
 > A chart that is Canonical will show the same values regardless of what date window the user has selected. A chart that is Display Evidence will update to reflect the active scope. The gap between tour and peer bars in Display Evidence charts represents a real difference in the date-windowed data — not a zero when evidence is absent. Shows with no records in the current window appear as `—`.
