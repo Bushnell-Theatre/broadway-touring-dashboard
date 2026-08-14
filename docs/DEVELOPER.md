@@ -8,7 +8,7 @@ This document covers the JavaScript architecture, the `BTD` shared namespace, ho
 
 The dashboard is a **fully static** application. There is no build step and no front-end framework. Every file the browser loads is a plain `.html`, `.css`, or `.js` file served as-is from Azure Static Web Apps.
 
-`npm` is present for **test tooling only** (`npm test` runs the scoring contract tests; `node scripts/test-filters.js` runs the Display Evidence behavioral tests). There is no compile step, no bundler, and no runtime npm dependency.
+`npm` is present for **test tooling only**. `npm test` runs the complete validation set: the scoring contract validator, render harness, and Display Evidence/date-filter tests. `node scripts/test-filters.js` can still run the filter and documentation checks directly. There is no compile step, no bundler, and no runtime npm dependency.
 
 ```
 src/
@@ -342,21 +342,21 @@ Do not modify `styles.css` without explicit direction — visual identity change
 
 ## Test Suite
 
-### `npm test` — Scoring contract tests
+### `npm test` — complete validation set
 
 ```bash
 npm test
 ```
 
-Runs `scripts/test_scoring_contract.js`. Validates that the canonical `BTD.signals.profileShow()` scorer produces correct output and that no page violates the scoring contract (no deprecated symbol calls, no inline scores, no conflated null/zero handling).
+Runs `scripts/test_scoring_contract.js`, which executes all three validation programs:
 
-### `node scripts/test-filters.js` — Display Evidence behavioral tests
+- `scripts/validate_scoring_contract.js` — canonical scorer and source-contract validation
+- `scripts/verify_render_harness.js` — page render and contract harness
+- `scripts/test-filters.js` — Season/Date Range, Display Evidence, source-compliance, version-sync, and documentation checks
 
-```bash
-node scripts/test-filters.js
-```
+Run `node scripts/test-filters.js` directly when you only need the filter and documentation validations.
 
-Runs 10 suites (89 assertions as of v6.1) covering:
+The filter test program covers:
 
 | Suite | What it validates |
 |---|---|
@@ -368,10 +368,11 @@ Runs 10 suites (89 assertions as of v6.1) covering:
 | 6 | Category 4 — aggregates exclude zero-count shows from denominators |
 | 7 | Dashboard contract: Season ↔ Date Range mutual exclusivity |
 | 8 | Programming/Exec contract: All data vs Custom range |
-| 9 | Source compliance — specific contracts verified in real page HTML/JS |
+| 9 | Source compliance and version synchronization in real page HTML/JS |
 | 10 | Opportunity Engine stays on canonical metrics regardless of display scope |
+| 11 | Durable documentation validation for both filter contracts |
 
-Suite 9 includes version-sync assertions: HTML fallback version and date strings must match `src/data/versions.json` at test time. A version bump that misses any governed location fails this suite.
+Avoid documenting a fixed assertion total; the runner reports the current count. Suite 9 verifies that HTML fallback version and date strings match `src/data/versions.json`. Suite 11 verifies that the maintained documentation continues to state the correct filtering and canonical-evidence contracts.
 
 ### Syntax and data checks
 
