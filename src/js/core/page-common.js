@@ -373,21 +373,35 @@
    *
    * Usage on each page:
    *   <input … onchange="BTD.page.onDateModeChange(renderAll)">
-   *   <input id="fDateFrom" … oninput="BTD.page.onDateRangeChange(renderAll)">
-   *   <input id="fDateTo"   … oninput="BTD.page.onDateRangeChange(renderAll)">
+   *   <input id="fDateFrom" … />   ← no oninput; Apply is the sole trigger
+   *   <input id="fDateTo"   … />   ← no oninput; Apply is the sole trigger
    *   <button … onclick="BTD.page.onDateRangeChange(renderAll)">Apply</button>
+   *
+   * From > To on Apply: range is cleared, no re-render, inputs retain their
+   * draft values so the user can correct the error. A future improvement may
+   * add inline validation feedback here.
    * ─────────────────────────────────────────────────────────────────────── */
 
   function onDateRangeChange(renderFn) {
+    /* Triggered only by the Apply button — not on input events.
+       Validates From ≤ To before activating the range.
+       When From > To, _DATE_RANGE is cleared and no re-render occurs
+       (inputs retain their draft values for correction). */
     var fromEl = root.document && root.document.getElementById('fDateFrom');
     var toEl   = root.document && root.document.getElementById('fDateTo');
     var from = fromEl ? fromEl.value : '';
     var to   = toEl   ? toEl.value   : '';
+
     if (from || to) {
-      root._DATE_RANGE = {
-        start: snapToSunday(from || '2000-01-01', 'back'),
-        end:   snapToSunday(to   || '2099-12-31', 'forward')
-      };
+      var snappedFrom = snapToSunday(from || '2000-01-01', 'back');
+      var snappedTo   = snapToSunday(to   || '2099-12-31', 'forward');
+      if (from && to && snappedFrom > snappedTo) {
+        /* Invalid range — From is after To. Clear the range silently.
+           The inputs retain their draft values so the user can fix them. */
+        root._DATE_RANGE = null;
+        return; // do not re-render
+      }
+      root._DATE_RANGE = { start: snappedFrom, end: snappedTo };
     } else {
       root._DATE_RANGE = null;
     }

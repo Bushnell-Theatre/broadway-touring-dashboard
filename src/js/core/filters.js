@@ -2,9 +2,29 @@
   'use strict';
   root.BTD = root.BTD || {};
   function fiscalYear(d) { return root.BTD.format && root.BTD.format.fiscalYear ? root.BTD.format.fiscalYear(d) : null; }
+  /* Validate that a string is a well-formed ISO date (YYYY-MM-DD).
+     Accepts only the 10-character form used by week_of throughout the dataset. */
+  function isValidISODate(s) {
+    if (typeof s !== 'string' || s.length !== 10) return false;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+    var d = new Date(s + 'T12:00:00');
+    return !Number.isNaN(d.getTime());
+  }
+
   function apply(rows, opts) {
     opts = opts || {};
     var peers = root.BTD.peers || {};
+
+    /* Date-range mode — dateFrom or dateTo being present makes date range the
+       active time selector. In this mode:
+         1. opts.season is NOT applied (date range takes priority; they are
+            mutually exclusive, not intersected).
+         2. Any record without a valid ISO week_of is excluded.
+       Without a date range, opts.season applies as before. */
+    var hasDateRange = !!(opts.dateFrom || opts.dateTo);
+    var dateFrom = hasDateRange && isValidISODate(opts.dateFrom) ? opts.dateFrom : null;
+    var dateTo   = hasDateRange && isValidISODate(opts.dateTo)   ? opts.dateTo   : null;
+
     return (rows || []).filter(function (d) {
       if (opts.tier && d.tier !== opts.tier) return false;
       var sub = opts.sub;
@@ -17,11 +37,18 @@
       var engage = opts.engage;
       if ((engage === 'performed' || engage === 'no') && d.no_engagement) return false;
       if ((engage === 'no_performance' || engage === 'yes') && !d.no_engagement) return false;
-      if (opts.season && fiscalYear(d.week_of) !== opts.season) return false;
-      // Date range filter — takes priority over season when both are supplied.
-      // Dates are ISO strings (YYYY-MM-DD); week_of is compared lexicographically.
-      if (opts.dateFrom && d.week_of && d.week_of < opts.dateFrom) return false;
-      if (opts.dateTo   && d.week_of && d.week_of > opts.dateTo)   return false;
+
+      if (hasDateRange) {
+        /* When a date range is active, week_of must be a valid ISO date.
+           Records missing or malformed week_of are excluded entirely. */
+        if (!isValidISODate(d.week_of)) return false;
+        if (dateFrom && d.week_of < dateFrom) return false;
+        if (dateTo   && d.week_of > dateTo)   return false;
+      } else {
+        /* Season filter — only applied when no date range is active. */
+        if (opts.season && fiscalYear(d.week_of) !== opts.season) return false;
+      }
+
       return true;
     });
   }
