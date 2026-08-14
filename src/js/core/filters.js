@@ -19,28 +19,47 @@
     return dt.getFullYear() === y && (dt.getMonth() + 1) === m && dt.getDate() === d;
   }
 
-  /* Fail-closed boundary handling for apply() options:
-     When a caller supplies dateFrom or dateTo that is NOT a valid ISO date
-     (malformed, impossible, or null), treat the boundary as absent.
-     This prevents a bad option from silently suppressing the season filter
-     while passing an effectively unbounded population through.
-     The variable `hasDateRange` controls whether date-range mode is entered
-     at all; if both boundaries fail validation, it is false and season
-     filtering resumes normally. */
+  /* Fail-closed boundary contract for apply() options:
+     A boundary is "supplied" when opts.dateFrom / opts.dateTo is a non-empty
+     string.  A supplied boundary MUST be a valid ISO date.  If it is not,
+     apply() returns an empty array — it does NOT fall back to treating the
+     invalid value as an absent (open) boundary.
+
+     Rationale: silently dropping an invalid dateFrom and leaving dateTo active
+     would produce an effectively unbounded left side, returning far more records
+     than the caller intended.  Silently dropping an invalid dateTo while keeping
+     dateFrom would suppress the season filter and return all records from dateFrom
+     onward.  Both are worse than returning nothing — they are invisible errors.
+
+     A genuinely omitted or empty boundary is still valid for From-only or
+     To-only half-open filtering.  Only a *supplied* value that fails validation
+     triggers fail-closed.
+
+     The variable `hasDateRange` is true when either boundary was supplied.
+     When both are omitted, hasDateRange is false and opts.season applies normally. */
 
   function apply(rows, opts) {
     opts = opts || {};
     var peers = root.BTD.peers || {};
 
-    /* Date-range mode — dateFrom or dateTo being present makes date range the
+    /* Date-range mode — dateFrom or dateTo being supplied makes date range the
        active time selector. In this mode:
          1. opts.season is NOT applied (date range takes priority; they are
             mutually exclusive, not intersected).
          2. Any record without a valid ISO week_of is excluded.
+       A supplied boundary that is NOT a valid ISO date triggers fail-closed:
+       the entire call returns no records.
        Without a date range, opts.season applies as before. */
-    var hasDateRange = !!(opts.dateFrom || opts.dateTo);
-    var dateFrom = hasDateRange && isValidISODate(opts.dateFrom) ? opts.dateFrom : null;
-    var dateTo   = hasDateRange && isValidISODate(opts.dateTo)   ? opts.dateTo   : null;
+    var fromSupplied = typeof opts.dateFrom === 'string' && opts.dateFrom !== '';
+    var toSupplied   = typeof opts.dateTo   === 'string' && opts.dateTo   !== '';
+    var hasDateRange = fromSupplied || toSupplied;
+    if (hasDateRange) {
+      /* Fail-closed: a supplied invalid boundary returns no records. */
+      if (fromSupplied && !isValidISODate(opts.dateFrom)) return [];
+      if (toSupplied   && !isValidISODate(opts.dateTo))   return [];
+    }
+    var dateFrom = fromSupplied ? opts.dateFrom : null;
+    var dateTo   = toSupplied   ? opts.dateTo   : null;
 
     return (rows || []).filter(function (d) {
       if (opts.tier && d.tier !== opts.tier) return false;
