@@ -470,6 +470,29 @@ console.log('\n── Suite 9: Source compliance — real page contracts ──'
     pageSrc.includes('raw ISO') || pageSrc.includes('raw ISO strings'));
   assert('page-common.js preserves _DATE_RANGE on invalid Apply',
     pageSrc.includes('do NOT touch _DATE_RANGE') || pageSrc.includes('NOT touch _DATE_RANGE'));
+
+  // ── Version synchronization: HTML fallback strings must match versions.json ──
+  // Each page has a fallback version/date in its HTML footer.  versions.json is the
+  // single source of truth; the fallback must match so offline/cached views stay accurate.
+  const versionsJson = JSON.parse(
+    fs.readFileSync(path.join(ROOT, 'src/data/versions.json'), 'utf8'),
+  );
+  const dashSrc = fs.readFileSync(path.join(ROOT, 'src/dashboard.html'), 'utf8');
+
+  assert('dashboard.html fallback version matches versions.json',
+    dashSrc.includes(`id="pageVersion">${versionsJson.dashboard.version}`));
+  assert('dashboard.html fallback date matches versions.json',
+    dashSrc.includes(`id="pageDate">${versionsJson.dashboard.date}`));
+
+  assert('programming.html fallback version matches versions.json',
+    progSrc.includes(`id="pageVersion">${versionsJson.programming.version}`));
+  assert('programming.html fallback date matches versions.json',
+    progSrc.includes(`id="pageDate">${versionsJson.programming.date}`));
+
+  assert('exec_summary.html fallback version matches versions.json',
+    execSrc.includes(`id="pageVersion">${versionsJson.exec_summary.version}`));
+  assert('exec_summary.html fallback date matches versions.json',
+    execSrc.includes(`id="pageDate">${versionsJson.exec_summary.date}`));
 }
 
 /* ══════════════════════════════════════════════════════════════════════════

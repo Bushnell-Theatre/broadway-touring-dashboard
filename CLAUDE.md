@@ -86,9 +86,9 @@ bump with a stale date is misleading.
 
 | Page | Current | Last meaningful change |
 |---|---|---|
-| dashboard.html | v5.0 | June 24, 2026 — initial production release |
-| programming.html | v6.0 | August 6, 2026 — canonical Signals Consolidation model and signal card |
-| exec_summary.html | v6.0 | August 6, 2026 — canonical Signals Consolidation model and signal card |
+| dashboard.html | v5.1 | August 14, 2026 — universal Season / Date Range filtering with fail-closed boundary validation |
+| programming.html | v6.1 | August 14, 2026 — Show Slate + Display Evidence filtering; canonical Planning Signal isolation |
+| exec_summary.html | v6.1 | August 14, 2026 — Show Slate + Display Evidence filtering; canonical Planning Signal isolation |
 | box_office.html | v2.1 | June 30, 2026 — venues.json integration |
 
 ---
