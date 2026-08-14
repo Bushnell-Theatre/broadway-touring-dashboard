@@ -3,13 +3,30 @@
   root.BTD = root.BTD || {};
   function fiscalYear(d) { return root.BTD.format && root.BTD.format.fiscalYear ? root.BTD.format.fiscalYear(d) : null; }
   /* Validate that a string is a well-formed ISO date (YYYY-MM-DD).
-     Accepts only the 10-character form used by week_of throughout the dataset. */
+     Accepts only the 10-character form used by week_of throughout the dataset.
+     Uses a round-trip check to reject impossible calendar dates such as
+     2025-02-31 (JS Date normalizes those to a neighbouring month). */
   function isValidISODate(s) {
     if (typeof s !== 'string' || s.length !== 10) return false;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
-    var d = new Date(s + 'T12:00:00');
-    return !Number.isNaN(d.getTime());
+    var parts = s.split('-');
+    var y = +parts[0], m = +parts[1], d = +parts[2];
+    /* Basic range guard before constructing a Date object */
+    if (!y || m < 1 || m > 12 || d < 1 || d > 31) return false;
+    var dt = new Date(s + 'T12:00:00');
+    if (Number.isNaN(dt.getTime())) return false;
+    /* Round-trip: if JS normalised the date (e.g. Feb 31 → Mar 3), reject it */
+    return dt.getFullYear() === y && (dt.getMonth() + 1) === m && dt.getDate() === d;
   }
+
+  /* Fail-closed boundary handling for apply() options:
+     When a caller supplies dateFrom or dateTo that is NOT a valid ISO date
+     (malformed, impossible, or null), treat the boundary as absent.
+     This prevents a bad option from silently suppressing the season filter
+     while passing an effectively unbounded population through.
+     The variable `hasDateRange` controls whether date-range mode is entered
+     at all; if both boundaries fail validation, it is false and season
+     filtering resumes normally. */
 
   function apply(rows, opts) {
     opts = opts || {};

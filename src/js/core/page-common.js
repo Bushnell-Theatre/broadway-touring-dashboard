@@ -392,23 +392,31 @@
 
   function onDateRangeChange(renderFn) {
     /* Triggered only by the Apply button — not on input events.
-       Validates From ≤ To before activating the range.
-       When From > To, _DATE_RANGE is cleared, a visible error is shown,
-       and no re-render occurs (inputs retain draft values for correction). */
+       Validation order:
+         1. Compare raw ISO strings (YYYY-MM-DD sorts lexicographically) BEFORE
+            snapping to Sunday. A same-week inversion would snap to the same
+            boundary and pass a snapped comparison even though From > To.
+         2. Only after raw validation passes do we snap to reporting-week
+            boundaries and update _DATE_RANGE.
+         3. On error: preserve the last valid _DATE_RANGE and the currently
+            rendered result — do not clear state, do not re-render. Draft inputs
+            remain in the fields for the user to correct. */
     var fromEl = root.document && root.document.getElementById('fDateFrom');
     var toEl   = root.document && root.document.getElementById('fDateTo');
     var from = fromEl ? fromEl.value : '';
     var to   = toEl   ? toEl.value   : '';
 
     if (from || to) {
-      var snappedFrom = snapToSunday(from || '2000-01-01', 'back');
-      var snappedTo   = snapToSunday(to   || '2099-12-31', 'forward');
-      if (from && to && snappedFrom > snappedTo) {
-        /* Invalid range — From is after To. Show visible error; do not re-render. */
-        root._DATE_RANGE = null;
+      /* Step 1 — validate raw ISO ordering before snapping */
+      if (from && to && from > to) {
+        /* Invalid range — do NOT touch _DATE_RANGE. The previously rendered
+           result (if any) stays current; the error is surfaced inline. */
         dateRangeValidationError('✕ “From” must be on or before “To”.');
         return;
       }
+      /* Step 2 — snap to reporting-week boundaries, then activate range */
+      var snappedFrom = snapToSunday(from || '2000-01-01', 'back');
+      var snappedTo   = snapToSunday(to   || '2099-12-31', 'forward');
       clearDateRangeError();
       root._DATE_RANGE = { start: snappedFrom, end: snappedTo };
     } else {
