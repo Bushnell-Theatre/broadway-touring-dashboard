@@ -32,7 +32,6 @@ def main() -> None:
     mode.add_argument("--rebuild", help="Full rebuild from a folder of XLSX reports")
     mode.add_argument("--validate-only", action="store_true", help="Only write validation_report.json")
     parser.add_argument("--skip-context", action="store_true", help="Skip NOAA/FRED context refresh")
-    parser.add_argument("--skip-shows", action="store_true", help="Skip show metadata enrichment")
     args = parser.parse_args()
 
     py = sys.executable
@@ -41,8 +40,6 @@ def main() -> None:
     elif args.rebuild:
         run([py, str(script_path("process_touring.py")), args.rebuild, str(DATA_JSON)])
 
-    if not args.validate_only and not args.skip_shows:
-        run([py, str(script_path("scrape_shows.py"))], required=False)
     if not args.validate_only and not args.skip_context:
         run([py, str(script_path("scrape_context.py"))], required=False)
     run([py, str(script_path("validate_data.py")), "--out", str(VALIDATION_JSON)])
