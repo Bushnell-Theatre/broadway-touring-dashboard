@@ -2098,23 +2098,26 @@
               const cls = p.isFutureNewTour ? 'neutral' : p.score == null ? 'neutral' : p.score >= SCORE_MED ? 'good' : 'warn';
               const scoreLabel = p.isFutureNewTour ? 'NEW' : p.score;
               return ((_fs = BTD.page.planningSignals(p)) =>
-                // Display values use filteredDisplay; signal badges and score are canonical
-                `<tr><td>${p.show.title}<br><span style="color:var(--ink3);font-size:.58rem">${dateLine(p.show)}</span></td><td>${p.show.sub ? 'Sub' : 'Add-on'}</td><td class="num"><span class="status ${cls}">${scoreLabel}</span></td><td class="num">${pct((p.filteredDisplay || {}).cap)}</td><td>${signalBadge(_fs.demand)}</td><td class="num">${pct((p.filteredDisplay || {}).gg)}</td><td>${signalBadge(_fs.revenue)}</td><td class="num">${pct((p.filteredDisplay || {}).peerCap)}</td><td class="num">${p.metrics.count}</td><td>${signalBadge(_fs.confidence)}</td><td>${_fs.planningRead}</td></tr>`)();
+                // Display cap/gg/peerCap/count use filteredDisplay — governed by Display Evidence.
+                // Signal badges, score, and confidence are canonical and unaffected.
+                `<tr><td>${p.show.title}<br><span style="color:var(--ink3);font-size:.58rem">${dateLine(p.show)}</span></td><td>${p.show.sub ? 'Sub' : 'Add-on'}</td><td class="num"><span class="status ${cls}">${scoreLabel}</span></td><td class="num">${pct((p.filteredDisplay || {}).cap)}</td><td>${signalBadge(_fs.demand)}</td><td class="num">${pct((p.filteredDisplay || {}).gg)}</td><td>${signalBadge(_fs.revenue)}</td><td class="num">${pct((p.filteredDisplay || {}).peerCap)}</td><td class="num">${(p.filteredDisplay || {}).count ?? '—'}</td><td>${signalBadge(_fs.confidence)}</td><td>${_fs.planningRead}</td></tr>`)();
             })
             .join(
               '',
             )}</tbody></table></div></div><div class="card"><div class="card-hd">High Confidence</div><div class="card-sub">Titles with enough feed history to support a stronger planning read.</div><div class="rank-list">${rankItems(
-            // Quality gate uses canonical count; display cap from filteredDisplay
+            // Canonical count drives High Confidence bucket membership — labeled explicitly
+            // to distinguish it from the display-range count in the planning table.
             profiles.filter((p) => p.metrics.count >= 5).slice(0, 5),
             (p) => p.show.title,
-            (p) => `${p.metrics.count} records · ${pct((p.filteredDisplay || {}).cap, 0)} cap`,
+            (p) => `${p.metrics.count} historical records supporting confidence · ${pct((p.filteredDisplay || {}).cap, 0)} cap in display range`,
             (p) => p.score,
           )}</div></div><div class="card"><div class="card-hd">New / Needs Comparable Validation</div><div class="card-sub">Use outside context, artistic priorities, pre-sale signal, and comparable prior Bushnell titles.</div><div class="rank-list">${
             profiles
               .filter((p) => p.metrics.count < 3)
               .map(
                 (p, i) =>
-                  `<div class="rank-item"><div class="rank-n">${i + 1}</div><div class="rank-body"><div class="rank-name">${p.show.title}</div><div class="rank-detail">${p.isFutureNewTour ? 'New-tour upside · no historical feed records' : p.metrics.count + ' matching records'} · ${confidenceLabel(p)}</div></div></div>`,
+                  // Canonical count explains why this show is in the Needs Validation bucket
+                  `<div class="rank-item"><div class="rank-n">${i + 1}</div><div class="rank-body"><div class="rank-name">${p.show.title}</div><div class="rank-detail">${p.isFutureNewTour ? 'New-tour upside · no historical feed records' : p.metrics.count + ' historical records'} · ${confidenceLabel(p)}</div></div></div>`,
               )
               .join('') || '<div class="empty">All candidates have at least 3 matching records.</div>'
           }</div></div><div class="card"><div class="card-hd">Fit Distribution</div><canvas id="cFuture" class="small-canvas"></canvas></div></div><div class="section-divider" style="margin-top:28px"><h2>Opportunity Engine</h2><div class="section-divider-line"></div><div class="section-divider-meta">Signals for booking and marketing conversations</div></div><div class="explainer"><p><strong>Purpose:</strong> this page surfaces exceptions worth discussing. "Hidden gems" are not automatic bookings, and "cautions" are not rejections. They are prompts for leadership to ask why a title over- or under-performs in Bushnell-like rooms.</p></div><div class="grid grid-3"><div class="card"><div class="card-hd">Peer-Strong Hidden Gems</div><div class="card-sub">Shows that perform better in Bushnell-size venues than nationally.</div><table class="mini-table"><thead><tr><th>Show</th><th class="num">Nat</th><th class="num">Peer</th><th class="num">Gap</th></tr></thead><tbody>${hidden.map((p) => `<tr><td>${p.show.title}</td><td class="num">${pct(p.metrics.cap)}</td><td class="num">${pct(p.metrics.peerCap)}</td><td class="num">+${pct(p.metrics.peerCap - p.metrics.cap)}</td></tr>`).join('')}</tbody></table></div></div><div class="card"><div class="card-hd">Caution List</div><div class="card-sub">Shows where peer venues trail the full national average.</div><table class="mini-table"><thead><tr><th>Show</th><th class="num">Nat</th><th class="num">Peer</th><th class="num">Gap</th></tr></thead><tbody>${caution.map((p) => `<tr><td>${p.show.title}</td><td class="num">${pct(p.metrics.cap)}</td><td class="num">${pct(p.metrics.peerCap)}</td><td class="num">${pct(p.metrics.peerCap - p.metrics.cap)}</td></tr>`).join('')}</tbody></table></div></div><div class="card"><div class="card-hd">Subscription Lift</div><div class="card-sub">Shows with the strongest subscription capacity lift.</div><table class="mini-table"><thead><tr><th>Show</th><th class="num">Sub</th><th class="num">Non</th><th class="num">Lift</th></tr></thead><tbody>${subLift.map((p) => `<tr><td>${p.show.title}</td><td class="num">${pct(p.metrics.subCap)}</td><td class="num">${pct(p.metrics.nonSubCap)}</td><td class="num">+${pct(p.metrics.subCap - p.metrics.nonSubCap)}</td></tr>`).join('')}</tbody></table></div></div></div>`;
@@ -2264,7 +2267,8 @@
         // Canonical signal KPIs
         $('kFit').textContent = Math.round(avg(profiles.map((p) => p.score)) || 0);
         $('kStrong').textContent = profiles.filter((p) => p.score >= SCORE_MED).length;
-        $('kWatch').textContent = profiles.filter((p) => p.score < SCORE_MED).length;
+        // kWatch is canonical — any show with a score below median; null score = unscored, not watchlisted
+        $('kWatch').textContent = profiles.filter((p) => p.score != null && p.score < SCORE_MED).length;
 
         // Record-derived KPIs — use filteredDisplay; exclude shows with 0 in-range records
         const fd = profiles.map((p) => p.filteredDisplay).filter((x) => x && x.count > 0);
@@ -2692,6 +2696,10 @@
         const names = [...new Set(ALL.map((d) => d.show).filter(Boolean))]
           .filter((s) => !q || norm(s).includes(q))
           .slice(0, 80);
+        // library: canonical quality gate ensures the show has ANY historical data.
+        // libraryDisplay: further filtered to shows with records in the active
+        //   Display Evidence window, then sorted by filteredDisplay.count descending
+        //   so the visible ordering matches the displayed record counts.
         const library = names
           .map((s) =>
             profile({
@@ -2700,16 +2708,23 @@
               sub: false,
             }),
           )
-          .filter((p) => p.metrics.count > 0)
-          .sort((a, b) => b.metrics.weeks - a.metrics.weeks)
+          .filter((p) => p.metrics.count > 0);  // canonical quality gate: must have some data
+        const libraryDisplay = library
+          .filter((p) => (p.filteredDisplay || p.metrics).count > 0)
+          .sort((a, b) =>
+            // Sort by displayed count descending; stable tie-break on title
+            (b.filteredDisplay || b.metrics).count - (a.filteredDisplay || a.metrics).count ||
+            String(a.show.title).localeCompare(String(b.show.title)),
+          )
           .slice(0, 30);
         // seasonAvgCap/Gross use filteredDisplay — governed by Display Evidence window
         const seasonAvgCap = avg(seasonRows.map((p) => (p.filteredDisplay || p.metrics).cap));
         const seasonAvgGross = avg(seasonRows.map((p) => (p.filteredDisplay || p.metrics).gross));
         const strong = seasonRows.filter((p) => p.score != null && p.score >= SCORE_MED).length;
-        const watch = seasonRows.filter((p) => p.score != null && p.score < SCORE_MED && p.filteredDisplay && p.filteredDisplay.count > 0).length;
+        // watch is canonical — score below median; filteredDisplay has no bearing on membership
+        const watch = seasonRows.filter((p) => p.score != null && p.score < SCORE_MED).length;
         $('tab-history').innerHTML =
-          `<div class="section-divider"><h2>Show History</h2><div class="section-divider-line"></div><div class="section-divider-meta">Retrospective read: how did we do?</div></div><div class="explainer"><p><strong>Purpose:</strong> previous seasons are shown as completed performance reviews, not forecasts. The result index uses the same demand, revenue, peer, and sample-depth signals, but the interpretation is retrospective: what worked, what lagged, and what should inform future booking and marketing decisions.</p></div><div class="grid grid-4"><div class="kpi-card"><div class="kpi-label">Reviewed Season</div><div class="kpi-value">${selected ? selected.id.slice(2, 4) + '-' + selected.id.slice(7, 9) : '—'}</div><div class="kpi-note">selected season lens</div></div><div class="kpi-card"><div class="kpi-label">Avg Capacity</div><div class="kpi-value">${pct(seasonAvgCap, 0)}</div><div class="kpi-note">season slate actuals</div></div><div class="kpi-card"><div class="kpi-label">Avg Gross</div><div class="kpi-value">${fmt$(seasonAvgGross)}</div><div class="kpi-note">matched touring records</div></div><div class="kpi-card"><div class="kpi-label">Strong / Watch</div><div class="kpi-value">${strong} / ${watch}</div><div class="kpi-note">performance result bands</div></div></div><div class="grid grid-2" style="margin-top:18px"><div class="card full"><div class="card-hd">${selected ? selected.name : 'Previous Season'} Performance Review</div><table class="mini-table"><thead><tr><th>Show</th><th>Pkg</th><th class="num">Result</th><th class="num">Cap</th><th>Demand</th><th class="num">GG%</th><th>Revenue</th><th class="num">Peer Cap</th><th class="num">Avg Gross</th><th>Confidence</th><th>Historical Read</th></tr></thead><tbody>${seasonRows.map((p) => rowHtml(p, 'past')).join('') || '<tr><td colspan="8" class="empty">No programmed show records matched this season.</td></tr>'}</tbody></table></div></div>${bushnellVsMarketTable(seasonRows, selected ? selected.id : '')}<div class="card"><div class="card-hd">Selected History</div><div id="historyDetail">${seasonRows[0] ? detailHtml(seasonRows[0], 'past') : library[0] ? detailHtml(library[0], 'past') : '<div class="empty">Search for a show.</div>'}</div></div><div class="card"><div class="card-hd">Broader Historical Show Library</div><div class="card-sub">All matched touring titles, sorted by weeks reported.</div><table class="mini-table"><thead><tr><th>Show</th><th class="num">Weeks</th><th class="num">Cap</th><th class="num">Gross</th></tr></thead><tbody>${library.map((p) => `<tr onclick="historyDetail('${esc(p.show.title)}')" style="cursor:pointer"><td>${p.show.title}</td><td class="num">${p.metrics.weeks}</td><td class="num">${pct(p.metrics.cap)}</td><td class="num">${fmt$(p.metrics.gross)}</td></tr>`).join('')}</tbody></table></div></div></div>`;
+          `<div class="section-divider"><h2>Show History</h2><div class="section-divider-line"></div><div class="section-divider-meta">Retrospective read: how did we do?</div></div><div class="explainer"><p><strong>Purpose:</strong> previous seasons are shown as completed performance reviews, not forecasts. The result index uses the same demand, revenue, peer, and sample-depth signals, but the interpretation is retrospective: what worked, what lagged, and what should inform future booking and marketing decisions.</p></div><div class="grid grid-4"><div class="kpi-card"><div class="kpi-label">Reviewed Season</div><div class="kpi-value">${selected ? selected.id.slice(2, 4) + '-' + selected.id.slice(7, 9) : '—'}</div><div class="kpi-note">selected season lens</div></div><div class="kpi-card"><div class="kpi-label">Avg Capacity</div><div class="kpi-value">${pct(seasonAvgCap, 0)}</div><div class="kpi-note">season slate actuals</div></div><div class="kpi-card"><div class="kpi-label">Avg Gross</div><div class="kpi-value">${fmt$(seasonAvgGross)}</div><div class="kpi-note">matched touring records</div></div><div class="kpi-card"><div class="kpi-label">Strong / Watch</div><div class="kpi-value">${strong} / ${watch}</div><div class="kpi-note">performance result bands</div></div></div><div class="grid grid-2" style="margin-top:18px"><div class="card full"><div class="card-hd">${selected ? selected.name : 'Previous Season'} Performance Review</div><table class="mini-table"><thead><tr><th>Show</th><th>Pkg</th><th class="num">Result</th><th class="num">Cap</th><th>Demand</th><th class="num">GG%</th><th>Revenue</th><th class="num">Peer Cap</th><th class="num">Avg Gross</th><th>Confidence</th><th>Historical Read</th></tr></thead><tbody>${seasonRows.map((p) => rowHtml(p, 'past')).join('') || '<tr><td colspan="8" class="empty">No programmed show records matched this season.</td></tr>'}</tbody></table></div></div>${bushnellVsMarketTable(seasonRows, selected ? selected.id : '')}<div class="card"><div class="card-hd">Selected History</div><div id="historyDetail">${seasonRows[0] ? detailHtml(seasonRows[0], 'past') : libraryDisplay[0] ? detailHtml(libraryDisplay[0], 'past') : '<div class="empty">Search for a show.</div>'}</div></div><div class="card"><div class="card-hd">Broader Historical Show Library</div><div class="card-sub">Matched touring titles with records in the active display range, sorted by record count.</div><table class="mini-table"><thead><tr><th>Show</th><th class="num">Records</th><th class="num">Cap</th><th class="num">Gross</th></tr></thead><tbody>${libraryDisplay.length ? libraryDisplay.map((p) => { const fd = p.filteredDisplay || p.metrics; return `<tr onclick="historyDetail('${esc(p.show.title)}')" style="cursor:pointer"><td>${p.show.title}</td><td class="num">${fd.count}</td><td class="num">${pct(fd.cap)}</td><td class="num">${fmt$(fd.gross)}</td></tr>`; }).join('') : '<tr><td colspan="4" class="empty">No library records in this display range.</td></tr>'}</tbody></table></div></div></div>`;
       }
 
       function historyDetail(title) {
@@ -2741,16 +2756,19 @@
             .join(
               '',
             )}</tbody></table></div></div><div class="card"><div class="card-hd">High Confidence</div><div class="card-sub">Titles with enough feed history to support a stronger planning read.</div><div class="rank-list">${rankItems(
+            // Canonical count drives confidence bucket; labeled explicitly to avoid confusion
+            // with the display-range count in the planning table beside it.
             profiles.filter((p) => p.metrics.count >= 5).slice(0, 5),
             (p) => p.show.title,
-            (p) => `${p.metrics.count} records · ${pct((p.filteredDisplay || p.metrics).cap, 0)} cap`,
+            (p) => `${p.metrics.count} historical records supporting confidence · ${pct((p.filteredDisplay || p.metrics).cap, 0)} cap in display range`,
             (p) => p.score,
           )}</div></div><div class="card"><div class="card-hd">New / Needs Comparable Validation</div><div class="card-sub">Use outside context, artistic priorities, pre-sale signal, and comparable prior Bushnell titles.</div><div class="rank-list">${
             profiles
               .filter((p) => p.metrics.count < 3)
               .map(
                 (p, i) =>
-                  `<div class="rank-item"><div class="rank-n">${i + 1}</div><div class="rank-body"><div class="rank-name">${p.show.title}</div><div class="rank-detail">${p.isFutureNewTour ? 'New-tour upside · no historical feed records' : p.metrics.count + ' matching records'} · ${confidenceLabel(p)}</div></div></div>`,
+                  // Canonical count explains Needs Validation bucket membership
+                  `<div class="rank-item"><div class="rank-n">${i + 1}</div><div class="rank-body"><div class="rank-name">${p.show.title}</div><div class="rank-detail">${p.isFutureNewTour ? 'New-tour upside · no historical feed records' : p.metrics.count + ' historical records'} · ${confidenceLabel(p)}</div></div></div>`,
               )
               .join('') || '<div class="empty">All candidates have at least 3 matching records.</div>'
           }</div></div><div class="card"><div class="card-hd">Fit Distribution</div><canvas id="cFuture" class="small-canvas"></canvas></div></div>`;
@@ -2906,6 +2924,24 @@
         destroy(id);
         const ctx = $(id);
         if (!ctx || !window.Chart) return;
+        // Tour/Peer capacity from filteredDisplay (governed by Display Evidence).
+        // Use null for missing values — zero would misrepresent absent evidence.
+        const capVals  = profiles.map((p) => (p.filteredDisplay || p.metrics).cap  ?? null);
+        const peerVals = profiles.map((p) => (p.filteredDisplay || p.metrics).peerCap ?? null);
+        // Empty-state: remove any prior empty-state div, then decide whether to
+        // recreate it. If data returns on a subsequent render, canvas is restored.
+        const emptyEl = document.getElementById(id + '-empty');
+        if (emptyEl) emptyEl.remove();
+        if (capVals.every((v) => v == null) && peerVals.every((v) => v == null)) {
+          ctx.style.display = 'none';
+          const msg = document.createElement('div');
+          msg.id = id + '-empty';
+          msg.textContent = 'No capacity data in this display range.';
+          msg.style.cssText = 'font-size:.65rem;color:var(--ink3);padding:18px 0;text-align:center;font-style:italic';
+          ctx.insertAdjacentElement('afterend', msg);
+          return;
+        }
+        ctx.style.display = '';
         CHARTS[id] = new Chart(ctx, {
           type: 'bar',
           data: {
@@ -2913,13 +2949,13 @@
             datasets: [
               {
                 label: 'Tour',
-                data: profiles.map((p) => (p.filteredDisplay || p.metrics).cap || 0),
+                data: capVals,
                 backgroundColor: '#003865',
                 borderRadius: 2,
               },
               {
                 label: 'Peer',
-                data: profiles.map((p) => (p.filteredDisplay || p.metrics).peerCap || 0),
+                data: peerVals,
                 backgroundColor: 'rgba(26,78,138,.65)',
                 borderRadius: 2,
               },
