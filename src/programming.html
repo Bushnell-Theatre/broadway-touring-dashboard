@@ -264,33 +264,44 @@
     <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
     <div class="workspace">
       <aside class="sidebar">
-        <!-- TIME RANGE — Season mode shows season pills; Date Range shows date inputs -->
+        <!-- SHOW SLATE — always visible; season governs which planned shows appear -->
         <div class="sidebar-section">
           <span class="sidebar-label">
-            Time Range
+            Show Slate
             <span class="tip-icon" data-tip="season" tabindex="0">?</span>
           </span>
-          <!-- Radio toggle -->
-          <div style="display:flex; gap:6px; margin-bottom:8px;">
-            <label style="display:flex; align-items:center; gap:4px; font-size:0.62rem; cursor:pointer;">
-              <input type="radio" name="dateMode" value="season" id="modeSeason" checked onchange="onDateModeChange()" />
-              Season
-            </label>
-            <label style="display:flex; align-items:center; gap:4px; font-size:0.62rem; cursor:pointer;">
-              <input type="radio" name="dateMode" value="range" id="modeRange" onchange="onDateModeChange()" />
-              Date Range
-            </label>
-          </div>
+          <div class="pill-row" id="seasonPills"></div>
+        </div>
 
-          <!-- Season pills (shown when mode=season) -->
-          <div id="modeSeason-panel">
-            <div class="pill-row" id="seasonPills"></div>
+        <!-- DISPLAY EVIDENCE — governs which touring records are shown.
+             Switching this does NOT change the show slate or Planning Signals. -->
+        <div class="sidebar-section">
+          <span class="sidebar-label">Display Evidence</span>
+          <!-- Evidence pills — mutually exclusive -->
+          <div class="pill-row" style="flex-wrap:wrap; gap:4px; margin-bottom:6px;">
+            <button
+              class="pill active"
+              id="deAll"
+              onclick="setDisplayEvidence('all')"
+              aria-pressed="true"
+            >All available data</button>
+            <button
+              class="pill"
+              id="deRange"
+              onclick="setDisplayEvidence('range')"
+              aria-pressed="false"
+            >Custom date range</button>
           </div>
-
-          <!-- Date range inputs (shown when mode=range) -->
+          <!-- Date range inputs — visible only when Custom date range is selected -->
           <div id="modeRange-panel" style="display:none;">
-            <div style="font-size:0.55rem; color:var(--ink3); margin-bottom:6px;">
-              Snapped to nearest Sunday · overrides season filter
+            <!-- Disclosure text — page-specific: explains the two-contract model -->
+            <div style="font-size:0.55rem; color:var(--ink3); margin-bottom:8px; line-height:1.45;">
+              <!-- page-specific — disclosure for Display Evidence contract -->
+              Date range filters displayed touring metrics for this show slate.
+              Planning Signals use the canonical historical evidence window.
+            </div>
+            <div style="font-size:0.52rem; color:var(--ink3); margin-bottom:6px;">
+              Snapped to nearest Sunday
             </div>
             <label for="fDateFrom" class="sidebar-label" style="display:block; margin-top:4px;">From</label>
             <input
@@ -312,6 +323,12 @@
             >
               Apply
             </button>
+            <!-- Visible validation error — shown by BTD.page.onDateRangeChange() when From > To -->
+            <div
+              id="dateRangeError"
+              style="display:none; font-size:0.58rem; color:var(--rose); margin-top:5px; line-height:1.35;"
+              role="alert"
+            ></div>
           </div>
         </div>
         <div class="sidebar-section">
@@ -1174,8 +1191,11 @@
 
       /* Date range toggle — thin wrappers to shared BTD.page functions in page-common.js.
          Switching the radio panel hides/shows season pills vs date inputs. */
+      /* ── Date range wrappers ── */
       function onDateRangeChange() { BTD.page.onDateRangeChange(renderAll); }
-      function onDateModeChange()  { BTD.page.onDateModeChange(renderAll); }
+      /* setDisplayEvidence — called by the "All available data" / "Custom date range"
+         evidence pills. Season slate (STATE.season) is never touched here. */
+      function setDisplayEvidence(mode) { BTD.page.onDisplayEvidencePillChange(mode, renderAll); }
 
       function setSeason(v) {
         STATE.season = v;
@@ -1223,8 +1243,8 @@
         ACTIVE_PEER = '';
         ACTIVE_EQUITY = '';
         ACTIVE_ENGAGE = '';
-        // Reset date mode radio to Season, clear inputs and _DATE_RANGE
-        BTD.page.resetDateMode();
+        // Reset Display Evidence to "All available data" (clears _DATE_RANGE and inputs)
+        BTD.page.resetDisplayEvidence();
         document
           .querySelectorAll('[data-season]')
           .forEach((b) => b.classList.toggle('active', b.dataset.season === STATE.season));
@@ -1233,7 +1253,12 @@
             .querySelectorAll('[data-' + k + ']')
             .forEach((b) => b.classList.toggle('active', b.dataset[k] === '')),
         );
-        showTab('brief');
+        // Switch to Brief tab and do a full re-render (KPIs + active panel)
+        STATE.tab = 'brief';
+        document.querySelectorAll('.panel').forEach((p) => p.classList.remove('active'));
+        $('tab-brief') && $('tab-brief').classList.add('active');
+        document.querySelectorAll('[data-tab]').forEach((b) => b.classList.toggle('active', b.dataset.tab === 'brief'));
+        renderAll();
       }
 
       function showTab(tab) {
@@ -1283,17 +1308,31 @@
           _fsEl.innerHTML = `Filtered: <strong>${_sRows.length.toLocaleString()}</strong> records · Last report: <strong>${_last ? fmtWeek(_last) : '—'}</strong>`;
         }
         const profiles = seasonShows().shows.map(showProfile);
-        const active = profiles.filter((p) => p.metrics.count > 0);
         // Update the season median from actual computed scores so all above/below
         // median comparisons reflect the real distribution, not a hardcoded 50.
         SCORE_MED = median(profiles.map((p) => p.score).filter((s) => s != null)) || 50;
+
+        /* ── KPI taxonomy ─────────────────────────────────────────────────────
+         * Slate-derived    — unaffected by Display Evidence
+         * Canonical signal — unaffected by Display Evidence (p.score / p.signals)
+         * Touring-record display — governed by Display Evidence (filteredDisplay)
+         * ──────────────────────────────────────────────────────────────────── */
+
+        // Slate-derived KPIs
         $('kSeason').textContent = STATE.season.slice(2).replace('-20', '-');
         $('kScheduled').textContent = profiles.length;
-        $('kTourCap').textContent = pct(avg(active.map((p) => p.metrics.cap)), 0);
-        $('kPeerCap').textContent = pct(avg(active.map((p) => p.metrics.peerCap)), 0);
-        $('kIndex').textContent = num(avg(active.map((p) => p.metrics.index)), 0);
+
+        // Record-derived KPIs — use filteredDisplay; exclude shows with 0 in-range records
+        // so the average is not dragged toward zero by empty shows
+        const activeDisplay = profiles.filter((p) => p.filteredDisplay && p.filteredDisplay.count > 0);
+        $('kTourCap').textContent = pct(avg(activeDisplay.map((p) => p.filteredDisplay.cap)), 0);
+        $('kPeerCap').textContent = pct(avg(activeDisplay.map((p) => p.filteredDisplay.peerCap)), 0);
+        $('kIndex').textContent   = num(avg(activeDisplay.map((p) => p.filteredDisplay.index)), 0);
+
+        // Canonical signal KPIs — always from p.score; unaffected by Display Evidence
         $('kHighFit').textContent = profiles.filter((p) => p.score != null && p.score >= SCORE_MED).length;
-        $('kWatch').textContent = profiles.filter((p) => (p.score == null || p.score < SCORE_MED) && p.metrics.count > 0).length;
+        // kWatch: shows where the canonical signal is soft AND there is *some* filtered display data
+        $('kWatch').textContent   = profiles.filter((p) => (p.score == null || p.score < SCORE_MED) && p.filteredDisplay && p.filteredDisplay.count > 0).length;
         if (STATE.season === '2026-2027') updateFactsheetKPIs();
         renderActive();
       }
@@ -1389,9 +1428,10 @@
         const season = seasonShows();
         const profiles = season.shows.map(showProfile).sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
         const high = profiles.filter((p) => p.score != null && p.score >= SCORE_MED).slice(0, 3);
-        const watch = profiles.filter((p) => (p.score == null || p.score < SCORE_MED) && p.metrics.count > 0).slice(0, 3);
-        const withData = profiles.filter((p) => p.metrics.count > 0);
-        const avgIndex = avg(withData.map((p) => p.metrics.index));
+        // watch / withData use filteredDisplay so they reflect the active evidence window
+        const watch    = profiles.filter((p) => (p.score == null || p.score < SCORE_MED) && p.filteredDisplay && p.filteredDisplay.count > 0).slice(0, 3);
+        const withData = profiles.filter((p) => p.filteredDisplay && p.filteredDisplay.count > 0);
+        const avgIndex = avg(withData.map((p) => p.filteredDisplay.index));
         let status = 'Needs More Hartford Data',
           klass = 'neutral',
           msg =
@@ -1403,17 +1443,17 @@
           msg = `Selected season shows are indexing at ${num(avgIndex, 0)} against national capacity where Hartford records exist.`;
         }
         $('tab-brief').innerHTML =
-          `<div class="section-divider"><h2>Executive Brief</h2><div class="section-divider-line"></div><div class="section-divider-meta">${season.name} · programming decision view</div></div><div class="brief"><div class="callout ${klass}"><h3>${status}</h3><p>${msg}</p></div><div class="card"><div class="card-hd">What this page answers</div><div class="card-sub">How current shows are doing, how previous shows performed, and what next season candidates may do for Bushnell.</div><div class="metric-row"><div class="metric"><div class="val">${pct(avg(withData.map((p) => p.metrics.cap)), 0)}</div><div class="lbl">Tour Capacity</div></div><div class="metric"><div class="val">${pct(avg(withData.map((p) => p.metrics.peerCap)), 0)}</div><div class="lbl">Peer Capacity</div></div><div class="metric"><div class="val">${num(avg(withData.map((p) => p.score).filter((s) => s != null)), 0)}</div><div class="lbl">Avg Signal</div></div></div></div></div><div class="grid grid-3" style="margin-top:18px"><div class="card"><div class="card-hd">Strongest Signals</div><div class="rank-list">${rankItems(
+          `<div class="section-divider"><h2>Executive Brief</h2><div class="section-divider-line"></div><div class="section-divider-meta">${season.name} · programming decision view</div></div><div class="brief"><div class="callout ${klass}"><h3>${status}</h3><p>${msg}</p></div><div class="card"><div class="card-hd">What this page answers</div><div class="card-sub">How current shows are doing, how previous shows performed, and what next season candidates may do for Bushnell.</div><div class="metric-row"><div class="metric"><div class="val">${pct(avg(withData.map((p) => p.filteredDisplay.cap)), 0)}</div><div class="lbl">Tour Capacity</div></div><div class="metric"><div class="val">${pct(avg(withData.map((p) => p.filteredDisplay.peerCap)), 0)}</div><div class="lbl">Peer Capacity</div></div><div class="metric"><div class="val">${num(avg(withData.map((p) => p.score).filter((s) => s != null)), 0)}</div><div class="lbl">Avg Signal</div></div></div></div></div><div class="grid grid-3" style="margin-top:18px"><div class="card"><div class="card-hd">Strongest Signals</div><div class="rank-list">${rankItems(
             high,
             (p) => p.show.title,
-            (p) => `Signal ${p.score ?? '—'} · ${pct(p.metrics.cap, 0)} tour cap`,
+            (p) => `Signal ${p.score ?? '—'} · ${pct(p.filteredDisplay.cap, 0)} tour cap`,
             (p) => p.score ?? 0,
           )}</div></div><div class="card"><div class="card-hd">Watchlist</div><div class="rank-list">${
             watch.length
               ? rankItems(
                   watch,
                   (p) => p.show.title,
-                  (p) => `Signal ${p.score ?? '—'} · ${p.metrics.count} records`,
+                  (p) => `Signal ${p.score ?? '—'} · ${p.filteredDisplay.count} records`,
                   (p) => p.score,
                 )
               : '<div class="empty">No current watchlist items with available data.</div>'
@@ -1451,17 +1491,17 @@
 
       function makeInsights(profiles) {
         const out = [];
-        const known = profiles.filter((p) => p.metrics.count > 0);
+        const known = profiles.filter((p) => p.filteredDisplay && p.filteredDisplay.count > 0);
         const best = [...known].sort((a, b) => b.score - a.score)[0];
         const soft = [...known].sort((a, b) => a.score - b.score)[0];
         const peerWins = known.filter(
-          (p) => p.metrics.peerCap != null && p.metrics.cap != null && p.metrics.peerCap > p.metrics.cap + 3,
+          (p) => p.filteredDisplay.peerCap != null && p.filteredDisplay.cap != null && p.filteredDisplay.peerCap > p.filteredDisplay.cap + 3,
         ).length;
         if (best) {
           const _bs = BTD.page.planningSignals(best);
           out.push({
             title: `${best.show.title} — strongest Planning Signal`,
-            text: `Planning Read: ${_bs.planningRead}. Demand: ${_bs.demand}, Revenue: ${_bs.revenue}. ${pct(best.metrics.cap, 1)} avg capacity across matching tour records.`,
+            text: `Planning Read: ${_bs.planningRead}. Demand: ${_bs.demand}, Revenue: ${_bs.revenue}. ${pct(best.filteredDisplay.cap, 1)} avg capacity across matching tour records.`,
           });
         }
         if (soft) {
@@ -1495,7 +1535,10 @@
       function showCard(p, active, idx) {
         const k = p.score != null && p.score >= SCORE_MED ? 'good' : 'warn';
         const _sig = BTD.page.planningSignals(p);
-        return `<div class="show-card ${active ? 'active' : ''}" data-idx="${idx}"><div class="show-name">${p.show.title}</div><div style="font-size:.6rem;color:var(--ink3);margin:4px 0"><strong>Planning Read:</strong> ${_sig.planningRead}</div>${signalRow(_sig)}<div class="metric-row" style="margin-top:8px"><div class="metric"><div class="val">${pct(p.metrics.cap, 0)}</div><div class="lbl">Demand Cap</div></div><div class="metric"><div class="val">${pct(p.metrics.gg, 0)}</div><div class="lbl">Revenue GG%</div></div><div class="metric"><div class="val ${k}">${p.score != null ? p.score : '—'}</div><div class="lbl">Nat. Signal</div></div></div></div>`;
+        // Demand Cap and Revenue GG% come from filteredDisplay (governed by Display Evidence)
+        // Nat. Signal comes from the canonical score (unaffected by Display Evidence)
+        const fd = p.filteredDisplay || {};
+        return `<div class="show-card ${active ? 'active' : ''}" data-idx="${idx}"><div class="show-name">${p.show.title}</div><div style="font-size:.6rem;color:var(--ink3);margin:4px 0"><strong>Planning Read:</strong> ${_sig.planningRead}</div>${signalRow(_sig)}<div class="metric-row" style="margin-top:8px"><div class="metric"><div class="val">${pct(fd.cap, 0)}</div><div class="lbl">Demand Cap</div></div><div class="metric"><div class="val">${pct(fd.gg, 0)}</div><div class="lbl">Revenue GG%</div></div><div class="metric"><div class="val ${k}">${p.score != null ? p.score : '—'}</div><div class="lbl">Nat. Signal</div></div></div></div>`;
       }
 
       function selectCurrent(idx) {
@@ -1508,7 +1551,9 @@
 
       function detailHtml(p) {
         var _sig = BTD.page.planningSignals(p);
-        var m = p.metrics;
+        // Display metrics use filteredDisplay (governed by Display Evidence).
+        // Planning signal (_sig, p.score) remains canonical.
+        var m = p.filteredDisplay || p.metrics;
         var rows = p.rows
           .filter(function (d) {
             return d.gross_gross != null;
@@ -1571,7 +1616,7 @@
           '" · ' +
           (p.show.sub ? 'subscription' : 'non-subscription') +
           ' · ' +
-          p.metrics.count +
+          m.count +
           ' records</div>';
         // Fact sheet callout — 2026-27 only
         var _fsDH = _factsheets[p.show.title];
@@ -1700,10 +1745,11 @@
             match: s,
           }))
           .map(showProfile)
-          .sort((a, b) => b.metrics.count - a.metrics.count);
+          .sort((a, b) => b.metrics.count - a.metrics.count); // sort by total historical count
         HISTORY_PROFILES = rows;
+        // Display values use filteredDisplay so they reflect the active evidence window
         $('tab-history').innerHTML =
-          `<div class="section-divider"><h2>Show History</h2><div class="section-divider-line"></div><div class="section-divider-meta">Search and compare prior show performance</div></div><div class="grid grid-2"><div class="card"><div class="card-hd">Historical Show Library</div><table class="mini-table"><thead><tr><th>Show</th><th class="num">Weeks</th><th class="num">Cap</th><th class="num">Avg Gross</th></tr></thead><tbody>${rows.map((p, i) => `<tr onclick="historyDetailByIndex(${i})" style="cursor:pointer"><td>${p.show.title} ${contextWeekCount(p.rows)}</td><td class="num">${p.metrics.count}</td><td class="num">${pct(p.metrics.cap)}</td><td class="num">${fmt$(p.metrics.gross)}</td></tr>`).join('')}</tbody></table></div></div><div class="card"><div class="card-hd">Selected History</div><div id="historyDetail">${rows[0] ? detailHtml(rows[0]) : '<div class="empty">Search for a show.</div>'}</div></div></div>`;
+          `<div class="section-divider"><h2>Show History</h2><div class="section-divider-line"></div><div class="section-divider-meta">Search and compare prior show performance</div></div><div class="grid grid-2"><div class="card"><div class="card-hd">Historical Show Library</div><table class="mini-table"><thead><tr><th>Show</th><th class="num">Weeks</th><th class="num">Cap</th><th class="num">Avg Gross</th></tr></thead><tbody>${rows.map((p, i) => { const fd = p.filteredDisplay || {}; return `<tr onclick="historyDetailByIndex(${i})" style="cursor:pointer"><td>${p.show.title} ${contextWeekCount(p.rows)}</td><td class="num">${fd.count != null ? fd.count : '—'}</td><td class="num">${pct(fd.cap)}</td><td class="num">${fmt$(fd.gross)}</td></tr>`; }).join('')}</tbody></table></div></div><div class="card"><div class="card-hd">Selected History</div><div id="historyDetail">${rows[0] ? detailHtml(rows[0]) : '<div class="empty">Search for a show.</div>'}</div></div></div>`;
       }
 
       function historyDetailByIndex(i) {
@@ -1735,6 +1781,7 @@
             .map((p) => {
               const k = p.score != null && p.score >= SCORE_MED ? 'good' : 'warn';
               return ((_ps = BTD.page.planningSignals(p)) =>
+                // Display values use filteredDisplay; signal badges and score use canonical
                 `<tr><td>${p.show.title}</td><td>${(() => {
                   const _fsPl = _factsheets[p.show.title];
                   const _spPl =
@@ -1744,14 +1791,15 @@
                         'K target</span>'
                       : '';
                   return (p.show.sub ? 'Sub' : 'Add-on') + _spPl;
-                })()}</td><td class="num">${scoreBadge(p)}</td><td class="num">${pct(p.metrics.cap)}</td><td>${signalBadge(_ps.demand)}</td><td class="num">${pct(p.metrics.gg)}</td><td>${signalBadge(_ps.revenue)}</td><td class="num">${pct(p.metrics.peerCap)}</td><td>${signalBadge(_ps.confidence)}</td><td>${_ps.planningRead}</td></tr>`)();
+                })()}</td><td class="num">${scoreBadge(p)}</td><td class="num">${pct((p.filteredDisplay || {}).cap)}</td><td>${signalBadge(_ps.demand)}</td><td class="num">${pct((p.filteredDisplay || {}).gg)}</td><td>${signalBadge(_ps.revenue)}</td><td class="num">${pct((p.filteredDisplay || {}).peerCap)}</td><td>${signalBadge(_ps.confidence)}</td><td>${_ps.planningRead}</td></tr>`)();
             })
             .join(
               '',
             )}</tbody></table></div></div><div class="card"><div class="card-hd">High Confidence</div><div class="rank-list">${rankItems(
-            profiles.filter((p) => p.metrics.count >= 5).slice(0, 5),
+            // High Confidence uses canonical count as quality gate; display cap from filteredDisplay
+          profiles.filter((p) => p.metrics.count >= 5).slice(0, 5),
             (p) => p.show.title,
-            (p) => `${p.metrics.count} records · ${pct(p.metrics.cap, 0)} cap`,
+            (p) => `${p.metrics.count} records · ${pct((p.filteredDisplay || {}).cap, 0)} cap`,
             (p) => p.score,
           )}</div></div><div class="card"><div class="card-hd">Needs More Data</div><div class="rank-list">${
             profiles
@@ -2076,14 +2124,15 @@
             labels: profiles.map((p) => short(p.show.title, 16)),
             datasets: [
               {
+                // Tour/Peer capacity from filteredDisplay (governed by Display Evidence)
                 label: 'Tour',
-                data: profiles.map((p) => p.metrics.cap || 0),
+                data: profiles.map((p) => (p.filteredDisplay || p.metrics).cap || 0),
                 backgroundColor: '#003865',
                 borderRadius: 2,
               },
               {
                 label: 'Peer',
-                data: profiles.map((p) => p.metrics.peerCap || 0),
+                data: profiles.map((p) => (p.filteredDisplay || p.metrics).peerCap || 0),
                 backgroundColor: 'rgba(26,78,138,.65)',
                 borderRadius: 2,
               },
