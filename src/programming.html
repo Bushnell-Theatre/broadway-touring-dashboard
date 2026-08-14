@@ -1329,10 +1329,11 @@
         $('kPeerCap').textContent = pct(avg(activeDisplay.map((p) => p.filteredDisplay.peerCap)), 0);
         $('kIndex').textContent   = num(avg(activeDisplay.map((p) => p.filteredDisplay.index)), 0);
 
-        // Canonical signal KPIs — always from p.score; unaffected by Display Evidence
+        // Canonical signal KPIs — always from p.score; completely unaffected by Display Evidence
+        // Watch classification: any show with a canonical score below median.
+        // Shows with no canonical score (null) are unscored, not watchlisted.
         $('kHighFit').textContent = profiles.filter((p) => p.score != null && p.score >= SCORE_MED).length;
-        // kWatch: shows where the canonical signal is soft AND there is *some* filtered display data
-        $('kWatch').textContent   = profiles.filter((p) => (p.score == null || p.score < SCORE_MED) && p.filteredDisplay && p.filteredDisplay.count > 0).length;
+        $('kWatch').textContent   = profiles.filter((p) => p.score != null && p.score < SCORE_MED).length;
         if (STATE.season === '2026-2027') updateFactsheetKPIs();
         renderActive();
       }
@@ -1428,8 +1429,10 @@
         const season = seasonShows();
         const profiles = season.shows.map(showProfile).sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
         const high = profiles.filter((p) => p.score != null && p.score >= SCORE_MED).slice(0, 3);
-        // watch / withData use filteredDisplay so they reflect the active evidence window
-        const watch    = profiles.filter((p) => (p.score == null || p.score < SCORE_MED) && p.filteredDisplay && p.filteredDisplay.count > 0).slice(0, 3);
+        // watch membership is canonical — any show with a score below the season median.
+        // Shows with null score are unscored (no evidence), not watchlisted.
+        // Display Evidence does not add or remove items from the Watchlist.
+        const watch    = profiles.filter((p) => p.score != null && p.score < SCORE_MED).slice(0, 3);
         const withData = profiles.filter((p) => p.filteredDisplay && p.filteredDisplay.count > 0);
         const avgIndex = avg(withData.map((p) => p.filteredDisplay.index));
         let status = 'Needs More Hartford Data',
@@ -1453,10 +1456,16 @@
               ? rankItems(
                   watch,
                   (p) => p.show.title,
-                  (p) => `Signal ${p.score ?? '—'} · ${p.filteredDisplay.count} records`,
+                  // Canonical signal score drives membership; display count is secondary context
+                  (p) => {
+                    const cnt = p.filteredDisplay && p.filteredDisplay.count > 0
+                      ? p.filteredDisplay.count + ' records in this display range'
+                      : 'No records in this display range';
+                    return `Signal ${p.score ?? '—'} · ${cnt}`;
+                  },
                   (p) => p.score,
                 )
-              : '<div class="empty">No current watchlist items with available data.</div>'
+              : '<div class="empty">No watchlist items for this season.</div>'
           }</div></div><div class="card"><div class="card-hd">Programming Signals</div><div class="insight-list" id="briefInsights"></div></div></div><div class="grid grid-2" style="margin-top:18px"><div class="card"><div class="card-hd">Season Show Fit</div><canvas id="cBriefFit"></canvas></div><div class="card"><div class="card-hd">Capacity: Tour vs Peer</div><canvas id="cBriefCap"></canvas></div><div class="card full" style="border-left:3px solid var(--rule)"><div class="card-hd" style="margin-bottom:10px">How to Use This View</div><div class="grid grid-2"><div class="note"><div class="note-hd">What the Planning Signal measures</div><div class="note-body">Four separate signals: <strong>Demand</strong> (attendance), <strong>Revenue</strong> (monetization efficiency), <strong>Peer</strong> (Bushnell-size venue behavior), and <strong>Confidence</strong> (evidence depth). Scores are calibrated against the <strong>season median</strong> — above median means stronger relative to this season's actual touring market.</div></div><div class="note"><div class="note-hd">What it does not include</div><div class="note-body">Deal terms, guarantees &amp; expense structure &nbsp;·&nbsp; Local Bushnell audience history &nbsp;·&nbsp; Routing and availability &nbsp;·&nbsp; Pre-sale pace &nbsp;·&nbsp; Group or donor strategy &nbsp;·&nbsp; Competing local events &nbsp;·&nbsp; Artistic or mission priority. <strong>Revenue Signal is not Net Profit.</strong> Use the Planning Signal to start the conversation, not end it.</div></div></div></div></div>`;
         $('briefInsights').innerHTML = makeInsights(profiles)
           .map(
@@ -1796,17 +1805,19 @@
             .join(
               '',
             )}</tbody></table></div></div><div class="card"><div class="card-hd">High Confidence</div><div class="rank-list">${rankItems(
-            // High Confidence uses canonical count as quality gate; display cap from filteredDisplay
-          profiles.filter((p) => p.metrics.count >= 5).slice(0, 5),
+            // Canonical count drives confidence bucket membership and is labeled explicitly.
+            // Display cap reflects the active evidence window (filteredDisplay).
+            profiles.filter((p) => p.metrics.count >= 5).slice(0, 5),
             (p) => p.show.title,
-            (p) => `${p.metrics.count} records · ${pct((p.filteredDisplay || {}).cap, 0)} cap`,
+            (p) => `${p.metrics.count} historical records supporting confidence · ${pct((p.filteredDisplay || {}).cap, 0)} cap in display range`,
             (p) => p.score,
           )}</div></div><div class="card"><div class="card-hd">Needs More Data</div><div class="rank-list">${
             profiles
               .filter((p) => p.metrics.count < 3)
               .map(
                 (p, i) =>
-                  `<div class="rank-item"><div class="rank-n">${i + 1}</div><div class="rank-body"><div class="rank-name">${p.show.title}</div><div class="rank-detail">${p.metrics.count} matching records</div></div></div>`,
+                  // Canonical count explains why this show is in the "Needs More Data" bucket
+                  `<div class="rank-item"><div class="rank-n">${i + 1}</div><div class="rank-body"><div class="rank-name">${p.show.title}</div><div class="rank-detail">${p.metrics.count} historical records · validate with comparables</div></div></div>`,
               )
               .join('') || '<div class="empty">All candidates have at least 3 matching records.</div>'
           }</div></div><div class="card"><div class="card-hd">Planning Signal Distribution</div><canvas id="cFuture" class="small-canvas"></canvas></div></div><div class="section-divider" style="margin-top:28px"><h2>Opportunity Engine</h2><div class="section-divider-line"></div><div class="section-divider-meta">Find hidden gems and caution signs</div></div><div class="grid grid-2"><div class="card"><div class="card-hd">Peer-Strong Hidden Gems</div><div class="card-sub">Shows that perform meaningfully better in Bushnell-size venues than nationally.</div><table class="mini-table"><thead><tr><th>Show</th><th class="num">National</th><th class="num">Peer</th><th class="num">Gap</th></tr></thead><tbody>${hidden.map((p) => `<tr><td>${p.show.title}</td><td class="num">${pct(p.metrics.cap)}</td><td class="num">${pct(p.metrics.peerCap)}</td><td class="num">+${pct(p.metrics.peerCap - p.metrics.cap)}</td></tr>`).join('')}</tbody></table></div></div><div class="card"><div class="card-hd">Caution List</div><div class="card-sub">Shows where the peer venue lens trails the full national average.</div><table class="mini-table"><thead><tr><th>Show</th><th class="num">National</th><th class="num">Peer</th><th class="num">Gap</th></tr></thead><tbody>${risky.map((p) => `<tr><td>${p.show.title} ${contextWeekCount(p.rows)}</td><td class="num">${pct(p.metrics.cap)}</td><td class="num">${pct(p.metrics.peerCap)}</td><td class="num">${pct(p.metrics.peerCap - p.metrics.cap)}</td></tr>`).join('')}</tbody></table></div></div></div>`;
@@ -2118,21 +2129,39 @@
         destroy(id);
         const ctx = $(id);
         if (!ctx) return;
+        // Tour/Peer capacity from filteredDisplay (governed by Display Evidence).
+        // Use null for missing values — zero would misrepresent absent evidence.
+        const capVals  = profiles.map((p) => (p.filteredDisplay || p.metrics).cap  ?? null);
+        const peerVals = profiles.map((p) => (p.filteredDisplay || p.metrics).peerCap ?? null);
+        // Empty-state handling: when every value is null, hide the canvas and show a message.
+        // A prior empty-state div is removed before deciding whether to recreate it,
+        // so re-renders with usable data restore the chart correctly.
+        const emptyEl = document.getElementById(id + '-empty');
+        if (emptyEl) emptyEl.remove();
+        if (capVals.every((v) => v == null) && peerVals.every((v) => v == null)) {
+          ctx.style.display = 'none';
+          const msg = document.createElement('div');
+          msg.id = id + '-empty';
+          msg.textContent = 'No capacity data in this display range.';
+          msg.style.cssText = 'font-size:.65rem;color:var(--ink3);padding:18px 0;text-align:center;font-style:italic';
+          ctx.insertAdjacentElement('afterend', msg);
+          return;
+        }
+        ctx.style.display = '';
         CHARTS[id] = new Chart(ctx, {
           type: 'bar',
           data: {
             labels: profiles.map((p) => short(p.show.title, 16)),
             datasets: [
               {
-                // Tour/Peer capacity from filteredDisplay (governed by Display Evidence)
                 label: 'Tour',
-                data: profiles.map((p) => (p.filteredDisplay || p.metrics).cap || 0),
+                data: capVals,
                 backgroundColor: '#003865',
                 borderRadius: 2,
               },
               {
                 label: 'Peer',
-                data: profiles.map((p) => (p.filteredDisplay || p.metrics).peerCap || 0),
+                data: peerVals,
                 backgroundColor: 'rgba(26,78,138,.65)',
                 borderRadius: 2,
               },
