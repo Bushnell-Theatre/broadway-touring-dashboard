@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -664,30 +664,41 @@
     <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
     <div class="workspace">
       <aside class="sidebar">
-        <!-- TIME RANGE — Season mode shows season pills; Date Range shows date inputs -->
+        <!-- SHOW SLATE — always visible; season governs which planned shows appear -->
         <div class="sidebar-section">
-          <span class="sidebar-label">Time Range</span>
-          <!-- Radio toggle -->
-          <div style="display:flex; gap:6px; margin-bottom:8px;">
-            <label style="display:flex; align-items:center; gap:4px; font-size:0.62rem; cursor:pointer;">
-              <input type="radio" name="dateMode" value="season" id="modeSeason" checked onchange="onDateModeChange()" />
-              Season
-            </label>
-            <label style="display:flex; align-items:center; gap:4px; font-size:0.62rem; cursor:pointer;">
-              <input type="radio" name="dateMode" value="range" id="modeRange" onchange="onDateModeChange()" />
-              Date Range
-            </label>
-          </div>
+          <span class="sidebar-label">Show Slate</span>
+          <div class="pill-row" id="seasonPills"></div>
+        </div>
 
-          <!-- Season pills (shown when mode=season) -->
-          <div id="modeSeason-panel">
-            <div class="pill-row" id="seasonPills"></div>
+        <!-- DISPLAY EVIDENCE — governs which touring records are shown.
+             Switching this does NOT change the show slate or Planning Signals. -->
+        <div class="sidebar-section">
+          <span class="sidebar-label">Display Evidence</span>
+          <!-- Evidence pills — mutually exclusive -->
+          <div class="pill-row" style="flex-wrap:wrap; gap:4px; margin-bottom:6px;">
+            <button
+              class="pill active"
+              id="deAll"
+              onclick="setDisplayEvidence('all')"
+              aria-pressed="true"
+            >All available data</button>
+            <button
+              class="pill"
+              id="deRange"
+              onclick="setDisplayEvidence('range')"
+              aria-pressed="false"
+            >Custom date range</button>
           </div>
-
-          <!-- Date range inputs (shown when mode=range) -->
+          <!-- Date range inputs — visible only when Custom date range is selected -->
           <div id="modeRange-panel" style="display:none;">
-            <div style="font-size:0.55rem; color:var(--ink3); margin-bottom:6px;">
-              Snapped to nearest Sunday · overrides season filter
+            <!-- Disclosure text — page-specific: explains the two-contract model -->
+            <div style="font-size:0.55rem; color:var(--ink3); margin-bottom:8px; line-height:1.45;">
+              <!-- page-specific — disclosure for Display Evidence contract -->
+              Date range filters displayed touring metrics for this show slate.
+              Planning Signals use the canonical historical evidence window.
+            </div>
+            <div style="font-size:0.52rem; color:var(--ink3); margin-bottom:6px;">
+              Snapped to nearest Sunday
             </div>
             <label for="fDateFrom" class="sidebar-label" style="display:block; margin-top:4px;">From</label>
             <input
@@ -709,6 +720,12 @@
             >
               Apply
             </button>
+            <!-- Visible validation error — shown by BTD.page.onDateRangeChange() when From > To -->
+            <div
+              id="dateRangeError"
+              style="display:none; font-size:0.58rem; color:var(--rose); margin-top:5px; line-height:1.35;"
+              role="alert"
+            ></div>
           </div>
         </div>
         <div class="sidebar-section">
@@ -1699,6 +1716,29 @@
         return !d.no_engagement || hasPerformanceData(d);
       }
 
+      /* ── computeFilteredDisplay ──────────────────────────────────────────────
+       *
+       * Compute display-only metrics from a (possibly date-filtered) row set.
+       * These are presentation values only — NOT part of the scoring contract.
+       * Governed by Display Evidence (window._DATE_RANGE + other sidebar filters).
+       * Never passed to BTD.page.profileShowCanonical() or signals.js.
+       *
+       * ─────────────────────────────────────────────────────────────────────── */
+      function computeFilteredDisplay(rows) {
+        const active   = rows.filter(isUsableRecord);
+        const peerRows = active.filter((d) => isPeerType(d, ACTIVE_PEER || 'size'));
+        return {
+          count:      active.length,
+          allCount:   rows.length,
+          cap:        avg(active.map((d) => d.cap_paid)),
+          gg:         avg(active.map((d) => d.gg_pct_gp)),
+          adm:        avg(active.map((d) => d.avg_adm)),
+          gross:      avg(active.map((d) => d.gross_gross)),
+          totalGross: sum(active.map((d) => d.gross_gross)),
+          peerCap:    avg(peerRows.map((d) => d.cap_paid))
+        };
+      }
+
       function matchRows(show, rows = ALL) {
         const n = norm(show.match || show.title || show);
         return rows.filter((d) => d.show && norm(d.show).includes(n) && d.gross_gross != null);
@@ -1753,9 +1793,16 @@
           dateTo:   isPast ? season.end : undefined
         });
         /* Attach row/metric helpers for non-scoring display (charts, tables).
-         * These fields are presentation-only and are not part of the scoring contract. */
-        p.rows       = allRows;
-        p.rawDisplay = (() => {
+         * These fields are presentation-only and are not part of the scoring contract.
+         *
+         * rawDisplay   — unfiltered; all rows regardless of sidebar filters or date range
+         * filteredDisplay — governed by Display Evidence (applyFilters, which includes
+         *                   _DATE_RANGE plus tier/sub/peer/equity/engage sidebar filters).
+         *                   This is what gets shown to the user for record-derived metrics.
+         *                   Never used for Planning Signal scoring.
+         */
+        p.rows          = allRows;
+        p.rawDisplay    = (() => {
           const active = allRows.filter(isUsableRecord);
           return {
             count: allRows.length, cap: avg(active.map((d) => d.cap_paid)),
@@ -1763,6 +1810,7 @@
             gross: avg(active.map((d) => d.gross_gross)), totalGross: sum(active.map((d) => d.gross_gross))
           };
         })();
+        p.filteredDisplay = computeFilteredDisplay(applyFilters(allRows));
         return p;
       }
 
@@ -1976,8 +2024,11 @@
       }
 
       /* Date range toggle — thin wrappers to shared BTD.page functions in page-common.js. */
+      /* ── Date range wrappers ── */
       function onDateRangeChange() { BTD.page.onDateRangeChange(renderAll); }
-      function onDateModeChange()  { BTD.page.onDateModeChange(renderAll); }
+      /* setDisplayEvidence — called by the "All available data" / "Custom date range"
+         evidence pills. Season slate (ACTIVE_SEASON) is never touched here. */
+      function setDisplayEvidence(mode) { BTD.page.onDisplayEvidencePillChange(mode, renderAll); }
 
       function setSeason(id) {
         ACTIVE_SEASON = id;
@@ -2047,14 +2098,16 @@
               const cls = p.isFutureNewTour ? 'neutral' : p.score == null ? 'neutral' : p.score >= SCORE_MED ? 'good' : 'warn';
               const scoreLabel = p.isFutureNewTour ? 'NEW' : p.score;
               return ((_fs = BTD.page.planningSignals(p)) =>
-                `<tr><td>${p.show.title}<br><span style="color:var(--ink3);font-size:.58rem">${dateLine(p.show)}</span></td><td>${p.show.sub ? 'Sub' : 'Add-on'}</td><td class="num"><span class="status ${cls}">${scoreLabel}</span></td><td class="num">${pct(p.metrics.cap)}</td><td>${signalBadge(_fs.demand)}</td><td class="num">${pct(p.metrics.gg)}</td><td>${signalBadge(_fs.revenue)}</td><td class="num">${pct(p.metrics.peerCap)}</td><td class="num">${p.metrics.count}</td><td>${signalBadge(_fs.confidence)}</td><td>${_fs.planningRead}</td></tr>`)();
+                // Display values use filteredDisplay; signal badges and score are canonical
+                `<tr><td>${p.show.title}<br><span style="color:var(--ink3);font-size:.58rem">${dateLine(p.show)}</span></td><td>${p.show.sub ? 'Sub' : 'Add-on'}</td><td class="num"><span class="status ${cls}">${scoreLabel}</span></td><td class="num">${pct((p.filteredDisplay || {}).cap)}</td><td>${signalBadge(_fs.demand)}</td><td class="num">${pct((p.filteredDisplay || {}).gg)}</td><td>${signalBadge(_fs.revenue)}</td><td class="num">${pct((p.filteredDisplay || {}).peerCap)}</td><td class="num">${p.metrics.count}</td><td>${signalBadge(_fs.confidence)}</td><td>${_fs.planningRead}</td></tr>`)();
             })
             .join(
               '',
             )}</tbody></table></div></div><div class="card"><div class="card-hd">High Confidence</div><div class="card-sub">Titles with enough feed history to support a stronger planning read.</div><div class="rank-list">${rankItems(
+            // Quality gate uses canonical count; display cap from filteredDisplay
             profiles.filter((p) => p.metrics.count >= 5).slice(0, 5),
             (p) => p.show.title,
-            (p) => `${p.metrics.count} records · ${pct(p.metrics.cap, 0)} cap`,
+            (p) => `${p.metrics.count} records · ${pct((p.filteredDisplay || {}).cap, 0)} cap`,
             (p) => p.score,
           )}</div></div><div class="card"><div class="card-hd">New / Needs Comparable Validation</div><div class="card-sub">Use outside context, artistic priorities, pre-sale signal, and comparable prior Bushnell titles.</div><div class="rank-list">${
             profiles
@@ -2198,15 +2251,26 @@
 
       function renderKpis() {
         const { season, profiles } = seasonProfiles();
-        const m = profiles.map((p) => p.metrics);
+        /* ── KPI taxonomy ─────────────────────────────────────────────────────
+         * Slate-derived    — unaffected by Display Evidence
+         * Canonical signal — unaffected by Display Evidence (p.score)
+         * Touring-record display — governed by Display Evidence (filteredDisplay)
+         * ──────────────────────────────────────────────────────────────────── */
+
+        // Slate-derived KPIs
         $('kSeason').textContent = season.id.slice(2, 4) + '-' + season.id.slice(7, 9);
         $('kShows').textContent = profiles.length;
+
+        // Canonical signal KPIs
         $('kFit').textContent = Math.round(avg(profiles.map((p) => p.score)) || 0);
-        $('kCap').textContent = pct(avg(m.map((x) => x.cap)), 0);
-        $('kPeerCap').textContent = pct(avg(m.map((x) => x.peerCap)), 0);
-        $('kGross').textContent = fmt$(avg(m.map((x) => x.gross)));
         $('kStrong').textContent = profiles.filter((p) => p.score >= SCORE_MED).length;
         $('kWatch').textContent = profiles.filter((p) => p.score < SCORE_MED).length;
+
+        // Record-derived KPIs — use filteredDisplay; exclude shows with 0 in-range records
+        const fd = profiles.map((p) => p.filteredDisplay).filter((x) => x && x.count > 0);
+        $('kCap').textContent = pct(avg(fd.map((x) => x.cap)), 0);
+        $('kPeerCap').textContent = pct(avg(fd.map((x) => x.peerCap)), 0);
+        $('kGross').textContent = fmt$(avg(fd.map((x) => x.gross)));
       }
 
       function renderBrief() {
@@ -2215,8 +2279,10 @@
         const ranked = [...profiles].sort((a, b) => b.score - a.score);
         const dateOrdered = [...profiles].sort(bySeasonDate);
         const avgFit = Math.round(avg(profiles.map((p) => p.score)) || 0);
-        const avgCap = avg(profiles.map((p) => p.metrics.cap));
-        const peer = avg(profiles.map((p) => p.metrics.peerCap));
+        // Record-derived display averages use filteredDisplay (governed by Display Evidence)
+        const withDisplayData = profiles.filter((p) => p.filteredDisplay && p.filteredDisplay.count > 0);
+        const avgCap = avg(withDisplayData.map((p) => p.filteredDisplay.cap));
+        const peer   = avg(withDisplayData.map((p) => p.filteredDisplay.peerCap));
         const top = ranked.find((p) => !p.isFutureNewTour) || ranked[0],
           newTour = ranked.find((p) => p.isFutureNewTour),
           watch =
@@ -2285,7 +2351,7 @@
               .join('')}</tbody></table></div></div>`
           : '';
         $('tab-brief').innerHTML =
-          `<div class="section-divider"><h2>Executive Brief</h2><div class="section-divider-line"></div><div class="section-divider-meta">${season.name} · ${mode === 'past' ? 'completed-season performance lens' : 'real tour data lens'}</div></div><div class="explainer"><p><strong>How to read this page:</strong> ${mode === 'past' ? 'For completed seasons, the system reads each programmed title as a historical performance result: demand, revenue strength, peer-venue performance, sample depth, and subscription signal.' : 'The system scores each Bushnell season title by matching it to real tour records, then weighing demand, revenue strength, peer-venue performance, sample depth, and subscription signal. The result is a planning signal for leadership discussion — not a final programming recommendation.'}</p></div><div class="grid grid-2"><div class="callout ${avgCap >= 75 ? 'good' : avgCap < 65 ? 'warn' : ''}"><h3>${briefHeadline(avgFit, avgCap, peer, profiles)}</h3><p>${briefCopy(season, profiles, avgCap, peer)}</p></div><div class="card"><div class="card-hd">What to Watch</div><div class="rank-list"><div class="rank-item"><div class="rank-n top">1</div><div class="rank-body"><div class="rank-name">${mode === 'past' ? 'Strongest Result' : 'Strongest Fit'}: ${top ? top.show.title : '—'}</div><div class="rank-detail">Score ${top ? top.score : '—'} · ${top ? pct(top.metrics.cap) : '—'} avg capacity · confidence ${top ? confidenceLabel(top) : '—'}</div></div></div><div class="rank-item"><div class="rank-n">2</div><div class="rank-body"><div class="rank-name">${watch && watch.isFutureNewTour ? 'New-Tour Upside' : 'Needs Review'}: ${watch ? watch.show.title : '—'}</div><div class="rank-detail">${watch && watch.isFutureNewTour ? 'No historical records yet · exploratory confidence' : 'Score ' + (watch ? watch.score : '—') + ' · ' + (watch ? pct(watch.metrics.cap) : '—') + ' avg capacity · confidence ' + (watch ? confidenceLabel(watch) : '—')}</div></div></div><div class="rank-item"><div class="rank-n">3</div><div class="rank-body"><div class="rank-name">Peer Lens</div><div class="rank-detail">Peer venues are Bushnell-size comparators; season slate peer capacity averages ${pct(peer)}.</div></div></div></div></div>${ctxCard}${salesRiskCard}${mode === 'past' ? bushnellBriefCard(profiles, season.id) : ''}<div class="card full"><div class="card-hd">Planning Signal Model</div><div class="card-sub" style="margin-bottom:10px">Each show is evaluated across four separate signals. Demand and Revenue are always shown separately — they answer different questions.</div><div class="grid grid-4"><div class="note"><div class="note-hd">Demand Signal</div><div class="note-body">Do audiences want this title? Scaled paid capacity across available Size, Proximity, and Market peer cohorts, plus subscription lift when available. Occupancy is a demand measure, not a success measure on its own.</div></div><div class="note"><div class="note-hd">Revenue Signal</div><div class="note-body">Does demand convert to dollars? GG% of Gross Potential and average paid admission, scaled within each available peer cohort. A title can have strong attendance and weak revenue.</div></div><div class="note"><div class="note-hd">Peer Signal</div><div class="note-body">How well does this show perform at venues like Bushnell? Combined peer-pool capacity, GG% efficiency, and sample breadth across all three cohort types. Separates national popularity from likely Hartford fit.</div></div><div class="note"><div class="note-hd">Confidence Signal</div><div class="note-body">How much evidence supports this read? Active record count, distinct venue count, combined peer-record count, and reporting-week count. No recency component — Low confidence means thin evidence, not a bad signal about the title.</div></div></div><div class="card-sub" style="margin-top:10px;border-top:1px solid var(--rule2);padding-top:8px;font-style:italic">Revenue Signal is not Net Profit. Deal terms, local expenses, presenter economics, and ancillary revenue are not included in this dashboard.</div></div><div class="card full"><div class="card-hd">Season Slate Read</div><div class="explainer" style="margin-bottom:10px"><p>The Planning Signal summarizes how a title appears to perform as a programming candidate, built from separate Demand, Revenue, Peer, and Confidence signals. <strong>Revenue Signal is not Net Profit</strong> — until deal terms, local expenses, and presenter economics are added, this dashboard speaks to revenue quality, not final profitability.</p></div><div class="mini-table-wrap"><table class="mini-table"><thead><tr><th>Show</th><th>Pkg</th><th class="num">Fit</th><th class="num">Tour Cap</th><th>Demand</th><th class="num">GG%</th><th>Revenue</th><th class="num">Peer Cap</th><th class="num">Avg Gross</th><th>Confidence</th><th>Planning Read</th></tr></thead><tbody>${dateOrdered.map((p) => rowHtml(p, mode)).join('')}</tbody></table></div></div></div><div class="card"><div class="card-hd">Planning Signal Scores</div><canvas id="cBriefFit"></canvas></div><div class="card"><div class="card-hd">Tour vs Peer Capacity</div><canvas id="cBriefCap"></canvas></div><div class="card full" style="border-left:3px solid var(--rule)"><div class="card-hd" style="margin-bottom:10px">How to Use This Dashboard</div><div class="grid grid-2"><div class="note"><div class="note-hd">What the Planning Signal measures</div><div class="note-body">Four separate signals: <strong>Demand</strong> (did audiences show up?), <strong>Revenue</strong> (did demand convert to dollars?), <strong>Peer</strong> (how did comparable venues perform?), and <strong>Confidence</strong> (how much evidence exists?). These are combined into a single Planning Signal score (0–100), anchored to Bushnell's peer cohorts — not the national touring pool. <a onclick="openHelpDrawer()" href="#" style="color:var(--amber);text-decoration:none;font-weight:600">Full methodology &rarr;</a></div></div><div class="note"><div class="note-hd">What it does not include</div><div class="note-body">Deal terms, guarantees &amp; expense structure &nbsp;&middot;&nbsp; Local Bushnell audience history &nbsp;&middot;&nbsp; Artistic or mission priority &nbsp;&middot;&nbsp; Routing and availability &nbsp;&middot;&nbsp; Pre-sale pace &nbsp;&middot;&nbsp; Group or donor sales strategy &nbsp;&middot;&nbsp; Competing local events. These factors belong in the leadership conversation — this tool starts it.</div></div></div></div></div>`;
+          `<div class="section-divider"><h2>Executive Brief</h2><div class="section-divider-line"></div><div class="section-divider-meta">${season.name} · ${mode === 'past' ? 'completed-season performance lens' : 'real tour data lens'}</div></div><div class="explainer"><p><strong>How to read this page:</strong> ${mode === 'past' ? 'For completed seasons, the system reads each programmed title as a historical performance result: demand, revenue strength, peer-venue performance, sample depth, and subscription signal.' : 'The system scores each Bushnell season title by matching it to real tour records, then weighing demand, revenue strength, peer-venue performance, sample depth, and subscription signal. The result is a planning signal for leadership discussion — not a final programming recommendation.'}</p></div><div class="grid grid-2"><div class="callout ${avgCap >= 75 ? 'good' : avgCap < 65 ? 'warn' : ''}"><h3>${briefHeadline(avgFit, avgCap, peer, profiles)}</h3><p>${briefCopy(season, profiles, avgCap, peer)}</p></div><div class="card"><div class="card-hd">What to Watch</div><div class="rank-list"><div class="rank-item"><div class="rank-n top">1</div><div class="rank-body"><div class="rank-name">${mode === 'past' ? 'Strongest Result' : 'Strongest Fit'}: ${top ? top.show.title : '—'}</div><div class="rank-detail">Score ${top ? top.score : '—'} · ${top ? pct((top.filteredDisplay || {}).cap) : '—'} avg capacity · confidence ${top ? confidenceLabel(top) : '—'}</div></div></div><div class="rank-item"><div class="rank-n">2</div><div class="rank-body"><div class="rank-name">${watch && watch.isFutureNewTour ? 'New-Tour Upside' : 'Needs Review'}: ${watch ? watch.show.title : '—'}</div><div class="rank-detail">${watch && watch.isFutureNewTour ? 'No historical records yet · exploratory confidence' : 'Score ' + (watch ? watch.score : '—') + ' · ' + (watch ? pct((watch.filteredDisplay || {}).cap) : '—') + ' avg capacity · confidence ' + (watch ? confidenceLabel(watch) : '—')}</div></div></div><div class="rank-item"><div class="rank-n">3</div><div class="rank-body"><div class="rank-name">Peer Lens</div><div class="rank-detail">Peer venues are Bushnell-size comparators; season slate peer capacity averages ${pct(peer)}.</div></div></div></div></div>${ctxCard}${salesRiskCard}${mode === 'past' ? bushnellBriefCard(profiles, season.id) : ''}<div class="card full"><div class="card-hd">Planning Signal Model</div><div class="card-sub" style="margin-bottom:10px">Each show is evaluated across four separate signals. Demand and Revenue are always shown separately — they answer different questions.</div><div class="grid grid-4"><div class="note"><div class="note-hd">Demand Signal</div><div class="note-body">Do audiences want this title? Scaled paid capacity across available Size, Proximity, and Market peer cohorts, plus subscription lift when available. Occupancy is a demand measure, not a success measure on its own.</div></div><div class="note"><div class="note-hd">Revenue Signal</div><div class="note-body">Does demand convert to dollars? GG% of Gross Potential and average paid admission, scaled within each available peer cohort. A title can have strong attendance and weak revenue.</div></div><div class="note"><div class="note-hd">Peer Signal</div><div class="note-body">How well does this show perform at venues like Bushnell? Combined peer-pool capacity, GG% efficiency, and sample breadth across all three cohort types. Separates national popularity from likely Hartford fit.</div></div><div class="note"><div class="note-hd">Confidence Signal</div><div class="note-body">How much evidence supports this read? Active record count, distinct venue count, combined peer-record count, and reporting-week count. No recency component — Low confidence means thin evidence, not a bad signal about the title.</div></div></div><div class="card-sub" style="margin-top:10px;border-top:1px solid var(--rule2);padding-top:8px;font-style:italic">Revenue Signal is not Net Profit. Deal terms, local expenses, presenter economics, and ancillary revenue are not included in this dashboard.</div></div><div class="card full"><div class="card-hd">Season Slate Read</div><div class="explainer" style="margin-bottom:10px"><p>The Planning Signal summarizes how a title appears to perform as a programming candidate, built from separate Demand, Revenue, Peer, and Confidence signals. <strong>Revenue Signal is not Net Profit</strong> — until deal terms, local expenses, and presenter economics are added, this dashboard speaks to revenue quality, not final profitability.</p></div><div class="mini-table-wrap"><table class="mini-table"><thead><tr><th>Show</th><th>Pkg</th><th class="num">Fit</th><th class="num">Tour Cap</th><th>Demand</th><th class="num">GG%</th><th>Revenue</th><th class="num">Peer Cap</th><th class="num">Avg Gross</th><th>Confidence</th><th>Planning Read</th></tr></thead><tbody>${dateOrdered.map((p) => rowHtml(p, mode)).join('')}</tbody></table></div></div></div><div class="card"><div class="card-hd">Planning Signal Scores</div><canvas id="cBriefFit"></canvas></div><div class="card"><div class="card-hd">Tour vs Peer Capacity</div><canvas id="cBriefCap"></canvas></div><div class="card full" style="border-left:3px solid var(--rule)"><div class="card-hd" style="margin-bottom:10px">How to Use This Dashboard</div><div class="grid grid-2"><div class="note"><div class="note-hd">What the Planning Signal measures</div><div class="note-body">Four separate signals: <strong>Demand</strong> (did audiences show up?), <strong>Revenue</strong> (did demand convert to dollars?), <strong>Peer</strong> (how did comparable venues perform?), and <strong>Confidence</strong> (how much evidence exists?). These are combined into a single Planning Signal score (0–100), anchored to Bushnell's peer cohorts — not the national touring pool. <a onclick="openHelpDrawer()" href="#" style="color:var(--amber);text-decoration:none;font-weight:600">Full methodology &rarr;</a></div></div><div class="note"><div class="note-hd">What it does not include</div><div class="note-body">Deal terms, guarantees &amp; expense structure &nbsp;&middot;&nbsp; Local Bushnell audience history &nbsp;&middot;&nbsp; Artistic or mission priority &nbsp;&middot;&nbsp; Routing and availability &nbsp;&middot;&nbsp; Pre-sale pace &nbsp;&middot;&nbsp; Group or donor sales strategy &nbsp;&middot;&nbsp; Competing local events. These factors belong in the leadership conversation — this tool starts it.</div></div></div></div></div>`;
         chartFit(ranked, 'cBriefFit');
         chartCap(ranked, 'cBriefCap');
 
@@ -2342,7 +2408,8 @@
       }
 
       function briefCopy(season, profiles, avgCap, peer) {
-        const known = profiles.filter((p) => p.metrics.count > 0).length;
+        // "known" counts shows with records in the active evidence window
+        const known = profiles.filter((p) => p.filteredDisplay && p.filteredDisplay.count > 0).length;
         const newTours = profiles.filter((p) => p.isFutureNewTour).length;
         if (newTours > 0) {
           return `${known} of ${profiles.length} planned shows have matching historical tour records. ${newTours} appear to be new-tour opportunities in this feed, so the lack of data should be read as uncertainty plus upside rather than a negative performance signal. Average matched capacity is ${pct(avgCap)} nationally and ${pct(peer)} across Bushnell-size peer venues.`;
@@ -2352,7 +2419,10 @@
 
       function rowHtml(p, mode = seasonMode()) {
         const _sig = BTD.page.planningSignals(p);
-        return `<tr><td>${p.show.title}${contextBadgeForDate(p.show.open)}<br><span style="color:var(--ink3);font-size:.58rem">${dateLine(p.show)}</span></td><td>${p.show.sub ? 'Sub' : 'Add-on'}</td><td class="num">${scoreBadge(p)}</td><td class="num">${pct(p.metrics.cap)}</td><td class="num">${signalBadge(_sig.demand)}</td><td class="num">${pct(p.metrics.gg)}</td><td class="num">${signalBadge(_sig.revenue)}</td><td class="num">${pct(p.metrics.peerCap)}</td><td class="num">${fmt$(p.metrics.gross)}</td><td>${signalBadge(_sig.confidence)}</td><td>${_sig.planningRead}</td></tr>`;
+        // Display values (cap, gg, peerCap, gross) use filteredDisplay — governed by Display Evidence
+        // Signal badges and score are canonical — unaffected by Display Evidence
+        const fd = p.filteredDisplay || {};
+        return `<tr><td>${p.show.title}${contextBadgeForDate(p.show.open)}<br><span style="color:var(--ink3);font-size:.58rem">${dateLine(p.show)}</span></td><td>${p.show.sub ? 'Sub' : 'Add-on'}</td><td class="num">${scoreBadge(p)}</td><td class="num">${pct(fd.cap)}</td><td class="num">${signalBadge(_sig.demand)}</td><td class="num">${pct(fd.gg)}</td><td class="num">${signalBadge(_sig.revenue)}</td><td class="num">${pct(fd.peerCap)}</td><td class="num">${fmt$(fd.gross)}</td><td>${signalBadge(_sig.confidence)}</td><td>${_sig.planningRead}</td></tr>`;
       }
 
       function readText(p, mode = seasonMode()) {
@@ -2408,7 +2478,7 @@
               : 'Current programming performance';
         const scoreLabel = scoreLabelForMode(mode);
         $('tab-current').innerHTML =
-          `<div class="section-divider"><h2>${title}</h2><div class="section-divider-line"></div><div class="section-divider-meta">${season.name} · ${meta}</div></div><div class="explainer"><p><strong>${mode === 'past' ? 'Retrospective lens:' : 'Planning lens:'}</strong> ${mode === 'past' ? 'For completed seasons, the index is read as a performance result: what happened in the touring data, how strong the title looked, and what lessons it provides for future programming.' : 'For current and future seasons, the score is directional and should be paired with pricing, timing, subscription role, and local audience knowledge.'}</p></div><div class="grid grid-3">${rows.map((p) => `<div class="show-card" onclick="selectCurrent('${esc(p.show.title)}')"><div class="show-name">${p.show.title}</div><div class="card-sub" style="margin-bottom:8px">${dateLine(p.show)}</div><div class="metric-row"><div class="metric"><div class="val ${p.isFutureNewTour ? 'neutral' : p.score == null ? 'neutral' : p.score >= SCORE_MED ? 'good' : 'warn'}">${scoreCellText(p)}</div><div class="lbl">${scoreLabel}</div></div><div class="metric"><div class="val">${pct(p.metrics.cap, 0)}</div><div class="lbl">Demand Cap</div></div><div class="metric"><div class="val">${pct(p.metrics.gg, 0)}</div><div class="lbl">Revenue GG%</div></div></div>${((_s = BTD.page.planningSignals(p)) => `<div style="font-size:.52rem;color:var(--ink3);margin-top:6px">Planning Read: <strong>${_s.planningRead}</strong></div>${signalRow(_s)}`)()}<div class="card-sub" style="margin-top:6px;margin-bottom:0">${p.metrics.count} matched records · ${p.metrics.venues} venues · peer cap ${pct(p.metrics.peerCap)}</div></div>`).join('')}</div><div class="grid grid-2" style="margin-top:18px"><div class="card"><div class="card-hd">Selected Show Detail</div><div id="currentDetail">${rows[0] ? detailHtml(rows[0], mode) : '<div class="empty">No matching show records.</div>'}</div><div class="signal-card" id="signalCard"><div class="signal-header"><div class="signal-title">Planning Signal</div><span class="signal-ctx-badge" id="sigContextBadge" style="display:none"></span></div><div class="signal-score-row"><div class="signal-score-num" id="sigCompositeScore">—</div><div style="flex:1"><div class="signal-planning-read" id="sigPlanningRead">—</div><div class="signal-season-pos" id="sigSeasonPos" style="display:none"></div></div></div><div class="signal-interpretation" id="sigInterpretation"></div><div class="signal-components"><div class="signal-component"><div class="signal-comp-label">Demand</div><div class="signal-comp-bar"><div class="signal-comp-fill" id="sigDemandBar" style="width:0%"></div></div><div class="signal-comp-badge" id="sigDemandLabel"></div></div><div class="signal-component"><div class="signal-comp-label">Revenue</div><div class="signal-comp-bar"><div class="signal-comp-fill" id="sigRevenueBar" style="width:0%"></div></div><div class="signal-comp-badge" id="sigRevenueLabel"></div></div><div class="signal-component"><div class="signal-comp-label">Peer Fit</div><div class="signal-comp-bar"><div class="signal-comp-fill" id="sigPeerFitBar" style="width:0%"></div></div><div class="signal-comp-badge" id="sigPeerFitLabel"></div></div><div class="signal-component"><div class="signal-comp-label">Confidence</div><div class="signal-comp-bar"><div class="signal-comp-fill signal-comp-fill--neutral" id="sigConfBar" style="width:0%"></div></div><div class="signal-comp-badge" id="sigConfLabel"></div></div></div><div class="signal-nat-strip"><div class="signal-nat-ref-label">National reference — not scored</div><div class="signal-nat-values"><span>Tour Cap <strong id="sigNatCap">—</strong></span><span>GG% <strong id="sigNatGg">—</strong></span><span id="sigNatDepth"></span></div></div></div></div><div class="card"><div class="card-hd">Season Capacity Comparison</div><canvas id="cCurrentCap"></canvas></div></div>`;
+          `<div class="section-divider"><h2>${title}</h2><div class="section-divider-line"></div><div class="section-divider-meta">${season.name} · ${meta}</div></div><div class="explainer"><p><strong>${mode === 'past' ? 'Retrospective lens:' : 'Planning lens:'}</strong> ${mode === 'past' ? 'For completed seasons, the index is read as a performance result: what happened in the touring data, how strong the title looked, and what lessons it provides for future programming.' : 'For current and future seasons, the score is directional and should be paired with pricing, timing, subscription role, and local audience knowledge.'}</p></div><div class="grid grid-3">${rows.map((p) => `<div class="show-card" onclick="selectCurrent('${esc(p.show.title)}')"><div class="show-name">${p.show.title}</div><div class="card-sub" style="margin-bottom:8px">${dateLine(p.show)}</div><div class="metric-row"><div class="metric"><div class="val ${p.isFutureNewTour ? 'neutral' : p.score == null ? 'neutral' : p.score >= SCORE_MED ? 'good' : 'warn'}">${scoreCellText(p)}</div><div class="lbl">${scoreLabel}</div></div><div class="metric"><div class="val">${pct((p.filteredDisplay || {}).cap, 0)}</div><div class="lbl">Demand Cap</div></div><div class="metric"><div class="val">${pct((p.filteredDisplay || {}).gg, 0)}</div><div class="lbl">Revenue GG%</div></div></div>${((_s = BTD.page.planningSignals(p)) => `<div style="font-size:.52rem;color:var(--ink3);margin-top:6px">Planning Read: <strong>${_s.planningRead}</strong></div>${signalRow(_s)}`)()}<div class="card-sub" style="margin-top:6px;margin-bottom:0">${(p.filteredDisplay || {}).count || 0} matched records · ${p.metrics.venues} venues · peer cap ${pct((p.filteredDisplay || {}).peerCap)}</div></div>`).join('')}</div><div class="grid grid-2" style="margin-top:18px"><div class="card"><div class="card-hd">Selected Show Detail</div><div id="currentDetail">${rows[0] ? detailHtml(rows[0], mode) : '<div class="empty">No matching show records.</div>'}</div><div class="signal-card" id="signalCard"><div class="signal-header"><div class="signal-title">Planning Signal</div><span class="signal-ctx-badge" id="sigContextBadge" style="display:none"></span></div><div class="signal-score-row"><div class="signal-score-num" id="sigCompositeScore">—</div><div style="flex:1"><div class="signal-planning-read" id="sigPlanningRead">—</div><div class="signal-season-pos" id="sigSeasonPos" style="display:none"></div></div></div><div class="signal-interpretation" id="sigInterpretation"></div><div class="signal-components"><div class="signal-component"><div class="signal-comp-label">Demand</div><div class="signal-comp-bar"><div class="signal-comp-fill" id="sigDemandBar" style="width:0%"></div></div><div class="signal-comp-badge" id="sigDemandLabel"></div></div><div class="signal-component"><div class="signal-comp-label">Revenue</div><div class="signal-comp-bar"><div class="signal-comp-fill" id="sigRevenueBar" style="width:0%"></div></div><div class="signal-comp-badge" id="sigRevenueLabel"></div></div><div class="signal-component"><div class="signal-comp-label">Peer Fit</div><div class="signal-comp-bar"><div class="signal-comp-fill" id="sigPeerFitBar" style="width:0%"></div></div><div class="signal-comp-badge" id="sigPeerFitLabel"></div></div><div class="signal-component"><div class="signal-comp-label">Confidence</div><div class="signal-comp-bar"><div class="signal-comp-fill signal-comp-fill--neutral" id="sigConfBar" style="width:0%"></div></div><div class="signal-comp-badge" id="sigConfLabel"></div></div></div><div class="signal-nat-strip"><div class="signal-nat-ref-label">National reference — not scored</div><div class="signal-nat-values"><span>Tour Cap <strong id="sigNatCap">—</strong></span><span>GG% <strong id="sigNatGg">—</strong></span><span id="sigNatDepth"></span></div></div></div></div><div class="card"><div class="card-hd">Season Capacity Comparison</div><canvas id="cCurrentCap"></canvas></div></div>`;
         chartCap(rows, 'cCurrentCap');
         if (rows[0]) renderSignalCard(rows[0]);
       }
@@ -2546,9 +2616,11 @@
             pread +
             '</div></div>';
         }
-        return `<div class="card-title">${p.show.title}</div><div class="card-sub">Matched on "${p.show.match || p.show.title}" · ${p.show.sub ? 'subscription package' : 'non-subscription/add-on'} · ${p.metrics.count} records</div><div class="explainer"><p><strong>${mode === 'past' ? 'Historical read' : 'Planning Signal'}:</strong> ${_psig.planningRead}. ${_psig.interpretation} Confidence is <strong>${confidenceLabel(p)}</strong>: ${confidenceText(p)}</p></div>${signalRow(_psig)}<div class="metric-row"><div class="metric"><div class="val ${p.score != null && p.score >= SCORE_MED ? 'good' : 'warn'}">${scoreCellText(p)}</div><div class="lbl">${label}</div></div><div class="metric"><div class="val">${pct(p.metrics.cap)}</div><div class="lbl">Avg Cap</div></div><div class="metric"><div class="val">${pct(p.metrics.peerCap)}</div><div class="lbl">Peer Cap</div></div>${velocityHtml}</div><table class="mini-table" style="margin-top:14px"><thead><tr><th>${mode === 'past' ? 'Historical Markets' : 'Recent Market'}</th><th>Week</th><th class="num">Gross</th><th class="num">Cap</th></tr></thead><tbody>${recent.length ? recent.map((r) => `<tr><td>${r.theatre}<br><span style="color:var(--ink3);font-size:.58rem">${r.city}</span></td><td>${fmtDate(r.week_of)}${contextBadge(r.week_of)}</td><td class="num">${fmt$(r.gross_gross)}</td><td class="num">${pct(r.cap_paid)}</td></tr>`).join('') : '<tr><td colspan="4" class="empty">No active tour records found.</td></tr>'}</tbody></table></div>${salesWindowHtml}${headwindHtml}${(() => {
-          // Revenue Questions section
-          const _m = p.metrics;
+        // Display values (cap, peerCap, count) use filteredDisplay; signal uses canonical
+        const _fd = p.filteredDisplay || p.metrics;
+        return `<div class="card-title">${p.show.title}</div><div class="card-sub">Matched on "${p.show.match || p.show.title}" · ${p.show.sub ? 'subscription package' : 'non-subscription/add-on'} · ${_fd.count} records</div><div class="explainer"><p><strong>${mode === 'past' ? 'Historical read' : 'Planning Signal'}:</strong> ${_psig.planningRead}. ${_psig.interpretation} Confidence is <strong>${confidenceLabel(p)}</strong>: ${confidenceText(p)}</p></div>${signalRow(_psig)}<div class="metric-row"><div class="metric"><div class="val ${p.score != null && p.score >= SCORE_MED ? 'good' : 'warn'}">${scoreCellText(p)}</div><div class="lbl">${label}</div></div><div class="metric"><div class="val">${pct(_fd.cap)}</div><div class="lbl">Avg Cap</div></div><div class="metric"><div class="val">${pct(_fd.peerCap)}</div><div class="lbl">Peer Cap</div></div>${velocityHtml}</div><table class="mini-table" style="margin-top:14px"><thead><tr><th>${mode === 'past' ? 'Historical Markets' : 'Recent Market'}</th><th>Week</th><th class="num">Gross</th><th class="num">Cap</th></tr></thead><tbody>${recent.length ? recent.map((r) => `<tr><td>${r.theatre}<br><span style="color:var(--ink3);font-size:.58rem">${r.city}</span></td><td>${fmtDate(r.week_of)}${contextBadge(r.week_of)}</td><td class="num">${fmt$(r.gross_gross)}</td><td class="num">${pct(r.cap_paid)}</td></tr>`).join('') : '<tr><td colspan="4" class="empty">No active tour records found.</td></tr>'}</tbody></table></div>${salesWindowHtml}${headwindHtml}${(() => {
+          // Revenue Questions section — uses filteredDisplay for display values
+          const _m = p.filteredDisplay || p.metrics;
           if (p.isFutureNewTour || _m.count < 2) return '';
           let _rh =
             '<div style="margin-top:14px"><div class="card-hd" style="margin-bottom:8px">Revenue Quality Analysis</div>';
@@ -2631,10 +2703,11 @@
           .filter((p) => p.metrics.count > 0)
           .sort((a, b) => b.metrics.weeks - a.metrics.weeks)
           .slice(0, 30);
-        const seasonAvgCap = avg(seasonRows.map((p) => p.metrics.cap));
-        const seasonAvgGross = avg(seasonRows.map((p) => p.metrics.gross));
+        // seasonAvgCap/Gross use filteredDisplay — governed by Display Evidence window
+        const seasonAvgCap = avg(seasonRows.map((p) => (p.filteredDisplay || p.metrics).cap));
+        const seasonAvgGross = avg(seasonRows.map((p) => (p.filteredDisplay || p.metrics).gross));
         const strong = seasonRows.filter((p) => p.score != null && p.score >= SCORE_MED).length;
-        const watch = seasonRows.filter((p) => p.score != null && p.score < SCORE_MED && p.metrics.count > 0).length;
+        const watch = seasonRows.filter((p) => p.score != null && p.score < SCORE_MED && p.filteredDisplay && p.filteredDisplay.count > 0).length;
         $('tab-history').innerHTML =
           `<div class="section-divider"><h2>Show History</h2><div class="section-divider-line"></div><div class="section-divider-meta">Retrospective read: how did we do?</div></div><div class="explainer"><p><strong>Purpose:</strong> previous seasons are shown as completed performance reviews, not forecasts. The result index uses the same demand, revenue, peer, and sample-depth signals, but the interpretation is retrospective: what worked, what lagged, and what should inform future booking and marketing decisions.</p></div><div class="grid grid-4"><div class="kpi-card"><div class="kpi-label">Reviewed Season</div><div class="kpi-value">${selected ? selected.id.slice(2, 4) + '-' + selected.id.slice(7, 9) : '—'}</div><div class="kpi-note">selected season lens</div></div><div class="kpi-card"><div class="kpi-label">Avg Capacity</div><div class="kpi-value">${pct(seasonAvgCap, 0)}</div><div class="kpi-note">season slate actuals</div></div><div class="kpi-card"><div class="kpi-label">Avg Gross</div><div class="kpi-value">${fmt$(seasonAvgGross)}</div><div class="kpi-note">matched touring records</div></div><div class="kpi-card"><div class="kpi-label">Strong / Watch</div><div class="kpi-value">${strong} / ${watch}</div><div class="kpi-note">performance result bands</div></div></div><div class="grid grid-2" style="margin-top:18px"><div class="card full"><div class="card-hd">${selected ? selected.name : 'Previous Season'} Performance Review</div><table class="mini-table"><thead><tr><th>Show</th><th>Pkg</th><th class="num">Result</th><th class="num">Cap</th><th>Demand</th><th class="num">GG%</th><th>Revenue</th><th class="num">Peer Cap</th><th class="num">Avg Gross</th><th>Confidence</th><th>Historical Read</th></tr></thead><tbody>${seasonRows.map((p) => rowHtml(p, 'past')).join('') || '<tr><td colspan="8" class="empty">No programmed show records matched this season.</td></tr>'}</tbody></table></div></div>${bushnellVsMarketTable(seasonRows, selected ? selected.id : '')}<div class="card"><div class="card-hd">Selected History</div><div id="historyDetail">${seasonRows[0] ? detailHtml(seasonRows[0], 'past') : library[0] ? detailHtml(library[0], 'past') : '<div class="empty">Search for a show.</div>'}</div></div><div class="card"><div class="card-hd">Broader Historical Show Library</div><div class="card-sub">All matched touring titles, sorted by weeks reported.</div><table class="mini-table"><thead><tr><th>Show</th><th class="num">Weeks</th><th class="num">Cap</th><th class="num">Gross</th></tr></thead><tbody>${library.map((p) => `<tr onclick="historyDetail('${esc(p.show.title)}')" style="cursor:pointer"><td>${p.show.title}</td><td class="num">${p.metrics.weeks}</td><td class="num">${pct(p.metrics.cap)}</td><td class="num">${fmt$(p.metrics.gross)}</td></tr>`).join('')}</tbody></table></div></div></div>`;
       }
@@ -2657,19 +2730,20 @@
               const cls = p.isFutureNewTour ? 'neutral' : p.score == null ? 'neutral' : p.score >= SCORE_MED ? 'good' : 'warn';
               const scoreLabel = p.isFutureNewTour ? 'NEW' : p.score;
               ((_fs = BTD.page.planningSignals(p)) =>
+                // Display cap/gg/peerCap/count use filteredDisplay; quality gates (count>=5, <3) stay canonical
                 `<tr><td>${p.show.title}<br><span style="color:var(--ink3);font-size:.58rem">${dateLine(p.show)}</span></td><td>${p.show.sub ? 'Sub' : 'Add-on'}</td><td class="num">${(() => {
                   const _fsData = _factsheets[p.show.title];
                   return _fsData && _fsData.splitPointGross
                     ? '$' + Math.round(_fsData.splitPointGross / 1000) + 'K'
                     : '—';
-                })()}</td><td class="num"><span class="status ${cls}">${scoreLabel}</span></td><td class="num">${pct(p.metrics.cap)}</td><td>${signalBadge(_fs.demand)}</td><td class="num">${pct(p.metrics.gg)}</td><td>${signalBadge(_fs.revenue)}</td><td class="num">${pct(p.metrics.peerCap)}</td><td class="num">${p.metrics.count}</td><td>${signalBadge(_fs.confidence)}</td><td>${_fs.planningRead}</td></tr>`)();
+                })()}</td><td class="num"><span class="status ${cls}">${scoreLabel}</span></td><td class="num">${pct((p.filteredDisplay || p.metrics).cap)}</td><td>${signalBadge(_fs.demand)}</td><td class="num">${pct((p.filteredDisplay || p.metrics).gg)}</td><td>${signalBadge(_fs.revenue)}</td><td class="num">${pct((p.filteredDisplay || p.metrics).peerCap)}</td><td class="num">${(p.filteredDisplay || p.metrics).count}</td><td>${signalBadge(_fs.confidence)}</td><td>${_fs.planningRead}</td></tr>`)();
             })
             .join(
               '',
             )}</tbody></table></div></div><div class="card"><div class="card-hd">High Confidence</div><div class="card-sub">Titles with enough feed history to support a stronger planning read.</div><div class="rank-list">${rankItems(
             profiles.filter((p) => p.metrics.count >= 5).slice(0, 5),
             (p) => p.show.title,
-            (p) => `${p.metrics.count} records · ${pct(p.metrics.cap, 0)} cap`,
+            (p) => `${p.metrics.count} records · ${pct((p.filteredDisplay || p.metrics).cap, 0)} cap`,
             (p) => p.score,
           )}</div></div><div class="card"><div class="card-hd">New / Needs Comparable Validation</div><div class="card-sub">Use outside context, artistic priorities, pre-sale signal, and comparable prior Bushnell titles.</div><div class="rank-list">${
             profiles
@@ -2839,13 +2913,13 @@
             datasets: [
               {
                 label: 'Tour',
-                data: profiles.map((p) => p.metrics.cap || 0),
+                data: profiles.map((p) => (p.filteredDisplay || p.metrics).cap || 0),
                 backgroundColor: '#003865',
                 borderRadius: 2,
               },
               {
                 label: 'Peer',
-                data: profiles.map((p) => p.metrics.peerCap || 0),
+                data: profiles.map((p) => (p.filteredDisplay || p.metrics).peerCap || 0),
                 backgroundColor: 'rgba(26,78,138,.65)',
                 borderRadius: 2,
               },
@@ -2959,8 +3033,8 @@
             return {
               title: p.show.title,
               bCap: bm.cap,
-              nCap: p.metrics.cap,
-              pCap: p.metrics.peerCap,
+              nCap: (p.filteredDisplay || p.metrics).cap,
+              pCap: (p.filteredDisplay || p.metrics).peerCap,
             };
           })
           .filter(Boolean);
@@ -2985,9 +3059,11 @@
           .map(({ p, bm }) => {
             if (!bm || bm.cap == null)
               return `<tr><td>${p.show.title}</td><td colspan="6" style="color:var(--ink3);font-size:.62rem">No Bushnell records in feed for this season</td></tr>`;
-            const vsN = p.metrics.cap != null ? bm.cap - p.metrics.cap : null;
-            const vsP = p.metrics.peerCap != null ? bm.cap - p.metrics.peerCap : null;
-            return `<tr><td>${p.show.title}<br><span style="color:var(--ink3);font-size:.58rem">${dateLine(p.show)}</span></td><td class="num"><strong>${pct(bm.cap)}</strong></td><td class="num">${pct(p.metrics.cap)}</td><td class="num">${pct(p.metrics.peerCap)}</td><td class="num"><span class="status ${vsN == null ? 'neutral' : vsN >= 0 ? 'good' : 'warn'}">${vsN != null ? (vsN >= 0 ? '+' : '') + pct(vsN) : '—'}</span></td><td class="num"><span class="status ${vsP == null ? 'neutral' : vsP >= 0 ? 'good' : 'warn'}">${vsP != null ? (vsP >= 0 ? '+' : '') + pct(vsP) : '—'}</span></td><td class="num">${fmt$(bm.gross)}</td>${
+            // Display cap/peerCap use filteredDisplay — governed by Display Evidence window
+            const _fd = p.filteredDisplay || p.metrics;
+            const vsN = _fd.cap != null ? bm.cap - _fd.cap : null;
+            const vsP = _fd.peerCap != null ? bm.cap - _fd.peerCap : null;
+            return `<tr><td>${p.show.title}<br><span style="color:var(--ink3);font-size:.58rem">${dateLine(p.show)}</span></td><td class="num"><strong>${pct(bm.cap)}</strong></td><td class="num">${pct(_fd.cap)}</td><td class="num">${pct(_fd.peerCap)}</td><td class="num"><span class="status ${vsN == null ? 'neutral' : vsN >= 0 ? 'good' : 'warn'}">${vsN != null ? (vsN >= 0 ? '+' : '') + pct(vsN) : '—'}</span></td><td class="num"><span class="status ${vsP == null ? 'neutral' : vsP >= 0 ? 'good' : 'warn'}">${vsP != null ? (vsP >= 0 ? '+' : '') + pct(vsP) : '—'}</span></td><td class="num">${fmt$(bm.gross)}</td>${
               seasonId === '2026-2027'
                 ? `<td class="num">${(() => {
                     const _spData = _factsheets[p.show.title];
