@@ -358,35 +358,43 @@
   }
 
 
+  /* ── Date Range Validation Error Display ───────────────────────────────────
+   *
+   * Pages that include a #dateRangeError element (dashboard, programming,
+   * exec_summary) get a visible inline error message when From > To.
+   * ─────────────────────────────────────────────────────────────────────── */
+
+  function dateRangeValidationError(msg) {
+    /* Show or clear the inline validation message in #dateRangeError.
+       Pass a non-empty string to show; pass '' or null to clear. */
+    var el = root.document && root.document.getElementById('dateRangeError');
+    if (!el) return;
+    el.textContent = msg || '';
+    el.style.display = msg ? '' : 'none';
+  }
+
+  function clearDateRangeError() {
+    dateRangeValidationError('');
+  }
+
   /* ── Date Range Toggle — shared across all three dashboard pages ──────────
    *
-   * All three pages use identical "Time Range" sidebar HTML with:
-   *   input[name="dateMode"]  — radios with values "season" and "range"
-   *   id="modeSeason-panel"   — container for season pills
-   *   id="modeRange-panel"    — container for date inputs
-   *   id="fDateFrom"          — date input (from)
-   *   id="fDateTo"            — date input (to)
+   * Dashboard uses a radio (Season / Date Range) that calls onDateModeChange().
+   * Programming and Executive Summary use evidence pills (All available data /
+   * Custom date range) that call onDisplayEvidencePillChange().
    *
-   * The shared state is window._DATE_RANGE = { start, end } | null.
-   * When set, each page's render function filters by date range instead
-   * of the active season.
+   * Shared state:  window._DATE_RANGE = { start, end } | null
+   * Shared inputs: id="fDateFrom", id="fDateTo", id="modeRange-panel"
+   * Shared error:  id="dateRangeError"
    *
-   * Usage on each page:
-   *   <input … onchange="BTD.page.onDateModeChange(renderAll)">
-   *   <input id="fDateFrom" … />   ← no oninput; Apply is the sole trigger
-   *   <input id="fDateTo"   … />   ← no oninput; Apply is the sole trigger
-   *   <button … onclick="BTD.page.onDateRangeChange(renderAll)">Apply</button>
-   *
-   * From > To on Apply: range is cleared, no re-render, inputs retain their
-   * draft values so the user can correct the error. A future improvement may
-   * add inline validation feedback here.
+   * Apply button is the sole trigger for both contracts — no oninput.
    * ─────────────────────────────────────────────────────────────────────── */
 
   function onDateRangeChange(renderFn) {
     /* Triggered only by the Apply button — not on input events.
        Validates From ≤ To before activating the range.
-       When From > To, _DATE_RANGE is cleared and no re-render occurs
-       (inputs retain their draft values for correction). */
+       When From > To, _DATE_RANGE is cleared, a visible error is shown,
+       and no re-render occurs (inputs retain draft values for correction). */
     var fromEl = root.document && root.document.getElementById('fDateFrom');
     var toEl   = root.document && root.document.getElementById('fDateTo');
     var from = fromEl ? fromEl.value : '';
@@ -396,17 +404,26 @@
       var snappedFrom = snapToSunday(from || '2000-01-01', 'back');
       var snappedTo   = snapToSunday(to   || '2099-12-31', 'forward');
       if (from && to && snappedFrom > snappedTo) {
-        /* Invalid range — From is after To. Clear the range silently.
-           The inputs retain their draft values so the user can fix them. */
+        /* Invalid range — From is after To. Show visible error; do not re-render. */
         root._DATE_RANGE = null;
-        return; // do not re-render
+        dateRangeValidationError('✕ “From” must be on or before “To”.');
+        return;
       }
+      clearDateRangeError();
       root._DATE_RANGE = { start: snappedFrom, end: snappedTo };
     } else {
+      clearDateRangeError();
       root._DATE_RANGE = null;
     }
     if (typeof renderFn === 'function') renderFn();
   }
+
+  /* ── Dashboard-only: radio-based Season ↔ Date Range toggle ─────────────
+   *
+   * Reads input[name="dateMode"] (values: "season" | "range") and shows the
+   * corresponding panel. Only used by dashboard.html. Programming and
+   * Executive Summary use onDisplayEvidencePillChange() instead.
+   * ─────────────────────────────────────────────────────────────────────── */
 
   function onDateModeChange(renderFn) {
     var checked = root.document && root.document.querySelector('input[name="dateMode"]:checked');
@@ -418,6 +435,7 @@
     if (mode === 'season') {
       // Switching back to Season — clear any active date range so season filter takes over
       root._DATE_RANGE = null;
+      clearDateRangeError();
       var fromEl = root.document && root.document.getElementById('fDateFrom');
       var toEl   = root.document && root.document.getElementById('fDateTo');
       if (fromEl) fromEl.value = '';
@@ -428,15 +446,68 @@
   }
 
   function resetDateMode(renderFn) {
-    /* Resets the sidebar radio back to Season and clears any active date range.
-       Call from each page's resetFilters() function. */
+    /* Dashboard: reset the sidebar radio back to Season and clear any active
+       date range. Call from dashboard.html's reset function. */
     root._DATE_RANGE = null;
+    clearDateRangeError();
     var fromEl = root.document && root.document.getElementById('fDateFrom');
     var toEl   = root.document && root.document.getElementById('fDateTo');
     if (fromEl) fromEl.value = '';
     if (toEl)   toEl.value   = '';
     var seasonRadio = root.document && root.document.getElementById('modeSeason');
     if (seasonRadio) { seasonRadio.checked = true; onDateModeChange(null); }
+    if (typeof renderFn === 'function') renderFn();
+  }
+
+  /* ── Programming / Executive Summary: evidence pill toggle ───────────────
+   *
+   * Two always-visible sidebar sections:
+   *   "Show Slate"       — season pills; governs which planned shows appear
+   *   "Display Evidence" — pills: "All available data" | "Custom date range"
+   *
+   * Switching to "Custom date range" shows the From/To/Apply inputs.
+   * Switching back to "All available data" clears _DATE_RANGE and re-renders.
+   * Apply is still the sole trigger for actually applying a date range.
+   *
+   * HTML structure required on these pages:
+   *   id="deAll"         — "All available data" pill button
+   *   id="deRange"       — "Custom date range" pill button
+   *   id="modeRange-panel" — collapsible From/To/Apply container
+   *   id="fDateFrom", id="fDateTo" — date inputs inside that container
+   *   id="dateRangeError"          — validation message element
+   * ─────────────────────────────────────────────────────────────────────── */
+
+  function onDisplayEvidencePillChange(mode, renderFn) {
+    /* mode: 'all' | 'range'
+       'all'   → hide inputs, clear _DATE_RANGE, re-render
+       'range' → show inputs; wait for Apply before re-rendering */
+    var deAll   = root.document && root.document.getElementById('deAll');
+    var deRange = root.document && root.document.getElementById('deRange');
+    var panel   = root.document && root.document.getElementById('modeRange-panel');
+
+    if (deAll)   deAll.classList.toggle('active', mode !== 'range');
+    if (deRange) deRange.classList.toggle('active', mode === 'range');
+    if (panel)   panel.style.display = mode === 'range' ? '' : 'none';
+
+    if (mode !== 'range') {
+      // Switching to "All available data" — clear range and re-render
+      root._DATE_RANGE = null;
+      clearDateRangeError();
+      var fromEl = root.document && root.document.getElementById('fDateFrom');
+      var toEl   = root.document && root.document.getElementById('fDateTo');
+      if (fromEl) fromEl.value = '';
+      if (toEl)   toEl.value   = '';
+      if (typeof renderFn === 'function') renderFn();
+    }
+    // Switching to 'range' — show inputs but do nothing until Apply
+  }
+
+  function resetDisplayEvidence(renderFn) {
+    /* Programming / Executive Summary: reset Display Evidence to
+       "All available data" without triggering a separate re-render.
+       Pass renderFn if you want a re-render after reset (usually omit
+       and let the caller's full reset function trigger renderAll). */
+    onDisplayEvidencePillChange('all', null);
     if (typeof renderFn === 'function') renderFn();
   }
 
@@ -453,7 +524,9 @@
     normalizeDashboardRows: normalizeDashboardRows, normalizeDashboardSeasons: normalizeDashboardSeasons,
     renderDashboardSeasonPills: renderDashboardSeasonPills, attachHelpTooltips: attachHelpTooltips,
     snapToSunday: snapToSunday, fiscalWeek: fiscalWeek,
+    dateRangeValidationError: dateRangeValidationError, clearDateRangeError: clearDateRangeError,
     onDateRangeChange: onDateRangeChange, onDateModeChange: onDateModeChange, resetDateMode: resetDateMode,
+    onDisplayEvidencePillChange: onDisplayEvidencePillChange, resetDisplayEvidence: resetDisplayEvidence,
     seasonCalloutClass: seasonCalloutClass, seasonHeadline: seasonHeadline, seasonSummaryCopy: seasonSummaryCopy
   };
 })(window);
