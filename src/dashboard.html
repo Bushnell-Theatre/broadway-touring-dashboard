@@ -2346,45 +2346,14 @@
         applyFilters();
       }
 
+      /* Thin wrappers — logic lives in BTD.page (page-common.js).
+         Dashboard-specific extra: clear any active date preset pill on range change. */
       function onDateRangeChange() {
-        const from = document.getElementById('fDateFrom').value;
-        const to = document.getElementById('fDateTo').value;
-        if (from || to) {
-          window._DATE_RANGE = {
-            start: snapToSunday(from || '2000-01-01', 'back'),
-            end: snapToSunday(to || '2099-12-31', 'forward'),
-          };
-          const fDate = document.getElementById('fDate');
-          if (fDate) fDate.value = '';
-          document.querySelectorAll('[data-preset]').forEach((b) => b.classList.remove('active'));
-        } else {
-          window._DATE_RANGE = null;
-        }
-        applyFilters();
+        document.querySelectorAll('[data-preset]').forEach((b) => b.classList.remove('active'));
+        BTD.page.onDateRangeChange(applyFilters);
       }
-
-      /* Toggle between Season and Date Range modes in the sidebar.
-         The active panel is shown; the inactive one is hidden.
-         Switching to Season clears any active date range and re-applies
-         the season filter. Switching to Date Range clears no selection
-         — the user still needs to enter dates and hit Apply. */
       function onDateModeChange() {
-        const mode = document.querySelector('input[name="dateMode"]:checked')?.value || 'season';
-        const seasonPanel = document.getElementById('modeSeason-panel');
-        const rangePanel  = document.getElementById('modeRange-panel');
-        if (seasonPanel) seasonPanel.style.display = mode === 'season' ? '' : 'none';
-        if (rangePanel)  rangePanel.style.display  = mode === 'range'  ? '' : 'none';
-
-        if (mode === 'season') {
-          // Clear any active date range so season pills take over
-          window._DATE_RANGE = null;
-          const from = document.getElementById('fDateFrom');
-          const to   = document.getElementById('fDateTo');
-          if (from) from.value = '';
-          if (to)   to.value   = '';
-          applyFilters();
-        }
-        // If switching to range, do nothing yet — user must enter dates and Apply
+        BTD.page.onDateModeChange(applyFilters);
       }
 
       function setPeer(btn, val) {
@@ -2475,12 +2444,7 @@
         if (document.getElementById('showSearch')) document.getElementById('showSearch').value = '';
         if (document.getElementById('fVenue')) document.getElementById('fVenue').value = '';
         if (document.getElementById('fCity')) document.getElementById('fCity').value = '';
-        document.getElementById('fDateFrom').value = '';
-        document.getElementById('fDateTo').value = '';
-        window._DATE_RANGE = null;
-        // Reset date mode radio to Season and hide date range panel
-        const mS = document.getElementById('modeSeason');
-        if (mS) { mS.checked = true; onDateModeChange(); }
+        BTD.page.resetDateMode(); // resets radio to Season, clears _DATE_RANGE and inputs
         // Reset to default season (dynamic — July 1 fiscal year)
         const _rNow = new Date(), _rYr = _rNow.getFullYear(), _rMo = _rNow.getMonth() + 1;
         const _rDef = _rMo >= 7 ? `${_rYr}-${_rYr + 1}` : `${_rYr - 1}-${_rYr}`;
