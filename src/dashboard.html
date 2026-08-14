@@ -945,10 +945,54 @@
           </div>
         </div>
 
-        <!-- SEASON -->
+        <!-- DATE MODE: Season or Date Range — mutually exclusive -->
         <div class="sidebar-section">
-          <span class="sidebar-label">Season</span>
-          <div class="pill-row" style="flex-wrap: wrap; gap: 4px" id="seasonPills"></div>
+          <span class="sidebar-label">Time Range</span>
+          <!-- Radio toggle -->
+          <div style="display:flex; gap:6px; margin-bottom:8px;">
+            <label style="display:flex; align-items:center; gap:4px; font-size:0.62rem; cursor:pointer;">
+              <input type="radio" name="dateMode" value="season" id="modeSeason" checked onchange="onDateModeChange()" />
+              Season
+            </label>
+            <label style="display:flex; align-items:center; gap:4px; font-size:0.62rem; cursor:pointer;">
+              <input type="radio" name="dateMode" value="range" id="modeRange" onchange="onDateModeChange()" />
+              Date Range
+            </label>
+          </div>
+
+          <!-- Season pills (shown when mode=season) -->
+          <div id="modeSeason-panel">
+            <div class="pill-row" style="flex-wrap: wrap; gap: 4px" id="seasonPills"></div>
+          </div>
+
+          <!-- Date range inputs (shown when mode=range) -->
+          <div id="modeRange-panel" style="display:none;">
+            <div style="font-size:0.55rem; color:var(--ink3); margin-bottom:6px;">
+              Snapped to nearest Sunday · overrides season filter
+            </div>
+            <label for="fDateFrom" class="sidebar-label" style="display:block; margin-top:4px;">From</label>
+            <input
+              type="date"
+              id="fDateFrom"
+              style="width:100%; background:var(--bg); border:1px solid var(--rule); color:var(--ink); font-family:var(--mono); font-size:0.65rem; padding:5px 7px; border-radius:2px; outline:none; margin-bottom:6px;"
+              oninput="onDateRangeChange()"
+            />
+            <label for="fDateTo" class="sidebar-label" style="display:block;">To</label>
+            <input
+              type="date"
+              id="fDateTo"
+              style="width:100%; background:var(--bg); border:1px solid var(--rule); color:var(--ink); font-family:var(--mono); font-size:0.65rem; padding:5px 7px; border-radius:2px; outline:none; margin-bottom:6px;"
+              oninput="onDateRangeChange()"
+            />
+            <button
+              class="btn btn-primary"
+              style="width:100%; margin-top:2px;"
+              onclick="onDateRangeChange()"
+              aria-label="Apply date range filter"
+            >
+              Apply
+            </button>
+          </div>
         </div>
 
         <!-- TIER -->
@@ -1104,62 +1148,6 @@
           </div>
           <div class="show-list" id="showList"></div>
           <div class="show-count" id="showCount"></div>
-        </div>
-
-        <!-- DATE RANGE -->
-        <div class="sidebar-section">
-          <span class="sidebar-label">
-            Date Range
-            <span
-              style="font-size: 0.5rem; color: var(--ink3); text-transform: none; letter-spacing: 0; font-weight: 400"
-            >
-              (snapped to nearest Sunday · use with season filter)
-            </span>
-          </span>
-          <label for="fDateFrom" class="sidebar-label" style="display: block; margin-top: 6px">From</label>
-          <input
-            type="date"
-            id="fDateFrom"
-            style="
-              width: 100%;
-              background: var(--bg);
-              border: 1px solid var(--rule);
-              color: var(--ink);
-              font-family: var(--mono);
-              font-size: 0.65rem;
-              padding: 5px 7px;
-              border-radius: 2px;
-              outline: none;
-              margin-bottom: 6px;
-            "
-            oninput="onDateRangeChange()"
-          />
-          <label for="fDateTo" class="sidebar-label" style="display: block">To</label>
-          <input
-            type="date"
-            id="fDateTo"
-            style="
-              width: 100%;
-              background: var(--bg);
-              border: 1px solid var(--rule);
-              color: var(--ink);
-              font-family: var(--mono);
-              font-size: 0.65rem;
-              padding: 5px 7px;
-              border-radius: 2px;
-              outline: none;
-              margin-bottom: 6px;
-            "
-            oninput="onDateRangeChange()"
-          />
-          <button
-            class="btn btn-primary"
-            style="width: 100%; margin-top: 2px"
-            onclick="onDateRangeChange()"
-            aria-label="Apply date range filter"
-          >
-            Apply Date Range
-          </button>
         </div>
 
         <!-- ADVANCED (collapsed) -->
@@ -2375,6 +2363,30 @@
         applyFilters();
       }
 
+      /* Toggle between Season and Date Range modes in the sidebar.
+         The active panel is shown; the inactive one is hidden.
+         Switching to Season clears any active date range and re-applies
+         the season filter. Switching to Date Range clears no selection
+         — the user still needs to enter dates and hit Apply. */
+      function onDateModeChange() {
+        const mode = document.querySelector('input[name="dateMode"]:checked')?.value || 'season';
+        const seasonPanel = document.getElementById('modeSeason-panel');
+        const rangePanel  = document.getElementById('modeRange-panel');
+        if (seasonPanel) seasonPanel.style.display = mode === 'season' ? '' : 'none';
+        if (rangePanel)  rangePanel.style.display  = mode === 'range'  ? '' : 'none';
+
+        if (mode === 'season') {
+          // Clear any active date range so season pills take over
+          window._DATE_RANGE = null;
+          const from = document.getElementById('fDateFrom');
+          const to   = document.getElementById('fDateTo');
+          if (from) from.value = '';
+          if (to)   to.value   = '';
+          applyFilters();
+        }
+        // If switching to range, do nothing yet — user must enter dates and Apply
+      }
+
       function setPeer(btn, val) {
         ACTIVE_PEER = val;
         document.querySelectorAll('[data-peer]').forEach((b) => b.classList.toggle('active', b.dataset.peer === val));
@@ -2407,15 +2419,16 @@
         const checked = [...document.querySelectorAll('.sCb:checked')].map((c) => c.value);
 
         FILTERED = ALL_DATA.filter((d) => {
-          if (ACTIVE_SEASONS.size === 0 && window._DATE_RANGE) {
+          // Date range takes priority over season filter when set.
+          // If a date range is active, ignore the season pills entirely.
+          if (window._DATE_RANGE) {
             if (d.week_of < window._DATE_RANGE.start || d.week_of > window._DATE_RANGE.end) return false;
-          }
-          if (ACTIVE_TIER && d.tier !== ACTIVE_TIER) return false;
-          if (ACTIVE_SUB !== '' && String(d.on_sub) !== ACTIVE_SUB) return false;
-          if (ACTIVE_SEASONS.size > 0) {
+          } else if (ACTIVE_SEASONS.size > 0) {
             const fy = getFiscalYear(d.week_of);
             if (!fy || !ACTIVE_SEASONS.has(fy)) return false;
           }
+          if (ACTIVE_TIER && d.tier !== ACTIVE_TIER) return false;
+          if (ACTIVE_SUB !== '' && String(d.on_sub) !== ACTIVE_SUB) return false;
           if (ACTIVE_PEER && !isPeerType(d, ACTIVE_PEER)) return false;
           if (ACTIVE_EQUITY === 'yes' && !d.non_equity) return false;
           if (ACTIVE_EQUITY === 'no' && d.non_equity) return false;
@@ -2465,6 +2478,9 @@
         document.getElementById('fDateFrom').value = '';
         document.getElementById('fDateTo').value = '';
         window._DATE_RANGE = null;
+        // Reset date mode radio to Season and hide date range panel
+        const mS = document.getElementById('modeSeason');
+        if (mS) { mS.checked = true; onDateModeChange(); }
         // Reset to default season (dynamic — July 1 fiscal year)
         const _rNow = new Date(), _rYr = _rNow.getFullYear(), _rMo = _rNow.getMonth() + 1;
         const _rDef = _rMo >= 7 ? `${_rYr}-${_rYr + 1}` : `${_rYr - 1}-${_rYr}`;
