@@ -32,6 +32,10 @@ const SUITES = [
     label: 'verify_render_harness.js',
     script: path.join(SCRIPTS_DIR, 'verify_render_harness.js'),
   },
+  {
+    label: 'test-filters.js',
+    script: path.join(SCRIPTS_DIR, 'test-filters.js'),
+  },
 ];
 
 /* ── Runner ─────────────────────────────────────────────────────────────────── */
