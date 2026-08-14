@@ -6,7 +6,18 @@ Each chart is described below: what it shows, what the axes mean, how to read it
 
 ## Programming Page
 
+> **Chart data source key**
+>
+> Charts on the Programming and Executive Summary pages draw from one of two sources:
+>
+> - **Canonical** — derived from `p.metrics` or `p.signals`, which are produced by `BTD.page.profileShowCanonical()` and **do not change** when the Display Evidence date scope changes. Canonical charts always reflect the full available evidence.
+> - **Display Evidence** — derived from `p.filteredDisplay`, which reflects only the records in the current Display Evidence window ("All available data" or a custom date range). These charts update when the pill is changed.
+>
+> A chart that is Canonical will show the same values regardless of what date window the user has selected. A chart that is Display Evidence will update to reflect the active scope. The gap between tour and peer bars in Display Evidence charts represents a real difference in the date-windowed data — not a zero when evidence is absent. Shows with no records in the current window appear as `—`.
+
 ### Season Show Fit (cBriefFit)
+
+**Data source: Canonical** — draws from `p.score` (Planning Signal) and `p.planning.read`. Not affected by the Display Evidence pill.
 
 **What it shows:** A horizontal bar chart ranking every show on the current season slate by its Planning Signal score (0–100). Bars are color-coded: green for Strong Candidate, neutral for Discuss/Watch, amber for Exploratory.
 
@@ -18,15 +29,19 @@ Each chart is described below: what it shows, what the axes mean, how to read it
 
 ### Capacity: Tour vs Peer (cBriefCap)
 
-**What it shows:** A grouped horizontal bar chart with two bars per show. One bar shows the national touring average paid capacity; the other shows the average paid capacity at Bushnell-size peer venues (±10% of Bushnell's sellable seats).
+**Data source: Display Evidence** — draws from `p.filteredDisplay.cap` (tour) and `p.filteredDisplay.peerCap` (peer). Updates when the Display Evidence pill is changed.
 
-**How to read it:** The gap between the two bars tells you whether the show performs better or worse at venues our size. A show with a high national bar but a lower peer bar may fill large houses but underperform at mid-size venues — a meaningful distinction for Bushnell.
+**What it shows:** A grouped horizontal bar chart with two bars per show. One bar shows the national touring average paid capacity in the current display window; the other shows the average paid capacity at Bushnell-size peer venues (±10% of Bushnell's sellable seats) in the same window.
 
-**What it supports:** Understanding whether a show's national numbers translate to our venue scale. Peer capacity is a more relevant signal than raw national capacity for programming decisions.
+**How to read it:** The gap between the two bars tells you whether the show performs better or worse at venues our size within the selected date scope. A show with a high national bar but a lower peer bar may fill large houses but underperform at mid-size venues — a meaningful distinction for Bushnell. When a show has no records in the current Display Evidence window, both bars show `—` (not zero).
+
+**What it supports:** Understanding whether a show's performance in the selected date window translates to our venue scale. Change the Display Evidence scope to compare how the gap shifts across different time periods — the Planning Signal remains unchanged.
 
 ---
 
 ### Season Comparison (cCurrent) — Current Season tab
+
+**Data source: Canonical** — draws from `p.score`. Not affected by the Display Evidence pill.
 
 **What it shows:** A vertical bar chart of Planning Signal scores for all confirmed shows in the current active season.
 
@@ -38,6 +53,8 @@ Each chart is described below: what it shows, what the axes mean, how to read it
 
 ### Fit Distribution (cFuture) — Planning tab
 
+**Data source: Canonical** — draws from `p.score` for each candidate. Not affected by the Display Evidence pill.
+
 **What it shows:** A bar chart showing the distribution of Planning Signal scores across future season candidates (shows under consideration, not yet confirmed).
 
 **How to read it:** Each bar is a score band (e.g., 0–10, 10–20, ..., 90–100). The height shows how many candidate shows fall in that band. A cluster of bars toward the right means the planning slate is strong; a cluster left means most candidates are speculative.
@@ -48,6 +65,8 @@ Each chart is described below: what it shows, what the axes mean, how to read it
 
 ### Peer Capacity Distribution (cPeers) — Peers tab
 
+**Data source: Canonical** — draws from per-venue peer metrics computed within `BTD.signals.profileShow()`. Not affected by the Display Evidence pill.
+
 **What it shows:** A horizontal bar chart of average paid capacity at the top peer venues nationally (Bushnell-size venues, ±10% of our sellable seat count).
 
 **How to read it:** Each bar is a venue. Longer bars = higher average paid capacity across all shows that played there. This shows which peer venues are consistently strong, not just which shows did well.
@@ -57,6 +76,8 @@ Each chart is described below: what it shows, what the axes mean, how to read it
 ---
 
 ### Tony Recognition (cIntelTony) — Intelligence tab
+
+**Data source: Canonical** — draws from show metadata (`p.awards`), not from touring records. Not affected by the Display Evidence pill.
 
 **What it shows:** A horizontal bar chart of Tony Award wins and nominations per show (where data is available from Wikidata/Wikipedia).
 
@@ -70,35 +91,41 @@ Each chart is described below: what it shows, what the axes mean, how to read it
 
 ### Fit Scores (cBriefFit)
 
-Same as the Programming page Season Show Fit chart. Shows Planning Signal scores for the full slate, formatted for leadership review. Supports the headline callout narrative.
+**Data source: Canonical.** Same as the Programming page Season Show Fit chart. Shows Planning Signal scores for the full slate, formatted for leadership review. Supports the headline callout narrative. Not affected by the Display Evidence pill.
 
 ---
 
 ### Tour vs Peer Capacity (cBriefCap)
 
-Same as the Programming page Capacity: Tour vs Peer chart. Shows national vs peer-venue capacity side by side per show. Gives leadership visibility into whether the national picture translates to our venue scale.
+**Data source: Display Evidence.** Same contract as the Programming page Capacity: Tour vs Peer chart. Draws from `p.filteredDisplay.cap` and `p.filteredDisplay.peerCap`. Updates when the Display Evidence pill is changed. Shows with no records in the active window appear as `—`, not zero.
 
 ---
 
 ### Season Capacity Comparison (cCurrentCap)
 
-**What it shows:** A bar chart of average paid capacity for each active season show.
+**Data source: Display Evidence** — draws from `p.filteredDisplay.cap` for each active show.
 
-**How to read it:** Capacity as a percentage — higher bars mean more seats sold per week on average. Unlike the grouped bar chart, this shows only Bushnell-context capacity (using peer venue data where available).
+**What it shows:** A bar chart of average paid capacity for each active season show within the current Display Evidence window.
 
-**What it supports:** A capacity-level view of the current season for leadership — useful context alongside revenue figures but not the primary evaluation metric.
+**How to read it:** Capacity as a percentage — higher bars mean more seats sold per week on average in the selected date scope. Unlike the grouped bar chart, this shows capacity using peer venue data where available.
+
+**What it supports:** A capacity-level view of the current season for leadership — useful context alongside revenue figures but not the primary evaluation metric. Change the Display Evidence scope to compare capacity across different time periods.
 
 ---
 
 ### Fit Distribution (cFuture) — Planning section
 
-Same as the Programming page Fit Distribution. Shows score distribution across planning candidates for the future season. Gives leadership a sense of the pipeline quality without show-by-show detail.
+**Data source: Canonical.** Same as the Programming page Fit Distribution. Shows score distribution across planning candidates for the future season. Gives leadership a sense of the pipeline quality without show-by-show detail. Not affected by the Display Evidence pill.
 
 ---
 
 ## Dashboard Page
 
 The Dashboard is the operations and QA layer. Its charts are built from raw Broadway League data across all seasons and venues, not filtered to the Bushnell slate.
+
+> **Dashboard chart data source:** All Dashboard charts reflect the **active filter population** — the records returned by `BTD.filters.apply()` with the current Season or Date Range selection. Changing the Season or switching to a custom Date Range updates every chart. There is no separate "canonical" vs "display evidence" distinction in the Dashboard; the active record set is always the single source for all charts.
+>
+> There is no Planning Signal on the Dashboard. Its charts are exploratory — for QA, trend analysis, and market context — not for scoring or programming decisions.
 
 ---
 

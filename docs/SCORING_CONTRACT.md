@@ -130,6 +130,67 @@ the Dashboard; it is that no Planning Signal depends on them.
 | Show selection (checkbox list) | Visible show rows |
 | Season / date intersection | Week-of boundaries (before KPI aggregation) |
 
+**Fail-closed validation.** A supplied `dateFrom` or `dateTo` boundary that is
+not a valid ISO calendar date causes `BTD.filters.apply()` to return `[]`. It
+does not fall back to treating the invalid value as an absent open boundary.
+An omitted boundary is valid — from-only and to-only half-open ranges are
+supported. See `src/js/core/filters.js` for the exact contract.
+
+**Season / Date Range mutual exclusivity.** When a date range is active, the
+`opts.season` parameter is suppressed. The two time selectors are never
+intersected.
+
+### Category 5 — Display Evidence (Programming and Exec Summary only)
+
+The **Display Evidence pill** ("All available data" / "Custom date range") is a
+**presentation-layer** selector in `programming.html` and `exec_summary.html`.
+It is not a filter in the scoring sense — it controls what the user sees for
+context, not what the scorer receives as evidence.
+
+| Selector state | What changes | What does NOT change |
+|---|---|---|
+| "All available data" (default) | `p.filteredDisplay` reflects all records | Everything in Category 1–2 |
+| "Custom date range" | `p.filteredDisplay` reflects the windowed records | Everything in Category 1–2 |
+
+**The Display Evidence scope MUST NOT be passed to `profileShowCanonical()`.**
+`BTD.page.profileShowCanonical()` must always be called with the canonical
+evidence boundary (`dateTo = season.end` for past seasons; no upper bound for
+current/future seasons) — never with the Display Evidence date window.
+
+**The Display Evidence scope MUST NOT alter any of the following:**
+
+| Field | Contract |
+|---|---|
+| `p.score` | Canonical composite; always the same for a given show and season |
+| `p.signals.*` | Demand, Revenue, Peer, Confidence — all canonical |
+| `p.planning.read` | Planning Read — canonical |
+| `p.planning.note` | Interpretation — canonical |
+| Season Position badge | Derived from canonical `p.score` and season median |
+| Strong Watch classification | Derived from canonical signals |
+| Opportunity Engine results | Uses `p.metrics.peerCap` and `p.metrics.cap` — both canonical; threshold is `> + 8` integer percentage points |
+
+**Historical season boundary.** For shows in a past season, the canonical
+`dateTo` is `season.end`. This is an evidence-boundary filter (Category 1), not
+a Display Evidence filter. It must always be applied in the canonical call and
+must never be confused with the Display Evidence date window.
+
+**Missing evidence is disclosed as `—`, not zeroed.** When `p.filteredDisplay`
+has no records for the current display window, metric fields are `null`. Pages
+must render `null` as `—`. Rendering `null` as `0` is prohibited — it falsely
+implies the show played and earned nothing in that window.
+
+**Distinct labeling required.** Any metric derived from `p.filteredDisplay`
+must be visually distinguished from canonical metrics. The date-range scope
+must be visible to the user (e.g., a badge or label reading "Custom: Jul 1 –
+Dec 31, 2025"). Unlabeled display-scope metrics are prohibited.
+
+**Permanent validation.** Suite 10 of `scripts/test-filters.js` verifies that
+the Opportunity Engine result is identical with and without an active Display
+Evidence scope. Suite 9 verifies that both page HTML files contain `profileShowCanonical`
+(canonical entry point) and that neither calls `profileShow` directly with a
+display-scope boundary. Any future change that passes Display Evidence dates into
+`profileShowCanonical()` will fail these suites.
+
 ---
 
 ## Score types

@@ -144,7 +144,50 @@ Revenue Signal describes gross revenue quality in the available touring evidence
 
 ## Filters and summaries
 
-The Sales Intelligence Dashboard filters the full touring dataset and updates its KPIs, tables, and charts in the browser. Programming and Executive Summary focus on season slates and show profiles.
+Filtering works differently on the Dashboard than on Programming and Executive Summary. The two designs reflect two different questions.
+
+### Sales Intelligence Dashboard — Season / Date Range toggle
+
+The Dashboard lets you explore the full touring dataset by time period. A **Season / Date Range** toggle controls which records are included:
+
+- **Season mode** (default): all records whose `week_of` falls in the selected Broadway fiscal season (July 1 – June 30). KPIs, charts, and rankings all update to that season's data.
+- **Date Range mode**: records within an explicit From / To date window. Season selection is suspended. Any record missing a valid date is excluded.
+
+The two modes are **mutually exclusive** — selecting a date range suppresses season filtering; clearing the range restores it. They are never intersected.
+
+**Fail-closed validation:** If you supply a From or To boundary that is not a valid calendar date (for example, February 31), the filter returns zero records rather than silently falling back to an unbounded set. An omitted boundary is valid — "From only" gives all records from that date forward; "To only" gives all records up to that date.
+
+A **Reset** control clears an active date range and returns to Season mode. All downstream KPIs, charts, and tables always reflect the active filter set.
+
+The Dashboard does not compute or display a Planning Signal. Its filters are for record-level exploration only.
+
+### Programming and Executive Summary — Show Slate + Display Evidence
+
+Programming and Executive Summary use a **two-layer design** that separates what is always visible from what is date-scoped.
+
+**Layer 1 — Show Slate (always visible):**
+Every show on the selected Bushnell season appears in the slate and receives a Planning Signal regardless of the date scope. Filtering cannot remove a show from the slate or change its Planning Signal score, Planning Read, component signals (Demand, Revenue, Peer, Confidence), or Confidence label. The Opportunity Engine — which identifies shows where peer capacity substantially exceeds the Bushnell-venue average — is also canonical and does not change with the date scope. This isolation means the planning read a team discusses is always based on the full available evidence, not on whatever date window happens to be selected.
+
+**Layer 2 — Display Evidence pill:**
+A pill above the show cards reads either **"All available data"** (default) or **"Custom date range"**. When you choose Custom, a From / To date input appears. The selected window controls:
+
+- The cap%, gross, and GG% figures shown on show cards and in peer comparison charts
+- The "Tour vs Peer Capacity" chart
+- Per-record display tables (where shown)
+
+What the Display Evidence scope does **not** change:
+- Planning Signal scores and component values
+- Planning Reads (Strong Candidate, Discuss, Watch, Exploratory, etc.)
+- Season Position badge (Above / At / Below season median)
+- Confidence levels
+- Strong Watch classifications
+- Opportunity Engine results
+
+**Missing evidence is disclosed, not zeroed.** If a show has no touring records in the selected date window, its display metrics appear as `—` rather than as zero. A zero would imply a show played and earned nothing; `—` correctly indicates that no evidence exists in that window. Shows with no display evidence in the current window remain on the slate so the team can still see their canonical Planning Signal.
+
+**Fail-closed validation:** The same rules as the Dashboard apply. A supplied boundary that is not a valid ISO date (YYYY-MM-DD) causes the display window to return no records rather than silently opening to an unbounded range.
+
+---
 
 Averages and rankings answer different questions. Cumulative gross favors titles with more reported engagements; capacity and GG% describe different aspects of performance; confidence reflects evidence depth rather than show quality. Users should retain the current filters and sample size when interpreting any result.
 

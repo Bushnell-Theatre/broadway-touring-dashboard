@@ -605,6 +605,120 @@ console.log('\n── Suite 10: Opportunity Engine uses canonical metrics ──
     `all-data: [${hiddenAllData.map((p) => p.show.title).join(',')}]`);
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   Suite 11 — Durable documentation validation
+   Verifies that the five required documentation files contain the claims
+   they must make about the Season / Date Range and Display Evidence features.
+   A doc that is missing or has had a critical claim removed will fail this
+   suite, surfacing the gap before any PR is merged.
+   ══════════════════════════════════════════════════════════════════════════ */
+{
+  console.log('\n── Suite 11: Documentation validation ──────────────────────────');
+
+  const readDoc = (rel) => {
+    const p = path.join(ROOT, rel);
+    return fs.existsSync(p) ? fs.readFileSync(p, 'utf8') : '';
+  };
+
+  const readme   = readDoc('README.md');
+  const howit    = readDoc('docs/HOW_IT_WORKS.md');
+  const dev      = readDoc('docs/DEVELOPER.md');
+  const scoring  = readDoc('docs/SCORING_CONTRACT.md');
+  const charts   = readDoc('docs/CHARTS.md');
+
+  /* ── README describes both contracts ── */
+  assert('README describes Dashboard Season/Date Range toggle',
+    readme.includes('Season / Date Range'));
+  assert('README describes Programming Display Evidence pill',
+    readme.includes('Display Evidence'));
+  assert('README describes Show Slate always visible',
+    readme.includes('Show Slate is always visible') || readme.includes('always visible'));
+  assert('README states canonical signals unchanged by Display Evidence',
+    readme.includes('Planning Signals') && readme.includes('altering'));
+
+  /* ── HOW_IT_WORKS documents Display Evidence and canonical isolation ── */
+  assert('HOW_IT_WORKS documents Display Evidence pill',
+    howit.includes('Display Evidence'));
+  assert('HOW_IT_WORKS documents fail-closed validation',
+    howit.includes('fail-closed') || howit.includes('Fail-closed'));
+  assert('HOW_IT_WORKS documents mutual exclusivity',
+    howit.includes('mutually exclusive'));
+  assert('HOW_IT_WORKS documents canonical isolation (Planning Signal unchanged)',
+    howit.includes('canonical') || howit.includes('Planning Signal'));
+  assert('HOW_IT_WORKS states missing evidence is — not zero',
+    howit.includes('—') && (howit.includes('not zero') || howit.includes('zeroed') || howit.includes('zero')));
+
+  /* ── DEVELOPER documents shared APIs and npm test ── */
+  assert('DEVELOPER no longer claims no npm',
+    !dev.includes('no npm') && !dev.includes('no framework, no npm'));
+  assert('DEVELOPER documents npm test',
+    dev.includes('npm test'));
+  assert('DEVELOPER documents node scripts/test-filters.js',
+    dev.includes('test-filters.js'));
+  assert('DEVELOPER documents BTD.filters.apply() dateFrom/dateTo contract',
+    dev.includes('dateFrom') && dev.includes('dateTo'));
+  assert('DEVELOPER documents isValidISODate',
+    dev.includes('isValidISODate'));
+  assert('DEVELOPER documents fail-closed behavior',
+    dev.includes('fail-closed') || dev.includes('Fail-closed'));
+  assert('DEVELOPER documents window._DATE_RANGE',
+    dev.includes('window._DATE_RANGE'));
+  assert('DEVELOPER documents onDisplayEvidencePillChange',
+    dev.includes('onDisplayEvidencePillChange'));
+  assert('DEVELOPER documents p.filteredDisplay',
+    dev.includes('p.filteredDisplay'));
+  assert('DEVELOPER documents p.metrics as canonical',
+    dev.includes('p.metrics') && dev.includes('canonical'));
+  assert('DEVELOPER documents Opportunity Engine canonical exception',
+    dev.includes('Opportunity Engine'));
+  assert('DEVELOPER documents both page contracts separately',
+    dev.includes('Dashboard') && dev.includes('Programming') &&
+    dev.includes('Two Page Contracts') || dev.includes('page contract') || dev.includes('Page Contracts'));
+
+  /* ── SCORING_CONTRACT classifies Display Evidence correctly ── */
+  assert('SCORING_CONTRACT includes Category 5 for Display Evidence',
+    scoring.includes('Category 5') || scoring.includes('Display Evidence'));
+  assert('SCORING_CONTRACT states Display Evidence must not be passed to profileShowCanonical',
+    scoring.includes('profileShowCanonical') &&
+    (scoring.includes('MUST NOT') || scoring.includes('must not')));
+  assert('SCORING_CONTRACT enumerates must-not fields (p.score)',
+    scoring.includes('p.score') && (scoring.includes('MUST NOT') || scoring.includes('must not')));
+  assert('SCORING_CONTRACT includes Opportunity Engine in must-not list',
+    scoring.includes('Opportunity Engine') &&
+    (scoring.includes('MUST NOT') || scoring.includes('must not') || scoring.includes('canonical')));
+  assert('SCORING_CONTRACT states missing evidence is null not zero',
+    scoring.includes('null') && (scoring.includes('—') || scoring.includes('zeroed') || scoring.includes('not zero')));
+
+  /* ── CHARTS distinguishes canonical from filtered ── */
+  assert('CHARTS document includes "Canonical" data source labels',
+    charts.includes('Canonical'));
+  assert('CHARTS document includes "Display Evidence" data source labels',
+    charts.includes('Display Evidence'));
+  assert('CHARTS states Season Show Fit is Canonical',
+    /Season Show Fit[\s\S]{0,200}Canonical/.test(charts));
+  assert('CHARTS states Capacity: Tour vs Peer follows Display Evidence',
+    /Capacity: Tour vs Peer[\s\S]{0,200}Display Evidence/.test(charts));
+  assert('CHARTS states Fit Distribution is Canonical',
+    /Fit Distribution[\s\S]{0,200}Canonical/.test(charts));
+  assert('CHARTS states Tour vs Peer Capacity on Exec Summary is Display Evidence',
+    /Tour vs Peer Capacity[\s\S]{0,200}Display Evidence/.test(charts));
+  assert('CHARTS states gaps not zeros (— not zero)',
+    charts.includes('—') && (charts.includes('not zero') || charts.includes('absent')));
+  assert('CHARTS documents Dashboard active population',
+    charts.includes('active filter population') || charts.includes('active record set'));
+
+  /* ── No doc claims Display Evidence changes Planning Signals ── */
+  /* Check that no sentence says Display Evidence "changes" or "alters" the signal.
+     Only check in sentences that reference both; a general mention is fine. */
+  const badPattern = /Display Evidence[^.]*(?:changes|alters|modifies)[^.]*Planning Signal/i;
+  assert('No doc claims Display Evidence changes Planning Signals (README)',
+    !badPattern.test(readme));
+  assert('No doc claims Display Evidence changes Planning Signals (HOW_IT_WORKS)',
+    !badPattern.test(howit));
+  assert('No doc claims Display Evidence changes Planning Signals (DEVELOPER)',
+    !badPattern.test(dev));
+}
+
 /* ── Final results ───────────────────────────────────────────────────────── */
 const total = pass + fail;
 console.log(`\n${'─'.repeat(60)}`);

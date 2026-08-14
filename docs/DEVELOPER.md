@@ -6,7 +6,9 @@ This document covers the JavaScript architecture, the `BTD` shared namespace, ho
 
 ## Architecture Overview
 
-The dashboard is a **fully static** application. There is no build step, no framework, no npm. Every file the browser loads is a plain `.html`, `.css`, or `.js` file served as-is from Azure Static Web Apps.
+The dashboard is a **fully static** application. There is no build step and no front-end framework. Every file the browser loads is a plain `.html`, `.css`, or `.js` file served as-is from Azure Static Web Apps.
+
+`npm` is present for **test tooling only** (`npm test` runs the scoring contract tests; `node scripts/test-filters.js` runs the Display Evidence behavioral tests). There is no compile step, no bundler, and no runtime npm dependency.
 
 ```
 src/
@@ -338,7 +340,40 @@ Do not modify `styles.css` without explicit direction — visual identity change
 
 ---
 
-## Validation and Syntax Checks
+## Test Suite
+
+### `npm test` — Scoring contract tests
+
+```bash
+npm test
+```
+
+Runs `scripts/test_scoring_contract.js`. Validates that the canonical `BTD.signals.profileShow()` scorer produces correct output and that no page violates the scoring contract (no deprecated symbol calls, no inline scores, no conflated null/zero handling).
+
+### `node scripts/test-filters.js` — Display Evidence behavioral tests
+
+```bash
+node scripts/test-filters.js
+```
+
+Runs 10 suites (89 assertions as of v6.1) covering:
+
+| Suite | What it validates |
+|---|---|
+| 1 | `BTD.filters.apply()` — Season vs Date Range mutual exclusivity |
+| 2 | `BTD.filters.apply()` — invalid boundary fail-closed contract |
+| 3 | Category 1 — slate-derived metrics unaffected by Display Evidence |
+| 4 | Category 2 — canonical signal unaffected by Display Evidence |
+| 5 | Category 3 — touring-record display governed by `filteredDisplay` |
+| 6 | Category 4 — aggregates exclude zero-count shows from denominators |
+| 7 | Dashboard contract: Season ↔ Date Range mutual exclusivity |
+| 8 | Programming/Exec contract: All data vs Custom range |
+| 9 | Source compliance — specific contracts verified in real page HTML/JS |
+| 10 | Opportunity Engine stays on canonical metrics regardless of display scope |
+
+Suite 9 includes version-sync assertions: HTML fallback version and date strings must match `src/data/versions.json` at test time. A version bump that misses any governed location fails this suite.
+
+### Syntax and data checks
 
 Run before any push:
 
@@ -356,6 +391,146 @@ python scripts/validate_data.py --data src/data/data.json --out src/data/validat
 node scripts/compare_signals.js 2025-2026
 node scripts/compare_signals.js 2026-2027
 ```
+
+---
+
+## Date Range APIs
+
+### `BTD.filters.apply(rows, opts)` — date range options
+
+The filter function in `src/js/core/filters.js` accepts `opts.dateFrom` and `opts.dateTo` as ISO date strings (`'YYYY-MM-DD'`).
+
+**Supplied vs omitted:** A boundary is "supplied" when the option is a non-empty string. An omitted or empty-string option is a valid open end.
+
+**Fail-closed contract:** A *supplied* boundary that is not a valid ISO calendar date causes `apply()` to return `[]` immediately. It does **not** fall back to treating the invalid value as an absent open boundary.
+
+```javascript
+// From-only: all records from 2025-07-01 forward
+BTD.filters.apply(rows, { dateFrom: '2025-07-01' });
+
+// To-only: all records up to 2025-12-31
+BTD.filters.apply(rows, { dateTo: '2025-12-31' });
+
+// Invalid supplied boundary — returns [] (fail-closed)
+BTD.filters.apply(rows, { dateFrom: '2025-02-31', dateTo: '2025-12-31' });
+
+// Both omitted — season filter applies normally
+BTD.filters.apply(rows, { season: '2025-2026' });
+```
+
+**Date range precedence:** When `dateFrom` or `dateTo` is supplied, `opts.season` is suppressed — the two modes are mutually exclusive. Records missing a valid `week_of` are excluded when a date range is active.
+
+### `isValidISODate(s)` (internal to `filters.js`)
+
+Round-trip validates a `YYYY-MM-DD` string: parses it, then checks that `getFullYear()`, `getMonth()+1`, and `getDate()` all match the original string parts. This rejects impossible dates such as `'2025-02-31'` (which JavaScript would silently normalize to March 3) and non-leap-year Feb 29.
+
+### `window._DATE_RANGE`
+
+`{ start: 'YYYY-MM-DD', end: 'YYYY-MM-DD' } | null`
+
+The shared global that both Programming and Exec Summary page controllers read to determine the active display scope. Set to `null` when the Display Evidence pill is "All available data"; set to an object when the pill is "Custom date range" and valid boundaries have been entered.
+
+Page controllers must never read `window._DATE_RANGE` before calling `BTD.page.profileShowCanonical()` — the canonical call ignores it. They read it only when building `p.filteredDisplay` for presentation output.
+
+### Shared page-event handlers
+
+These functions are attached to `window` (not `BTD.*`) so that inline HTML `onclick=` handlers can call them:
+
+| Function | Page | What it does |
+|---|---|---|
+| `onDateRangeChange()` | Dashboard | Called when the From or To date input changes; re-runs `BTD.filters.apply()` and updates KPIs/charts |
+| `onDateModeChange(mode)` | Dashboard | Called when the Season / Date Range radio changes; switches the active time selector |
+| `resetDateMode()` | Dashboard | Clears the date range, restores Season mode |
+| `onDisplayEvidencePillChange(mode)` | Programming, Exec Summary | Called when the pill is clicked; sets `window._DATE_RANGE` and re-renders display metrics |
+| `resetDisplayEvidence()` | Programming, Exec Summary | Resets the pill to "All available data" and clears `window._DATE_RANGE` |
+| `dateRangeValidationError(message)` | Programming, Exec Summary | Shows an inline validation error near the date inputs |
+| `clearDateRangeError()` | Programming, Exec Summary | Clears the validation error |
+
+---
+
+## Two Page Contracts
+
+### Dashboard — Season / Date Range
+
+- The time selector is **mutually exclusive**: Season mode and Date Range mode cannot both be active.
+- The active filter populates `window.BTD.state.active` and `window.BTD.state.filtered`.
+- KPIs, charts, rankings, and all analytics tabs always reflect the filtered record set.
+- **No Planning Signal is computed.** Date filtering in the Dashboard has no effect on any signal in Programming or Exec Summary.
+
+### Programming and Executive Summary — Show Slate + Display Evidence
+
+- The **Show Slate is always built from the full available evidence** via `BTD.page.profileShowCanonical()`. The canonical call is never passed a `dateFrom`/`dateTo` derived from the Display Evidence pill.
+- `window._DATE_RANGE` is set by the pill interaction and read **after** canonical profiling, only when building `p.filteredDisplay`.
+- `p.filteredDisplay` (see Metric Taxonomy below) is the only structure whose values change with the Display Evidence scope.
+- The Opportunity Engine uses `p.metrics.peerCap` and `p.metrics.cap` — both canonical — and therefore never changes with display scope.
+
+---
+
+## Metric Taxonomy
+
+Four categories of metric exist in a show profile. Only Category 3 is governed by the Display Evidence date scope.
+
+### Category 1 — Slate-derived
+
+Derived from `seasons.json`, not from touring records. Unaffected by any date filter.
+
+Examples: show title, season, status (confirmed / candidate / exploratory), slate position.
+
+### Category 2 — Canonical signal
+
+Produced by `BTD.signals.profileShow()` using all available evidence up to the canonical date boundary. These fields live on `p.metrics`, `p.signals`, `p.score`, `p.planning`, `p.decomp`, and `p.isFutureNewTour`.
+
+**The Display Evidence pill must never alter these fields.** The canonical call must be made once per show, before any display-scope logic runs, and its result must be cached — not re-called with display-scope boundaries.
+
+Key fields:
+
+| Field | Meaning |
+|---|---|
+| `p.metrics.cap` | National average paid capacity (canonical) |
+| `p.metrics.peerCap` | Average paid capacity across all peer cohorts (canonical) |
+| `p.metrics.gg` | National average GG% (canonical) |
+| `p.score` | Composite Planning Signal score 0–100 or null |
+| `p.planning.read` | Planning Read string |
+| `p.signals.demand.value` | Demand component 0–100 or null |
+
+### Category 3 — Touring-record display (`p.filteredDisplay`)
+
+Computed after the canonical call, using only records in the active Display Evidence window. These are the numbers shown on show cards and in the Tour vs Peer Capacity chart.
+
+```javascript
+p.filteredDisplay = {
+  cap:        // avg paid capacity in the display window
+  gg:         // avg GG% in the display window
+  peerCap:    // avg peer capacity in the display window
+  gross:      // avg weekly gross in the display window
+  count:      // record count in the display window
+  totalGross  // cumulative gross in the display window
+};
+```
+
+When `window._DATE_RANGE` is null ("All available data"), `p.filteredDisplay` is built from all records — its values approach (but may not identically match) canonical values due to the canonical model's own deduplication and scoring logic.
+
+**Missing evidence is `null`, not zero.** If no records exist in the display window, `p.filteredDisplay.count` is `0` and metric fields are `null`. Pages render `null` as `—`. Rendering `null` as `0` is prohibited — it falsely implies the show played and grossed nothing.
+
+### Category 4 — Record-derived aggregates
+
+Season-level aggregates (average cap%, average GG%, top-grossing show, etc.) computed after all show profiles are built. These are used for the season headline, callout text, and Season Position badge.
+
+When the Display Evidence pill is "All available data," aggregates reflect the full evidence set. When a custom date range is active, aggregates computed from `p.filteredDisplay` values will reflect the windowed data — but Season Position (Above / At / Below median) is always computed from canonical `p.score` values and is never date-scoped.
+
+---
+
+## Canonical Opportunity Engine Exception
+
+The **Opportunity Engine** in Programming and Exec Summary identifies shows where the peer venue average paid capacity substantially exceeds the Bushnell-venue average. It uses:
+
+```javascript
+p.metrics.peerCap > p.metrics.cap + 8   // 8 integer percentage points
+```
+
+Both `p.metrics.peerCap` and `p.metrics.cap` are **canonical** (Category 2). The Opportunity Engine therefore produces identical results regardless of what Display Evidence scope is active. This is intentional: the question "could this show do substantially better at our size venue?" must be answered from the full evidence base, not from a date-windowed slice.
+
+Suite 10 of `test-filters.js` verifies this contract: the Opportunity Engine result is identical when called with `window._DATE_RANGE = null` and with an arbitrary custom date range.
 
 ---
 

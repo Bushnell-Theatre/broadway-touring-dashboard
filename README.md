@@ -16,9 +16,9 @@ The application supports three active experiences built on the same touring data
 
 | Experience | Intended audience | Primary use |
 |---|---|---|
-| [Sales Intelligence Dashboard](src/dashboard.html) | Sales and analytics | Explore weekly touring results, show history, markets, subscription behavior, and peer benchmarks |
-| [Programming](src/programming.html) | Programming | Review current and candidate shows, inspect the evidence behind their Planning Signals, and compare peer performance |
-| [Executive Summary](src/exec_summary.html) | Leadership | Review a concise season-level view of performance, candidates, and notable signals |
+| [Sales Intelligence Dashboard](src/dashboard.html) | Sales and analytics | Explore weekly touring results, show history, markets, subscription behavior, and peer benchmarks. A **Season / Date Range** toggle controls which records are included in KPIs, charts, and tables — the two modes are mutually exclusive. |
+| [Programming](src/programming.html) | Programming | Review current and candidate shows, inspect the evidence behind their Planning Signals, and compare peer performance. The **Show Slate is always visible** regardless of the date scope selected. A **Display Evidence** pill ("All available data" / "Custom date range") controls the time window used for display metrics and charts without altering Planning Signals, scores, or confidence. |
+| [Executive Summary](src/exec_summary.html) | Leadership | Review a concise season-level view of performance, candidates, and notable signals. Shares the same two-contract design as Programming: Show Slate always visible; Display Evidence pill controls display scope; canonical Planning Signals are date-range-independent. |
 | [Development Hub](src/index.html) | All internal users | Choose an experience and see data currency/version information |
 
 The former Box Office scenario model remains in the repository, but its work is suspended and it is not presented as an active product experience.
