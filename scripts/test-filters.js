@@ -164,61 +164,81 @@ console.log('\n── Suite 1: BTD.filters.apply() — season vs. date range ─
 
 /* ══════════════════════════════════════════════════════════════════════════
    SUITE 2 — BTD.filters.apply() invalid boundary fail-closed contract
+   ════════════════════════════════════════════════════════════════════════
+   A supplied boundary that fails isValidISODate() must return [] — not an
+   open-ended range, not a season fallback, not a partial result.
+   Omitted / empty boundaries remain valid as open ends (From-only, To-only).
    ════════════════════════════════════════════════════════════════════════ */
 console.log('\n── Suite 2: BTD.filters.apply() — invalid boundary fail-closed ──');
 {
-  // Impossible calendar date: 2025-02-31 (round-trip check rejects it)
-  // When dateFrom is invalid, it is treated as absent; dateTo determines range mode.
+  /* ── Impossible calendar dates: supplied invalid dateFrom ── */
+
+  // 2025-02-31: JS would normalise to 2025-03-03 without the round-trip check.
+  // Supplying it as dateFrom must fail closed: 0 records, NOT an open left side.
   const badFrom = apply(RECORDS, { dateFrom: '2025-02-31', dateTo: '2026-12-31' });
-  // dateFrom invalid → treated as absent → open start from the remaining dateTo
-  // dateTo is valid, so date-range mode IS entered (hasDateRange = true because dateTo present),
-  // but dateFrom resolves to null → all records up to 2026-12-31 pass
-  assert('Invalid dateFrom (2025-02-31) treated as absent; valid dateTo still active',
-    badFrom.every((r) => r.week_of <= '2026-12-31') && badFrom.length === RECORDS.length);
+  assert('Invalid dateFrom (2025-02-31) fails closed: 0 records returned',
+    badFrom.length === 0,
+    `Got ${badFrom.length} records; expected 0`);
 
-  // Invalid dateTo: 2025-13-01 (month 13 doesn't exist)
-  const badTo = apply(RECORDS, { dateFrom: '2025-09-01', dateTo: '2025-13-01' });
-  // dateTo invalid → treated as absent → open end from dateFrom
-  assert('Invalid dateTo (2025-13-01) treated as absent; valid dateFrom still active',
-    badTo.every((r) => r.week_of >= '2025-09-01') && badTo.length >= 1);
+  // Invalid dateTo: month 13 does not exist.
+  // Supplying it as dateTo must fail closed: 0 records, NOT an open right side.
+  const badTo = apply(RECORDS, { dateFrom: '2025-01-01', dateTo: '2025-13-01' });
+  assert('Invalid dateTo (2025-13-01) fails closed: 0 records returned',
+    badTo.length === 0,
+    `Got ${badTo.length} records; expected 0`);
 
-  // Feb 29 on a non-leap year (2025 is not a leap year)
+  // Feb 29 on a non-leap year (2025 is not a leap year).
   const nonLeapFeb29 = apply(RECORDS, { dateFrom: '2025-02-29', dateTo: '2026-12-31' });
-  assert('Non-leap-year Feb 29 (2025-02-29) treated as absent boundary',
-    nonLeapFeb29.every((r) => r.week_of <= '2026-12-31') && nonLeapFeb29.length === RECORDS.length);
+  assert('Non-leap-year Feb 29 (2025-02-29) fails closed: 0 records returned',
+    nonLeapFeb29.length === 0,
+    `Got ${nonLeapFeb29.length} records; expected 0`);
 
-  // Feb 29 on a valid leap year (2024) — should be accepted
-  const leapFeb29 = apply(RECORDS, { dateFrom: '2024-02-29', dateTo: '2026-12-31' });
-  assert('Leap-year Feb 29 (2024-02-29) accepted as valid boundary',
-    leapFeb29.every((r) => r.week_of >= '2024-02-29'));
-
-  // Apr 31 (April has 30 days) — invalid, treated as absent
+  // Apr 31 — April has 30 days.
   const apr31 = apply(RECORDS, { dateFrom: '2025-04-31', dateTo: '2026-12-31' });
-  assert('Apr 31 (2025-04-31) treated as absent boundary (impossible date)',
-    apr31.length === RECORDS.length);
+  assert('Apr 31 (2025-04-31) fails closed: 0 records returned',
+    apr31.length === 0,
+    `Got ${apr31.length} records; expected 0`);
 
-  // Feb 30 — invalid
+  // Feb 30 — never a valid date.
   const feb30 = apply(RECORDS, { dateFrom: '2025-02-30', dateTo: '2026-12-31' });
-  assert('Feb 30 (2025-02-30) treated as absent boundary (impossible date)',
-    feb30.length === RECORDS.length);
+  assert('Feb 30 (2025-02-30) fails closed: 0 records returned',
+    feb30.length === 0,
+    `Got ${feb30.length} records; expected 0`);
 
-  // Both boundaries invalid: hasDateRange = false → season filter resumes
-  // Season is '2024-2025' and both dateFrom/dateTo are invalid
+  // Both boundaries invalid: season must NOT resume and unbounded population must NOT pass.
+  // Both dateFrom and dateTo are supplied but invalid → fail-closed → 0 records.
   const bothBad = apply(RECORDS, { season: '2024-2025', dateFrom: '2025-02-31', dateTo: '2025-13-01' });
-  // hasDateRange depends on whether dateFrom or dateTo is truthy (non-empty string).
-  // Both are truthy strings (even if invalid). So hasDateRange=true, but both
-  // validate to null → open-ended date range that passes all records with valid week_of.
-  // The key contract: invalid boundaries do NOT silently suppress the season filter
-  // AND return an unbounded population of ALL records. Instead they fail-closed:
-  // date-range mode activates (because the option was present) but with null bounds.
-  assert('Both boundaries invalid: date-range mode entered with null bounds (not season)',
-    bothBad.length === RECORDS.length); // all records pass null-bounded date-range
+  assert('Both boundaries invalid: fails closed (season does NOT resume), 0 records returned',
+    bothBad.length === 0,
+    `Got ${bothBad.length} records; expected 0`);
 
-  // Inverted range (From > To): both valid ISO but wrong order
+  /* ── Valid Feb 29 on a leap year — must be accepted ── */
+  const leapFeb29 = apply(RECORDS, { dateFrom: '2024-02-29', dateTo: '2026-12-31' });
+  assert('Leap-year Feb 29 (2024-02-29) is valid: records on or after that date returned',
+    leapFeb29.length > 0 && leapFeb29.every((r) => r.week_of >= '2024-02-29'));
+
+  /* ── Inverted range: both valid ISO, From > To — naturally returns 0 records ── */
   const inverted = apply(RECORDS, { dateFrom: '2025-12-01', dateTo: '2025-09-01' });
-  assert('Inverted range (From > To): 0 records returned',
+  assert('Inverted range (valid From > valid To): 0 records returned',
     inverted.length === 0,
-    `Got ${inverted.length} records, expected 0`);
+    `Got ${inverted.length} records; expected 0`);
+
+  /* ── Omitted boundaries stay open-ended — no fail-closed triggered ── */
+
+  // From-only (dateTo omitted): open right side; all records ≥ dateFrom pass.
+  const fromOnly = apply(RECORDS, { dateFrom: '2026-01-01' });
+  assert('Valid From-only (dateTo omitted): open right side, returns records ≥ 2026-01-01',
+    fromOnly.length === 1 && fromOnly[0].show === 'MoTown');
+
+  // To-only (dateFrom omitted): open left side; all records ≤ dateTo pass.
+  const toOnly = apply(RECORDS, { dateTo: '2024-12-31' });
+  assert('Valid To-only (dateFrom omitted): open left side, returns records ≤ 2024-12-31',
+    toOnly.length === 2 && toOnly.every((r) => r.week_of <= '2024-12-31'));
+
+  // Both omitted: date-range mode is NOT entered; opts.season applies normally.
+  const seasonOnly = apply(RECORDS, { season: '2024-2025' });
+  assert('Both boundaries omitted: season filter resumes, returns FY 2024-2025 records',
+    seasonOnly.length === 3);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -375,11 +395,18 @@ console.log('\n── Suite 9: Source compliance — real page contracts ──'
     execSrc.includes('historical records supporting confidence') &&
     execSrc.match(/p\.metrics\.count.*historical records supporting confidence/));
 
-  // ── Opportunity Engine uses p.metrics ──
-  assert('programming Opportunity Engine uses p.metrics.cap (canonical)',
+  // ── Opportunity Engine uses p.metrics with the correct threshold ──
+  // Production threshold is "+ 8" (8 integer percentage points, matching cap_paid
+  // values in the data which are on a 0–100 scale in the League data).
+  // Suite 10 uses PEER_GAP = 0.08 on decimal-scale fixture values — same 8pp gap.
+  assert('programming Opportunity Engine uses p.metrics (canonical)',
     progSrc.includes('p.metrics.peerCap > p.metrics.cap'));
-  assert('exec_summary Opportunity Engine uses p.metrics.cap (canonical)',
+  assert('programming Opportunity Engine threshold is + 8 (8 percentage points)',
+    progSrc.includes('p.metrics.peerCap > p.metrics.cap + 8'));
+  assert('exec_summary Opportunity Engine uses p.metrics (canonical)',
     execSrc.includes('p.metrics.peerCap > p.metrics.cap'));
+  assert('exec_summary Opportunity Engine threshold is + 8 (8 percentage points)',
+    execSrc.includes('p.metrics.peerCap > p.metrics.cap + 8'));
 
   // ── chartCap contains no missing-to-zero fallback ──
   // Find chartCap() in each file and verify no '|| 0' after cap or peerCap
@@ -447,75 +474,112 @@ console.log('\n── Suite 9: Source compliance — real page contracts ──'
 
 /* ══════════════════════════════════════════════════════════════════════════
    SUITE 10 — Opportunity Engine stays on canonical metrics
+   ════════════════════════════════════════════════════════════════════════
+   Fixture design: Wicked has two PRIMARY records at low cap (0.55, 0.57)
+   and one SECONDARY record at high cap (0.77).
+     national avg cap = (0.55 + 0.57 + 0.77) / 3 = 0.630
+     peer avg cap     = 0.77 (SECONDARY only)
+     gap              = 0.77 - 0.630 = 0.140  > PEER_GAP (0.08) → QUALIFIES
+   Hamilton gap ≈ 0.01 (flat) → does NOT qualify.
+   MoTown peer below national → does NOT qualify.
+   The Opportunity Engine runs on canonical p.metrics.  When Display Evidence
+   is set to a future date range (all filteredDisplay.count === 0), Wicked
+   must still appear in the canonical result — and must appear identically in
+   the all-data result.
    ════════════════════════════════════════════════════════════════════════ */
 console.log('\n── Suite 10: Opportunity Engine uses canonical metrics ──');
 {
-  // Data: Wicked has strong peer performance (peerCap > cap by 12pp canonically)
-  // MoTown's canonical data shows peer < national (caution signal)
+  /* PEER_GAP_PP = 8 matches the production threshold:
+       p.metrics.peerCap > p.metrics.cap + 8
+     where cap values in production data are integer percentage points (82 = 82%).
+     Test fixture uses decimal cap_paid (0–1); PEER_GAP = 8/100 = 0.08 is the
+     same gap in the test's unit system.  Suite 9 confirms the production
+     source uses exactly "+ 8". */
+  const PEER_GAP_PP = 8;
+  const PEER_GAP    = PEER_GAP_PP / 100;  /* decimal-unit equivalent for test fixture */
+
   const OPPTY_RECORDS = [
-    // Wicked: national cap 65%, peer cap 77% → hidden gem (peer > national + 8)
-    { show: 'Wicked', week_of: '2024-10-07', cap_paid: 0.65, tier: 'PRIMARY',   on_sub: true, gross_gross: 400000, gg_pct_gp: 0.60 },
-    { show: 'Wicked', week_of: '2024-11-04', cap_paid: 0.77, tier: 'SECONDARY', on_sub: true, gross_gross: 460000, gg_pct_gp: 0.72 },
-    // Hamilton: flat peer/national
-    { show: 'Hamilton', week_of: '2024-12-02', cap_paid: 0.80, tier: 'PRIMARY',   on_sub: false, gross_gross: 550000, gg_pct_gp: 0.78 },
-    { show: 'Hamilton', week_of: '2025-01-06', cap_paid: 0.81, tier: 'SECONDARY', on_sub: false, gross_gross: 560000, gg_pct_gp: 0.79 },
-    // MoTown: peer below national (caution)
-    { show: 'MoTown', week_of: '2025-02-03', cap_paid: 0.70, tier: 'PRIMARY',   on_sub: true, gross_gross: 380000, gg_pct_gp: 0.65 },
-    { show: 'MoTown', week_of: '2025-03-03', cap_paid: 0.55, tier: 'SECONDARY', on_sub: true, gross_gross: 310000, gg_pct_gp: 0.50 },
+    /* Wicked: 2 PRIMARY at low cap, 1 SECONDARY at high cap.
+       national avg = (0.55+0.57+0.77)/3 = 0.630
+       peer avg     = 0.77
+       gap          = 0.140 → QUALIFIES (> 0.08) */
+    { show: 'Wicked', week_of: '2024-10-07', cap_paid: 0.55, tier: 'PRIMARY',   gross_gross: 380000, gg_pct_gp: 0.52 },
+    { show: 'Wicked', week_of: '2024-11-04', cap_paid: 0.57, tier: 'PRIMARY',   gross_gross: 390000, gg_pct_gp: 0.54 },
+    { show: 'Wicked', week_of: '2024-12-02', cap_paid: 0.77, tier: 'SECONDARY', gross_gross: 460000, gg_pct_gp: 0.73 },
+    /* Hamilton: nearly flat peer/national gap (~1pp) → does NOT qualify */
+    { show: 'Hamilton', week_of: '2024-12-02', cap_paid: 0.80, tier: 'PRIMARY',   gross_gross: 550000, gg_pct_gp: 0.78 },
+    { show: 'Hamilton', week_of: '2025-01-06', cap_paid: 0.82, tier: 'SECONDARY', gross_gross: 570000, gg_pct_gp: 0.80 },
+    /* MoTown: peer BELOW national (caution signal) → does NOT qualify */
+    { show: 'MoTown', week_of: '2025-02-03', cap_paid: 0.70, tier: 'PRIMARY',   gross_gross: 380000, gg_pct_gp: 0.65 },
+    { show: 'MoTown', week_of: '2025-03-03', cap_paid: 0.62, tier: 'SECONDARY', gross_gross: 310000, gg_pct_gp: 0.57 },
   ];
 
-  // Build profiles under a narrow date range that excludes ALL records (empty display)
+  /* Build profiles with a future Display Evidence range — all filteredDisplay.count = 0 */
   const FUTURE_FROM = '2030-01-01';
   const FUTURE_TO   = '2030-12-31';
   const slate = ['Wicked', 'Hamilton', 'MoTown'];
   const profiles = slate.map((t) => buildProfile(t, OPPTY_RECORDS, FUTURE_FROM, FUTURE_TO));
 
-  // All filteredDisplay should be empty (future range)
-  assert('All filteredDisplay counts are 0 under future date range',
+  /* Confirm the Display Evidence range truly empties filteredDisplay */
+  assert('All filteredDisplay.count === 0 under future date range',
     profiles.every((p) => p.filteredDisplay.count === 0));
 
-  // Opportunity Engine uses canonical p.metrics — identical filter to what the page uses
-  const PEER_GAP = 0.08;
+  /* Canonical metrics remain populated even when filteredDisplay is empty */
+  assert('Canonical metrics populated even when filteredDisplay is empty',
+    profiles.every((p) => p.metrics.count > 0 && p.filteredDisplay.count === 0));
+
+  /* ── Verify canonical Wicked calculation ── */
+  const wickedAll       = OPPTY_RECORDS.filter((r) => r.show === 'Wicked');
+  const wickedNatCanon  = avg(wickedAll.map((r) => r.cap_paid));              /* 0.630 */
+  const wickedPeerCanon = avg(wickedAll.filter((r) => r.tier === 'SECONDARY').map((r) => r.cap_paid)); /* 0.77 */
+  const wickedGap       = wickedPeerCanon - wickedNatCanon;                   /* 0.140 */
+
+  assert('Wicked canonical peer gap exceeds PEER_GAP threshold (0.08)',
+    wickedGap > PEER_GAP,
+    `gap=${wickedGap.toFixed(4)}, threshold=${PEER_GAP}`);
+
+  const wickedProfile = profiles.find((p) => p.show.title === 'Wicked');
+  assert('Wicked canonical cap uses all records (including non-peer)',
+    Math.abs(wickedProfile.metrics.cap - wickedNatCanon) < 0.001,
+    `Expected ${wickedNatCanon.toFixed(4)}, got ${(wickedProfile.metrics.cap || 0).toFixed(4)}`);
+  assert('Wicked canonical peerCap uses only SECONDARY tier records',
+    Math.abs(wickedProfile.metrics.peerCap - wickedPeerCanon) < 0.001,
+    `Expected ${wickedPeerCanon}, got ${wickedProfile.metrics.peerCap}`);
+  assert('Qualifying show (Wicked) has filteredDisplay.count === 0 in future range',
+    wickedProfile.filteredDisplay.count === 0);
+
+  /* ── Opportunity Engine result: Wicked qualifies, Hamilton and MoTown do not ── */
   const hidden = profiles.filter(
     (p) => p.metrics.peerCap != null && p.metrics.cap != null &&
            p.metrics.peerCap > p.metrics.cap + PEER_GAP
   );
 
-  // Wicked: national avg = (0.65+0.77)/2 = 0.71, peer (SECONDARY only) = 0.77
-  // Gap = 0.77 - 0.71 = 0.06 — just below 0.08 threshold with this data mix
-  // Let's verify the canonical calculation directly:
-  const wickedAll = OPPTY_RECORDS.filter((r) => r.show === 'Wicked');
-  const wickedNatCanon = avg(wickedAll.map((r) => r.cap_paid));
-  const wickedPeerCanon = avg(wickedAll.filter((r) => r.tier === 'SECONDARY').map((r) => r.cap_paid));
-  const wickedGap = wickedPeerCanon - wickedNatCanon;
-  assert('Wicked canonical gap calculated correctly from all records',
-    Math.abs(wickedGap - (0.77 - (0.65 + 0.77) / 2)) < 0.001,
-    `Expected ${0.77 - (0.65 + 0.77) / 2}, got ${wickedGap}`);
+  assert('Opportunity Engine: Wicked appears in hidden-gem result (canonical, non-empty)',
+    hidden.some((p) => p.show.title === 'Wicked'),
+    `hidden titles: [${hidden.map((p) => p.show.title).join(', ')}]`);
 
-  assert('Opportunity Engine filters on canonical p.metrics (not filteredDisplay)',
-    // The filter function works on the profiles object, not on filteredDisplay
-    hidden.every((p) => p.metrics.peerCap != null && p.metrics.cap != null));
+  assert('Opportunity Engine: Hamilton absent (gap < 8pp)',
+    !hidden.some((p) => p.show.title === 'Hamilton'));
 
-  // Changing filteredDisplay has no effect on Opportunity Engine result
-  const profilesAllData = slate.map((t) => buildProfile(t, OPPTY_RECORDS)); // no date filter
+  assert('Opportunity Engine: MoTown absent (peer below national)',
+    !hidden.some((p) => p.show.title === 'MoTown'));
+
+  /* ── Result is identical when Display Evidence is all-data ── */
+  const profilesAllData = slate.map((t) => buildProfile(t, OPPTY_RECORDS)); /* no date filter */
   const hiddenAllData = profilesAllData.filter(
     (p) => p.metrics.peerCap != null && p.metrics.cap != null &&
            p.metrics.peerCap > p.metrics.cap + PEER_GAP
   );
-  assert('Opportunity Engine result identical regardless of Display Evidence setting',
-    hidden.length === hiddenAllData.length,
-    `Empty-range hidden=${hidden.length}, all-data hidden=${hiddenAllData.length}`);
 
-  assert('Canonical metrics populated even when filteredDisplay is empty',
-    profiles.every((p) => p.metrics.count > 0 && p.filteredDisplay.count === 0));
+  assert('Wicked still appears in Opportunity Engine with all-data Display Evidence',
+    hiddenAllData.some((p) => p.show.title === 'Wicked'));
 
-  // Verify the canonical calculation for the specific case:
-  // If Wicked is in hidden (peerCap > cap + 8pp), it must have been from canonical data
-  const wickedProfile = profiles.find((p) => p.show.title === 'Wicked');
-  assert('Wicked canonical peerCap uses only SECONDARY tier records',
-    wickedProfile.metrics.peerCap === wickedPeerCanon);
-  assert('Wicked canonical cap uses all records',
-    Math.abs(wickedProfile.metrics.cap - wickedNatCanon) < 0.001);
+  assert('Opportunity Engine result identical with empty-range vs all-data Display Evidence',
+    hidden.length === hiddenAllData.length &&
+    hidden.map((p) => p.show.title).sort().join(',') ===
+    hiddenAllData.map((p) => p.show.title).sort().join(','),
+    `empty-range: [${hidden.map((p) => p.show.title).join(',')}], ` +
+    `all-data: [${hiddenAllData.map((p) => p.show.title).join(',')}]`);
 }
 
 /* ── Final results ───────────────────────────────────────────────────────── */
