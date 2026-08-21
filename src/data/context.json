@@ -3917,9 +3917,17 @@
   },
   "2026-05-17": {
     "weather": {
-      "events": [],
-      "significant": false,
-      "summary": null
+      "events": [
+        {
+          "type": "Thunderstorm Wind",
+          "begin": "2026-05-19",
+          "end": "2026-05-19",
+          "magnitude": "50.00 EG",
+          "narrative": "In Burlington, tree and wires reported down  on Johnnycake mountain road. Relayed by  amateur radio."
+        }
+      ],
+      "significant": true,
+      "summary": "Thunderstorm Wind"
     },
     "economic": {
       "consumer_confidence": 44.8,
@@ -4059,6 +4067,32 @@
     }
   },
   "2026-08-02": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 49.5,
+      "ct_unemployment": 4.9,
+      "confidence_trend": "stable",
+      "source_month": "2026-08"
+    }
+  },
+  "2026-08-09": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 49.5,
+      "ct_unemployment": 4.9,
+      "confidence_trend": "stable",
+      "source_month": "2026-08"
+    }
+  },
+  "2026-08-16": {
     "weather": {
       "events": [],
       "significant": false,

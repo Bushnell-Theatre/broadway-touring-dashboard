@@ -1,8 +1,8 @@
 {
   "2026-2027": {
-    "week_of": "2026-08-02",
-    "trigger": "show_closes,wow_gross_change",
-    "summary": "Two significant shifts emerged in this week's Broadway League data: Hell's Kitchen experienced a sharp 47% gross decline ($1.71M to $911K for the week ending August 2nd), while The Outsiders exited the tracking dataset entirely after a 45-week run. These movements suggest potential softening in national touring demand during early August, though the Hell's Kitchen decline may reflect typical summer audience fluctuations rather than fundamental market weakness.",
-    "generated_at": "2026-08-07T13:01:58"
+    "week_of": "2026-08-16",
+    "trigger": "cap_band_crossing,wow_gross_change",
+    "summary": "Hell's Kitchen experienced significant momentum nationally during the week of August 16, with gross revenue doubling to $2.0M and paid capacity jumping to 94.7%, elevating the show from mid-range to high-capacity performance band across all touring markets. This sharp week-over-week surge signals strengthened demand for the title during its touring run and warrants close monitoring of booking patterns as the 2026-2027 season approaches.",
+    "generated_at": "2026-08-21T13:22:39"
   }
 }
