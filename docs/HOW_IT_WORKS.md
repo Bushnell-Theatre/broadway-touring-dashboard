@@ -89,11 +89,13 @@ Supporting files define Bushnell seasons, curated peer cohorts, optional show me
 
 ## Peer comparisons
 
-The product uses three overlapping peer ideas:
+The product uses three peer ideas in scoring, plus two additional non-scoring context tiers — five total types defined in `peers.json`:
 
-- venues of comparable size
-- geographically relevant Northeast/New England markets
-- comparable nonprofit PAC/mid-size market environments
+- **size** — venues within ±10% of Bushnell's sellable capacity (2,450–2,994 seats); the core scoring cohort
+- **proximity** — geographically relevant Northeast/New England markets
+- **market** — comparable nonprofit PAC/mid-size market environments
+- **size_extended** — venues within ±15% (2,314–3,130 seats) but outside the ±10% core; context only, not used in scoring
+- **reference_only** — included for broad context/data completeness; explicitly excluded from peer scoring calculations
 
 These definitions come from curated metadata in `peers.json`. They are analytical choices, not Broadway League classifications. A venue can belong to more than one cohort.
 

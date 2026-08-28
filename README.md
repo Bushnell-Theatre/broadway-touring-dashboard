@@ -48,7 +48,7 @@ The browser loads static JSON files and calculates the interface at runtime.
 
 - `src/data/data.json` is the primary dataset. Each usable record represents a show at a venue for a reporting week.
 - `src/data/seasons.json` defines Bushnell season slates and candidates.
-- `src/data/peers.json` defines three curated peer cohorts: venue size, geographic proximity, and comparable market/PAC.
+- `src/data/peers.json` defines five peer types: three used in scoring (venue size, geographic proximity, comparable market/PAC) plus two non-scoring context tiers (an extended size band, and a reference-only catch-all). See [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md#peer-comparisons).
 - Optional enrichment and generated summary files add context but do not replace the primary touring evidence.
 
 The Planning Signal is derived from four components:
