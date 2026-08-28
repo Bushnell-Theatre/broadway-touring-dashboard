@@ -51,6 +51,10 @@ WOW_THRESHOLD_PCT   = 15.0    # ±15% week-over-week gross change
 CAP_LOW_BAND        = 60.0    # below this = low band
 CAP_HIGH_BAND       = 90.0    # at or above this = high band
 CLOSE_MIN_WEEKS     = 2       # show must have appeared this many prior weeks
+MIN_ABSENCE_WEEKS   = 2       # consecutive calendar weeks a show must be missing
+                              # from scope before "closes"/"left scope" fires —
+                              # a single missed week is routine venue-size
+                              # rotation, not a signal
 
 BAND_LABELS = {0: "low (<60%)", 1: "mid (60–89%)", 2: "high (≥90%)"}
 
@@ -158,10 +162,15 @@ def evaluate_thresholds(
     prev_records: list,
     all_scope_records: list,
     prior_weeks_by_show: dict,
+    all_weeks: list,
     national_curr_agg: dict | None = None,
 ) -> list:
     """
     Evaluate all hard-coded thresholds for one scope (peer or all-venue).
+
+    all_weeks: sorted list of every distinct week_of in the dataset (the
+    calendar), used to measure how many consecutive weekly snapshots a show
+    has been missing from this scope — see MIN_ABSENCE_WEEKS.
 
     national_curr_agg: when evaluating the peer scope, pass the current week's
     show aggregation for ALL venues nationally (aggregate_by_show(curr_all)).
@@ -276,30 +285,42 @@ def evaluate_thresholds(
                 ),
             })
 
-    # — Show closes (was in scope last week, gone this week, ≥ CLOSE_MIN_WEEKS prior)
+    # — Show closes / left scope (absent ≥ MIN_ABSENCE_WEEKS consecutive
+    # calendar weeks, ≥ CLOSE_MIN_WEEKS prior appearances). A single missed
+    # week is routine venue-size rotation (a show can bounce in and out of
+    # the peer-size band week to week) — only a sustained gap is a signal.
     if same_season_wow:
-        for show, prev in prev_agg.items():
-            if show not in season_league_names:
-                continue
+        for show in season_league_names:
             if show in curr_agg:
-                continue   # still running
+                continue   # still running in this scope
             prior_weeks = prior_weeks_by_show.get(show, set())
             if len(prior_weeks) < CLOSE_MIN_WEEKS:
                 continue
 
+            last_seen = max(prior_weeks)
+            if last_seen not in all_weeks or current_week not in all_weeks:
+                continue   # can't measure the gap — skip rather than guess
+            weeks_absent = all_weeks.index(current_week) - all_weeks.index(last_seen)
+            if weeks_absent < MIN_ABSENCE_WEEKS:
+                continue   # gap not sustained yet — likely routine rotation
+            if weeks_absent > MIN_ABSENCE_WEEKS:
+                continue   # already fired the week the threshold was crossed
+
             national_hit = (national_curr_agg or {}).get(show)
             if national_curr_agg is not None and national_hit and national_hit.get("gross_total"):
-                # Still touring nationally — just not at a peer-sized venue this
-                # week. This is NOT a closure signal; do not describe it as one.
+                # Still touring nationally — just not at a peer-sized venue for
+                # several weeks running. This is NOT a closure signal; do not
+                # describe it as one.
                 triggers.append({
                     "type": "left_peer_scope",
                     "show": show,
                     "description": (
-                        f"{show}: no longer among peer-sized venues (~2,400–3,000 seats) "
-                        f"this week, but still active in national Broadway League data "
-                        f"(national gross {fmt_dollars(national_hit.get('gross_total'))}, "
-                        f"week of {current_week}). This is a venue-size shift, not a "
-                        f"closure — the tour is still running."
+                        f"{show}: absent from peer-sized venues (~2,400–3,000 seats) "
+                        f"for {weeks_absent} consecutive weeks (last seen there week of "
+                        f"{last_seen}), but still active in national Broadway League "
+                        f"data (national gross {fmt_dollars(national_hit.get('gross_total'))}, "
+                        f"week of {current_week}). This is a sustained venue-size shift, "
+                        f"not a closure — the tour is still running."
                     ),
                 })
             else:
@@ -308,8 +329,8 @@ def evaluate_thresholds(
                     "show": show,
                     "description": (
                         f"{show}: absent from Broadway League touring data entirely "
-                        f"this week — no records at any venue nationally "
-                        f"(last seen week of {prior_week}, "
+                        f"for {weeks_absent} consecutive weeks — no records at any venue "
+                        f"nationally (last seen week of {last_seen}, "
                         f"after {len(prior_weeks)} weeks in scope)"
                     ),
                 })
@@ -503,6 +524,7 @@ def run(dry_run: bool = False) -> list:
         prev_records        = prev_peer,
         all_scope_records   = peer_records,
         prior_weeks_by_show = prior_weeks_peer,
+        all_weeks           = all_weeks,
         national_curr_agg   = national_curr_agg,
     )
 
@@ -520,6 +542,7 @@ def run(dry_run: bool = False) -> list:
         prev_records        = prev_all,
         all_scope_records   = season_records,
         prior_weeks_by_show = prior_weeks_all,
+        all_weeks           = all_weeks,
     )
 
     written = []
