@@ -1595,7 +1595,7 @@
               .join('') +
             '</div>'
           : '';
-        var conf = confidenceLabel(p);
+        var conf = p.signals.confidence.label;
         var tableRows = rows.length
           ? rows
               .map(function (r) {
@@ -1933,12 +1933,11 @@
 
         function profileVals(p) {
           const m = p.metrics;
-          const confMap = { High: 100, Medium: 67, Low: 33, None: 0 };
           return [
             m.cap != null ? Math.min(m.cap, 100) : null,
             m.gg != null ? Math.min(m.gg, 100) : null,
             m.peerCap != null ? Math.min(m.peerCap, 100) : null,
-            confMap[confidenceLabel(p)] ?? 0,
+            p.signals.confidence.value ?? 0,
           ];
         }
 
@@ -2238,19 +2237,17 @@
         });
       }
 
-      function confidenceLabel(p) {
-        if (p.metrics.count >= 12) return 'High';
-        if (p.metrics.count >= 5) return 'Medium';
-        if (p.metrics.count > 0) return 'Low';
-        return 'None';
-      }
-
+      // Confidence label comes from BTD.signals.profileShow() (p.signals.confidence.label) —
+      // the canonical, score-based confidenceLabel() in signals.js. Do not reimplement
+      // this locally; a page-local, record-count-based version previously shadowed it
+      // and disagreed with the other pages for the same show (see SCORING_CONTRACT.md's
+      // "pages may not invent component labels" rule).
       function confidenceText(p) {
-        const c = confidenceLabel(p);
+        const c = p.signals.confidence.label;
         if (c === 'High') return 'Broad tour evidence across multiple venues.';
-        if (c === 'Medium') return 'Usable evidence, but still needs context.';
+        if (c === 'Moderate') return 'Usable evidence, but still needs context.';
         if (c === 'Low') return 'Light sample; validate before relying on it.';
-        return 'No matched touring records in this feed.';
+        return 'New title or little/no touring data in this feed.';
       }
 
       function scoreBadge(p) {
