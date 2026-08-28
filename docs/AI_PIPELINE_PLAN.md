@@ -4,7 +4,10 @@ Two separate pipeline steps. Feature 1 (weekly highlights) runs on every
 new XLSX ingestion. Feature 2 (end-of-season review) runs once per season,
 triggered by close-date passage. Neither blocks the data pipeline.
 
-*Status: COMPLETE — shipped July 22, 2026. All five steps deployed to production.*
+*Status: COMPLETE — shipped July 22, 2026. All five steps deployed to production.
+Trigger logic and prompts described below were revised again on August 28,
+2026 (see "Show-closes rework" and "National fallback" under Feature 1) —
+this doc has been updated to match.*
 
 ---
 
@@ -35,8 +38,50 @@ browser JS does — `"2026-2027"` → start `2026-07-01`, end `2027-06-30`.
 2. Output files are **season-keyed objects** rather than flat objects.
 3. Dashboard injection looks up by `ACTIVE_SEASON`, not by `LAST_REPORT_DATE`.
 
-Everything else in the original plan (thresholds, prompt text, callout
-element, watcher placement) is unchanged.
+Everything else in the original plan (callout element, watcher placement) is
+unchanged. Thresholds and prompt text were revised again on August 28, 2026 —
+see the next two subsections, which supersede any threshold/prompt detail
+elsewhere in this doc or in `AI_HIGHLIGHT_PIPELINE.md`.
+
+### Show-closes rework (August 28, 2026)
+
+The original "show closes" trigger fired as soon as a show was absent from a
+scope for a single week compared to the prior week — this produced a false
+positive (a real incident: it claimed a touring show's tour had "concluded"
+when it had simply played a differently-sized venue that week). The shipped
+logic in `scripts/generate_highlights.py` now:
+
+- Requires **`MIN_ABSENCE_WEEKS = 6`** consecutive calendar weeks of absence
+  (measured against the full weekly calendar, not just the immediate prior
+  week) before firing at all, on top of the existing `CLOSE_MIN_WEEKS = 2`
+  (the show must have appeared in scope at least twice before).
+- Splits the outcome into two distinct trigger types instead of one:
+  - **`show_closes`** — absent from Broadway League data nationally, at any
+    venue. This is the only case where the AI prompt is allowed to describe
+    the tour as closed/ended/exited.
+  - **`left_peer_scope`** — absent from the peer-size venue band specifically,
+    but still active nationally. Worded as a venue-size shift, never a
+    closure.
+- Both exec and programming prompts (`build_exec_prompt`, `build_prog_prompt`)
+  now include an explicit guardrail sentence: *"Only say a tour has closed,
+  ended, or exited touring if the data explicitly states it is absent
+  nationally — never infer a closure from a show simply moving out of the
+  peer-size venue band."*
+
+### National fallback (August 28, 2026)
+
+The exec brief only ever compared against peer-sized venues (~2,400–3,000
+seats). In a week where **zero** peer venues reported any data for the
+season's shows, exec had nothing to say — even when there was meaningful
+national movement the programming brief was already surfacing from the same
+underlying data. `run()` now falls back: if the peer scope produced no
+triggers because it had no records at all this week, and the national scope
+did produce triggers, exec uses those national triggers instead, through a
+dedicated prompt (`build_exec_national_fallback_prompt`) that opens by
+disclosing the fallback rather than presenting it as a peer comparison.
+`write_highlight()` tags the written entry with `"scope": "peer"` or
+`"scope": "national_fallback"` so the dashboard can label the callout
+accordingly (see the Output files and Dashboard injection sections below).
 
 ---
 
@@ -61,6 +106,16 @@ element, watcher placement) is unchanged.
   }
 }
 ```
+
+`exec_brief_highlight.json` entries additionally carry an optional `"scope"`
+field — `"peer"` (the normal case, written whenever the peer-venue scope
+itself produced a trigger) or `"national_fallback"` (peer scope had zero
+data this week, so the entry is based on national data instead — see the
+National fallback subsection above). `programming_highlight.json` entries
+never carry `scope`; that scope is always national. Possible `trigger`
+values now also include `left_peer_scope` alongside the original
+`wow_gross_change`, `cap_band_crossing`, `show_opens`, `show_closes`,
+`all_time_high_gross`, and `all_time_high_cap`.
 
 Each season key is written once per triggering week. A season's entry is
 overwritten if a later week in that same season also trips a threshold.
@@ -88,33 +143,47 @@ the same July-1 boundary logic already in the JS.
 
 ### Dashboard injection (season-keyed)
 
-After the existing `$('tab-brief').innerHTML = ...` and chart calls in
-`renderBrief()`, fetch the highlight file and look up by season key:
+This is what's actually shipped in `exec_summary.html` (see "AI callout
+injection" comment, ~line 2362) — note it's a **combined fetch of both**
+`season_review.json` and `exec_brief_highlight.json`, not the highlight file
+alone, because `exec_summary.html` also needs to prioritize the amber
+season-retrospective callout over the teal weekly one when both exist for a
+season:
 
 ```javascript
-// exec_summary.html — after chartCap call, ~line 2198
-fetch('data/exec_brief_highlight.json')
-  .then(r => r.ok ? r.json() : null)
-  .then(h => {
-    if (!h) return;
-    const entry = h[season.id];   // season.id is already ACTIVE_SEASON
-    if (!entry) return;
+// exec_summary.html — after chartCap call
+Promise.all([
+  fetch('data/season_review.json').then(r => r.ok ? r.json() : null).catch(() => null),
+  fetch('data/exec_brief_highlight.json').then(r => r.ok ? r.json() : null).catch(() => null)
+]).then(([reviewData, highlightData]) => {
+  const reviewEntry    = reviewData    && reviewData[season.id];
+  const highlightEntry = highlightData && highlightData[season.id];
+  if (reviewEntry && reviewEntry.summary) {
+    // amber "Season Retrospective" callout — takes priority, see Feature 2
+  } else if (highlightEntry && highlightEntry.summary) {
+    const label = (highlightEntry.scope === 'national_fallback'
+      ? 'Weekly Intelligence (National Data — No Peer Venues Reported) · '
+      : 'Weekly Intelligence · ') + highlightEntry.week_of;
     const el = document.createElement('div');
     el.className = 'callout ai-highlight';
     el.style.cssText = 'border-left-color:var(--teal);margin-bottom:16px;';
     el.innerHTML =
       `<div style="font-size:.6rem;font-weight:700;letter-spacing:.12em;
                    text-transform:uppercase;color:var(--teal);margin-bottom:6px;">
-         Weekly Intelligence · ${entry.week_of}
+         ${label}
        </div>
-       <p style="margin:0;">${entry.summary}</p>`;
+       <p style="margin:0;"></p>`;
+    el.querySelector('p').textContent = highlightEntry.summary;  // textContent, not innerHTML — AI text is untrusted
     document.getElementById('tab-brief').prepend(el);
-  })
-  .catch(() => {});
+  }
+});
 ```
 
-Same pattern in `programming.html` using `programming_highlight.json` and
-the current season key from the existing `ACTIVE_SEASON` variable on that page.
+`programming.html` only ever shows the weekly teal callout (there is no
+season-retrospective competitor on that page), so it fetches
+`programming_highlight.json` alone and looks up the current season key from
+the existing `ACTIVE_SEASON` variable on that page — no `scope` label needed
+there, since `programming_highlight.json` entries are always national.
 
 **Result:** Switching the season selector rerenders `#tab-brief` via the
 existing `renderBrief()` call, which re-runs the fetch and injects the
