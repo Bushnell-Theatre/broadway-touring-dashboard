@@ -277,9 +277,16 @@ Each component follows the same shape:
 
 ```
 p.signals.demand.value      — integer 0–100, or null
-p.signals.demand.label      — "Strong" | "Moderate" | "Soft" | "Weak" | "Exploratory"
+p.signals.demand.label      — "Strong" | "Moderate" | "Soft" | "Weak" | "Insufficient" | "Exploratory"
 p.signals.demand.drivers    — string[] explaining what data contributed
 ```
+
+`"Insufficient"` is what `label(score)` returns for a `null`/non-finite score on a show that is
+**not** a future new tour (e.g. zero peer records in any cohort). `"Exploratory"` is a distinct,
+separate case: it's hard-overridden onto every component when `p.isFutureNewTour` is `true`,
+regardless of what `label(score)` would otherwise return. Don't conflate the two — they mean
+different things ("no evidence in an existing tour's data" vs. "this is a new tour with no
+data yet").
 
 | Component | Field | What it measures |
 |---|---|---|
