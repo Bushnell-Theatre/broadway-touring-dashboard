@@ -158,9 +158,18 @@ def evaluate_thresholds(
     prev_records: list,
     all_scope_records: list,
     prior_weeks_by_show: dict,
+    national_curr_agg: dict | None = None,
 ) -> list:
     """
     Evaluate all hard-coded thresholds for one scope (peer or all-venue).
+
+    national_curr_agg: when evaluating the peer scope, pass the current week's
+    show aggregation for ALL venues nationally (aggregate_by_show(curr_all)).
+    This lets "show closes" distinguish a show that dropped out of the peer-size
+    band this week (still touring, just not at a comparably-sized venue) from a
+    show that is genuinely absent from Broadway League data nationally. Leave
+    None when evaluating the national scope itself, where "absent from scope"
+    already means absent nationally.
 
     Returns list of trigger dicts: { type, show, description }
     where description is the plain-text line sent to the API prompt.
@@ -275,12 +284,31 @@ def evaluate_thresholds(
             if show in curr_agg:
                 continue   # still running
             prior_weeks = prior_weeks_by_show.get(show, set())
-            if len(prior_weeks) >= CLOSE_MIN_WEEKS:
+            if len(prior_weeks) < CLOSE_MIN_WEEKS:
+                continue
+
+            national_hit = (national_curr_agg or {}).get(show)
+            if national_curr_agg is not None and national_hit and national_hit.get("gross_total"):
+                # Still touring nationally — just not at a peer-sized venue this
+                # week. This is NOT a closure signal; do not describe it as one.
+                triggers.append({
+                    "type": "left_peer_scope",
+                    "show": show,
+                    "description": (
+                        f"{show}: no longer among peer-sized venues (~2,400–3,000 seats) "
+                        f"this week, but still active in national Broadway League data "
+                        f"(national gross {fmt_dollars(national_hit.get('gross_total'))}, "
+                        f"week of {current_week}). This is a venue-size shift, not a "
+                        f"closure — the tour is still running."
+                    ),
+                })
+            else:
                 triggers.append({
                     "type": "show_closes",
                     "show": show,
                     "description": (
-                        f"{show}: no longer present in scope data this week "
+                        f"{show}: absent from Broadway League touring data entirely "
+                        f"this week — no records at any venue nationally "
                         f"(last seen week of {prior_week}, "
                         f"after {len(prior_weeks)} weeks in scope)"
                     ),
@@ -304,7 +332,10 @@ def build_exec_prompt(season_key: str, trigger_lines: list) -> str:
         f"Write 2–3 sentences in plain language suitable for senior leadership. "
         f"Describe what happened, which show(s) are involved, and what the data "
         f"may signal. Do not speculate beyond what the numbers show. Do not "
-        f"recommend booking or cancellation decisions. Keep it under 80 words."
+        f"recommend booking or cancellation decisions. Only say a tour has "
+        f"closed, ended, or exited touring if the data explicitly states it is "
+        f"absent nationally — never infer a closure from a show simply moving "
+        f"out of the peer-size venue band. Keep it under 80 words."
     )
 
 
@@ -322,7 +353,10 @@ def build_prog_prompt(season_key: str, trigger_lines: list) -> str:
         f"programming professional. Describe what changed, which show(s) are "
         f"involved, and what the data signals about national touring demand. "
         f"Do not recommend booking or cancellation decisions. Do not speculate "
-        f"beyond the data. Keep it under 80 words."
+        f"beyond the data. Only say a tour has closed, ended, or exited touring "
+        f"if the data explicitly states it is absent nationally — never infer "
+        f"a closure from a show simply moving out of the peer-size venue band. "
+        f"Keep it under 80 words."
     )
 
 
@@ -454,6 +488,12 @@ def run(dry_run: bool = False) -> list:
     log.info(f"Exec scope   — current week peer records : {len(curr_peer)}")
     log.info(f"Exec scope   — prior week peer records   : {len(prev_peer)}")
 
+    # ── PROG SCOPE inputs computed early so exec scope can check national
+    # presence before calling a show "closed" (see national_curr_agg below)
+    curr_all = [r for r in season_records if r.get("week_of") == current_week]
+    prev_all = [r for r in season_records if r.get("week_of") == prior_week]
+    national_curr_agg = aggregate_by_show(curr_all)
+
     exec_triggers = evaluate_thresholds(
         season_league_names = season_league_names,
         current_week        = current_week,
@@ -463,11 +503,10 @@ def run(dry_run: bool = False) -> list:
         prev_records        = prev_peer,
         all_scope_records   = peer_records,
         prior_weeks_by_show = prior_weeks_peer,
+        national_curr_agg   = national_curr_agg,
     )
 
     # ── PROG SCOPE: all venues nationally
-    curr_all = [r for r in season_records if r.get("week_of") == current_week]
-    prev_all = [r for r in season_records if r.get("week_of") == prior_week]
 
     log.info(f"Prog scope   — current week all records  : {len(curr_all)}")
     log.info(f"Prog scope   — prior week all records    : {len(prev_all)}")
