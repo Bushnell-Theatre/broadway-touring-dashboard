@@ -51,10 +51,10 @@ WOW_THRESHOLD_PCT   = 15.0    # ±15% week-over-week gross change
 CAP_LOW_BAND        = 60.0    # below this = low band
 CAP_HIGH_BAND       = 90.0    # at or above this = high band
 CLOSE_MIN_WEEKS     = 2       # show must have appeared this many prior weeks
-MIN_ABSENCE_WEEKS   = 2       # consecutive calendar weeks a show must be missing
+MIN_ABSENCE_WEEKS   = 6       # consecutive calendar weeks a show must be missing
                               # from scope before "closes"/"left scope" fires —
-                              # a single missed week is routine venue-size
-                              # rotation, not a signal
+                              # a short gap is routine venue-size rotation or
+                              # scheduling, not a signal
 
 BAND_LABELS = {0: "low (<60%)", 1: "mid (60–89%)", 2: "high (≥90%)"}
 
