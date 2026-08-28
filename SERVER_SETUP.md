@@ -1,5 +1,11 @@
 # Server Setup — Broadway Touring Dashboard Pipeline
 
+**Superseded.** This document assumed a Windows Server target. The actual plan is now a dedicated on-prem Ubuntu server ("Bush-Python"), moving over once the Entra/Azure app permissions for `data@bushnell.org` mail access are approved (the OS move and the mailbox approval happen together, not as separate steps). It's also missing `ANTHROPIC_API_KEY`/`anthropic`, added since this was written for the AI highlight feature (see [docs/AI_PIPELINE_PLAN.md](docs/AI_PIPELINE_PLAN.md)).
+
+See **[docs/SERVER_MIGRATION_AND_EMAIL_INGESTION.md](docs/SERVER_MIGRATION_AND_EMAIL_INGESTION.md)** for the current plan. Everything below is kept for historical reference only — don't follow these steps.
+
+---
+
 This document covers everything needed to run the data pipeline on a dedicated server so the weekly update process is not dependent on a specific laptop being on.
 
 ---
