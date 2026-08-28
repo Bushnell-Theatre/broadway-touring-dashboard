@@ -11,29 +11,47 @@ var DATA_URL = 'https://white-pebble-01710020f.7.azurestaticapps.net/data/data.j
 fetch(DATA_URL).catch(() => fetch('data/data.json'))
 ```
 
-**Record structure:**
+**File shape:** `data.json` is `{ generated_at, record_count, records: [...] }` — not a bare array.
+Always index through `.records`.
+
+**Record structure (real field names — verified against the live file):**
 ```json
 {
-  "week_of": "2026-05-04",
-  "show": "The Great Gatsby",
-  "city": "Hartford",
-  "theatre": "Bushnell",
-  "capacity": 2704,
-  "gross": 215000,
-  "gross_potential": 280000,
-  "paid_capacity": 0.82,
-  "performances": 8,
-  "tour_type": "eq",
-  "market_tier": "Primary"
+  "week_of": "2019-07-21",
+  "tier": "Primary",
+  "show": "A Bronx Tale The Musical",
+  "theatre": "Layoff",
+  "city": "Layoff",
+  "ticket_range": null,
+  "top_price": null,
+  "num_perf": null,
+  "gross_gross": null,
+  "gross_potential": null,
+  "gg_pct_gp": null,
+  "paid_tix": null,
+  "total_tix": null,
+  "capacity": null,
+  "cap_paid": null,
+  "cap_total": null,
+  "on_sub": false,
+  "avg_adm": null,
+  "venue_sellable": null,
+  "similar_bushnell": false,
+  "non_equity": false,
+  "no_engagement": true,
+  "canonical_key": "2019-07-21|a bronx tale the musical|layoff|layoff|primary"
 }
 ```
 
 Key field notes:
 - `week_of` — always a Sunday date (week ending)
-- `tour_type` — `"eq"` (equity) or `"n/e"` (non-equity, NOT "no engagement")
-- `market_tier` — `"Primary"` or `"Secondary"` (Broadway League designation)
-- `paid_capacity` — GG ÷ GP; can exceed 1.0 (100%) — this is valid per League guidelines
-- `gross` — face value excl. restoration
+- `tier` — Broadway League designation, e.g. `"Primary"` (NOT `market_tier`)
+- `non_equity` / `no_engagement` — two independent booleans (NOT a single `tour_type: "eq"/"n/e"` field). `no_engagement` means the venue had no performance that week (a dark/closed row), not "non-equity" — don't conflate the two.
+- `gg_pct_gp` — GG ÷ GP as a percentage; can exceed 100% — this is valid per League guidelines (NOT `paid_capacity` as a 0–1 fraction)
+- `cap_paid` — paid capacity percentage (NOT `paid_capacity`)
+- `gross_gross` — face value excl. restoration (NOT `gross`)
+- `num_perf` — performance count for that row (NOT `performances`)
+- `similar_bushnell` — boolean, true when the venue is within ±10% of Bushnell's sellable capacity
 
 ---
 
@@ -59,7 +77,7 @@ Defines Bushnell's Broadway season show list. Used to identify which shows are "
 ```
 
 Key notes:
-- `name` — display name, matches `factsheets.json` keys exactly for 2026-27 shows
+- `name` — display name, matches `factsheets.json`'s `shows{}` keys exactly for 2026-27 shows (not top-level keys — see factsheets.json below)
 - `league_name` — how the show appears in Broadway League data (may differ from display name)
 - `sub` — boolean: true = core subscription show, false = add-on (Jersey Boys, Oh Mary!)
 - `factsheets.json` `subType` field ("core"/"addon") is more precise than this boolean
@@ -133,41 +151,46 @@ function resolveSectionName(hallKey, rawName) {
 
 Per-show contracted engagement data for 2026-27 Broadway season. Extracted from event fact sheets.
 
-**Keys match `seasons.json` `name` fields exactly** — direct lookup works:
+**File shape:** `factsheets.json` is `{ _meta: {...}, shows: {...} }` — show names are keys of the
+**nested `shows` object**, not top-level keys of the file:
 ```javascript
-var fs = _factsheets[show.name]; // direct match, no fuzzy needed
+var fs = _factsheets.shows[show.name]; // NOT _factsheets[show.name] — that returns undefined
 ```
 
 **Known key variations to watch:**
 - `"BOOP! The Betty Boop Musical"` (NOT "Boop!")
 - `"Operation Mincemeat: A New Musical"` (NOT "Operation Mincemeat")
 
-**Show structure:**
+**Show structure (nested under `shows`):**
 ```json
 {
-  "The Great Gatsby": {
-    "hall": "Mortensen Hall",
-    "subType": "core",
-    "splitPointGross": 1077733,
-    "grossPotentialExclRest": 1864657,
-    "grossPotentialWithRest": 1951185,
-    "contractedSellablePerPerf": 2704,
-    "sellableCapacityRunTotal": 21632,
-    "holds": {
-      "house": 40,
-      "presenter": 50,
-      "troubleBO": 10,
-      "troubleFOH": 10,
-      "other": 0,
-      "notes": "Human-readable note about holds"
-    },
-    "performances": [
-      { "date": "2026-09-29", "time": "7:30 PM", "tier": "C" }
-    ],
-    "pricing": {
-      "A": { "Broadway Circle": 151.00, "Orchestra Prime": 141.00 },
-      "B": { "Broadway Circle": 135.00, "Orchestra Prime": 125.00 },
-      "C": { "Broadway Circle": 125.00, "Orchestra Prime": 115.00 }
+  "_meta": { "...": "..." },
+  "shows": {
+    "The Great Gatsby": {
+      "hall": "Mortensen Hall",
+      "season": "2026-2027",
+      "subType": "core",
+      "splitPointGross": 1077733,
+      "grossPotentialExclRest": 1864657,
+      "grossPotentialWithRest": 1951185,
+      "contractedSellablePerPerf": 2704,
+      "sellableCapacityRunTotal": 21632,
+      "holds": {
+        "house": 40,
+        "presenter": 50,
+        "troubleBO": 10,
+        "troubleFOH": 10,
+        "other": 0,
+        "notes": "Human-readable note about holds"
+      },
+      "performances": [
+        { "date": "2026-09-29", "time": "7:30 PM", "tier": "B" }
+      ],
+      "pricing": {
+        "A": { "Broadway Circle": 151.00, "Orchestra Prime": 141.00 },
+        "B": { "Broadway Circle": 135.00, "Orchestra Prime": 125.00 },
+        "C": { "Broadway Circle": 125.00, "Orchestra Prime": 115.00 }
+      }
     }
   }
 }
@@ -177,7 +200,7 @@ Key notes:
 - `contractedSellablePerPerf` = per-performance sellable (NOT run total) — all Mortensen shows = 2704
 - `sellableCapacityRunTotal` = run total across all performances
 - `tier` on each performance = Price Level A/B/C (NOT Broadway League tier)
-- **Correct price level split for all standard 8-perf Mortensen shows:** Tue=C, Wed=C, Thu=B, Fri=B, SatMat=A, SatEve=B, SunMat=A, SunEve=C → 2×A / 3×B / 3×C
+- **Don't hardcode a "standard" price-level pattern — always read each show's own `performances[].tier`.** Checked against the live file (Aug 2026): all nine current 8-performance Mortensen shows use Tue=B, Wed=B, Thu=B, Fri=A, SatMat=A, SatEve=A, SunMat=A, SunEve=C (4×A / 3×B / 1×C), except BOOP! which starts Tue/Wed=C instead of B. A prior version of this doc claimed a different "corrected" split that doesn't match any current fact sheet — this pattern can and does change per contract, so treat any hardcoded pattern here as a snapshot, not a rule.
 - `pricing` keys use canonical section names matching `venues.json`
 - Prices are **face value excluding $4.00 restoration** — League-compliant
 - `grossPotentialWithRest` is display-only; never use in League gross calculations
@@ -190,11 +213,14 @@ Key notes:
 
 Defines peer venue classifications for benchmarking. Bushnell is compared against venues with similar capacity and market characteristics.
 
-**Peer classification types:**
-- `"size"` — similar total capacity
-- `"proximity"` — geographic proximity to Hartford
-- `"market"` — similar market characteristics
-- `"size_extended"` — broader size range
+Each venue stores its classifications in a `peer_types` **array** field (a venue can belong to more than one type), not a singular `type` field.
+
+**Peer classification types (5 total — `peer_type_definitions` in the live file):**
+- `"size"` — within ±10% of Bushnell's sellable capacity (2,450–2,994 seats); the core scoring cohort
+- `"proximity"` — Northeast/New England markets
+- `"market"` — comparable nonprofit PAC/mid-size market environments
+- `"size_extended"` — within ±15% (2,314–3,130 seats) but outside the ±10% core; context only, not used in scoring
+- `"reference_only"` — included for broad context/data completeness; explicitly excluded from peer scoring calculations
 
 ---
 
@@ -202,29 +228,68 @@ Defines peer venue classifications for benchmarking. Bushnell is compared agains
 
 External enrichment data keyed by `week_of` date.
 
-**Structure:**
+**Structure (verified against the live file):**
 ```json
 {
-  "2026-05-04": {
+  "2019-07-21": {
     "weather": {
-      "station": "KBDL",
-      "precip_in": 0.12,
-      "snow_in": 0.0,
-      "tavg_f": 58.3
+      "events": [],
+      "significant": false,
+      "summary": null
     },
-    "fred": {
-      "UMCSENT": 68.2,
-      "CTURN": 4.1
+    "economic": {
+      "consumer_confidence": 98.4,
+      "ct_unemployment": 3.9,
+      "confidence_trend": "stable",
+      "source_month": "2019-07"
     }
   }
 }
 ```
 
-- Weather is from NOAA for Hartford Bradley Airport (KBDL)
-- FRED series: UMCSENT = University of Michigan Consumer Sentiment, CTURN = Connecticut unemployment rate
+- Weather is NOAA Storm Events filtered to Hartford County via a `CZ_NAME` substring match — no token required, and no per-station precip/snow/temperature fields (`station`/`precip_in`/`snow_in`/`tavg_f` don't exist; the real fields are `events`, `significant`, `summary`)
+- Economic data is under `economic`, not `fred`: `consumer_confidence` (FRED series `UMCSENT`, University of Michigan Consumer Sentiment) and `ct_unemployment` (FRED series `CTURN`, Connecticut unemployment rate), plus `confidence_trend` (`rising`/`falling`/`stable`) and `source_month`
 
 ---
 
-## shows.json / tonys.json
+## shows.json
 
-Show metadata enrichment — Tony Awards data, production details, Playbill references. Populated from Playbill, Wikipedia, Hollywood Reporter, and Wikidata SPARQL.
+**There is no `tonys.json`.** Show metadata enrichment lives in `shows.json` — an
+**array** of 57 records (one per show, with a `name` field), not an object keyed
+by show name. **Enrichment is currently suspended** (source data proved
+unreliable — wrong articles, missing Tony data, null fields); `shows.json` is
+committed as retained from the last run before suspension, not regenerated by
+the pipeline. See `docs/OPERATIONS.md`.
+
+Sourced from **Wikidata SPARQL → Wikidata REST → Wikipedia pageprops API →
+DBpedia SPARQL → Wikipedia REST summary** (in that fallback order) — not
+Playbill or Hollywood Reporter; neither is referenced anywhere in
+`scrape_shows.py`. Each record's `sources` dict documents which service
+supplied each field. Tony win/nomination counts (`tony_wins`,
+`tony_nominations`) come from this same enrichment, not from a separate file.
+
+**Award-body data** (Olivier Awards, etc. — broader than just Tony) lives in a
+separate file, `awards.json`, built by `scripts/build_awards.py`:
+```json
+{
+  "generated_at": "...",
+  "source_count": 0,
+  "records": [
+    {
+      "show": "10 Nights",
+      "show_key": "10 nights",
+      "award_body": "Olivier Awards",
+      "award_body_key": "olivier",
+      "award_year": 2022,
+      "category": "Best Revival ...",
+      "result": "nominee",
+      "source_url": "https://...",
+      "source_type": "official",
+      "confidence": "low",
+      "notes": ""
+    }
+  ],
+  "summary_by_show": {},
+  "notes": ["Award counts are source-derived and title-normalized through title_aliases.json.", "..."]
+}
+```
