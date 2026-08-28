@@ -19,7 +19,7 @@ Each chart is described below: what it shows, what the axes mean, how to read it
 
 **Data source: Canonical** — draws from `p.score` (Planning Signal) and `p.planning.read`. Not affected by the Display Evidence pill.
 
-**What it shows:** A horizontal bar chart ranking every show on the current season slate by its Planning Signal score (0–100). Bars are color-coded: green for Strong Candidate, neutral for Discuss/Watch, amber for Exploratory.
+**What it shows:** A horizontal bar chart ranking every show on the current season slate by its Planning Signal score (0–100). All bars render in a single navy color (`#003865`) — there is no color-coding by Planning Read.
 
 **How to read it:** Longer bar = stronger combined signal across Demand, Revenue, Peer, and Confidence. The score is a fixed-range index (0–100) built from peer-cohort scaling — the same show always scores the same regardless of who else is on the slate. The Season Position badge (shown on the Planning Signal card) is the comparative element that places a show relative to the season median.
 
@@ -41,13 +41,13 @@ Each chart is described below: what it shows, what the axes mean, how to read it
 
 ### Season Comparison (cCurrent) — Current Season tab
 
-**Data source: Canonical** — draws from `p.score`. Not affected by the Display Evidence pill.
+**Data source: Canonical** — draws from `p.signals`/`p.metrics` via `chartRadar()`. Not affected by the Display Evidence pill.
 
-**What it shows:** A vertical bar chart of Planning Signal scores for all confirmed shows in the current active season.
+**What it shows:** A hand-drawn radar/diamond chart (not Chart.js, not a bar chart) plotting one selected show's four Planning Signal components — Demand, Revenue, Peer, Confidence — against the season average on the same four axes.
 
-**How to read it:** Same scoring as the Season Show Fit chart, displayed differently for the current season view. Shows to the left are ranked higher.
+**How to read it:** The show's shape relative to the season-average shape shows where it over- or under-indexes. A vertex pushed outward on an axis means that component is stronger than the season average; pulled inward means weaker.
 
-**What it supports:** Quick comparison of active season performance as weekly data accumulates. Scores update as new Broadway League reports are ingested.
+**What it supports:** A quick, single-show diagnostic of which of the four components is driving (or dragging) its overall score, compared to the rest of the slate.
 
 ---
 
@@ -55,35 +55,23 @@ Each chart is described below: what it shows, what the axes mean, how to read it
 
 **Data source: Canonical** — draws from `p.score` for each candidate. Not affected by the Display Evidence pill.
 
-**What it shows:** A bar chart showing the distribution of Planning Signal scores across future season candidates (shows under consideration, not yet confirmed).
+**What it shows:** One bar per future-season candidate ranked by Planning Signal score — the same `chartFit()` rendering used for `cBriefFit`, not a binned score-band histogram. There is no score-bucketing logic anywhere in the codebase.
 
-**How to read it:** Each bar is a score band (e.g., 0–10, 10–20, ..., 90–100). The height shows how many candidate shows fall in that band. A cluster of bars toward the right means the planning slate is strong; a cluster left means most candidates are speculative.
+**How to read it:** Longer bar = stronger combined signal, same as `cBriefFit`. Scanning top-to-bottom shows the full candidate pool ranked, not grouped into bands.
 
-**What it supports:** Understanding the overall quality of the planning pool — not just the top picks, but how the full candidate list distributes across confidence levels.
+**What it supports:** Understanding the overall quality of the planning pool — not just the top picks, but how the full candidate list ranks relative to each other.
 
 ---
 
 ### Peer Capacity Distribution (cPeers) — Peers tab
 
-**Data source: Canonical** — draws from per-venue peer metrics computed within `BTD.signals.profileShow()`. Not affected by the Display Evidence pill.
+**Data source: raw records, filtered by the display-only peer selector** — `renderPeers()` aggregates directly from raw touring records filtered by peer type (`ACTIVE_PEER`, defaulting to `size`), not from `p.signals`/`p.metrics`/`profileShow()` output. Note this means the display-only peer filter — otherwise excluded from scoring per the Filter Taxonomy contract — does govern what this chart shows.
 
 **What it shows:** A horizontal bar chart of average paid capacity at the top peer venues nationally (Bushnell-size venues, ±10% of our sellable seat count).
 
 **How to read it:** Each bar is a venue. Longer bars = higher average paid capacity across all shows that played there. This shows which peer venues are consistently strong, not just which shows did well.
 
 **What it supports:** Benchmarking. If a peer venue consistently outperforms us in capacity across the same shows, that's a signal about market positioning, marketing, or subscription base — not just the shows themselves.
-
----
-
-### Tony Recognition (cIntelTony) — Intelligence tab
-
-**Data source: Canonical** — draws from show metadata (`p.awards`), not from touring records. Not affected by the Display Evidence pill.
-
-**What it shows:** A horizontal bar chart of Tony Award wins and nominations per show (where data is available from Wikidata/Wikipedia).
-
-**How to read it:** Two values per show: wins (solid) and nominations (lighter). Tony recognition is a demand signal — award-winning shows tend to carry stronger name recognition with subscribers and casual buyers.
-
-**What it supports:** Identifying shows with strong cultural cachet that may drive subscriber acquisition or renewal — an input to marketing decisions, not a substitute for revenue data.
 
 ---
 
@@ -171,7 +159,7 @@ The Dashboard is the operations and QA layer. Its charts are built from raw Broa
 
 ### Market Capacity by City (cMarketCap)
 
-**What it shows:** A vertical bar chart of the top 20 cities by average paid capacity, color-coded green (≥ 80%), amber (60–79%), or red (< 60%).
+**What it shows:** A vertical bar chart of the top 20 cities by average paid capacity, color-coded green (> 90%), amber (60–90%), or red (< 60%).
 
 **How to read it:** Higher bars = markets that consistently fill a higher percentage of seats. Hartford/Bushnell appears in this chart when sufficient records exist — compare it to peer markets.
 
