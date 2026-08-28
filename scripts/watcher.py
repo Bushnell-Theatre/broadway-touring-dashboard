@@ -5,8 +5,9 @@ Bushnell Center for the Performing Arts
 Monitors the Broadway League report uploads folder for new XLSX files.
 When a new file is detected:
   1.    Runs process_touring.py --append to update data.json
-  2.    Runs scrape_shows.py to enrich any new show names in shows.json
   2.5.  Runs scrape_context.py to refresh context.json (weather + econ)
+        (numbered 2.5, not 2 — step 2 was scrape_shows.py, since removed;
+        the code's own inline comment still just says "Step 2")
   2.75. Runs generate_highlights.py to write AI weekly highlight blurbs
   2.8.  Runs generate_season_review.py to write end-of-season AI retrospective
   3.    Commits updated files to a dedicated data-import branch, merges that

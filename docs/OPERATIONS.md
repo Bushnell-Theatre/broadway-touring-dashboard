@@ -20,7 +20,9 @@ python -m venv venv
 venv\Scripts\activate          # Windows
 
 pip install openpyxl requests watchdog python-dotenv anthropic
-pip install SPARQLWrapper       # optional — scrape_shows.py falls back gracefully without it
+pip install SPARQLWrapper       # required only if running scrape_shows.py manually — see
+                                 # "scrape_shows.py / show enrichment" below; it's an
+                                 # unconditional top-level import, not a graceful fallback
 ```
 
 ### API keys
@@ -28,16 +30,16 @@ pip install SPARQLWrapper       # optional — scrape_shows.py falls back gracef
 Create a `.env` file in the repo root (already gitignored):
 
 ```
-NOAA_CDO_TOKEN=your_noaa_token_here
 FRED_API_KEY=your_fred_key_here
 ANTHROPIC_API_KEY=your_anthropic_key_here
 ```
 
-- **NOAA token:** https://www.ncdc.noaa.gov/cdo-web/token — free, instant
 - **FRED key:** https://fred.stlouisfed.org/docs/api/api_key.html — free, instant
 - **Anthropic key:** https://console.anthropic.com — required for AI highlight and season review generation
 
-If NOAA or FRED keys are missing, `scrape_context.py` skips that source and logs a warning. If `ANTHROPIC_API_KEY` is missing, `generate_highlights.py` and `generate_season_review.py` log a warning and skip the file write — the dashboard shows no callout. The rest of the pipeline still runs in all cases.
+NOAA Storm Events data (`scrape_context.py`) downloads from NOAA's public bulk CSV files — no token or `.env` entry required.
+
+If the FRED key is missing, `scrape_context.py` skips that source and logs a warning. If `ANTHROPIC_API_KEY` is missing, `generate_highlights.py` and `generate_season_review.py` log a warning and skip the file write — the dashboard shows no callout. The rest of the pipeline still runs in all cases.
 
 ---
 
@@ -66,7 +68,7 @@ The watcher requires the laptop to be on and logged in. Because the watcher is n
 
 ### Manual — single command
 
-`run_pipeline.py` is the preferred manual entry point. It chains all three pipeline stages in the correct order.
+`run_pipeline.py` is the preferred manual entry point for the three scripted stages — `process_touring.py`, `scrape_context.py`, and `validate_data.py`. It does **not** run `generate_highlights.py` or `generate_season_review.py` — run those separately (see "Manual — individual scripts" below) if you need the AI callouts refreshed outside of the watcher.
 
 ```bash
 venv\Scripts\activate
@@ -80,47 +82,46 @@ python scripts/run_pipeline.py --rebuild path\to\xlsx_folder
 # Validate only (no data changes)
 python scripts/run_pipeline.py --validate-only
 
-# Skip slow steps when you only updated touring data
-python scripts/run_pipeline.py --append path\to\new_report.xlsx --skip-context --skip-shows
+# Skip the weather/economic context refresh when you only updated touring data
+python scripts/run_pipeline.py --append path\to\new_report.xlsx --skip-context
 ```
 
-After the pipeline completes, commit and push:
+After the pipeline completes, commit and push **to `dev`**, then follow the [Deployment](#deployment) section below to promote to `main` — do not push data changes straight to `main` by hand; that bypasses the confirmation step every other change on this project goes through.
 
 ```bash
 git add src/data/
 git commit -m "Data update — week of YYYY-MM-DD"
-git push origin main
+git push origin dev
 ```
 
 ### Manual — individual scripts
 
-Run each script directly if you need fine-grained control:
+Run each script directly if you need fine-grained control. This is the actual current pipeline order (matches `watcher.py`'s Step 1 → 2.5 → 2.75 → 2.8 → 3) — there is no show-metadata enrichment step; that stage was suspended (see the Data Files table below) and dropped from the pipeline entirely, not just skipped by default.
 
 ```bash
-# Stage 1: process touring records
+# Step 1: process touring records
 python scripts/process_touring.py --append path\to\new_report.xlsx src\data\data.json
 
-# Stage 2: enrich show metadata (only new shows)
-python scripts/scrape_shows.py
-
-# Stage 2.5: refresh weather and economic context
+# Step 2.5: refresh weather and economic context
 python scripts/scrape_context.py
 
-# Stage 2.75: generate AI weekly highlight blurbs (requires ANTHROPIC_API_KEY)
+# Step 2.75: generate AI weekly highlight blurbs (requires ANTHROPIC_API_KEY)
 python scripts/generate_highlights.py
 
-# Stage 2.75 dry run — evaluate thresholds only, no API call
+# Step 2.75 dry run — evaluate thresholds only, no API call
 python scripts/generate_highlights.py --dry-run
 
-# Stage 2.8: generate AI end-of-season reviews (fires once per season, 14 days after close)
+# Step 2.8: generate AI end-of-season reviews (fires once per season, 14 days after close)
 python scripts/generate_season_review.py
 
-# Stage 2.8 dry run
+# Step 2.8 dry run
 python scripts/generate_season_review.py --dry-run
 
-# Stage 3: validate
+# Validate
 python scripts/validate_data.py --data src\data\data.json --out src\data\validation_report.json
 ```
+
+`scrape_shows.py` still exists and can be run by hand (`python scripts/scrape_shows.py --season 2026-2027`) if enrichment is ever revived, but it is not part of the regular pipeline — see the Data Files table below.
 
 ---
 
@@ -129,7 +130,7 @@ python scripts/validate_data.py --data src\data\data.json --out src\data\validat
 | File | Generated by | Notes |
 |---|---|---|
 | `src/data/data.json` | `process_touring.py` | All weekly touring records — the primary dataset |
-| `src/data/shows.json` | `scrape_shows.py` | Show metadata: Tony awards, composer, Wikipedia summary. **Enrichment suspended** — source data unreliable. File retained but not updated. |
+| `src/data/shows.json` | `scrape_shows.py` | Show metadata: Tony awards, composer, Wikipedia summary. **Enrichment suspended** — source data unreliable. Committed to the repo as retained from before suspension; not regenerated by the pipeline. |
 | `src/data/seasons.json` | Edited manually | Season slates — confirmed and candidate shows |
 | `src/data/peers.json` | Edited manually | Peer venue metadata (Bushnell-size venues) |
 | `src/data/context.json` | `scrape_context.py` | Weekly weather and economic signals |
@@ -138,7 +139,7 @@ python scripts/validate_data.py --data src\data\data.json --out src\data\validat
 | `src/data/season_review.json` | `generate_season_review.py` | Season-keyed AI end-of-season retrospectives; written once per season |
 | `src/data/validation_report.json` | `validate_data.py` | Data quality report, surfaced in Dashboard |
 
-**Note:** `shows.json` is not committed to the repo by default — it must be generated locally by running `scrape_shows.py`. If it is absent, the Programming page's Intelligence tab shows a message instead of show metadata. All other tabs function normally without it.
+**Note:** `shows.json` **is** committed to the repo — it's the last enrichment run before the feature was suspended, kept so the Programming page's Intelligence tab still has data to show. It is not regenerated automatically; nothing in the current pipeline writes to it.
 
 The three AI output files (`exec_brief_highlight.json`, `programming_highlight.json`, `season_review.json`) are committed by `watcher.py` only when the scripts write new content. If the Anthropic API is unavailable, these files retain their last-written values and the dashboard continues to show the previous callout until the next successful run.
 
@@ -179,13 +180,13 @@ Shows on the season slate come from `src/data/seasons.json`. Edit that file to a
 }
 ```
 
-Then fetch metadata for the new title:
+Show-metadata enrichment is currently **suspended** (see "Data Files" above) — `scrape_shows.py` is not part of the regular update flow, and its only CLI argument is `--season` (there is no `--show` or `--force` flag). If enrichment is ever revived, the real invocation is:
 
 ```bash
-python scripts/scrape_shows.py --season 2026-2027 --show "New Show Title" --force
+python scripts/scrape_shows.py --season 2026-2027
 ```
 
-The `--force` flag overwrites any existing entry. Omit it to skip shows already in `shows.json`.
+which scrapes metadata for every show in that season not already enriched (it skips entries younger than 30 days rather than taking a per-show `--force` flag).
 
 ---
 
@@ -268,11 +269,10 @@ If you see stale behavior after a code change, hard-refresh (`Ctrl+Shift+R`) or 
 
 | Variable | Script | Purpose |
 |---|---|---|
-| `NOAA_CDO_TOKEN` | `scrape_context.py` | NOAA Climate Data Online — storm event data for Hartford County |
 | `FRED_API_KEY` | `scrape_context.py` | FRED — consumer sentiment (UMCSENT) and CT unemployment (CTURN) |
 | `ANTHROPIC_API_KEY` | `generate_highlights.py`, `generate_season_review.py` | Anthropic API — used to call `claude-haiku-4-5-20251001` for AI summary generation |
 
-None of these variables are used by the browser frontend. They are only needed when running the respective scripts locally or via `watcher.py`.
+NOAA Storm Events data needs no token — it's a public bulk CSV download. None of the variables above are used by the browser frontend; they're only needed when running the respective scripts locally or via `watcher.py`.
 
 ---
 
@@ -281,14 +281,14 @@ None of these variables are used by the browser frontend. They are only needed w
 | Script | Purpose |
 |---|---|
 | `start_watcher.bat` | **Windows entry point** — double-click to start the file watcher |
-| `run_pipeline.py` | **Manual entry point** — chains all pipeline stages with `--append`, `--rebuild`, or `--validate-only` flags |
+| `run_pipeline.py` | **Manual entry point** — chains `process_touring.py`, `scrape_context.py`, and `validate_data.py` with `--append`, `--rebuild`, or `--validate-only` flags (`--skip-context` skips the weather/economic refresh). Does not run `generate_highlights.py` or `generate_season_review.py`. |
 | `process_touring.py` | Reads XLSX reports, deduplicates, writes/appends `data.json` |
 | `scrape_shows.py` | **Suspended.** Previously fetched show metadata from Wikidata, Wikipedia, DBpedia. Enrichment removed from pipeline — data was unreliable (wrong articles, missing Tony data, null fields). Script retained for future use with a better source. |
 | `scrape_context.py` | Fetches NOAA weather and FRED economic data; writes `context.json`. NOAA bulk CSV files are cached in `scripts/cache/storm_events/` by filename — when NOAA publishes a revised file the name changes and the new file is fetched automatically; no re-download occurs if the filename hasn't changed. FRED data is fetched fresh on every run (small JSON, no cache). |
 | `generate_highlights.py` | Evaluates hard-coded thresholds against current-season data; calls Anthropic API if any trip; writes season-keyed `exec_brief_highlight.json` and `programming_highlight.json`. Supports `--dry-run`. |
 | `generate_season_review.py` | Fires once per season, 14 days after last show close; computes pre-season signal vs actual peer results; calls Anthropic API; writes `season_review.json`. Supports `--dry-run`. |
 | `validate_data.py` | Data quality checks; writes `validation_report.json` |
-| `watcher.py` | Watches OneDrive folder for new XLSX files; runs all pipeline stages (1 → 2 → 2.5 → 2.75 → 2.8 → 3) on detection. On startup, scans the folder for any reports missed while the watcher was down and processes them before going live. Handles OneDrive's `on_modified` sync pattern in addition to `on_created`. |
+| `watcher.py` | Watches OneDrive folder for new XLSX files; on detection runs `process_touring.py` (Step 1) → `scrape_context.py` (Step 2.5) → `generate_highlights.py` (Step 2.75) → `generate_season_review.py` (Step 2.8) → git commit/auto-deploy (Step 3) — no show-enrichment step, since that's suspended. On startup, scans the folder for any reports missed while the watcher was down and processes them before going live. Handles OneDrive's `on_modified` sync pattern in addition to `on_created`. |
 | `dashboard_config.py` | Shared path constants used by all other scripts |
 | `compare_signals.js` | QA tool — prints Planning Signal scores for a given season |
 

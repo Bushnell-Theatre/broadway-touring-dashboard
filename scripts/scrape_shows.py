@@ -13,7 +13,11 @@ Output: src/data/shows.json
 Run manually:
     python scrape_shows.py [--season 2024-2025]
 
-Called automatically by watcher.py after each data update (new shows only).
+**Suspended as of the current pipeline — not called by watcher.py.** Enrichment
+was pulled from the automated pipeline because the source data proved
+unreliable (wrong articles, missing Tony data, null fields). shows.json is
+retained in the repo from the last enrichment run before suspension; run
+this script by hand if enrichment is ever revived (see docs/OPERATIONS.md).
 
 Dependencies:
     pip install requests SPARQLWrapper
