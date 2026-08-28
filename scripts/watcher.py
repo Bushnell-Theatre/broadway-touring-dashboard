@@ -9,10 +9,19 @@ When a new file is detected:
   2.5.  Runs scrape_context.py to refresh context.json (weather + econ)
   2.75. Runs generate_highlights.py to write AI weekly highlight blurbs
   2.8.  Runs generate_season_review.py to write end-of-season AI retrospective
-  3.    Commits all updated files to GitHub and pushes
+  3.    Commits updated files to a dedicated data-import branch, merges that
+        straight to main, and pushes — auto-deploying to production. main is
+        then fast-forward merged back into dev so dev never drifts behind on
+        data files. This branch is separate from dev on purpose: the watcher
+        runs unattended, so it must never be able to pick up or interfere
+        with whatever feature work is in progress on dev.
 
 Steps 2.75 and 2.8 are non-fatal: if either fails the pipeline logs a
 warning and continues to the git commit.
+
+If folding the deploy back into dev conflicts with in-progress work there,
+the merge is aborted and dev is left clean — production still got the
+update, but a human needs to `git merge main` into dev manually afterward.
 
 Startup behaviour
 -----------------
@@ -59,6 +68,10 @@ from watchdog.events import FileSystemEventHandler
 
 WATCH_FOLDER = r"C:\Users\rnunley\Bushnell Center for the Performing Arts\AI Taskforce Group-Testing-Development - Broadway League Report Uploads\reports"
 REPO_FOLDER = r"C:\Users\rnunley\OneDrive - Bushnell Center for the Performing Arts\Documents\GitHub\broadway-touring-dashboard"
+# Dedicated branch for automated weekly commits. Cut fresh from main and
+# merged straight back into main on every run — never touches dev, so
+# in-progress feature work is never at risk from an unattended auto-deploy.
+DATA_BRANCH = "data-import"
 SCRIPT_PATH    = os.path.join(REPO_FOLDER, "scripts", "process_touring.py")
 CONTEXT_PATH   = os.path.join(REPO_FOLDER, "scripts", "scrape_context.py")
 HIGHLIGHTS_PATH = os.path.join(REPO_FOLDER, "scripts", "generate_highlights.py")
@@ -177,14 +190,35 @@ def process_new_file(filepath):
     commit_msg = f"Weekly update: {fname} — {
         datetime.now().strftime('%Y-%m-%d %H:%M')}"
 
-    # Always commit to dev — never directly to main.
-    # Checkout dev first so the commit lands on the right branch regardless
-    # of what branch the repo happened to be on when the watcher fired.
+    # The watcher runs on its own branch (DATA_BRANCH), cut fresh from main
+    # each run, and merges straight to main — it never touches dev. This
+    # keeps automated weekly data imports fully separate from whatever
+    # feature work is in progress on dev, so the watcher can deploy without
+    # any risk of picking up or clobbering in-progress changes, and nobody
+    # has to remember to manually deploy a data-only update.
+    #
+    # After merging to main, main is fast-forward merged back into dev so
+    # dev never drifts behind main on data files — this prevents a data.json
+    # merge conflict the next time a feature branch merges dev into main.
     add_cmd = ["git", "-C", REPO_FOLDER, "add"] + files_to_add
     git_commands = [
-        ["git", "-C", REPO_FOLDER, "checkout", "dev"],
+        ["git", "-C", REPO_FOLDER, "fetch", "origin"],
+        ["git", "-C", REPO_FOLDER, "checkout", "main"],
+        ["git", "-C", REPO_FOLDER, "pull", "--ff-only", "origin", "main"],
+        ["git", "-C", REPO_FOLDER, "checkout", "-B", DATA_BRANCH, "main"],
         add_cmd,
         ["git", "-C", REPO_FOLDER, "commit", "-m", commit_msg],
+        ["git", "-C", REPO_FOLDER, "checkout", "main"],
+        # --ff-only: DATA_BRANCH is always exactly one commit ahead of the
+        # main we just pulled, so this must be a fast-forward. If it isn't
+        # (main moved between the pull and here), fail loudly rather than
+        # create an unexpected merge commit unattended.
+        ["git", "-C", REPO_FOLDER, "merge", "--ff-only", DATA_BRANCH],
+        ["git", "-C", REPO_FOLDER, "push", "origin", "main"],
+        ["git", "-C", REPO_FOLDER, "branch", "-D", DATA_BRANCH],
+        ["git", "-C", REPO_FOLDER, "checkout", "dev"],
+        ["git", "-C", REPO_FOLDER, "pull", "origin", "dev"],
+        ["git", "-C", REPO_FOLDER, "merge", "main", "-m", f"sync: fold {fname} update into dev"],
         ["git", "-C", REPO_FOLDER, "push", "origin", "dev"],
     ]
 
@@ -194,11 +228,32 @@ def process_new_file(filepath):
             log.error(f"Git command failed: {' '.join(cmd)}")
             if r.stderr:
                 log.error(r.stderr.strip())
+
+            # The main deploy already succeeded if we get this far into the
+            # command list — only the dev-sync step can still fail (e.g. a
+            # conflict with in-progress feature work on dev). Leave the repo
+            # clean on dev rather than mid-merge, and flag that dev needs a
+            # manual `git merge main` to pick up the data update.
+            if cmd == ["git", "-C", REPO_FOLDER, "merge", "main", "-m", f"sync: fold {fname} update into dev"]:
+                subprocess.run(["git", "-C", REPO_FOLDER, "merge", "--abort"],
+                                capture_output=True, text=True)
+                log.error(
+                    f"Production deploy for {fname} succeeded, but folding it back "
+                    "into dev conflicted with in-progress work there. Merge aborted "
+                    "— dev is left clean. A human needs to `git merge main` into dev "
+                    "manually to resolve before the next feature merges to main."
+                )
+            else:
+                log.error(
+                    "Aborting git pipeline for this file — repo may be left on "
+                    f"branch '{DATA_BRANCH}' or 'main' rather than 'dev'. Check "
+                    "state manually before the next run."
+                )
             return
         if r.stdout.strip():
             log.info(f"  {r.stdout.strip()}")
 
-    log.info(f"Done. Dashboard updated for {fname}")
+    log.info(f"Done. Deployed to production for {fname}")
     log.info("-" * 60)
 
 

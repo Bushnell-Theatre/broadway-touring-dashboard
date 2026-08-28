@@ -105,7 +105,7 @@ Output format:
 
 ### Stage 4 — watcher.py
 
-Monitors the OneDrive upload folder for new `.xlsx` files using the `watchdog` library. On detection, runs stages 1–3 in sequence, then commits and pushes all changed files to `main`.
+Monitors the OneDrive upload folder for new `.xlsx` files using the `watchdog` library. On detection, runs stages 1–3 in sequence, then commits the changed files on a dedicated `data-import` branch, merges that straight to `main` and pushes — auto-deploying to production with no human confirmation step — then fast-forward-merges `main` back into `dev` so `dev` stays current. `data-import` is ephemeral: recreated from `main` and deleted again every run. This is the one exception to this project's otherwise-manual `feat/xxx → dev → main` deploy policy (see [CLAUDE.md](CLAUDE.md#branch-policy)) — it exists so a weekly data import is never blocked on a human, while never touching `dev` directly so it can't collide with in-progress feature work.
 
 If `scrape_context.py` fails (e.g. missing API token), the watcher logs a warning but continues — data.json and shows.json are still committed.
 

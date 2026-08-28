@@ -96,7 +96,7 @@ Or clone to whatever path you prefer — just update the `REPO_FOLDER` path in `
 
 ## Step 5 — Configure GitHub authentication
 
-The watcher commits and pushes to GitHub automatically. The server needs credentials that work non-interactively.
+The watcher commits and pushes to GitHub automatically — including directly to `main`, since it auto-deploys weekly data updates to production on its own `data-import` branch (see [OPERATIONS.md](docs/OPERATIONS.md#deployment)). The server needs credentials that work non-interactively and that aren't blocked by branch protection on `main`.
 
 **Recommended: Personal Access Token (PAT)**
 

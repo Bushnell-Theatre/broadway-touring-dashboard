@@ -58,7 +58,7 @@ Watcher is now LIVE — listening for new files.
 
 Wait for this line before concluding the watcher is ready. Everything above it is the catch-up scan, not a hang.
 
-Once live, drop a new `.xlsx` file into the designated OneDrive upload folder — the watcher detects it, runs all pipeline stages, and commits and pushes automatically.
+Once live, drop a new `.xlsx` file into the designated OneDrive upload folder — the watcher detects it, runs all pipeline stages, and commits and **auto-deploys straight to production** on its own `data-import` branch (see [Deployment](#deployment) below). No manual deploy step is needed for weekly data updates.
 
 Keep the window open while the watcher is running. Close it or press `Ctrl+C` to stop.
 
@@ -205,8 +205,13 @@ The `--force` flag overwrites any existing entry. Omit it to skip shows already 
 |---|---|---|
 | `main` | Production | Auto — push triggers Azure GitHub Actions (~30 sec) |
 | `dev` | Staging | Auto — same Azure app, separate staging URL |
+| `data-import` | — | Ephemeral. `watcher.py` re-creates it from `main` on every weekly run, commits the data update, merges it to `main`, then deletes it. Never used for anything else. |
 
 Push to `main` deploys to production. The GitHub Actions workflow (`.github/workflows/azure-static-web-apps-white-pebble-01710020f.yml`) deploys the `src/` directory only.
+
+**Feature/code work** (anyone working in an editor or Claude Code session) always goes through the manual `feat/* → dev → main` flow below, with an explicit confirmation before the `main` push — see [CLAUDE.md](../CLAUDE.md#branch-policy).
+
+**Weekly data updates** are the one exception: `watcher.py` deploys them straight to `main` on its own `data-import` branch, fully unattended, then fast-forward-merges `main` back into `dev` so `dev` never drifts behind on data files. This is deliberate — the watcher never touches `dev` directly, so an automated weekly import can never pick up or interfere with in-progress feature work sitting there. If folding the deploy back into `dev` hits a conflict (e.g. a feature branch also touched `data.json`), the watcher aborts that merge, leaves `dev` clean, and logs that a human needs to run `git merge main` into `dev` manually — production still got the update either way.
 
 ### Deploy to staging first (recommended for code changes)
 
