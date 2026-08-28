@@ -1,6 +1,6 @@
 ---
 name: btd-project
-description: Broadway Touring Dashboard (BTD) project conventions, architecture, and coding standards for The Bushnell Center for the Performing Arts. Use this skill for ANY task involving the BTD project files: dashboard.html, exec_summary.html, programming.html, box_office.html, index.html, utils.js, styles.css, charts.css, process_touring.py, watcher.py, or any file in src/data/. Also use when writing Claude Code prompts targeting BTD files, when working with BTD JSON data files (data.json, seasons.json, peers.json, venues.json, factsheets.json, context.json, shows.json, tonys.json), or when the user mentions Brandon, Tom, Stephanie, Alex, Paciolan, Broadway League, Bushnell Broadway, or the box office scenario model.
+description: Broadway Touring Dashboard (BTD) project conventions, architecture, and coding standards for The Bushnell Center for the Performing Arts. Use this skill for ANY task involving the BTD project files: dashboard.html, exec_summary.html, programming.html, box_office.html, index.html, utils.js, styles.css, charts.css, process_touring.py, watcher.py, or any file in src/data/. Also use when writing Claude Code prompts targeting BTD files, when working with BTD JSON data files (data.json, seasons.json, peers.json, venues.json, factsheets.json, context.json, shows.json, awards.json), or when the user mentions Brandon, Tom, Stephanie, Alex, Paciolan, Broadway League, Bushnell Broadway, or the box office scenario model.
 ---
 
 # Broadway Touring Dashboard — Project Skill
@@ -23,9 +23,7 @@ The Broadway Touring Dashboard (BTD) is a data intelligence suite for The Bushne
 
 ## The Golden Rule — One File, One Change
 
-**Make one file change, deploy, verify, then move to the next.**
-
-This rule was established after aggressive multi-file refactoring broke pages and required a full revert via Claude Code. Never batch changes across multiple HTML files into a single commit unless the task explicitly requires it (e.g. a shared CSS extraction).
+See [CLAUDE.md → The Golden Rule](../../CLAUDE.md#the-golden-rule--one-file-one-change) — canonical there, not restated here.
 
 ---
 
@@ -68,7 +66,7 @@ Use existing CSS custom properties (`var(--ink)`, `var(--teal)`, `var(--amber)`,
 | `src/css/styles.css` | Shared base styles | All dashboards |
 | `src/css/charts.css` | Shared chart styles | All dashboards |
 | `scripts/process_touring.py` | Broadway League XLSX → data.json pipeline | IT (Randale) |
-| `scripts/watcher.py` | File watcher for pipeline automation | IT |
+| `scripts/watcher.py` | File watcher for pipeline automation. Auto-deploys straight to `main` on its own `data-import` branch — the one exception to this project's manual `feat → dev → main` deploy policy. See [CLAUDE.md → Branch Policy](../../CLAUDE.md#branch-policy). | IT |
 
 **Read `references/data-sources.md` for the canonical data file descriptions.**
 
@@ -79,7 +77,9 @@ Use existing CSS custom properties (`var(--ink)`, `var(--teal)`, `var(--amber)`,
 ### Load order (all pages except box_office.html)
 
 ```
-utils.js                           ← true globals (fmt$, pct, avg, planningSignal, etc.)
+utils.js                           ← true globals (fmt$, pct, avg, etc.)
+                                      (planningSignal/SIGNAL_WEIGHTS were removed in
+                                      Phase 4 — canonical scorer is BTD.signals.profileShow())
 js/core/config.js                  → BTD.config
 js/core/state.js                   → BTD.state
 js/core/format.js                  → BTD.format
@@ -103,7 +103,7 @@ js/core/dashboard-analytics.js    → BTD.dashboardAnalytics (dashboard.html onl
 
 ### Key invariants
 
-- **utils.js is NOT an IIFE.** All its functions (`planningSignal`, `fmt$`, `pct`, etc.) are true globals — no `BTD.` prefix needed.
+- **utils.js is NOT an IIFE.** Its remaining functions (`fmt$`, `pct`, etc.) are true globals — no `BTD.` prefix needed. Scoring functions (`planningSignal`, `SIGNAL_WEIGHTS`) were removed in Phase 4; only a deprecation comment remains.
 - **All core modules ARE IIFEs.** They expose via `BTD.X` namespace. Inline scripts check `if(window.BTD && BTD.X)` before using any BTD API.
 - **pages/*.page.js files are OUT OF SYNC with current HTML.** `exec-summary.page.js` predates the Part 3 Planning Signal redesign (commit `695eb6c`). Do NOT wire any `.page.js` file until it is re-synced with its HTML page's inline script.
 
@@ -164,7 +164,7 @@ All dashboards also fetch:
 |---|---|---|
 | Tier | Broadway League Primary/Secondary market tier | Pricing tier A/B/C in fact sheets |
 | Price Level | Fact sheet pricing tiers A/B/C (A=premium, B=mid, C=lowest) | Broadway League tier |
-| n/e | Non-equity tour type | "No engagement" |
+| `non_equity` | Independent boolean: non-equity tour | `no_engagement` (a separate boolean — a dark/closed week, not tour type) |
 | GG | Gross Grosses (total revenue) | Anything else |
 | GP | Gross Potential | |
 | Cap % | GG ÷ GP × 100 — CAN exceed 100% | A simple fill rate |
@@ -184,7 +184,7 @@ Any change to a script, pipeline behavior, scoring formula, or data file schema 
 | Scoring formula or Planning Signal methodology | `SCORING.md` |
 | Data file schema (new/renamed field) | `skills/btd-project/references/data-sources.md` |
 | How the system works at a high level | `docs/HOW_IT_WORKS.md` |
-| AI pipeline (highlights, season review) | `docs/AI_HIGHLIGHT_PIPELINE.md` |
+| AI pipeline (highlights, season review) | `docs/AI_PIPELINE_PLAN.md` (`docs/AI_HIGHLIGHT_PIPELINE.md` is superseded — don't update it) |
 | Box office model calculations | `skills/btd-project/references/box-office-model.md` |
 
 Do not commit a behavior change without updating the matching doc in the same branch. If you are unsure which doc applies, ask.
@@ -214,15 +214,4 @@ For detailed reference on specific topics, read these files as needed:
 
 ## Version Convention
 
-**Single source of truth:** `src/data/versions.json` — edit only this file to bump any version.
-All pages and the index hub read from it at boot. Never hardcode version strings in HTML.
-
-Format is **MAJOR.MINOR** (no patch). Full rules in `CLAUDE.md` → Versioning section.
-
-| Bump | When |
-|---|---|
-| MAJOR | Architectural rebuild, feature removed, breaking data model change |
-| MINOR | New feature, new tab, new chart, new data source |
-| None | Bug fix, CSS tweak, copy edit, data update |
-
-Current versions: dashboard v5.0 · programming v5.2 · exec_summary v5.2 · box_office v2.1
+Edit only `src/data/versions.json` to bump any version — never hardcode version strings in HTML. Full format/bump rules and the current version table: [CLAUDE.md → Versioning](../../CLAUDE.md#versioning) — canonical there. A version number was previously duplicated here and went stale (three of four numbers wrong) while CLAUDE.md's own table stayed current — that's exactly the failure mode cross-referencing instead of restating is meant to prevent.
