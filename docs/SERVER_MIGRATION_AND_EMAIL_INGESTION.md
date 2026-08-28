@@ -35,7 +35,7 @@ Bush-Python runs Ubuntu, not Windows — a few of these steps look different fro
 - Create a venv, `pip install -r requirements.txt` (openpyxl, requests, watchdog, python-dotenv, SPARQLWrapper, anthropic — plus `msal`, see Part 2).
 
 ### 2. Secrets
-- `.env` is gitignored and won't come with the clone — copy it by hand. It currently holds `NOAA_CDO_TOKEN`, `FRED_API_KEY`, and `ANTHROPIC_API_KEY` (see [OPERATIONS.md](OPERATIONS.md)); Part 2 adds mailbox credentials to it.
+- `.env` is gitignored and won't come with the clone — copy it by hand. See [OPERATIONS.md](OPERATIONS.md) for the current variable list; Part 2 adds mailbox credentials to it.
 
 ### 3. Git push credentials
 - The `origin` remote is HTTPS, so pushes rely on a cached credential helper/token on whatever machine runs them. Bush-Python needs its own credential setup (Git Credential Manager for Linux, or a plain GitHub PAT stored via a credential helper) under the account that will run the pipeline, or background commits will fail silently.
