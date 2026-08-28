@@ -1,8 +1,8 @@
 {
   "2026-2027": {
-    "week_of": "2026-08-16",
+    "week_of": "2026-08-23",
     "trigger": "cap_band_crossing,wow_gross_change",
-    "summary": "Hell's Kitchen experienced a significant demand surge in the week of August 16, with national touring gross revenues nearly doubling to $2.0M and paid capacity jumping from mid-band (68.8%) to high-band (94.7%). This shift signals strengthened consumer interest in the touring production across markets, suggesting robust demand heading into the fall touring season. Monitor whether this momentum sustains in subsequent weeks.",
-    "generated_at": "2026-08-21T13:23:08"
+    "summary": "National touring data for the week of August 23, 2026 shows divergent momentum across Bushnell's slate: Hell's Kitchen experienced a sharp 62% gross decline with paid capacity collapsing from 94.7% to 50.5%, signaling potential post-summer audience softness, while The Outsiders surged 41% week-over-week to near-capacity (96.5%) and The Great Gatsby posted modest 17% growth. These movements suggest selective rather than broad-market demand weakness.",
+    "generated_at": "2026-08-28T14:39:44"
   }
 }

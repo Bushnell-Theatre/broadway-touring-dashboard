@@ -4022,7 +4022,7 @@
     },
     "economic": {
       "consumer_confidence": 49.5,
-      "ct_unemployment": 4.9,
+      "ct_unemployment": 5.8,
       "confidence_trend": "stable",
       "source_month": "2026-07"
     }
@@ -4035,7 +4035,7 @@
     },
     "economic": {
       "consumer_confidence": 49.5,
-      "ct_unemployment": 4.9,
+      "ct_unemployment": 5.8,
       "confidence_trend": "stable",
       "source_month": "2026-07"
     }
@@ -4048,7 +4048,7 @@
     },
     "economic": {
       "consumer_confidence": 49.5,
-      "ct_unemployment": 4.9,
+      "ct_unemployment": 5.8,
       "confidence_trend": "stable",
       "source_month": "2026-07"
     }
@@ -4061,7 +4061,7 @@
     },
     "economic": {
       "consumer_confidence": 49.5,
-      "ct_unemployment": 4.9,
+      "ct_unemployment": 5.8,
       "confidence_trend": "stable",
       "source_month": "2026-07"
     }
@@ -4074,7 +4074,7 @@
     },
     "economic": {
       "consumer_confidence": 49.5,
-      "ct_unemployment": 4.9,
+      "ct_unemployment": 5.8,
       "confidence_trend": "stable",
       "source_month": "2026-08"
     }
@@ -4087,7 +4087,7 @@
     },
     "economic": {
       "consumer_confidence": 49.5,
-      "ct_unemployment": 4.9,
+      "ct_unemployment": 5.8,
       "confidence_trend": "stable",
       "source_month": "2026-08"
     }
@@ -4100,7 +4100,20 @@
     },
     "economic": {
       "consumer_confidence": 49.5,
-      "ct_unemployment": 4.9,
+      "ct_unemployment": 5.8,
+      "confidence_trend": "stable",
+      "source_month": "2026-08"
+    }
+  },
+  "2026-08-23": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 49.5,
+      "ct_unemployment": 5.8,
       "confidence_trend": "stable",
       "source_month": "2026-08"
     }
