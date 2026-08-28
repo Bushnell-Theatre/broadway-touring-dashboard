@@ -1,5 +1,16 @@
 # Box Office Scenario Model — Calculation Reference
 
+**Abandoned — `src/box_office.html` is not an active product experience.** This
+doc is kept as historical reference for the calculation model, not as a
+maintained, code-verified spec. An audit found several concrete mismatches
+against the current code (e.g. `calcPerfTotals()` returns `current`, not
+`contractPotential`, at the per-performance level; the described "auto-fill
+with a sticky user-edit flag" behavior on the Justification tab's rationale
+field doesn't exist in the code — it's a plain `<div>`, unconditionally
+overwritten). Given the feature is abandoned, these are not being chased down
+field-by-field — treat this file as directional, not authoritative, and verify
+against `src/box_office.html` directly if this work is ever revived.
+
 ## Core Business Rules
 
 1. **Contracted sellable is the base** — editable per section, no hard ceiling until physical max is confirmed
