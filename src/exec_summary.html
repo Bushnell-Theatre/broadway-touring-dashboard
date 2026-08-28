@@ -2386,7 +2386,9 @@
             document.getElementById('tab-brief').prepend(el);
           } else if (highlightEntry && highlightEntry.summary) {
             color = 'var(--teal)';
-            label = 'Weekly Intelligence · ' + highlightEntry.week_of;
+            label = (highlightEntry.scope === 'national_fallback'
+              ? 'Weekly Intelligence (National Data — No Peer Venues Reported) · '
+              : 'Weekly Intelligence · ') + highlightEntry.week_of;
             el = document.createElement('div');
             el.className = 'callout ai-highlight';
             el.style.cssText = 'border-left-color:' + color + ';margin-bottom:16px;';

@@ -1,1 +1,9 @@
-{}
+{
+  "2026-2027": {
+    "week_of": "2026-08-23",
+    "trigger": "cap_band_crossing,wow_gross_change",
+    "summary": "Without comparable peer venue data this week, we're monitoring national touring performance across our 2026-2027 slate. Hell's Kitchen experienced a significant pullback, with grosses dropping 62% and paid capacity falling from 95% to 51%, suggesting potential demand softness for that title. Conversely, The Outsiders and The Great Gatsby showed strength, with The Outsiders surging 41% in grosses and reaching 97% capacity—indicating robust audience interest in that production.",
+    "generated_at": "2026-08-28T14:57:58",
+    "scope": "national_fallback"
+  }
+}

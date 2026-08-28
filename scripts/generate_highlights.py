@@ -360,6 +360,29 @@ def build_exec_prompt(season_key: str, trigger_lines: list) -> str:
     )
 
 
+def build_exec_national_fallback_prompt(season_key: str, trigger_lines: list) -> str:
+    trigger_text = "\n".join(f"- {line}" for line in trigger_lines)
+    return (
+        f"You are writing a one-paragraph executive brief for the COO of "
+        f"The Bushnell Center for the Performing Arts in Hartford, CT.\n\n"
+        f"No peer venues of comparable size (~2,400–3,000 seats) reported data "
+        f"this week, so there is nothing to compare Bushnell's slate against at "
+        f"that scale. Instead, here are the significant changes in this week's "
+        f"Broadway League touring data for shows in Bushnell's {season_key} "
+        f"season slate across ALL national touring markets (not peer-sized "
+        f"venues specifically):\n\n"
+        f"{trigger_text}\n\n"
+        f"Write 2–3 sentences in plain language suitable for senior leadership. "
+        f"Open by noting this reflects national touring data because no "
+        f"comparable-size peer venues reported this week. Describe what "
+        f"happened, which show(s) are involved, and what the data may signal. "
+        f"Do not speculate beyond what the numbers show. Do not recommend "
+        f"booking or cancellation decisions. Only say a tour has closed, "
+        f"ended, or exited touring if the data explicitly states it is absent "
+        f"nationally. Keep it under 80 words."
+    )
+
+
 def build_prog_prompt(season_key: str, trigger_lines: list) -> str:
     trigger_text = "\n".join(f"- {line}" for line in trigger_lines)
     return (
@@ -412,19 +435,30 @@ def call_api(prompt: str, dry_run: bool) -> str | None:
 
 
 def write_highlight(out_path: Path, season_key: str, week_of: str,
-                    triggers: list, summary: str) -> None:
-    """Merge one season's entry into the existing season-keyed JSON file."""
+                    triggers: list, summary: str, scope: str | None = None) -> None:
+    """
+    Merge one season's entry into the existing season-keyed JSON file.
+
+    scope: optional tag for the exec brief distinguishing which data the
+    summary is based on — "peer" (peer-sized venues, the normal case) or
+    "national_fallback" (peer scope had no data this week, so national data
+    was used instead). The dashboard uses this to label the callout so
+    leadership isn't misled about what it's being compared against.
+    """
     existing = {}
     if out_path.exists():
         with open(out_path, encoding="utf-8") as f:
             existing = json.load(f)
 
-    existing[season_key] = {
+    entry = {
         "week_of":      week_of,
         "trigger":      ",".join(sorted({t["type"] for t in triggers})),
         "summary":      summary,
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S"),
     }
+    if scope:
+        entry["scope"] = scope
+    existing[season_key] = entry
 
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(existing, f, indent=2, ensure_ascii=False)
@@ -555,8 +589,23 @@ def run(dry_run: bool = False) -> list:
         prompt  = build_exec_prompt(current_season, [t["description"] for t in exec_triggers])
         summary = call_api(prompt, dry_run)
         if summary:
-            write_highlight(EXEC_OUT, current_season, current_week, exec_triggers, summary)
+            write_highlight(EXEC_OUT, current_season, current_week, exec_triggers, summary, scope="peer")
             log.info(f"Wrote exec highlight for {current_season} → {EXEC_OUT.name}")
+            written.append(str(EXEC_OUT.relative_to(REPO)))
+    elif not curr_peer and prog_triggers:
+        # No peer-sized venues reported anything this week, so there's nothing
+        # to compare Bushnell's slate against at that scale. Rather than go
+        # dark, fall back to national data — clearly labeled as such so
+        # leadership isn't misled about what it's being compared to.
+        log.info(f"No peer-venue data this week — falling back to national data for exec brief "
+                 f"({len(prog_triggers)} national trigger(s)):")
+        for t in prog_triggers:
+            log.info(f"  [{t['type']}] {t['description']}")
+        prompt  = build_exec_national_fallback_prompt(current_season, [t["description"] for t in prog_triggers])
+        summary = call_api(prompt, dry_run)
+        if summary:
+            write_highlight(EXEC_OUT, current_season, current_week, prog_triggers, summary, scope="national_fallback")
+            log.info(f"Wrote exec highlight (national fallback) for {current_season} → {EXEC_OUT.name}")
             written.append(str(EXEC_OUT.relative_to(REPO)))
     else:
         log.info("No exec triggers — skipping exec highlight")
