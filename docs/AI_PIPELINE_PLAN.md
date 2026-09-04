@@ -101,7 +101,7 @@ written**. `validate_summary(summary, prompt, show_names)` enforces:
 | Check | Rule |
 |---|---|
 | Numbers | Every dollar figure and percentage in the summary must appear in the prompt. Faithful rounding is allowed (94.7% → 95%, $760,558 → $761K); new or calculated figures are not. En/em dashes are folded to hyphens first, so "2025–2026" is not misread as a stray `2026`. |
-| Counts of shows | Rejected outright — "three shows exceeded their benchmark" is arithmetic over the table, not a given figure, and it has been wrong in practice (see Known limitation below). Name shows individually with their own figures instead. |
+| Counts of shows | Rejected outright — "three shows exceeded their benchmark" is arithmetic over the table, not a given figure, and it has been wrong in practice (see [Benchmark-comparison validation (guard v2, September 4, 2026)](#benchmark-comparison-validation-guard-v2-september-4-2026) below). Name shows individually with their own figures instead. |
 | Dates | Every date must appear in the prompt. Long-form restatement of an ISO date is allowed (`2026-06-07` → "June 7, 2026"). |
 | Show names | Any season-slate show named in the summary must have been in the prompt — catches numbers being attributed to the wrong production. |
 | Banned claims | Finality (closed/ended/concluded/wrapped/exited/cancelled/"no longer touring"), invented causation ("due to", "because of", "driven by", "stems from"), speculation ("likely", "probably"), and predicted consequences for Bushnell ("availability", "may/might/will impact or affect"). |
