@@ -45,6 +45,10 @@ from __future__ import annotations
 
 import re
 
+# Bumped when the checks change in a way worth distinguishing in stored
+# provenance. v2 added payload-aware benchmark-comparison validation.
+GUARD_VERSION = "2"
+
 # ── BANNED LANGUAGE ───────────────────────────────────────────────────────────
 #
 # Each entry is (compiled pattern, human-readable explanation). These are
@@ -234,8 +238,283 @@ def _number_supported(value: float, kind: str,
 # ── VALIDATION ────────────────────────────────────────────────────────────────
 
 
+# ── COMPARISON CLAIMS ─────────────────────────────────────────────────────────
+#
+# Narrow, runtime-derived checking for the ONE claim shape that has repeatedly
+# shipped wrong: "<show> exceeded / underperformed / matched its benchmark".
+#
+# This deliberately does not attempt general fact-checking of prose, and it
+# defines no schema of allowed analysis. It reads whatever fields the per-show
+# payload actually carries at runtime, and only adjudicates sentences that
+# combine a show name with comparison language. Everything else stays
+# open-ended and continues through the ingredient and banned-claim checks.
+#
+# Confirmed production errors this exists to catch:
+#   2021-2022 Hamilton         "significantly exceeded"  92.1% vs 99.7% -> below
+#   2022-2023 Mean Girls       grouped as outperforming  85.0% vs 90.9% -> below
+#   2022-2023 Ain't Too Proud  grouped as outperforming  74.7% vs 75.0% -> below
+#   2023-2024 Funny Girl       grouped as underperforming, pre_peer_cap is null
+
+_DIRECTION_WORDS = {
+    "above": [
+        r"exceed(s|ed|ing)?", r"outperform(s|ed|ing)?", r"surpass(es|ed|ing)?",
+        r"beat", r"above", r"ahead\s+of", r"stronger\s+than", r"over-?perform(s|ed|ing)?",
+        r"outpaced?", r"better\s+than",
+    ],
+    "below": [
+        r"underperform(s|ed|ing)?", r"under-?perform(s|ed|ing)?",
+        r"fell\s+(notably\s+|well\s+|significantly\s+)?short", r"falls\s+short",
+        r"below", r"missed", r"trail(s|ed|ing)?", r"lagg?(s|ed|ing)?",
+        r"short\s+of", r"weaker\s+than", r"worse\s+than", r"declined\s+against",
+    ],
+    "equal": [
+        r"matched?", r"in\s+line\s+with", r"met\s+(its|their)", r"on\s+par",
+        r"equal(l)?ed", r"consistent\s+with", r"tracked\s+(closely\s+)?with",
+    ],
+    # An explicit statement that there is nothing to compare against. This is
+    # a legitimate claim and must be checked like any other — and it stops a
+    # clause from inheriting a direction from its sentence lead-in.
+    "none": [
+        r"no\s+(\w+\s+){0,3}?benchmarks?\b",
+        r"no\s+(\w+\s+){0,3}?(signal|comparison|data)\s+available",
+        r"without\s+(\w+\s+){0,3}?benchmarks?\b",
+        # "lacked comparable benchmarks" — allow an adjective or two between.
+        r"lack(s|ed|ing)?\s+(\w+\s+){0,3}?(benchmarks?|signals?|comparisons?)\b",
+    ],
+}
+
+# A sentence only enters comparison adjudication if it also refers to the thing
+# being compared against. Without this, ordinary prose ("gross fell short of
+# $1M") would be dragged in.
+_BENCHMARK_REF = re.compile(
+    r"\b(benchmark|pre-?season|peer\s+signal|signal|expectation|projection|forecast|"
+    r"pre-?booking)\w*\b", re.IGNORECASE)
+
+_DIRECTION_RE = {
+    d: re.compile(r"\b(" + "|".join(pats) + r")\b", re.IGNORECASE)
+    for d, pats in _DIRECTION_WORDS.items()
+}
+
+# Clause splitters — a single sentence often carries one claim per show.
+_CLAUSE_SPLIT = re.compile(
+    r"\s*(?::|;|,\s*(?:while|whereas|and|but|though|although)\b|"
+    r"\s+(?:while|whereas|but|though|although)\b|,)\s*", re.IGNORECASE)
+
+_SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+")
+
+
+def _payload_facts(shows_payload) -> dict:
+    """
+    Build {show_name: {field: value}} from whatever the payload actually has.
+    No field list is assumed; missing/None values simply stay absent.
+    """
+    facts = {}
+    for row in shows_payload or []:
+        name = (row.get("name") or "").strip()
+        if not name:
+            continue
+        facts[name] = {k: v for k, v in row.items() if k != "name" and v is not None}
+    return facts
+
+
+def displayed_pct(v):
+    """
+    Render a payload capacity at exactly the precision leadership sees.
+
+    Relationships are classified from these displayed values, so a stated
+    relationship can never contradict the figures printed beside it.
+    """
+    if v is None:
+        return None
+    return round(v * 100, 1) if v <= 1 else round(v, 1)
+
+
+def derive_relationship(row: dict) -> dict:
+    """
+    Compute the benchmark relationship for one show, deterministically, from
+    the values it actually has. This is the authority — neither the model nor
+    the guard's prose reading is allowed to override it.
+
+    Returns {relationship, actual, benchmark} where relationship is one of
+    'no_benchmark' | 'above' | 'below' | 'matched'.
+    """
+    actual = displayed_pct(row.get("actual_peer_cap"))
+    bench  = displayed_pct(row.get("pre_peer_cap"))
+    if bench is None or actual is None:
+        rel = "no_benchmark"
+    elif actual > bench:
+        rel = "above"
+    elif actual < bench:
+        rel = "below"
+    else:
+        rel = "matched"
+    return {"relationship": rel, "actual": actual, "benchmark": bench}
+
+
+def derive_relationships(shows_payload) -> dict:
+    """{show_name: derive_relationship(row)} for every show in the payload."""
+    out = {}
+    for row in shows_payload or []:
+        name = (row.get("name") or "").strip()
+        if name:
+            out[name] = derive_relationship(row)
+    return out
+
+
+# Prose direction -> the derived relationship it asserts.
+_CLAIM_TO_RELATIONSHIP = {"above": "above", "below": "below", "equal": "matched",
+                          "none": "no_benchmark"}
+
+
+def _unmask(fragment: str, tokens: dict) -> str:
+    """Restore real show names in a masked fragment, for readable messages."""
+    for tok, name in tokens.items():
+        fragment = fragment.replace(tok, name)
+    return fragment
+
+
+def check_comparisons(summary: str, shows_payload) -> list[str]:
+    """
+    Adjudicate every clause that names at least one show AND uses
+    benchmark-comparison language, against the deterministically derived
+    relationship for each show named.
+
+    Grouping is permitted: "Wicked and Beetlejuice exceeded their benchmarks"
+    is fine when BOTH are derived 'above'. It fails when any named show does
+    not share the stated relationship — which is exactly how Mean Girls and
+    Ain't Too Proud were smuggled into an "outperformed" group while sitting
+    below their benchmarks.
+
+    Fails closed when a comparison cannot be attributed to any show, or when a
+    clause asserts more than one direction at once.
+    """
+    derived = derive_relationships(shows_payload)
+    if not derived:
+        return []
+
+    problems: list[str] = []
+    text = _normalize_dashes(summary)
+
+    # Mask show names before splitting. Titles contain the very punctuation the
+    # clause splitter uses — "Back to the Future: The Musical", "Oh, Mary!" —
+    # and splitting inside a title strands the claim from the show it is about.
+    # Longest first so "Six" cannot mask part of a longer title.
+    ordered = sorted(derived, key=len, reverse=True)
+    tokens = {}
+    for i, name in enumerate(ordered):
+        tok = f"\x00SHOW{chr(65 + i % 26)}{i}\x00"
+        tokens[tok] = name
+        text = re.sub(re.escape(name), tok, text, flags=re.IGNORECASE)
+
+    def shows_in(fragment: str) -> list:
+        return [tokens[t] for t in tokens if t in fragment]
+
+    for sentence in _SENTENCE_SPLIT.split(text):
+        if not _BENCHMARK_REF.search(sentence):
+            continue
+        if not any(rx.search(sentence) for rx in _DIRECTION_RE.values()):
+            continue
+
+        clauses = _CLAUSE_SPLIT.split(sentence)
+
+        # Only a LEAD-IN clause — one that states a direction while naming no
+        # show — can lend its direction to the shows listed after it, as in
+        # "Several shows outperformed their benchmarks: Hadestown ..., while
+        # Mean Girls ...". A direction inside a clause that names its own show
+        # ("Shucked matched expectations") belongs to that show alone and must
+        # not leak onto its neighbours.
+        lead_dirs: list[str] = []
+        for c in clauses:
+            if shows_in(c):
+                continue
+            lead_dirs += [d for d, rx in _DIRECTION_RE.items() if rx.search(c)]
+
+        for clause in clauses:
+            dirs = [d for d, rx in _DIRECTION_RE.items() if rx.search(clause)]
+
+            named = shows_in(clause)
+
+            # A sentence lead-in can carry the direction for shows listed in
+            # later clauses: "Several shows outperformed ...: Hadestown reached
+            # X, while Mean Girls achieved Y and Ain't Too Proud hit Z." Those
+            # trailing clauses assert the lead-in's direction about their own
+            # shows — which is how two shows sitting BELOW their benchmarks were
+            # published inside an "outperformed" group. Inherit it, but only
+            # when the sentence states exactly one direction and the clause
+            # names a show and states no direction of its own.
+            if not dirs and named and len(set(lead_dirs)) == 1:
+                dirs = list(set(lead_dirs))
+            if not dirs:
+                continue
+
+            if not named:
+                # A lead-in ("Several shows outperformed their benchmarks:")
+                # names no show itself, but its direction is inherited and
+                # checked against every show listed after it. Only flag a
+                # show-less comparison when nothing downstream picked it up —
+                # that is a genuinely unattributable claim.
+                if dirs and set(dirs) & set(lead_dirs) and any(
+                    shows_in(c) and not any(rx.search(c) for rx in _DIRECTION_RE.values())
+                    for c in clauses
+                ):
+                    continue
+                problems.append(
+                    "comparison claim names no show that can be matched to the "
+                    f"payload — cannot verify: {_unmask(clause, tokens).strip()[:90]!r}"
+                )
+                continue
+            if len(dirs) > 1:
+                problems.append(
+                    f"clause asserts multiple directions {sorted(dirs)} at once — "
+                    f"cannot attribute unambiguously: {_unmask(clause, tokens).strip()[:90]!r}"
+                )
+                continue
+
+            claimed_rel = _CLAIM_TO_RELATIONSHIP[dirs[0]]
+
+            for show in named:
+                d = derived[show]
+                rel = d["relationship"]
+                if rel == claimed_rel:
+                    continue                      # claim matches the data
+                if claimed_rel == "no_benchmark":
+                    problems.append(
+                        f"{show}: described as having no pre-season benchmark, but "
+                        f"one exists (derived '{rel}': actual {d['actual']}% vs "
+                        f"benchmark {d['benchmark']}%)"
+                    )
+                elif rel == "no_benchmark":
+                    problems.append(
+                        f"{show}: described as '{claimed_rel}' a benchmark, but it "
+                        f"has no pre-season peer benchmark (derived: no_benchmark)"
+                    )
+                else:
+                    problems.append(
+                        f"{show}: stated '{claimed_rel}' but derived '{rel}' "
+                        f"(actual {d['actual']}% vs benchmark {d['benchmark']}%)"
+                    )
+
+            # Within a verified comparison clause, any percentage quoted must
+            # be one of the named shows' own displayed values — catches a real
+            # figure attached to the wrong production.
+            own = set()
+            for show in named:
+                own.update(x for x in (derived[show]["actual"],
+                                       derived[show]["benchmark"]) if x is not None)
+            for value, kind in extract_numbers(clause):
+                if kind == "percent" and round(value, 1) not in own:
+                    problems.append(
+                        f"{'/'.join(named)}: cites {value}% in a comparison, which is "
+                        f"not one of the named show's displayed figures "
+                        f"({sorted(own)})"
+                    )
+
+    return problems
+
+
 def validate_summary(summary: str, prompt: str,
-                     show_names: set | None = None) -> list[str]:
+                     show_names: set | None = None,
+                     shows_payload=None) -> list[str]:
     """
     Check `summary` against the `prompt` it was generated from.
 
@@ -287,5 +566,8 @@ def validate_summary(summary: str, prompt: str,
             problems.append(
                 f"names {show!r}, which was not among the shows given to the model"
             )
+
+    # 5. Comparative claims, checked against each show's own runtime values.
+    problems.extend(check_comparisons(summary, shows_payload))
 
     return problems
