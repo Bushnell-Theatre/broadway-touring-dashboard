@@ -636,6 +636,50 @@ _SMALL_NUMBERS = {
 }
 
 
+def comparison_availability(curr_records: list, prev_records: list,
+                            same_season_wow: bool) -> dict:
+    """
+    Decide whether a week-over-week comparison was actually possible for this
+    scope, and why not when it wasn't.
+
+    Comparability is a property of SHOWS, not record counts: a WoW change can
+    only be computed for a show present in both scoped weeks. A scope can hold
+    records in both weeks and still support no comparison at all.
+
+    None of these states mean the previous reporting week is unavailable — it
+    exists in data.json either way. `prior_week` is derived globally from the
+    dataset and is never inferred from these counts or from the output files.
+
+    Returns the counts plus one of:
+      available               at least one show appears in both scoped weeks
+      no_prior_scope_records  prior reporting week holds no records in scope
+      no_comparable_shows     both weeks hold records, no show in common
+      season_boundary         WoW intentionally reset across the fiscal boundary
+    """
+    curr_agg  = aggregate_by_show(curr_records)
+    prior_agg = aggregate_by_show(prev_records)
+    comparable = set(curr_agg) & set(prior_agg)
+
+    if not same_season_wow:
+        status = "season_boundary"
+    elif not prev_records:
+        status = "no_prior_scope_records"
+    elif not comparable:
+        status = "no_comparable_shows"
+    else:
+        status = "available"
+
+    return {
+        "comparison_status": status,
+        "current_records":   len(curr_records),
+        "prior_records":     len(prev_records),
+        "current_shows":     len(curr_agg),
+        "prior_shows":       len(prior_agg),
+        "comparable_shows":  len(comparable),
+        "same_season":       bool(same_season_wow),
+    }
+
+
 def _count_word(n: int, capitalize: bool = False) -> str:
     w = _SMALL_NUMBERS.get(n, str(n))
     return w if capitalize else w.lower()
@@ -650,8 +694,33 @@ def long_date(iso: str) -> str:
         datetime.strptime(iso, "%Y-%m-%d").strftime(", %Y")
 
 
+def _comparison_clause(status: str, body: str) -> str:
+    """
+    Say plainly whether a week-over-week comparison ran.
+
+    "No configured material-change threshold was reached" implies the
+    comparison ran and found stability. When a whole class of comparison could
+    not run, saying only that is misleading, so each unavailable state names
+    its own reason. No wording here implies a report is missing — the prior
+    reporting week exists in the dataset in every one of these cases.
+    """
+    if status == "no_prior_scope_records":
+        return (f" The prior reporting week contained no {body} records for "
+                f"this slate, so a week-over-week comparison was not available.")
+    if status == "no_comparable_shows":
+        return (" Both reporting weeks contained relevant records, but no "
+                "season-slate show appeared in both weeks, so a like-for-like "
+                "week-over-week comparison was not available.")
+    if status == "season_boundary":
+        return (" Week-over-week comparison is intentionally reset at the "
+                "fiscal-season boundary, so no comparison against the prior "
+                "reporting week was made.")
+    return ""
+
+
 def build_pulse(week_of: str, scope: str, scope_records: list,
-                all_scope_records: list, reason: str) -> tuple:
+                all_scope_records: list, reason: str,
+                comparison: dict | None = None) -> tuple:
     """
     Build deterministic current-week confirmation copy, plus the fact string it
     is checked against.
@@ -702,7 +771,7 @@ def build_pulse(week_of: str, scope: str, scope_records: list,
     show_word = "show" if n_s == 1 else "shows"
     venue_word = noun if n_v == 1 else noun + "s"
     counted = (f"{_count_word(n_s, True)} season-slate {show_word} reported "
-               f"across {_count_word(n_v)} {venue_word}")
+               f"at {_count_word(n_v)} {venue_word}")
 
     # The calendar-month norm is included only when this week is at or above
     # it. Printing it on a below-norm week frames an ordinary quiet week as a
@@ -722,8 +791,19 @@ def build_pulse(week_of: str, scope: str, scope_records: list,
         norm = (f" That is in line with the usual volume of {body} records for "
                 f"this point in the year.")
 
+    status = (comparison or {}).get("comparison_status", "available")
+    clause = _comparison_clause(status, body)
+
+    # Independent checks — show_opens and the all-time highs — do not need a
+    # prior-week match and are evaluated whenever the current week has scoped
+    # shows. Only claim they ran when they actually did.
+    if status == "available":
+        outcome = " No configured material-change threshold was reached."
+    else:
+        outcome = " Other configured checks produced no material highlight."
+
     summary = (f"Data updated through the week of {when}. {counted}."
-               f"{norm} No configured material-change threshold was reached.")
+               f"{norm}{clause}{outcome}")
     facts = (f"week_of {week_of} ({when}); shows {n_s}; venues {n_v}; "
              f"records {len(scope_records)}; typical {typical}")
     return summary, facts
@@ -734,7 +814,8 @@ def write_entry(out_path: Path, season_key: str, week_of: str,
                 triggers: list | None = None,
                 pulse_reason: str | None = None,
                 validation_status: str = "passed",
-                validation_method: str = "ai_guard") -> None:
+                validation_method: str = "ai_guard",
+                comparison: dict | None = None) -> None:
     """
     Merge one season's entry into the season-keyed JSON file.
 
@@ -764,6 +845,11 @@ def write_entry(out_path: Path, season_key: str, week_of: str,
         "validation_status": validation_status,
         "validation_method": validation_method,
         "guard_version":     GUARD_VERSION,
+        # Why a week-over-week comparison was or was not possible for this
+        # scope. None of its values mean the prior reporting week is missing.
+        "comparison_status": (comparison or {}).get("comparison_status"),
+        "comparison_detail": {k: v for k, v in (comparison or {}).items()
+                              if k != "comparison_status"} or None,
     }
 
     with open(out_path, "w", encoding="utf-8") as f:
@@ -772,7 +858,8 @@ def write_entry(out_path: Path, season_key: str, week_of: str,
 
 def write_pulse(out_path: Path, season_key: str, week_of: str, scope: str,
                 scope_records: list, all_scope_records: list, reason: str,
-                triggers: list | None = None) -> bool:
+                triggers: list | None = None,
+                comparison: dict | None = None) -> bool:
     """
     Build, validate and write a deterministic pulse. Returns True if written.
 
@@ -782,7 +869,7 @@ def write_pulse(out_path: Path, season_key: str, week_of: str, scope: str,
     AI copy is never substituted, and the rest of the pipeline continues.
     """
     summary, facts = build_pulse(week_of, scope, scope_records,
-                                 all_scope_records, reason)
+                                 all_scope_records, reason, comparison)
     problems = validate_summary(summary, facts)
     if problems:
         log.error(f"DEFECT: deterministic pulse for {out_path.name} failed its own "
@@ -793,7 +880,8 @@ def write_pulse(out_path: Path, season_key: str, week_of: str, scope: str,
 
     write_entry(out_path, season_key, week_of, summary, "pulse", scope,
                 triggers=triggers, pulse_reason=reason,
-                validation_status="fallback", validation_method="deterministic")
+                validation_status="fallback", validation_method="deterministic",
+                comparison=comparison)
     log.info(f"Wrote {scope} pulse ({reason}) for {season_key} → {out_path.name}")
     return True
 
@@ -874,8 +962,13 @@ def run(dry_run: bool = False) -> list:
     curr_peer    = [r for r in peer_records if r.get("week_of") == current_week]
     prev_peer    = [r for r in peer_records if r.get("week_of") == prior_week]
 
+    exec_cmp = comparison_availability(curr_peer, prev_peer, same_season_wow)
     log.info(f"Exec scope   — current week peer records : {len(curr_peer)}")
-    log.info(f"Exec scope   — prior week peer records   : {len(prev_peer)}")
+    log.info(f"Exec scope   — prior week peer records   : {len(prev_peer)}"
+             f"   (prior reporting week {prior_week} exists in data.json)")
+    log.info(f"Exec scope   — WoW comparison            : {exec_cmp['comparison_status']} "
+             f"(current shows {exec_cmp['current_shows']}, prior shows "
+             f"{exec_cmp['prior_shows']}, comparable {exec_cmp['comparable_shows']})")
 
     # ── PROG SCOPE inputs computed early so the exec scope can check national
     # presence before saying anything about a show being absent nationally
@@ -909,8 +1002,13 @@ def run(dry_run: bool = False) -> list:
 
     # ── PROG SCOPE: all venues nationally
 
+    prog_cmp = comparison_availability(curr_all, prev_all, same_season_wow)
     log.info(f"Prog scope   — current week all records  : {len(curr_all)}")
-    log.info(f"Prog scope   — prior week all records    : {len(prev_all)}")
+    log.info(f"Prog scope   — prior week all records    : {len(prev_all)}"
+             f"   (prior reporting week {prior_week} exists in data.json)")
+    log.info(f"Prog scope   — WoW comparison            : {prog_cmp['comparison_status']} "
+             f"(current shows {prog_cmp['current_shows']}, prior shows "
+             f"{prog_cmp['prior_shows']}, comparable {prog_cmp['comparable_shows']})")
 
     prog_triggers = evaluate_thresholds(
         season_league_names = season_league_names,
@@ -940,12 +1038,13 @@ def run(dry_run: bool = False) -> list:
         summary = call_api(prompt, dry_run, season_league_names)
         if summary:
             write_entry(EXEC_OUT, current_season, current_week, summary,
-                        "highlight", "peer", triggers=exec_triggers)
+                        "highlight", "peer", triggers=exec_triggers,
+                        comparison=exec_cmp)
             log.info(f"Wrote exec highlight for {current_season} → {EXEC_OUT.name}")
             written.append(str(EXEC_OUT.relative_to(REPO)))
         elif write_pulse(EXEC_OUT, current_season, current_week, "peer",
                          curr_peer, peer_records, "highlight_validation_failed",
-                         exec_triggers):
+                         exec_triggers, exec_cmp):
             written.append(str(EXEC_OUT.relative_to(REPO)))
     elif not curr_peer and prog_triggers:
         # No peer-sized venues reported anything this week, so there's nothing
@@ -960,15 +1059,17 @@ def run(dry_run: bool = False) -> list:
         summary = call_api(prompt, dry_run, season_league_names)
         if summary:
             write_entry(EXEC_OUT, current_season, current_week, summary,
-                        "highlight", "national_fallback", triggers=prog_triggers)
+                        "highlight", "national_fallback", triggers=prog_triggers,
+                        comparison=prog_cmp)
             log.info(f"Wrote exec highlight (national fallback) for {current_season} → {EXEC_OUT.name}")
             written.append(str(EXEC_OUT.relative_to(REPO)))
         elif write_pulse(EXEC_OUT, current_season, current_week, "national_fallback",
                          curr_all, season_records, "highlight_validation_failed",
-                         prog_triggers):
+                         prog_triggers, prog_cmp):
             written.append(str(EXEC_OUT.relative_to(REPO)))
     elif write_pulse(EXEC_OUT, current_season, current_week, "peer",
-                     curr_peer, peer_records, "no_threshold"):
+                     curr_peer, peer_records, "no_threshold",
+                     comparison=exec_cmp):
         written.append(str(EXEC_OUT.relative_to(REPO)))
 
     # ── Write programming highlight
@@ -982,15 +1083,17 @@ def run(dry_run: bool = False) -> list:
         summary = call_api(prompt, dry_run, season_league_names)
         if summary:
             write_entry(PROG_OUT, current_season, current_week, summary,
-                        "highlight", "national", triggers=prog_triggers)
+                        "highlight", "national", triggers=prog_triggers,
+                        comparison=prog_cmp)
             log.info(f"Wrote programming highlight for {current_season} → {PROG_OUT.name}")
             written.append(str(PROG_OUT.relative_to(REPO)))
         elif write_pulse(PROG_OUT, current_season, current_week, "national",
                          curr_all, season_records, "highlight_validation_failed",
-                         prog_triggers):
+                         prog_triggers, prog_cmp):
             written.append(str(PROG_OUT.relative_to(REPO)))
     elif write_pulse(PROG_OUT, current_season, current_week, "national",
-                     curr_all, season_records, "no_threshold"):
+                     curr_all, season_records, "no_threshold",
+                     comparison=prog_cmp):
         written.append(str(PROG_OUT.relative_to(REPO)))
 
     return written
