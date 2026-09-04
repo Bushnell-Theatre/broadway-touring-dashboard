@@ -145,7 +145,22 @@ The three AI output files (`exec_brief_highlight.json`, `programming_highlight.j
 
 **Generated copy is validated before it is written.** Every AI summary is checked by `highlight_guard.py` against the prompt it came from — numbers, dates, and show names must all trace back to the input, and invented causes, predicted booking consequences, and any claim that a tour has closed are rejected. A failure gets one corrective retry; if that also fails the run writes nothing and logs the specific violations. This is deliberate fail-closed behavior: seeing last week's callout is much better than seeing a confident, wrong one. If you see `Retry ALSO failed validation` in `watcher.log`, the pipeline worked as intended — check the logged violations before assuming the data is at fault.
 
-**The guard checks the ingredients of a sentence, not whether the sentence is true.** It verifies that every figure, date and show name traces back to the input and that no banned claim type is used, but it cannot confirm that a comparison points the right way or that a figure is attached to the right show. A brief can still say a show "underperformed its benchmark" when it matched it, or when it has no benchmark at all. Give generated copy a human skim before leadership relies on it — especially any sentence sorting shows into "outperformed" and "underperformed" groups. Full detail, and the change that would close this, are in [AI_PIPELINE_PLAN.md](AI_PIPELINE_PLAN.md#known-limitation--claims-are-token-checked-not-fact-checked).
+**Benchmark comparisons are validated against the data; other prose is not.** For season retrospectives the pipeline computes each show's relationship to its benchmark (`above` / `below` / `matched` / `no_benchmark`) from the displayed figures and hands it to the model as a fact. The guard then checks any sentence combining a show name with comparison language against that derived relationship, and fails closed on claims it cannot attribute. This closes the failure that shipped four wrong comparisons to production. It does **not** prove other prose true — a sentence making some other kind of claim is checked only for its ingredients and for banned claim types.
+
+**Nothing waits on a person.** Generation stays unattended:
+
+- A **weekly highlight** that fails validation twice writes nothing. Last week's callout stays in place, clearly dated with its own `week_of`, and the rest of the pipeline continues.
+- A **season retrospective** that fails validation twice publishes deterministic factual copy instead — each show's actual and benchmark figures with no comparative language. A season is never left blank, and no approval step exists.
+
+Each entry records `validation_status`, `validation_method` and `guard_version` for auditing. This metadata is informational; it never blocks publication.
+
+To audit what was published, run the verification report — it derives the table from the stored payload and the generated summary, so it is evidence rather than an assertion:
+
+```bash
+python scripts/report_review_claims.py
+```
+
+It prints `season | show | displayed actual | displayed benchmark | derived relationship | relationship stated in summary | result` and exits non-zero if any claim mismatches or cannot be attributed. Periodic spot-checking is recommended; reviewing every run is not required.
 
 ---
 
@@ -290,7 +305,8 @@ NOAA Storm Events data needs no token — it's a public bulk CSV download. None 
 | `scrape_shows.py` | **Suspended.** Previously fetched show metadata from Wikidata, Wikipedia, DBpedia. Enrichment removed from pipeline — data was unreliable (wrong articles, missing Tony data, null fields). Script retained for future use with a better source. |
 | `scrape_context.py` | Fetches NOAA weather and FRED economic data; writes `context.json`. NOAA bulk CSV files are cached in `scripts/cache/storm_events/` by filename — when NOAA publishes a revised file the name changes and the new file is fetched automatically; no re-download occurs if the filename hasn't changed. FRED data is fetched fresh on every run (small JSON, no cache). |
 | `generate_highlights.py` | Evaluates hard-coded thresholds against current-season data; calls Anthropic API if any trip; writes season-keyed `exec_brief_highlight.json` and `programming_highlight.json`. Supports `--dry-run`. Output is validated by `highlight_guard.py` before any write. |
-| `highlight_guard.py` | **Validation gate for all AI-generated copy.** Rejects a summary whose numbers, dates, or show names don't appear in the prompt it was given, plus invented causes, predicted consequences, and any claim a tour has closed. One corrective retry, then writes nothing. Used by both `generate_highlights.py` and `generate_season_review.py`. Tests: `npm run test:guard`. |
+| `highlight_guard.py` | **Validation gate for all AI-generated copy.** Rejects a summary whose numbers, dates, or show names don't appear in the prompt it was given, plus invented causes, predicted consequences, counts of shows, and any claim a tour has closed. For season retrospectives it also validates benchmark comparisons against each show's derived relationship. One corrective retry, then weekly writes nothing / season publishes deterministic fallback. Tests: `npm run test:guard`. |
+| `report_review_claims.py` | **Verification report for `season_review.json`.** Derives `season \| show \| actual \| benchmark \| derived relationship \| stated relationship \| result` from the stored payload and generated summary. Exits non-zero if any claim mismatches or cannot be attributed. Tests: `npm run test:pipeline`. |
 | `generate_season_review.py` | Fires once per season, 14 days after last show close; computes pre-season signal vs actual peer results; calls Anthropic API; writes `season_review.json`. Supports `--dry-run`. |
 | `validate_data.py` | Data quality checks; writes `validation_report.json` |
 | `watcher.py` | Watches OneDrive folder for new XLSX files; on detection runs `process_touring.py` (Step 1) → `scrape_context.py` (Step 2.5) → `generate_highlights.py` (Step 2.75) → `generate_season_review.py` (Step 2.8) → git commit/auto-deploy (Step 3) — no show-enrichment step, since that's suspended. On startup, scans the folder for any reports missed while the watcher was down and processes them before going live. Handles OneDrive's `on_modified` sync pattern in addition to `on_created`. |

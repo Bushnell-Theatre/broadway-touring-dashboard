@@ -117,68 +117,63 @@ suite includes all three real false briefs as regression cases, plus
 false-positive guards — an early version of the "re-book" pattern matched inside
 "p**re-book**ing" and would have rejected a sound season retrospective.
 
-### Known limitation — claims are token-checked, not fact-checked
+### Benchmark-comparison validation (guard v2, September 4, 2026)
 
-**The guard verifies the ingredients of a sentence, not whether the sentence is
-true.** It confirms that every number, date, and show name appears in the
-prompt, that no banned claim type is present, and that no count of shows is
-asserted. It does not confirm that a *relationship* between two numbers holds.
+The token-level guard could not catch relationship errors, and four reached
+production in `season_review.json`:
 
-A sentence like "Six fell short at 78.0% against its benchmark of 83.9%" is only
-true if both figures belong to *Six* and 78.0 < 83.9. The guard sees two
-supported numbers and a permitted phrasing, and passes it. It has no per-show
-structure to check attribution or direction against.
+| Season | Show | Claimed | Actual | Benchmark | Truth |
+|---|---|---|---|---|---|
+| 2021-2022 | Hamilton | "significantly exceeded" | 92.1% | 99.7% | **below** |
+| 2022-2023 | Mean Girls | grouped as outperforming | 85.0% | 90.9% | **below** |
+| 2022-2023 | Ain't Too Proud | grouped as outperforming | 74.7% | 75.0% | **below** |
+| 2023-2024 | Funny Girl | grouped as underperforming | 79.3% | none | **no benchmark** |
 
-This is not hypothetical. The first regenerated 2024-2025 retrospective (Sep 4,
-2026) passed the guard while asserting:
+Every figure quoted was real; the *relationships* were invented. Generation
+remains fully unattended — the fix is deterministic derivation plus narrow
+validation, not human approval.
 
-- *A Beautiful Noise* and *Some Like It Hot* had "exceeded"/"underperformed"
-  their pre-season peer benchmarks. Both show `—` in the table: they have no
-  benchmark, so neither claim can be true.
-- *Les Misérables* "exceeded" its benchmark. It matched it exactly (89.7% vs
-  89.7%).
-- "three subscriber titles performed at or above peer signal, two fell notably
-  short." Only two subscriber titles had a benchmark at all.
+**1. The relationship is computed, never asked for.** `derive_relationship()`
+classifies each show as `above` / `below` / `matched` / `no_benchmark` from the
+same displayed percentages the table prints, so a stated relationship cannot
+contradict the figures beside it. `build_shows_table()` emits this as a
+`Vs Benchmark` column and the prompt instructs the model to use it as given.
 
-Every individual figure quoted was real and present in the prompt. The
-*relationships and groupings* were invented.
+**2. The guard adjudicates only this claim shape.** `validate_summary()` takes
+the per-show payload; `check_comparisons()` examines clauses combining a show
+name with benchmark-comparison language and checks them against the derived
+relationship. It recognises above / below / matched / "no benchmark available".
+A `no_benchmark` show cannot be described as above, below or matched. Grouping
+is allowed only when **every** named show shares the stated relationship — which
+is how Mean Girls and Ain't Too Proud were smuggled into an "outperformed" list.
+Unattributable claims and clauses asserting two directions at once fail closed.
+All other prose stays open-ended under the existing ingredient and banned-claim
+checks; no schema of permitted analysis is defined.
 
-**Current mitigation is the prompt, not the guard.** `build_season_prompt()`
-now instructs the model that a show whose `Pre Peer%` is `—` cannot have
-exceeded or underperformed anything, that equal figures mean "matched" rather
-than "exceeded", and that it must never count shows. The counts rule is
-enforced by the guard; the benchmark-awareness rule is not. All six current
-retrospectives were hand-verified against their stored `shows[]` payload after
-regeneration.
+**3. Failure behaviour differs by generator, and neither blocks.**
 
-**Practical implication:** a briefing can still be wrong in this specific way —
-a correct number attached to the wrong show, or a comparative verb pointing the
-wrong direction. Treat generated copy as needing a human skim before leadership
-relies on it, particularly any sentence grouping shows into "outperformed" and
-"underperformed" buckets.
+| | On two failed attempts |
+|---|---|
+| Weekly highlight | Writes nothing. Last week's entry stays, clearly dated with its own `week_of`. The rest of the pipeline continues. |
+| Season retrospective | Publishes deterministic factual copy — each show's displayed actual and benchmark, no comparative or interpretive language, true by construction. A season is never left blank and never waits on a person. |
 
-**Why this is not closed.** Two approaches would close it, and both were
-rejected as worse than the gap:
+**4. Provenance is recorded for auditing only.** Each entry carries
+`validation_status` (`passed` / `fallback`), `validation_method` (`ai_guard` /
+`deterministic`) and `guard_version`. It never gates publication and never
+requires operator action.
 
-- *Structured claims* — have the model emit `{show, relation, benchmark,
-  actual}` for arithmetic verification. Requires deciding up front which claim
-  shapes and which fields a briefing may use, which locks the analysis to the
-  questions we can imagine today and quietly reshapes it to fit the schema.
-- *Deterministic templates* — generate the factual sentences in Python. Same
-  pre-definition problem, and it costs the analytical voice entirely.
+**5. Verification is machine-derived.** `scripts/report_review_claims.py` emits
+`season | show | displayed actual | displayed benchmark | derived relationship |
+relationship stated in summary | result` from the stored payload and the
+generated summary. Current state: **0 mismatched claims, 0 ambiguous**, with
+three seasons on validated AI copy and three on deterministic fallback.
 
-Both amount to pre-supplying answer shapes for questions and data that may not
-exist, which is the same error class as the `—` benchmark bug itself.
-
-**If this starts producing visible problems**, the change that does not require
-pre-definition is to give `validate_summary()` the per-show payload and derive
-the checks from whatever fields are actually populated at runtime: verify that a
-figure appearing alongside a show name is one of that show's own values, reject
-any comparative claim about a value the show does not have, and fail closed on
-comparative sentences that cannot be parsed. That keeps the schema open while
-closing the observed failure mode. It still needs a small vocabulary mapping
-comparative verbs to arithmetic, and it would raise the catch rate rather than
-prove correctness.
+**What this does and does not establish.** It closes the benchmark-comparison
+failure specifically — the shape that failed repeatedly. It does **not** prove
+unrestricted prose true. A sentence making some other kind of claim is still
+only checked for its ingredients and for banned claim types. Periodic
+spot-checking is worthwhile; a human read of every run is not required, and was
+never a real control while `watcher.py` commits and deploys unattended.
 
 ### National fallback (August 28, 2026)
 
