@@ -1476,26 +1476,66 @@
         chartFit(profiles, 'cBriefFit');
         chartCap(profiles, 'cBriefCap');
 
-        /* ── AI weekly highlight injection ─────────────────────────────────
-           Shows teal callout if an entry exists for the selected season.
-           Silent on any fetch error — page renders normally either way.   */
+        /* ── AI weekly entry injection ─────────────────────────────────────
+           Renders one of five distinguishable states. Previously the callout
+           was skipped entirely when no entry existed, so "nothing rendered"
+           meant any of: no data, the watcher never ran, the guard rejected the
+           copy, or a genuinely quiet week — and a prior week's callout could
+           sit on screen reading as current.
+
+           Entries written before the kind/pulse_reason fields existed lack
+           them, so a missing `kind` is treated as a highlight. This page is
+           always national in scope. */
+        function weeklyCalloutMeta(entry, latestWeek) {
+          if (!entry || !entry.summary) {
+            return {
+              label: 'Weekly Intelligence',
+              color: 'var(--ink3)',
+              text: 'No weekly intelligence entry is available.'
+            };
+          }
+          var kind = entry.kind || 'highlight';
+          var base;
+          if (kind === 'pulse' && entry.pulse_reason === 'highlight_validation_failed') {
+            base = 'Weekly Data Pulse — Narrative Unavailable';
+          } else if (kind === 'pulse') {
+            base = 'Weekly Data Pulse — No Material Threshold Changes';
+          } else {
+            base = 'Weekly Intelligence';
+          }
+          /* Only claim an entry is current when it matches the newest week the
+             loaded data actually contains. This does not assert that a report
+             is missing — the page has no authoritative expected-report
+             schedule — only that this entry describes an earlier week. */
+          if (latestWeek && entry.week_of && entry.week_of < latestWeek) {
+            base = 'Earlier Update · ' + base;
+          }
+          return {
+            label: base + ' · Week of ' + (entry.week_of || 'unknown'),
+            color: kind === 'pulse' ? 'var(--ink3)' : 'var(--teal)',
+            text: entry.summary
+          };
+        }
+
         fetch('data/programming_highlight.json')
           .then(function(r) { return r.ok ? r.json() : null; })
+          .catch(function() { return null; })
           .then(function(h) {
-            if (!h) return;
-            var entry = h[season.id];
-            if (!entry || !entry.summary) return;
-            var color = 'var(--teal)';
+            var entry = h && h[season.id];
+            var latestWeek = '';
+            for (var i = 0; i < ALL.length; i++) {
+              if (ALL[i].week_of && ALL[i].week_of > latestWeek) latestWeek = ALL[i].week_of;
+            }
+            var meta = weeklyCalloutMeta(entry, latestWeek);
             var el = document.createElement('div');
             el.className = 'callout ai-highlight';
-            el.style.cssText = 'border-left-color:' + color + ';margin-bottom:16px;';
+            el.style.cssText = 'border-left-color:' + meta.color + ';margin-bottom:16px;';
             el.innerHTML =
-              '<div style="font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:' + color + ';margin-bottom:6px;">Weekly Intelligence · ' + entry.week_of + '</div>' +
+              '<div style="font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:' + meta.color + ';margin-bottom:6px;">' + meta.label + '</div>' +
               '<p style="margin:0;"></p>';
-            el.querySelector('p').textContent = entry.summary;
+            el.querySelector('p').textContent = meta.text;
             document.getElementById('tab-brief').prepend(el);
-          })
-          .catch(function() {});
+          });
       }
 
       function makeInsights(profiles) {
