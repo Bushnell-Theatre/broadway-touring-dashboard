@@ -8,7 +8,8 @@
     "test": "test"
   },
   "scripts": {
-    "test": "node scripts/test_scoring_contract.js"
+    "test": "node scripts/test_scoring_contract.js",
+    "test:guard": "python scripts/test_highlight_guard.py"
   },
   "repository": {
     "type": "git",

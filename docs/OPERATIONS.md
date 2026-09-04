@@ -143,6 +143,8 @@ python scripts/validate_data.py --data src\data\data.json --out src\data\validat
 
 The three AI output files (`exec_brief_highlight.json`, `programming_highlight.json`, `season_review.json`) are committed by `watcher.py` only when the scripts write new content. If the Anthropic API is unavailable, these files retain their last-written values and the dashboard continues to show the previous callout until the next successful run.
 
+**Generated copy is validated before it is written.** Every AI summary is checked by `highlight_guard.py` against the prompt it came from — numbers, dates, and show names must all trace back to the input, and invented causes, predicted booking consequences, and any claim that a tour has closed are rejected. A failure gets one corrective retry; if that also fails the run writes nothing and logs the specific violations. This is deliberate fail-closed behavior: seeing last week's callout is much better than seeing a confident, wrong one. If you see `Retry ALSO failed validation` in `watcher.log`, the pipeline worked as intended — check the logged violations before assuming the data is at fault.
+
 ---
 
 ## Validate the Data
@@ -285,7 +287,8 @@ NOAA Storm Events data needs no token — it's a public bulk CSV download. None 
 | `process_touring.py` | Reads XLSX reports, deduplicates, writes/appends `data.json` |
 | `scrape_shows.py` | **Suspended.** Previously fetched show metadata from Wikidata, Wikipedia, DBpedia. Enrichment removed from pipeline — data was unreliable (wrong articles, missing Tony data, null fields). Script retained for future use with a better source. |
 | `scrape_context.py` | Fetches NOAA weather and FRED economic data; writes `context.json`. NOAA bulk CSV files are cached in `scripts/cache/storm_events/` by filename — when NOAA publishes a revised file the name changes and the new file is fetched automatically; no re-download occurs if the filename hasn't changed. FRED data is fetched fresh on every run (small JSON, no cache). |
-| `generate_highlights.py` | Evaluates hard-coded thresholds against current-season data; calls Anthropic API if any trip; writes season-keyed `exec_brief_highlight.json` and `programming_highlight.json`. Supports `--dry-run`. |
+| `generate_highlights.py` | Evaluates hard-coded thresholds against current-season data; calls Anthropic API if any trip; writes season-keyed `exec_brief_highlight.json` and `programming_highlight.json`. Supports `--dry-run`. Output is validated by `highlight_guard.py` before any write. |
+| `highlight_guard.py` | **Validation gate for all AI-generated copy.** Rejects a summary whose numbers, dates, or show names don't appear in the prompt it was given, plus invented causes, predicted consequences, and any claim a tour has closed. One corrective retry, then writes nothing. Used by both `generate_highlights.py` and `generate_season_review.py`. Tests: `npm run test:guard`. |
 | `generate_season_review.py` | Fires once per season, 14 days after last show close; computes pre-season signal vs actual peer results; calls Anthropic API; writes `season_review.json`. Supports `--dry-run`. |
 | `validate_data.py` | Data quality checks; writes `validation_report.json` |
 | `watcher.py` | Watches OneDrive folder for new XLSX files; on detection runs `process_touring.py` (Step 1) → `scrape_context.py` (Step 2.5) → `generate_highlights.py` (Step 2.75) → `generate_season_review.py` (Step 2.8) → git commit/auto-deploy (Step 3) — no show-enrichment step, since that's suspended. On startup, scans the folder for any reports missed while the watcher was down and processes them before going live. Handles OneDrive's `on_modified` sync pattern in addition to `on_created`. |

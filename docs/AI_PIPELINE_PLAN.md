@@ -92,6 +92,30 @@ The shipped logic in `scripts/generate_highlights.py`:
   the model may never state or imply a tour has closed, ended, concluded,
   wrapped, or exited touring, and may not speculate about why a show is absent.
 
+### Output validation gate — `scripts/highlight_guard.py` (September 4, 2026)
+
+Prompt instructions alone did not stop any of the three false briefs, so the
+model's output is now **validated against its own input before anything is
+written**. `validate_summary(summary, prompt, show_names)` enforces:
+
+| Check | Rule |
+|---|---|
+| Numbers | Every dollar figure and percentage in the summary must appear in the prompt. Faithful rounding is allowed (94.7% → 95%, $760,558 → $761K); new or calculated figures are not. Bare integers ≤ 12 are treated as prose counts, not statistics. |
+| Dates | Every date must appear in the prompt. Long-form restatement of an ISO date is allowed (`2026-06-07` → "June 7, 2026"). |
+| Show names | Any season-slate show named in the summary must have been in the prompt — catches numbers being attributed to the wrong production. |
+| Banned claims | Finality (closed/ended/concluded/wrapped/exited/cancelled/"no longer touring"), invented causation ("due to", "because of", "driven by", "stems from"), speculation ("likely", "probably"), and predicted consequences for Bushnell ("availability", "may/might/will impact or affect"). |
+
+On failure the model gets **one corrective retry** with the specific violations
+appended. If that also fails, **nothing is written** — a stale entry from a
+prior week, clearly labeled with its own `week_of`, beats a confident wrong one.
+The same gate wraps `generate_season_review.py`, since the retrospective
+publishes to the same page.
+
+Tests: `npm run test:guard` (or `python scripts/test_highlight_guard.py`). The
+suite includes all three real false briefs as regression cases, plus
+false-positive guards — an early version of the "re-book" pattern matched inside
+"p**re-book**ing" and would have rejected a sound season retrospective.
+
 ### National fallback (August 28, 2026)
 
 The exec brief only ever compared against peer-sized venues (~2,400–3,000

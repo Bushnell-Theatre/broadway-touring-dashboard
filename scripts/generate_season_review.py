@@ -51,6 +51,9 @@ from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from highlight_guard import validate_summary   # noqa: E402
+
 # ── PATHS ─────────────────────────────────────────────────────────────────────
 
 REPO       = Path(__file__).resolve().parent.parent
@@ -292,14 +295,7 @@ def build_season_prompt(season_key: str, shows_data: list) -> str:
 # ── API CALL ──────────────────────────────────────────────────────────────────
 
 
-def call_api(prompt: str, dry_run: bool) -> str | None:
-    """
-    Call Claude Haiku with the season retrospective prompt.
-    Returns the summary text, or None on failure. Never raises.
-    """
-    if dry_run:
-        return "[DRY RUN — API not called. Trigger payload above would be sent to claude-haiku-4-5-20251001.]"
-
+def _call_once(prompt: str, max_tokens: int = 300) -> str | None:
     try:
         from dotenv import load_dotenv
         load_dotenv(REPO / ".env")
@@ -307,13 +303,62 @@ def call_api(prompt: str, dry_run: bool) -> str | None:
         client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
         response = client.messages.create(
             model="claude-haiku-4-5-20251001",
-            max_tokens=300,
+            max_tokens=max_tokens,
             messages=[{"role": "user", "content": prompt}],
         )
         return response.content[0].text.strip()
     except Exception as exc:
         log.warning(f"Anthropic API call failed: {exc}")
         return None
+
+
+def call_api(prompt: str, dry_run: bool, show_names: set | None = None) -> str | None:
+    """
+    Call Claude Haiku with the season retrospective prompt and VALIDATE the
+    result before returning it. Returns the summary text, or None on failure.
+
+    This retrospective is published on the Executive Summary page, so it goes
+    through the same guard as the weekly highlights: every number, date, and
+    show name must trace back to the prompt, and invented causes, predicted
+    consequences, and closure claims are rejected. One corrective retry, then
+    fail closed and write nothing. See scripts/highlight_guard.py.
+    """
+    if dry_run:
+        return "[DRY RUN — API not called. Trigger payload above would be sent to claude-haiku-4-5-20251001.]"
+
+    summary = _call_once(prompt)
+    if summary is None:
+        return None
+
+    problems = validate_summary(summary, prompt, show_names)
+    if not problems:
+        return summary
+
+    log.warning("Season review FAILED validation — retrying once:")
+    for p in problems:
+        log.warning(f"    • {p}")
+
+    retry_prompt = (
+        prompt
+        + "\n\nYour previous attempt was rejected for these reasons:\n"
+        + "\n".join(f"- {p}" for p in problems)
+        + "\n\nRewrite it. Use ONLY the figures, dates, and show names given "
+          "above — do not introduce or calculate any others. Describe what the "
+          "results were, not why they happened or what should be booked next."
+    )
+    summary = _call_once(retry_prompt)
+    if summary is None:
+        return None
+
+    problems = validate_summary(summary, prompt, show_names)
+    if problems:
+        log.error("Retry ALSO failed validation — writing nothing this run:")
+        for p in problems:
+            log.error(f"    • {p}")
+        return None
+
+    log.info("Retry passed validation.")
+    return summary
 
 
 # ── FILE WRITE ────────────────────────────────────────────────────────────────
@@ -404,7 +449,8 @@ def run(dry_run: bool = False) -> list:
 
         # ── Call API
         prompt  = build_season_prompt(season_key, shows_data)
-        summary = call_api(prompt, dry_run)
+        summary = call_api(prompt, dry_run,
+                           {s.get("name") for s in shows_data if s.get("name")})
         if not summary:
             log.warning(f"  No summary returned for {season_key} — skipping file write")
             continue

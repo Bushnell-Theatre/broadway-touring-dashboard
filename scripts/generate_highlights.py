@@ -37,6 +37,9 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from highlight_guard import validate_summary   # noqa: E402
+
 # ── PATHS ─────────────────────────────────────────────────────────────────────
 
 REPO     = Path(__file__).resolve().parent.parent
@@ -477,14 +480,7 @@ def build_prog_prompt(season_key: str, trigger_lines: list) -> str:
 # ── API CALL ──────────────────────────────────────────────────────────────────
 
 
-def call_api(prompt: str, dry_run: bool) -> str | None:
-    """
-    Call Claude Haiku with the trigger prompt. Returns the summary text,
-    or None on failure. Never raises — failures are logged and skipped.
-    """
-    if dry_run:
-        return "[DRY RUN — API not called. Trigger payload above would be sent to claude-haiku-4-5-20251001.]"
-
+def _call_once(prompt: str) -> str | None:
     try:
         from dotenv import load_dotenv
         load_dotenv(REPO / ".env")
@@ -499,6 +495,61 @@ def call_api(prompt: str, dry_run: bool) -> str | None:
     except Exception as exc:
         log.warning(f"Anthropic API call failed: {exc}")
         return None
+
+
+def call_api(prompt: str, dry_run: bool, show_names: set | None = None) -> str | None:
+    """
+    Call Claude Haiku with the trigger prompt and VALIDATE the result before
+    returning it. Returns the summary text, or None on failure. Never raises.
+
+    Every summary is checked by highlight_guard.validate_summary() against the
+    prompt it came from: numbers, dates, and show names must all trace back to
+    the input, and invented causes, predicted consequences, and closure claims
+    are rejected outright. Prompt instructions alone did not prevent three
+    false briefs from reaching leadership — this is the enforcement layer.
+
+    On a validation failure the model gets exactly one corrective retry. If
+    that also fails, this returns None and NOTHING is written — a stale entry
+    from a prior week (labeled with its own week_of) beats a confident, wrong
+    one. See scripts/highlight_guard.py.
+    """
+    if dry_run:
+        return "[DRY RUN — API not called. Trigger payload above would be sent to claude-haiku-4-5-20251001.]"
+
+    summary = _call_once(prompt)
+    if summary is None:
+        return None
+
+    problems = validate_summary(summary, prompt, show_names)
+    if not problems:
+        return summary
+
+    log.warning("Generated summary FAILED validation — retrying once:")
+    for p in problems:
+        log.warning(f"    • {p}")
+
+    retry_prompt = (
+        prompt
+        + "\n\nYour previous attempt was rejected for these reasons:\n"
+        + "\n".join(f"- {p}" for p in problems)
+        + "\n\nRewrite it. Use ONLY the figures, dates, and show names given "
+          "above — do not introduce or calculate any others. State what the "
+          "data shows and nothing about why it happened, what it means for "
+          "Bushnell's bookings, or whether any tour has stopped."
+    )
+    summary = _call_once(retry_prompt)
+    if summary is None:
+        return None
+
+    problems = validate_summary(summary, prompt, show_names)
+    if problems:
+        log.error("Retry ALSO failed validation — writing nothing this run:")
+        for p in problems:
+            log.error(f"    • {p}")
+        return None
+
+    log.info("Retry passed validation.")
+    return summary
 
 
 # ── FILE WRITE ────────────────────────────────────────────────────────────────
@@ -668,7 +719,7 @@ def run(dry_run: bool = False) -> list:
         for t in exec_triggers:
             log.info(f"  [{t['type']}] {t['description']}")
         prompt  = build_exec_prompt(current_season, [t["description"] for t in exec_triggers])
-        summary = call_api(prompt, dry_run)
+        summary = call_api(prompt, dry_run, season_league_names)
         if summary:
             write_highlight(EXEC_OUT, current_season, current_week, exec_triggers, summary, scope="peer")
             log.info(f"Wrote exec highlight for {current_season} → {EXEC_OUT.name}")
@@ -683,7 +734,7 @@ def run(dry_run: bool = False) -> list:
         for t in prog_triggers:
             log.info(f"  [{t['type']}] {t['description']}")
         prompt  = build_exec_national_fallback_prompt(current_season, [t["description"] for t in prog_triggers])
-        summary = call_api(prompt, dry_run)
+        summary = call_api(prompt, dry_run, season_league_names)
         if summary:
             write_highlight(EXEC_OUT, current_season, current_week, prog_triggers, summary, scope="national_fallback")
             log.info(f"Wrote exec highlight (national fallback) for {current_season} → {EXEC_OUT.name}")
@@ -697,7 +748,7 @@ def run(dry_run: bool = False) -> list:
         for t in prog_triggers:
             log.info(f"  [{t['type']}] {t['description']}")
         prompt  = build_prog_prompt(current_season, [t["description"] for t in prog_triggers])
-        summary = call_api(prompt, dry_run)
+        summary = call_api(prompt, dry_run, season_league_names)
         if summary:
             write_highlight(PROG_OUT, current_season, current_week, prog_triggers, summary)
             log.info(f"Wrote programming highlight for {current_season} → {PROG_OUT.name}")
