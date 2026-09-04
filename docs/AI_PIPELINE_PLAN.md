@@ -175,6 +175,121 @@ only checked for its ingredients and for banned claim types. Periodic
 spot-checking is worthwhile; a human read of every run is not required, and was
 never a real control while `watcher.py` commits and deploys unattended.
 
+### Weekly Data Pulse — every ingestion writes a current-week entry (September 4, 2026)
+
+The weekly feature was exception-only by original design: *"If no threshold
+trips, nothing happens — no API call, no file write, no visual change."* In
+practice that made four different situations render identically — no data, the
+watcher never ran, the guard rejected the copy, and a genuinely uneventful week
+— while the previous week's confidently-worded callout stayed on screen looking
+current. Measured over 24 weeks, programming fired 22/24 but **exec fired only
+12/24**, so the exec brief was silent half the time.
+
+**Three outcomes; one always occurs.**
+
+| Situation | `kind` | `pulse_reason` |
+|---|---|---|
+| Threshold fires, AI copy validates | `highlight` | `null` |
+| No threshold fires | `pulse` | `no_threshold` |
+| Threshold fires, both AI attempts fail | `pulse` | `highlight_validation_failed` |
+
+The third is the important one: a guard rejection is no longer visually
+indistinguishable from an old callout, and its copy states that a threshold
+*was* detected rather than implying a quiet week. Rejected AI text is never
+published.
+
+**Pulse copy is built in Python — no API call.** Routing the common case
+through the model would put a failure surface on the quiet weeks. It describes
+evidence that is present, never evidence that is absent: "9 of 10 slate shows
+did not report" is true but predictably misleading in a season where most
+productions have not begun touring, so it is never printed. The calendar-month
+norm appears only when the week is at or above it, since printing it on a
+below-norm week frames an ordinary week as a shortfall. Zero records is stated
+plainly, without implying closure, cancellation, weak demand, or a failure to
+report.
+
+#### Comparison availability
+
+"No configured material-change threshold was reached" implies a comparison ran
+and found stability. It was printed even when no comparison was possible.
+`comparison_availability()` derives status from **comparable shows** — a
+week-over-week change can only be computed for a show present in both scoped
+weeks, so a scope can hold records in both weeks and still support no
+comparison:
+
+| `comparison_status` | Meaning |
+|---|---|
+| `available` | at least one show appears in both scoped weeks |
+| `no_prior_scope_records` | the prior reporting week holds no records in this scope |
+| `no_comparable_shows` | both weeks hold records, but no show in common |
+| `season_boundary` | week-over-week intentionally reset across the fiscal boundary |
+
+**None of these mean the previous reporting week is unavailable.** Reporting
+weeks are derived globally from `data.json` — `latest_week` is the maximum
+`week_of`, `previous_week` the maximum strictly below it — by ordering, never
+by date arithmetic, so a skipped or delayed report still selects the preceding
+*available* report. The output files are never read to discover weeks.
+
+Each status has its own deterministic wording, and the closing sentence
+distinguishes a comparison that ran from one that could not. Missing
+comparability does **not** disable trigger types that need no prior-week match:
+`show_opens` and the all-time highs are evaluated whenever the current week has
+scoped shows, which is the only reason the pulse may say "Other configured
+checks produced no material highlight."
+
+#### Scope and season
+
+Executive Summary reports peer-venue evidence and retains its national-fallback
+path; Programming reports national evidence. Weekly output is written **only for
+`fiscal_year(latest_week)`** — historical seasons are never backfilled, and
+existing historical entries are preserved on merge. Season retrospectives remain
+the historical-season feature; pulses are not substitutes for them.
+
+#### Schema
+
+```json
+{
+  "kind": "highlight | pulse",
+  "pulse_reason": "no_threshold | highlight_validation_failed | null",
+  "scope": "peer | national | national_fallback",
+  "week_of": "YYYY-MM-DD",
+  "summary": "...",
+  "generated_at": "...",
+  "validation_status": "passed | fallback",
+  "validation_method": "ai_guard | deterministic",
+  "guard_version": "2",
+  "comparison_status": "available | no_prior_scope_records | no_comparable_shows | season_boundary",
+  "comparison_detail": { "current_records": 0, "prior_records": 0,
+                          "current_shows": 0, "prior_shows": 0,
+                          "comparable_shows": 0, "same_season": true }
+}
+```
+
+Entries written before these fields exist simply lack them; consumers treat a
+missing `kind` as a highlight.
+
+#### Page states
+
+Both pages distinguish five states, always showing the entry's week:
+
+| State | Label |
+|---|---|
+| Current highlight | Weekly Intelligence · Week of … |
+| Exec national fallback | Weekly Intelligence (National Data — No Peer Venues Reported) · Week of … |
+| Routine pulse | Weekly Data Pulse — No Material Threshold Changes · Week of … |
+| Validation fallback | Weekly Data Pulse — Narrative Unavailable · Week of … |
+| Older entry | Earlier Update · *label* · Week of … |
+| No entry / no file | "No weekly intelligence entry is available." |
+
+Staleness is decided by comparing the entry against the newest week in the
+loaded data. Because the page has no authoritative expected-report schedule, it
+never asserts that a report is missing — writing a pulse each week does not make
+staleness impossible, since no pulse can be written if the report never arrives.
+
+Defense in depth: deterministic pulse copy is validated by the same guard that
+polices AI copy. A failure there is a code defect — it logs loudly, abandons
+that write, never substitutes rejected AI copy, and lets the pipeline continue.
+
 ### PARKED — verifiable counts (not started; requires separate authorization)
 
 **Status: parked and unstarted as of September 4, 2026.** The counts-of-shows

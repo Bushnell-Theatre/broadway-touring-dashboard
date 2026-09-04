@@ -149,8 +149,10 @@ The three AI output files (`exec_brief_highlight.json`, `programming_highlight.j
 
 **Nothing waits on a person.** Generation stays unattended:
 
-- A **weekly highlight** that fails validation twice writes nothing. Last week's callout stays in place, clearly dated with its own `week_of`, and the rest of the pipeline continues.
+- **Every successful ingestion writes a current-week weekly entry** for both pages. If a threshold fires and the AI copy validates, that is a *Weekly Intelligence* highlight. If no threshold fires, a deterministic *Weekly Data Pulse* is written instead. If a threshold fires but the AI copy fails validation twice, a pulse is still written and says a threshold was detected but the narrative could not be validated — rejected AI text is never published. A quiet week is therefore visibly different from a stalled pipeline.
 - A **season retrospective** that fails validation twice publishes deterministic factual copy instead — each show's actual and benchmark figures with no comparative language. A season is never left blank, and no approval step exists.
+
+Weekly entries record `comparison_status` — `available`, `no_prior_scope_records`, `no_comparable_shows` or `season_boundary` — so the copy never claims a week-over-week comparison ran when it could not. None of those values mean the prior reporting week is missing; reporting weeks come from `data.json` by ordering, so a skipped or delayed report still resolves to the preceding available week. Weekly output is written only for the season containing the latest reporting week; historical seasons are never backfilled.
 
 Each entry records `validation_status`, `validation_method` and `guard_version` for auditing. This metadata is informational; it never blocks publication.
 
