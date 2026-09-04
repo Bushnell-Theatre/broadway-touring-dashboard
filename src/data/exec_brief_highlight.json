@@ -1,1 +1,23 @@
-{}
+{
+  "2026-2027": {
+    "kind": "pulse",
+    "pulse_reason": "no_threshold",
+    "scope": "peer",
+    "week_of": "2026-08-30",
+    "trigger": "",
+    "summary": "Data updated through the week of August 30, 2026. One season-slate show reported at one peer venue. That is in line with the usual volume of peer-venue records for this point in the year. The prior reporting week contained no peer-venue records for this slate, so a week-over-week comparison was not available. Other configured checks produced no material highlight.",
+    "generated_at": "2026-09-04T19:23:36",
+    "validation_status": "fallback",
+    "validation_method": "deterministic",
+    "guard_version": "2",
+    "comparison_status": "no_prior_scope_records",
+    "comparison_detail": {
+      "current_records": 1,
+      "prior_records": 0,
+      "current_shows": 1,
+      "prior_shows": 0,
+      "comparable_shows": 0,
+      "same_season": true
+    }
+  }
+}

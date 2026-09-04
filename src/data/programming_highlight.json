@@ -1,1 +1,23 @@
-{}
+{
+  "2026-2027": {
+    "kind": "pulse",
+    "pulse_reason": "no_threshold",
+    "scope": "national",
+    "week_of": "2026-08-30",
+    "trigger": "",
+    "summary": "Data updated through the week of August 30, 2026. One season-slate show reported at one venue. That is in line with the usual volume of national touring records for this point in the year. No configured material-change threshold was reached.",
+    "generated_at": "2026-09-04T19:23:36",
+    "validation_status": "fallback",
+    "validation_method": "deterministic",
+    "guard_version": "2",
+    "comparison_status": "available",
+    "comparison_detail": {
+      "current_records": 3,
+      "prior_records": 3,
+      "current_shows": 1,
+      "prior_shows": 3,
+      "comparable_shows": 1,
+      "same_season": true
+    }
+  }
+}
