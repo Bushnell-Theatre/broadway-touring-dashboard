@@ -145,6 +145,8 @@ The three AI output files (`exec_brief_highlight.json`, `programming_highlight.j
 
 **Generated copy is validated before it is written.** Every AI summary is checked by `highlight_guard.py` against the prompt it came from — numbers, dates, and show names must all trace back to the input, and invented causes, predicted booking consequences, and any claim that a tour has closed are rejected. A failure gets one corrective retry; if that also fails the run writes nothing and logs the specific violations. This is deliberate fail-closed behavior: seeing last week's callout is much better than seeing a confident, wrong one. If you see `Retry ALSO failed validation` in `watcher.log`, the pipeline worked as intended — check the logged violations before assuming the data is at fault.
 
+**The guard checks the ingredients of a sentence, not whether the sentence is true.** It verifies that every figure, date and show name traces back to the input and that no banned claim type is used, but it cannot confirm that a comparison points the right way or that a figure is attached to the right show. A brief can still say a show "underperformed its benchmark" when it matched it, or when it has no benchmark at all. Give generated copy a human skim before leadership relies on it — especially any sentence sorting shows into "outperformed" and "underperformed" groups. Full detail, and the change that would close this, are in [AI_PIPELINE_PLAN.md](AI_PIPELINE_PLAN.md#known-limitation--claims-are-token-checked-not-fact-checked).
+
 ---
 
 ## Validate the Data

@@ -100,7 +100,8 @@ written**. `validate_summary(summary, prompt, show_names)` enforces:
 
 | Check | Rule |
 |---|---|
-| Numbers | Every dollar figure and percentage in the summary must appear in the prompt. Faithful rounding is allowed (94.7% → 95%, $760,558 → $761K); new or calculated figures are not. Bare integers ≤ 12 are treated as prose counts, not statistics. |
+| Numbers | Every dollar figure and percentage in the summary must appear in the prompt. Faithful rounding is allowed (94.7% → 95%, $760,558 → $761K); new or calculated figures are not. En/em dashes are folded to hyphens first, so "2025–2026" is not misread as a stray `2026`. |
+| Counts of shows | Rejected outright — "three shows exceeded their benchmark" is arithmetic over the table, not a given figure, and it has been wrong in practice (see Known limitation below). Name shows individually with their own figures instead. |
 | Dates | Every date must appear in the prompt. Long-form restatement of an ISO date is allowed (`2026-06-07` → "June 7, 2026"). |
 | Show names | Any season-slate show named in the summary must have been in the prompt — catches numbers being attributed to the wrong production. |
 | Banned claims | Finality (closed/ended/concluded/wrapped/exited/cancelled/"no longer touring"), invented causation ("due to", "because of", "driven by", "stems from"), speculation ("likely", "probably"), and predicted consequences for Bushnell ("availability", "may/might/will impact or affect"). |
@@ -115,6 +116,69 @@ Tests: `npm run test:guard` (or `python scripts/test_highlight_guard.py`). The
 suite includes all three real false briefs as regression cases, plus
 false-positive guards — an early version of the "re-book" pattern matched inside
 "p**re-book**ing" and would have rejected a sound season retrospective.
+
+### Known limitation — claims are token-checked, not fact-checked
+
+**The guard verifies the ingredients of a sentence, not whether the sentence is
+true.** It confirms that every number, date, and show name appears in the
+prompt, that no banned claim type is present, and that no count of shows is
+asserted. It does not confirm that a *relationship* between two numbers holds.
+
+A sentence like "Six fell short at 78.0% against its benchmark of 83.9%" is only
+true if both figures belong to *Six* and 78.0 < 83.9. The guard sees two
+supported numbers and a permitted phrasing, and passes it. It has no per-show
+structure to check attribution or direction against.
+
+This is not hypothetical. The first regenerated 2024-2025 retrospective (Sep 4,
+2026) passed the guard while asserting:
+
+- *A Beautiful Noise* and *Some Like It Hot* had "exceeded"/"underperformed"
+  their pre-season peer benchmarks. Both show `—` in the table: they have no
+  benchmark, so neither claim can be true.
+- *Les Misérables* "exceeded" its benchmark. It matched it exactly (89.7% vs
+  89.7%).
+- "three subscriber titles performed at or above peer signal, two fell notably
+  short." Only two subscriber titles had a benchmark at all.
+
+Every individual figure quoted was real and present in the prompt. The
+*relationships and groupings* were invented.
+
+**Current mitigation is the prompt, not the guard.** `build_season_prompt()`
+now instructs the model that a show whose `Pre Peer%` is `—` cannot have
+exceeded or underperformed anything, that equal figures mean "matched" rather
+than "exceeded", and that it must never count shows. The counts rule is
+enforced by the guard; the benchmark-awareness rule is not. All six current
+retrospectives were hand-verified against their stored `shows[]` payload after
+regeneration.
+
+**Practical implication:** a briefing can still be wrong in this specific way —
+a correct number attached to the wrong show, or a comparative verb pointing the
+wrong direction. Treat generated copy as needing a human skim before leadership
+relies on it, particularly any sentence grouping shows into "outperformed" and
+"underperformed" buckets.
+
+**Why this is not closed.** Two approaches would close it, and both were
+rejected as worse than the gap:
+
+- *Structured claims* — have the model emit `{show, relation, benchmark,
+  actual}` for arithmetic verification. Requires deciding up front which claim
+  shapes and which fields a briefing may use, which locks the analysis to the
+  questions we can imagine today and quietly reshapes it to fit the schema.
+- *Deterministic templates* — generate the factual sentences in Python. Same
+  pre-definition problem, and it costs the analytical voice entirely.
+
+Both amount to pre-supplying answer shapes for questions and data that may not
+exist, which is the same error class as the `—` benchmark bug itself.
+
+**If this starts producing visible problems**, the change that does not require
+pre-definition is to give `validate_summary()` the per-show payload and derive
+the checks from whatever fields are actually populated at runtime: verify that a
+figure appearing alongside a show name is one of that show's own values, reject
+any comparative claim about a value the show does not have, and fail closed on
+comparative sentences that cannot be parsed. That keeps the schema open while
+closing the observed failure mode. It still needs a small vocabulary mapping
+comparative verbs to arithmetic, and it would raise the catch rate rather than
+prove correctness.
 
 ### National fallback (August 28, 2026)
 
