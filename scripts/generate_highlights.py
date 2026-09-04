@@ -38,7 +38,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from highlight_guard import validate_summary   # noqa: E402
+from highlight_guard import validate_summary, GUARD_VERSION   # noqa: E402
 
 # ── PATHS ─────────────────────────────────────────────────────────────────────
 
@@ -635,11 +635,17 @@ def write_highlight(out_path: Path, season_key: str, week_of: str,
         with open(out_path, encoding="utf-8") as f:
             existing = json.load(f)
 
+    # Weekly copy is only ever written after passing the guard — a failed
+    # summary writes nothing at all (see call_api). Provenance is recorded for
+    # auditing; it never gates publication.
     entry = {
-        "week_of":      week_of,
-        "trigger":      ",".join(sorted({t["type"] for t in triggers})),
-        "summary":      summary,
-        "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S"),
+        "week_of":           week_of,
+        "trigger":           ",".join(sorted({t["type"] for t in triggers})),
+        "summary":           summary,
+        "generated_at":      datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S"),
+        "validation_status": "passed",
+        "validation_method": "ai_guard",
+        "guard_version":     GUARD_VERSION,
     }
     if scope:
         entry["scope"] = scope

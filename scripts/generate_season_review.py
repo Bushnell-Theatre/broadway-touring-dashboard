@@ -52,7 +52,9 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from highlight_guard import validate_summary   # noqa: E402
+from highlight_guard import (   # noqa: E402
+    validate_summary, derive_relationship, GUARD_VERSION,
+)
 
 # ── PATHS ─────────────────────────────────────────────────────────────────────
 
@@ -242,7 +244,7 @@ def build_shows_table(shows_data: list) -> str:
     header = (
         f"{'Show':<35} {'Sub':>3} "
         f"{'Pre Cap%':>9} {'Pre Peer%':>9} "
-        f"{'Act Peer%':>9} {'Act Gross':>10} {'Wks':>4}"
+        f"{'Act Peer%':>9} {'Act Gross':>10} {'Wks':>4}  {'Vs Benchmark':<13}"
     )
     divider = "-" * len(header)
     rows = [header, divider]
@@ -255,13 +257,47 @@ def build_shows_table(shows_data: list) -> str:
         wks         = str(s.get("actual_peer_weeks") or "—")
         sub         = "Yes" if s.get("sub") else "No"
 
+        # The relationship is COMPUTED here from the displayed values and handed
+        # to the model as a fact. The model must never derive it: doing so put
+        # shows into "outperformed" groups while they sat below their
+        # benchmarks, and claimed comparisons for shows that have none.
+        rel = derive_relationship(s)["relationship"]
+
         rows.append(
             f"{s['name']:<35} {sub:>3} "
             f"{pre_cap:>9} {pre_peer:>9} "
-            f"{act_cap:>9} {act_gross:>10} {wks:>4}"
+            f"{act_cap:>9} {act_gross:>10} {wks:>4}  {rel:<13}"
         )
 
     return "\n".join(rows)
+
+
+def build_fallback_summary(season_key: str, shows_data: list) -> str:
+    """
+    Deterministic, factual retrospective used when AI copy cannot be validated.
+
+    States only the displayed figures for each show, with no comparative or
+    interpretive language, so it is true by construction. Published
+    automatically — a season retrospective is never left missing, and no
+    human approval step is introduced.
+    """
+    lines = [f"{season_key} season — recorded peer-venue results.", ""]
+    for s in shows_data:
+        d = derive_relationship(s)
+        name = s.get("name", "").strip()
+        if d["actual"] is None:
+            lines.append(f"{name}: no peer-venue capacity recorded this season.")
+        elif d["benchmark"] is None:
+            lines.append(
+                f"{name} recorded {d['actual']}% actual peer capacity. "
+                f"No pre-season peer benchmark is available."
+            )
+        else:
+            lines.append(
+                f"{name} recorded {d['actual']}% actual peer capacity. "
+                f"Its pre-season peer benchmark was {d['benchmark']}%."
+            )
+    return "\n".join(lines)
 
 
 def build_season_prompt(season_key: str, shows_data: list) -> str:
@@ -281,7 +317,13 @@ def build_season_prompt(season_key: str, shows_data: list) -> str:
         f"- Act Peer%: average paid capacity at peer venues during the season\n"
         f"- Act Gross: average weekly gross at peer venues during the season\n"
         f"- Sub: whether the show was part of Bushnell's subscriber package\n"
-        f"- Wks: number of weeks with peer-venue data during the season\n\n"
+        f"- Wks: number of weeks with peer-venue data during the season\n"
+        f"- Vs Benchmark: the ALREADY-COMPUTED relationship between Act Peer% "
+        f"and Pre Peer% — 'above', 'below', 'matched', or 'no_benchmark'. Use "
+        f"this value exactly as given. Do not work the relationship out "
+        f"yourself, and never describe a 'no_benchmark' show as having "
+        f"exceeded, matched, or underperformed anything — it has nothing to "
+        f"be compared against.\n\n"
         f"Write a 3–4 sentence retrospective that identifies: (1) which shows "
         f"outperformed their pre-season peer signal, (2) which underperformed, "
         f"and (3) any pattern across the season as a whole — for example, whether "
@@ -324,7 +366,8 @@ def _call_once(prompt: str, max_tokens: int = 300) -> str | None:
         return None
 
 
-def call_api(prompt: str, dry_run: bool, show_names: set | None = None) -> str | None:
+def call_api(prompt: str, dry_run: bool, show_names: set | None = None,
+             shows_payload: list | None = None) -> str | None:
     """
     Call Claude Haiku with the season retrospective prompt and VALIDATE the
     result before returning it. Returns the summary text, or None on failure.
@@ -342,7 +385,7 @@ def call_api(prompt: str, dry_run: bool, show_names: set | None = None) -> str |
     if summary is None:
         return None
 
-    problems = validate_summary(summary, prompt, show_names)
+    problems = validate_summary(summary, prompt, show_names, shows_payload)
     if not problems:
         return summary
 
@@ -362,7 +405,7 @@ def call_api(prompt: str, dry_run: bool, show_names: set | None = None) -> str |
     if summary is None:
         return None
 
-    problems = validate_summary(summary, prompt, show_names)
+    problems = validate_summary(summary, prompt, show_names, shows_payload)
     if problems:
         log.error("Retry ALSO failed validation — writing nothing this run:")
         for p in problems:
@@ -376,17 +419,24 @@ def call_api(prompt: str, dry_run: bool, show_names: set | None = None) -> str |
 # ── FILE WRITE ────────────────────────────────────────────────────────────────
 
 
-def write_review(season_key: str, summary: str, shows_data: list) -> None:
+def write_review(season_key: str, summary: str, shows_data: list,
+                 validation_status: str = "passed",
+                 validation_method: str = "ai_guard") -> None:
     """Merge one season's review into the existing season_review.json file."""
     existing = {}
     if REVIEW_OUT.exists():
         with open(REVIEW_OUT, encoding="utf-8") as f:
             existing = json.load(f)
 
+    # Provenance is for later auditing only. It never gates publication and
+    # never requires operator action.
     existing[season_key] = {
-        "summary":      summary,
-        "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S"),
-        "shows":        shows_data,
+        "summary":           summary,
+        "generated_at":      datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S"),
+        "validation_status": validation_status,
+        "validation_method": validation_method,
+        "guard_version":     GUARD_VERSION,
+        "shows":             shows_data,
     }
 
     with open(REVIEW_OUT, "w", encoding="utf-8") as f:
@@ -462,18 +512,35 @@ def run(dry_run: bool = False) -> list:
         # ── Call API
         prompt  = build_season_prompt(season_key, shows_data)
         summary = call_api(prompt, dry_run,
-                           {s.get("name") for s in shows_data if s.get("name")})
-        if not summary:
-            log.warning(f"  No summary returned for {season_key} — skipping file write")
-            continue
+                           {s.get("name") for s in shows_data if s.get("name")},
+                           shows_data)
 
-        log.info(f"Summary:\n{summary}\n")
+        # Unlike the weekly highlight — which writes nothing and leaves last
+        # week's clearly-dated callout in place — a season retrospective has no
+        # earlier entry to fall back on. Rather than leave the season blank or
+        # demand a human approval step, publish deterministic factual copy:
+        # each show's displayed figures, with no comparative or interpretive
+        # language, true by construction.
+        if summary:
+            validation_status, validation_method = "passed", "ai_guard"
+        else:
+            log.warning(
+                f"  {season_key}: AI copy failed validation twice — publishing "
+                f"deterministic factual fallback instead"
+            )
+            summary = build_fallback_summary(season_key, shows_data)
+            validation_status, validation_method = "fallback", "deterministic"
+
+        log.info(f"Summary ({validation_method}):\n{summary}\n")
 
         if not dry_run:
-            write_review(season_key, summary, shows_data)
-            log.info(f"Wrote season review for {season_key} → {REVIEW_OUT.name}")
+            write_review(season_key, summary, shows_data,
+                         validation_status, validation_method)
+            log.info(f"Wrote season review for {season_key} → {REVIEW_OUT.name} "
+                     f"[{validation_status}/{validation_method}]")
         else:
-            log.info(f"[DRY RUN] Would write season review for {season_key}")
+            log.info(f"[DRY RUN] Would write season review for {season_key} "
+                     f"[{validation_status}/{validation_method}]")
 
         reviewed.append(season_key)
 
