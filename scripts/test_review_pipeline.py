@@ -427,5 +427,93 @@ check("no reference count invented when none is computable",
       "typical weekly count" not in none_ref or "is no" not in none_ref, none_ref)
 
 
+print()
+print("Suite M - dry run must not modify either output file")
+
+import hashlib, subprocess   # noqa: E402
+
+_ROOT = Path(__file__).resolve().parent.parent
+_OUTS = [_ROOT / "src/data/exec_brief_highlight.json",
+         _ROOT / "src/data/programming_highlight.json"]
+_DATA = _ROOT / "src/data/data.json"
+
+
+def _digests():
+    return {f.name: hashlib.sha256(f.read_bytes()).hexdigest() for f in _OUTS}
+
+
+def _dry_run():
+    return subprocess.run([sys.executable, str(_ROOT / "scripts/generate_highlights.py"),
+                           "--dry-run"], capture_output=True, text=True)
+
+
+_orig_data = _DATA.read_bytes()
+_raw = json.loads(_orig_data.decode("utf-8"))
+_weeks = sorted({r["week_of"] for r in _raw["records"] if r.get("week_of")})
+_wk, _pw = _weeks[-1], _weeks[-2]
+_seasons = json.loads((_ROOT / "src/data/seasons.json").read_text(encoding="utf-8"))
+_slate = [(x.get("league_name") or x.get("name") or "").strip()
+          for x in _seasons["2026-2027"]["shows"]]
+
+
+def _row(week, show, gross, cap, peer):
+    return {"week_of": week, "show": show, "theatre": "Peer Hall" if peer else "Big House",
+            "city": "X", "tier": "Primary", "similar_bushnell": peer,
+            "gross_gross": gross, "cap_paid": cap, "no_engagement": False, "num_perf": 8}
+
+
+# threshold-trigger: a slate show swings well past the WoW threshold at a peer venue
+_trigger = json.loads(_orig_data.decode("utf-8"))
+_trigger["records"] += [_row(_pw, _slate[0], 1_000_000, 95.0, True),
+                        _row(_wk, _slate[0],   300_000, 40.0, True)]
+
+# national fallback: national movement, zero peer records in the current week
+_fallback = json.loads(_orig_data.decode("utf-8"))
+_fallback["records"] = [r for r in _fallback["records"]
+                        if not (r.get("week_of") == _wk and r.get("similar_bushnell"))]
+_fallback["records"] += [_row(_pw, _slate[0], 1_000_000, 95.0, False),
+                         _row(_wk, _slate[0],   200_000, 35.0, False)]
+
+_cases = [
+    ("no-trigger / no_prior_scope_records", None),
+    ("threshold-trigger", _trigger),
+    ("national-fallback", _fallback),
+]
+
+try:
+    for _label, _data in _cases:
+        if _data is not None:
+            _DATA.write_text(json.dumps(_data), encoding="utf-8")
+        _before = _digests()
+        _proc = _dry_run()
+        _after = _digests()
+        check(f"dry run [{_label}]: both output files byte-identical",
+              _before == _after, f"{_before} != {_after}")
+        check(f"dry run [{_label}]: reports it did not modify files",
+              "file NOT modified" in (_proc.stdout + _proc.stderr))
+        check(f"dry run [{_label}]: no real API call is announced",
+              "Retry passed validation" not in (_proc.stdout + _proc.stderr))
+        _DATA.write_bytes(_orig_data)
+finally:
+    _DATA.write_bytes(_orig_data)
+
+check("data.json restored byte-identical after the dry-run sweep",
+      _DATA.read_bytes() == _orig_data)
+
+# run(dry_run=True) must report nothing as written
+_pre_run = _digests()
+_written = gh2.run(dry_run=True)
+check("run(dry_run=True) returns no written paths", _written == [], _written)
+check("dry run left files untouched after run() call",
+      _digests() == _pre_run, f"{_digests()} != {_pre_run}")
+
+# a skipped API call must never be recorded as an AI validation failure
+_entry = json.loads(_OUTS[0].read_text(encoding="utf-8")).get("2026-2027", {})
+check("no dry-run artifact was persisted as highlight_validation_failed",
+      _entry.get("pulse_reason") != "highlight_validation_failed"
+      or "[DRY RUN" not in _entry.get("summary", ""), _entry.get("summary", "")[:60])
+
+
+print()
 print(f"\n{'=' * 60}\n{PASSED} passed, {FAILED} failed\n{'=' * 60}")
 sys.exit(1 if FAILED else 0)

@@ -864,7 +864,8 @@ def write_entry(out_path: Path, season_key: str, week_of: str,
 def write_pulse(out_path: Path, season_key: str, week_of: str, scope: str,
                 scope_records: list, all_scope_records: list, reason: str,
                 triggers: list | None = None,
-                comparison: dict | None = None) -> bool:
+                comparison: dict | None = None,
+                dry_run: bool = False) -> bool:
     """
     Build, validate and write a deterministic pulse. Returns True if written.
 
@@ -881,6 +882,12 @@ def write_pulse(out_path: Path, season_key: str, week_of: str, scope: str,
                   f"validation — not writing. This is a code bug, not model output:")
         for p in problems:
             log.error(f"    • {p}")
+        return False
+
+    if dry_run:
+        log.info(f"[DRY RUN] would write {scope} pulse ({reason}) for {season_key} "
+                 f"→ {out_path.name}; file NOT modified")
+        log.info(f"[DRY RUN] pulse text: {summary}")
         return False
 
     write_entry(out_path, season_key, week_of, summary, "pulse", scope,
@@ -1040,17 +1047,28 @@ def run(dry_run: bool = False) -> list:
         prompt  = build_exec_prompt(current_season, [t["description"] for t in exec_triggers],
                                     build_evidence_note(curr_peer, peer_records, current_week,
                                                         "peer-venue"))
-        summary = call_api(prompt, dry_run, season_league_names)
-        if summary:
-            write_entry(EXEC_OUT, current_season, current_week, summary,
-                        "highlight", "peer", triggers=exec_triggers,
-                        comparison=exec_cmp)
-            log.info(f"Wrote exec highlight for {current_season} → {EXEC_OUT.name}")
-            written.append(str(EXEC_OUT.relative_to(REPO)))
-        elif write_pulse(EXEC_OUT, current_season, current_week, "peer",
-                         curr_peer, peer_records, "highlight_validation_failed",
-                         exec_triggers, exec_cmp):
-            written.append(str(EXEC_OUT.relative_to(REPO)))
+        if dry_run:
+            # No API call is made, so there is no generation to succeed or
+            # fail. Reporting that as a validation failure would describe work
+            # that never happened.
+            log.info("[DRY RUN] exec: would call the API for a peer highlight; "
+                     "on validation failure would fall back to the pulse below. "
+                     "No API call made, no file modified.")
+            write_pulse(EXEC_OUT, current_season, current_week, "peer",
+                        curr_peer, peer_records, "highlight_validation_failed",
+                        exec_triggers, exec_cmp, dry_run=True)
+        else:
+            summary = call_api(prompt, False, season_league_names)
+            if summary:
+                write_entry(EXEC_OUT, current_season, current_week, summary,
+                            "highlight", "peer", triggers=exec_triggers,
+                            comparison=exec_cmp)
+                log.info(f"Wrote exec highlight for {current_season} → {EXEC_OUT.name}")
+                written.append(str(EXEC_OUT.relative_to(REPO)))
+            elif write_pulse(EXEC_OUT, current_season, current_week, "peer",
+                             curr_peer, peer_records, "highlight_validation_failed",
+                             exec_triggers, exec_cmp):
+                written.append(str(EXEC_OUT.relative_to(REPO)))
     elif not curr_peer and prog_triggers:
         # No peer-sized venues reported anything this week, so there's nothing
         # to compare Bushnell's slate against at that scale. Rather than go
@@ -1061,20 +1079,28 @@ def run(dry_run: bool = False) -> list:
         for t in prog_triggers:
             log.info(f"  [{t['type']}] {t['description']}")
         prompt  = build_exec_national_fallback_prompt(current_season, [t["description"] for t in prog_triggers])
-        summary = call_api(prompt, dry_run, season_league_names)
-        if summary:
-            write_entry(EXEC_OUT, current_season, current_week, summary,
-                        "highlight", "national_fallback", triggers=prog_triggers,
-                        comparison=prog_cmp)
-            log.info(f"Wrote exec highlight (national fallback) for {current_season} → {EXEC_OUT.name}")
-            written.append(str(EXEC_OUT.relative_to(REPO)))
-        elif write_pulse(EXEC_OUT, current_season, current_week, "national_fallback",
-                         curr_all, season_records, "highlight_validation_failed",
-                         prog_triggers, prog_cmp):
-            written.append(str(EXEC_OUT.relative_to(REPO)))
+        if dry_run:
+            log.info("[DRY RUN] exec: would call the API for a national-fallback "
+                     "highlight; on validation failure would fall back to the "
+                     "pulse below. No API call made, no file modified.")
+            write_pulse(EXEC_OUT, current_season, current_week, "national_fallback",
+                        curr_all, season_records, "highlight_validation_failed",
+                        prog_triggers, prog_cmp, dry_run=True)
+        else:
+            summary = call_api(prompt, False, season_league_names)
+            if summary:
+                write_entry(EXEC_OUT, current_season, current_week, summary,
+                            "highlight", "national_fallback", triggers=prog_triggers,
+                            comparison=prog_cmp)
+                log.info(f"Wrote exec highlight (national fallback) for {current_season} → {EXEC_OUT.name}")
+                written.append(str(EXEC_OUT.relative_to(REPO)))
+            elif write_pulse(EXEC_OUT, current_season, current_week, "national_fallback",
+                             curr_all, season_records, "highlight_validation_failed",
+                             prog_triggers, prog_cmp):
+                written.append(str(EXEC_OUT.relative_to(REPO)))
     elif write_pulse(EXEC_OUT, current_season, current_week, "peer",
                      curr_peer, peer_records, "no_threshold",
-                     comparison=exec_cmp):
+                     comparison=exec_cmp, dry_run=dry_run):
         written.append(str(EXEC_OUT.relative_to(REPO)))
 
     # ── Write programming highlight
@@ -1085,20 +1111,28 @@ def run(dry_run: bool = False) -> list:
         prompt  = build_prog_prompt(current_season, [t["description"] for t in prog_triggers],
                                     build_evidence_note(curr_all, season_records, current_week,
                                                         "national"))
-        summary = call_api(prompt, dry_run, season_league_names)
-        if summary:
-            write_entry(PROG_OUT, current_season, current_week, summary,
-                        "highlight", "national", triggers=prog_triggers,
-                        comparison=prog_cmp)
-            log.info(f"Wrote programming highlight for {current_season} → {PROG_OUT.name}")
-            written.append(str(PROG_OUT.relative_to(REPO)))
-        elif write_pulse(PROG_OUT, current_season, current_week, "national",
-                         curr_all, season_records, "highlight_validation_failed",
-                         prog_triggers, prog_cmp):
-            written.append(str(PROG_OUT.relative_to(REPO)))
+        if dry_run:
+            log.info("[DRY RUN] programming: would call the API for a national "
+                     "highlight; on validation failure would fall back to the "
+                     "pulse below. No API call made, no file modified.")
+            write_pulse(PROG_OUT, current_season, current_week, "national",
+                        curr_all, season_records, "highlight_validation_failed",
+                        prog_triggers, prog_cmp, dry_run=True)
+        else:
+            summary = call_api(prompt, False, season_league_names)
+            if summary:
+                write_entry(PROG_OUT, current_season, current_week, summary,
+                            "highlight", "national", triggers=prog_triggers,
+                            comparison=prog_cmp)
+                log.info(f"Wrote programming highlight for {current_season} → {PROG_OUT.name}")
+                written.append(str(PROG_OUT.relative_to(REPO)))
+            elif write_pulse(PROG_OUT, current_season, current_week, "national",
+                             curr_all, season_records, "highlight_validation_failed",
+                             prog_triggers, prog_cmp):
+                written.append(str(PROG_OUT.relative_to(REPO)))
     elif write_pulse(PROG_OUT, current_season, current_week, "national",
                      curr_all, season_records, "no_threshold",
-                     comparison=prog_cmp):
+                     comparison=prog_cmp, dry_run=dry_run):
         written.append(str(PROG_OUT.relative_to(REPO)))
 
     return written
