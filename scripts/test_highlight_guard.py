@@ -15,7 +15,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from highlight_guard import validate_summary, extract_numbers, extract_dates  # noqa: E402
+from highlight_guard import (  # noqa: E402
+    validate_summary, extract_numbers, extract_dates, displayed_pct,
+)
+
+
+def _disp(v):
+    return '-' if v is None else f'{displayed_pct(v)}%'
 
 PASSED = 0
 FAILED = 0
@@ -247,6 +253,96 @@ accepts(
     "confirming with our booking partners.",
     PROMPT_ABSENCE, SHOWS,
 )
+
+
+print()
+print("Suite 6b - benchmark comparison claims (guard v2, payload-aware)")
+
+# Fixture mirrors the real payload shape: 0-1 fractions, some benchmarks null.
+PAYLOAD = [
+    {"name": "Hamilton",        "pre_peer_cap": 0.9970, "actual_peer_cap": 0.9210},  # below
+    {"name": "Mean Girls",      "pre_peer_cap": 0.9090, "actual_peer_cap": 0.8500},  # below
+    {"name": "Ain't Too Proud", "pre_peer_cap": 0.7500, "actual_peer_cap": 0.7468},  # below
+    {"name": "Funny Girl",      "pre_peer_cap": None,   "actual_peer_cap": 0.7930},  # no_benchmark
+    {"name": "Hadestown",       "pre_peer_cap": 0.8850, "actual_peer_cap": 0.8980},  # above
+    {"name": "Tootsie",         "pre_peer_cap": 0.6130, "actual_peer_cap": 0.6250},  # above
+    {"name": "Les Miserables",  "pre_peer_cap": 0.8971, "actual_peer_cap": 0.8974},  # matched at 89.7
+]
+# The real prompt carries the full table, so every displayed figure the model
+# may legitimately quote is present in it. Build it from the fixture so the
+# ingredient check sees exactly what production would supply.
+CMP_PROMPT = (
+    "Season table. Columns: Pre Peer%, Act Peer%, Wks, Vs Benchmark.\n"
+    + "\n".join(
+        f"{r['name']} | {_disp(r['pre_peer_cap'])} | {_disp(r['actual_peer_cap'])} | 19 wks"
+        for r in PAYLOAD
+    )
+)
+
+
+def cmp_rejects(name, summary, expect=""):
+    problems = validate_summary(summary, CMP_PROMPT, None, PAYLOAD)
+    ok = bool(problems) and (not expect or any(expect in p for p in problems))
+    check(name, ok, f"expected a problem containing {expect!r}, got: {problems}")
+
+
+def cmp_accepts(name, summary):
+    problems = validate_summary(summary, CMP_PROMPT, None, PAYLOAD)
+    check(name, not problems, f"expected no problems, got: {problems}")
+
+
+# - the four confirmed production errors
+cmp_rejects("REGRESSION 2021-22: Hamilton 'exceeded' at 92.1% vs 99.7%",
+            "Hamilton significantly exceeded its pre-season peer benchmark, "
+            "achieving 92.1% capacity versus a 99.7% pre-season peer signal.",
+            expect="Hamilton")
+cmp_rejects("REGRESSION 2022-23: Mean Girls grouped as outperforming at 85.0% vs 90.9%",
+            "Several shows outperformed their pre-season peer benchmarks: "
+            "Hadestown reached 89.8% against 88.5%, while Mean Girls achieved "
+            "85.0% against 90.9%.",
+            expect="Mean Girls")
+cmp_rejects("REGRESSION 2022-23: Ain't Too Proud grouped as outperforming at 74.7% vs 75.0%",
+            "Several shows outperformed their pre-season peer benchmarks: "
+            "Hadestown reached 89.8%, while Ain't Too Proud hit 74.7% against 75.0%.",
+            expect="Ain't Too Proud")
+cmp_rejects("REGRESSION 2023-24: Funny Girl 'underperformed' with a null benchmark",
+            "Funny Girl underperformed its pre-season peer benchmark at 79.3%.",
+            expect="no pre-season peer benchmark")
+
+# - valid claims in each direction
+cmp_accepts("valid 'above'",
+            "Hadestown exceeded its pre-season peer benchmark, at 89.8% against 88.5%.")
+cmp_accepts("valid 'below'",
+            "Hamilton underperformed its pre-season peer benchmark, at 92.1% against 99.7%.")
+cmp_accepts("valid 'matched' after display rounding (89.74 vs 89.71 both show 89.7%)",
+            "Les Miserables matched its pre-season peer benchmark at 89.7%.")
+cmp_accepts("valid 'no benchmark' statement",
+            "Funny Girl recorded 79.3%, with no pre-season peer benchmark available.")
+
+# - grouping
+cmp_accepts("multiple shows sharing one relationship may be grouped",
+            "Hadestown and Tootsie both exceeded their pre-season peer benchmarks.")
+cmp_rejects("multiple shows with DIFFERENT relationships may not be grouped",
+            "Hadestown and Hamilton both exceeded their pre-season peer benchmarks.",
+            expect="Hamilton")
+
+# - direction errors and ambiguity
+cmp_rejects("incorrect direction (above claimed, below derived)",
+            "Mean Girls exceeded its pre-season peer benchmark.",
+            expect="stated 'above' but derived 'below'")
+cmp_rejects("incorrect direction (matched claimed, above derived)",
+            "Hadestown matched its pre-season peer benchmark exactly.",
+            expect="stated 'matched' but derived 'above'")
+cmp_rejects("a show with a benchmark cannot be described as having none",
+            "Hamilton posted 92.1%, with no pre-season peer benchmark available.",
+            expect="but one exists")
+cmp_rejects("ambiguous attribution fails closed",
+            "Collectively, the subscription titles came in below their pre-season signals.",
+            expect="cannot verify")
+
+# - scope: prose without comparison language is untouched by this check
+cmp_accepts("non-comparative prose is not adjudicated",
+            "Hadestown played 19 weeks at peer venues this season.")
 
 
 print("\nSuite 7 — extraction helpers")
