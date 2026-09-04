@@ -126,7 +126,8 @@ sync; if that sync conflicts with feature work, it aborts and leaves `dev`
 clean, flagging that a human must merge manually. **This exception applies
 only to `watcher.py`'s own commits.** Everything else — every change made in
 a Claude Code session, including data-file edits — still follows the full
-manual `feat/xxx → dev → main` flow with explicit confirmation below.
+manual `feat/xxx → dev → main` flow, and still waits for the user to ask
+before anything reaches `main` (see Step 3).
 
 ### Publishing workflow — follow every time, no exceptions
 
@@ -154,21 +155,29 @@ git branch -d feat/my-feature
 
 Stop here. Tell the user what was pushed to dev. Do not touch `main`.
 
-**Step 3 — Merge to main (production) — confirmation required**
+**Step 3 — Merge to main (production)**
 
-Do not proceed until the user explicitly asks to deploy to production.
-When they do, respond with this prompt in a message — do not run the command yet:
+Do not deploy to production until the user asks for it. When they do ask
+clearly — "deploy", "push to main", "ship it to production" — **that is the
+confirmation. Run it.** Do not echo the command back and wait for a second
+approval; the instruction was already unambiguous, and re-asking just adds a
+round trip.
 
-> Ready to run:
-> ```
-> git checkout main && git merge dev && git push origin main && git checkout dev
-> ```
-> This will deploy to production via Azure (~30 sec). Reply to confirm.
+```bash
+git checkout main && git merge dev && git push origin main && git checkout dev
+```
 
-Wait for the user to reply in a **new message**. Only then run the command.
+**Ask only when the target is genuinely unclear** — for example "ship it" with
+several unrelated branches in flight, or a request that doesn't name a branch
+and could plausibly mean `dev`. In that case ask which target, once, and then
+act.
 
-**A one-word reply ("merge", "yes", "push") in the same conversational turn
-that proposed the deploy does not count as confirmation.** The confirmation
-must come in a separate message after the user has seen the prompt above.
+**Surface consequences in the same message you deploy in, not as a gate.** If
+the user should know something before it reaches production — a visible UI
+change, a callout that will disappear, a failing test, an irreversible data
+change — say it plainly alongside the deploy, so they can revert or follow up.
+Withholding the action to deliver the warning first is the thing to avoid; the
+warning itself is still required.
 
-Azure deploys are not reversible without a revert commit. When in doubt, wait.
+Azure deploys are live in ~30 sec and are only undone with a revert commit, so
+state clearly what shipped once the push completes.
