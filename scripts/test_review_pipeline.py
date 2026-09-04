@@ -390,5 +390,42 @@ check("no valid reporting week means no write (guarded in run())",
       "Fewer than 2 distinct weeks" in (_root / "scripts/generate_highlights.py").read_text(encoding="utf-8"))
 
 
+print()
+print("Suite L - volume statements are observed-vs-reference counts, not classifications")
+
+INTERPRETIVE = ["in line with", "above normal", "below normal", "typical for this point",
+                "usual volume", "as expected", "normal for", "healthy", "strong week",
+                "soft week", "unusually"]
+
+_many = [_rec(CUR, "Show " + str(i), peer=False) for i in range(3)]
+for scope, recs in [("peer", PEER), ("national", NATL), ("national", _many)]:
+    summ, facts = gh2.build_pulse(CUR, scope, recs, recs, "no_threshold",
+                                  gh2.comparison_availability(recs, [], True))
+    hits = [w for w in INTERPRETIVE if w in summ.lower()]
+    check(f"{scope}/{len(recs)}rec: no interpretive volume language", not hits,
+          f"{hits} in {summ}")
+    check(f"{scope}/{len(recs)}rec: states the observed count",
+          "This week contains" in summ, summ)
+    check(f"{scope}/{len(recs)}rec: states the reference count",
+          "typical weekly count for this calendar month is" in summ, summ)
+    check(f"{scope}/{len(recs)}rec: passes guard", not _vs(summ, facts), _vs(summ, facts))
+
+# singular / plural correctness on both sides of the comparison
+one, _f = gh2.build_pulse(CUR, "peer", PEER, PEER, "no_threshold",
+                          gh2.comparison_availability(PEER, [], True))
+check("singular record wording", "one peer-venue record for the season slate" in one, one)
+three, _f = gh2.build_pulse(CUR, "national", _many, _many, "no_threshold",
+                            gh2.comparison_availability(_many, [], True))
+check("plural record wording", "three national touring records" in three, three)
+check("plural show/venue wording",
+      "Three season-slate shows reported at three venues" in three, three)
+
+# the reference count is only offered when one exists
+none_ref, _f = gh2.build_pulse("2026-08-30", "peer", PEER, [], "no_threshold",
+                               gh2.comparison_availability(PEER, [], True))
+check("no reference count invented when none is computable",
+      "typical weekly count" not in none_ref or "is no" not in none_ref, none_ref)
+
+
 print(f"\n{'=' * 60}\n{PASSED} passed, {FAILED} failed\n{'=' * 60}")
 sys.exit(1 if FAILED else 0)

@@ -773,9 +773,10 @@ def build_pulse(week_of: str, scope: str, scope_records: list,
     counted = (f"{_count_word(n_s, True)} season-slate {show_word} reported "
                f"at {_count_word(n_v)} {venue_word}")
 
-    # The calendar-month norm is included only when this week is at or above
-    # it. Printing it on a below-norm week frames an ordinary quiet week as a
-    # shortfall, which is exactly the inference this copy must not invite.
+    # Report observed-versus-reference counts, never a qualitative reading of
+    # them. "In line with the usual volume" is a classification with no
+    # deterministic definition behind it — the reader can compare two numbers
+    # without being told what they mean.
     month = week_of[5:7]
     per_week = defaultdict(int)
     weeks_seen = set()
@@ -787,9 +788,13 @@ def build_pulse(week_of: str, scope: str, scope_records: list,
     counts = sorted(per_week.get(w, 0) for w in weeks_seen)
     typical = counts[len(counts) // 2] if counts else 0
     norm = ""
-    if typical and len(scope_records) >= typical:
-        norm = (f" That is in line with the usual volume of {body} records for "
-                f"this point in the year.")
+    if typical:
+        n_rec = len(scope_records)
+        rec_word = "record" if n_rec == 1 else "records"
+        typ_word = "record" if typical == 1 else "records"
+        norm = (f" This week contains {_count_word(n_rec)} {body} {rec_word} "
+                f"for the season slate; the typical weekly count for this "
+                f"calendar month is {_count_word(typical)} {typ_word}.")
 
     status = (comparison or {}).get("comparison_status", "available")
     clause = _comparison_clause(status, body)
