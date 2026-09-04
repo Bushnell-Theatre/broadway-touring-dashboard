@@ -175,6 +175,69 @@ only checked for its ingredients and for banned claim types. Periodic
 spot-checking is worthwhile; a human read of every run is not required, and was
 never a real control while `watcher.py` commits and deploys unattended.
 
+### PARKED — verifiable counts (not started; requires separate authorization)
+
+**Status: parked and unstarted as of September 4, 2026.** The counts-of-shows
+prohibition stays in force exactly as shipped. Nothing here is authorized work;
+it is the agreed shape of a possible future improvement.
+
+**The problem it would address.** Of the six retrospectives regenerated under
+guard v2, three published validated AI copy and three fell back to deterministic
+copy — a 50% fallback rate. That rate was accepted for the containment release:
+every retrospective still publishes automatically, the fallback is factually
+safe, and no operator interaction is required. In that batch the dominant
+rejection driver was counts and unattributable group statements, not wrong
+relationships.
+
+**Sequence, in order:**
+
+1. Improve the season-review prompt so it avoids counts and ambiguous group
+   statements in the first place.
+2. Observe fallback frequency on subsequent generations.
+3. Only if the fallback rate remains operationally significant, compute explicit
+   tallies in Python and supply them to the prompt as given facts — e.g.
+   `subscriber_above_count`, `subscriber_below_count`,
+   `subscriber_matched_count`, `subscriber_no_benchmark_count`.
+4. Permit only count statements that match those derived tallies exactly.
+
+**Do not weaken the counts prohibition merely to improve the pass rate.**
+Subjective qualifiers — "largely", "mostly", "generally" — remain rejected
+unless they are given explicit deterministic definitions.
+
+#### How a prompt change must be evaluated
+
+Two measurement gaps make the obvious approaches useless here:
+
+- **Natural weekly generations provide no evidence about season-retrospective
+  fallback frequency.** They exercise a different generator, different prompt
+  and different trigger. Season retrospectives fire once per season, 14 days
+  after the last close, and all six are already written — so this data does not
+  accumulate on its own.
+- **`report_review_claims.py` does not measure what step 2 needs.** It verifies
+  relationship correctness in *stored* output. It does not measure fallback
+  frequency and does not explain why an AI attempt was rejected.
+
+So evaluating a prompt change requires a **deliberate, non-publishing
+retrospective regeneration**. That evaluation:
+
+- must **not** overwrite `src/data/season_review.json`;
+- must **not** invoke the deployment workflow;
+- must **not** create commits.
+
+Record separately for each season:
+
+| Field | Meaning |
+|---|---|
+| first attempt | pass or rejection |
+| corrective retry | pass or rejection |
+| rejection reasons | the specific guard violations |
+| fallback would have been used | yes/no |
+| relationship verification | result from `report_review_claims.py` |
+
+Compare against the current baseline: **three AI passes** (2024-2025, 2023-2024,
+2019-2020) and **three deterministic fallbacks** (2025-2026, 2022-2023,
+2021-2022), all at `guard_version` 2.
+
 ### National fallback (August 28, 2026)
 
 The exec brief only ever compared against peer-sized venues (~2,400–3,000
