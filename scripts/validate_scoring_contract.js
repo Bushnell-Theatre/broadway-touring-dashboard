@@ -1092,8 +1092,11 @@ ACTIVE_CARD_KEYS.forEach(function (key) {
 });
 
 // 3. The versions.json loader is present and iterates over the active card keys.
+// Matches the fetch regardless of options, so adding a cache policy does not
+// break this contract. Governed fetches must also pass { cache: 'no-store' } —
+// that is asserted separately in test-filters.js.
 ok("index.html: versions.json loader fetches 'data/versions.json'",
-   indexSrc.includes("fetch('data/versions.json')"),
+   /fetch\('data\/versions\.json'/.test(indexSrc),
    "index.html is missing the versions.json fetch — loader is required to populate ver-* spans");
 
 ok("index.html: versions.json loader references 'programming' key",
