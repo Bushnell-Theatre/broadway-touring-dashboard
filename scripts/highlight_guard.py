@@ -274,12 +274,14 @@ _DIRECTION_WORDS = {
     # An explicit statement that there is nothing to compare against. This is
     # a legitimate claim and must be checked like any other — and it stops a
     # clause from inheriting a direction from its sentence lead-in.
+    # NB: filler uses [\w-]+ so hyphenated qualifiers match — "no PRE-SEASON
+    # peer benchmark" silently failed a \w+ filler, because \w excludes "-".
     "none": [
-        r"no\s+(\w+\s+){0,3}?benchmarks?\b",
-        r"no\s+(\w+\s+){0,3}?(signal|comparison|data)\s+available",
-        r"without\s+(\w+\s+){0,3}?benchmarks?\b",
+        r"no\s+([\w-]+\s+){0,3}?benchmarks?\b",
+        r"no\s+([\w-]+\s+){0,3}?(signal|comparison|data)s?\s+available",
+        r"without\s+([\w-]+\s+){0,3}?benchmarks?\b",
         # "lacked comparable benchmarks" — allow an adjective or two between.
-        r"lack(s|ed|ing)?\s+(\w+\s+){0,3}?(benchmarks?|signals?|comparisons?)\b",
+        r"lack(s|ed|ing)?\s+([\w-]+\s+){0,3}?(benchmarks?|signals?|comparisons?)\b",
     ],
 }
 
