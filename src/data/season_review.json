@@ -1,7 +1,10 @@
 {
   "2025-2026": {
-    "summary": "Hamilton proved resilient, delivering 93.0% capacity against its pre-season peer signal of 96.6%, while Shucked matched expectations at 72.0% versus 72.4%. Conversely, & Juliet significantly underperformed its pre-season peer signal of 91.5%, achieving 76.7% capacity instead. Among shows without pre-season benchmarks, Beauty and the Beast led at 92.4% capacity, while Kinky Boots trailed at 61.9%. Subscription shows showed mixed results: some like Hamilton and Beauty and the Beast held strong, while others like & Juliet fell short of expectations, suggesting subscriber appeal alone does not guarantee performance alignment with pre-season signals.",
-    "generated_at": "2026-09-04T15:14:00",
+    "summary": "2025-2026 season — recorded peer-venue results.\n\nThe Notebook recorded 76.0% actual peer capacity and has no pre-season peer benchmark.\nHamilton recorded 93.0% actual peer capacity against a pre-season peer benchmark of 96.6%.\nSpamalot recorded 61.2% actual peer capacity and has no pre-season peer benchmark.\nSuffs recorded 73.1% actual peer capacity and has no pre-season peer benchmark.\nShucked recorded 72.0% actual peer capacity against a pre-season peer benchmark of 72.4%.\nKinky Boots recorded 61.9% actual peer capacity and has no pre-season peer benchmark.\nBeauty and the Beast recorded 92.4% actual peer capacity and has no pre-season peer benchmark.\n& Juliet recorded 76.7% actual peer capacity against a pre-season peer benchmark of 91.5%.\nWater for Elephants recorded 67.7% actual peer capacity and has no pre-season peer benchmark.",
+    "generated_at": "2026-09-04T16:25:51",
+    "validation_status": "fallback",
+    "validation_method": "deterministic",
+    "guard_version": "2",
     "shows": [
       {
         "name": "The Notebook",
@@ -105,8 +108,11 @@
     ]
   },
   "2024-2025": {
-    "summary": "**2024–2025 Broadway Season Retrospective**\n\nLes Misérables and MJ The Musical matched their pre-season peer benchmarks, delivering 89.7% and 90.4% paid capacity respectively. The Lion King slightly underperformed its pre-season peer signal of 94.5%, achieving 93.8%. Six fell notably short at 78.0% against its pre-season peer benchmark of 83.9%, while Back to the Future: The Musical underperformed at 75.6% versus 80.1%. Subscription shows showed mixed results: A Beautiful Noise achieved 90.3%, Some Like It Hot reached 67.6%, and The Wiz posted 80.1%, with no pre-season benchmarks available for comparison. Overall, national peer signals proved reasonably predictive for established titles, though individual performance varied significantly.",
-    "generated_at": "2026-09-04T15:14:03",
+    "summary": "MJ The Musical exceeded its pre-season peer signal, achieving 90.4% against a Pre Peer% of 90.3%. Les Misérables matched its benchmark at 89.7%. Six, The Lion King, and Back to the Future: The Musical all underperformed, posting 78.0%, 93.8%, and 75.6% respectively against peer signals of 83.9%, 94.5%, and 80.1%. Subscriber shows showed mixed results—MJ outperformed while subscription titles Six and Back to the Future fell short—suggesting subscription status alone did not determine outcome.",
+    "generated_at": "2026-09-04T16:25:53",
+    "validation_status": "passed",
+    "validation_method": "ai_guard",
+    "guard_version": "2",
     "shows": [
       {
         "name": "A Beautiful Noise: The Neil Diamond Musical",
@@ -199,8 +205,11 @@
     ]
   },
   "2023-2024": {
-    "summary": "# 2023–2024 Broadway Season Retrospective\n\nWicked and Beetlejuice exceeded their pre-season peer benchmarks, with Wicked reaching 92.8% against a 90.3% pre-season signal and Beetlejuice achieving 96.3% against 92.6%. Conversely, Moulin Rouge!, Frozen, and Funny Girl underperformed their pre-season peer signals, posting 74.9%, 76.9%, and 79.3% respectively against benchmarks of 81.0%, 85.9%, and their pre-season signals unavailable. Mrs. Doubtfire and The Cher Show lack pre-season benchmarks but delivered 78.0% and 61.7% actual peer capacity respectively. The season shows no consistent pattern between subscription and non-subscription shows, with both categories mixed across outcomes.",
-    "generated_at": "2026-09-04T15:14:06",
+    "summary": "# 2023–2024 Broadway Season Retrospective\n\nWicked and Beetlejuice exceeded their pre-season peer benchmarks, achieving 92.8% and 96.3% paid capacity respectively. Moulin Rouge! The Musical and Frozen fell short, posting 74.9% and 76.9% against pre-season peer signals of 81.0% and 85.9%. Mrs. Doubtfire, The Cher Show, and Funny Girl lack pre-season comparables. Across the season, subscriber shows produced mixed results—Beetlejuice thrived while Moulin Rouge! and Frozen underperformed—suggesting subscription status alone did not determine outcome.",
+    "generated_at": "2026-09-04T16:25:58",
+    "validation_status": "passed",
+    "validation_method": "ai_guard",
+    "guard_version": "2",
     "shows": [
       {
         "name": "Mrs. Doubtfire",
@@ -282,8 +291,11 @@
     ]
   },
   "2022-2023": {
-    "summary": "# 2022-2023 Broadway Season Retrospective\n\nSeveral shows outperformed their pre-season peer benchmarks: Hadestown reached 89.8% capacity against a Pre Peer% of 88.5%, while Mean Girls achieved 85.0% against 90.9% and Ain't Too Proud hit 74.7% against 75.0%. Conversely, Come From Away underperformed significantly at 68.2% versus its Pre Peer% of 81.1%, and Jagged Little Pill came in at 72.0% with no pre-season benchmark available. Subscription shows demonstrated mixed results with no clear advantage over add-ons, while To Kill a Mockingbird—our only non-subscriber dramatic title—delivered 81.3% against an 83.0% pre-season signal, matching our strongest performer, Six, at 88.2%.",
-    "generated_at": "2026-09-04T15:14:09",
+    "summary": "2022-2023 season — recorded peer-venue results.\n\nMean Girls recorded 85.0% actual peer capacity against a pre-season peer benchmark of 90.9%.\nAladdin recorded 89.0% actual peer capacity and has no pre-season peer benchmark.\nCome From Away recorded 68.2% actual peer capacity against a pre-season peer benchmark of 81.1%.\nSix recorded 88.2% actual peer capacity and has no pre-season peer benchmark.\nTootsie recorded 62.5% actual peer capacity against a pre-season peer benchmark of 61.3%.\nHadestown recorded 89.8% actual peer capacity against a pre-season peer benchmark of 88.5%.\nThe Simon & Garfunkel Story recorded 57.7% actual peer capacity and has no pre-season peer benchmark.\nTina: The Tina Turner Musical recorded 81.8% actual peer capacity and has no pre-season peer benchmark.\nJagged Little Pill recorded 72.0% actual peer capacity and has no pre-season peer benchmark.\nAin't Too Proud recorded 74.7% actual peer capacity against a pre-season peer benchmark of 75.0%.\nTo Kill a Mockingbird recorded 81.3% actual peer capacity against a pre-season peer benchmark of 83.0%.",
+    "generated_at": "2026-09-04T16:26:03",
+    "validation_status": "fallback",
+    "validation_method": "deterministic",
+    "guard_version": "2",
     "shows": [
       {
         "name": "Mean Girls",
@@ -408,70 +420,12 @@
       }
     ]
   },
-  "2019-2020": {
-    "summary": "# 2019-2020 Broadway Season Retrospective\n\nAnastasia demonstrated exceptional strength, reaching 89.8% paid capacity at peer venues. By contrast, Hello, Dolly! underperformed at 63.8%, and Dr. Seuss' How the Grinch Stole Christmas achieved only 48.8% despite its single-week run. The Book of Mormon and Jesus Christ Superstar posted 75.7% and 72.5% respectively. Subscription shows (Hello, Dolly!, Anastasia, and Jesus Christ Superstar) showed mixed results, with Anastasia excelling while Hello, Dolly! lagged. Non-subscription titles (The Book of Mormon and the Grinch) split between strong and weak performance, suggesting factors beyond subscription status influenced outcomes across the season.",
-    "generated_at": "2026-09-04T15:14:20",
-    "shows": [
-      {
-        "name": "The Book of Mormon",
-        "sub": false,
-        "pre_cap": null,
-        "pre_peer_cap": null,
-        "pre_gross": null,
-        "pre_record_count": 0,
-        "actual_peer_cap": 0.7569,
-        "actual_peer_gross": 1296989,
-        "actual_peer_weeks": 9
-      },
-      {
-        "name": "Hello, Dolly!",
-        "sub": true,
-        "pre_cap": null,
-        "pre_peer_cap": null,
-        "pre_gross": null,
-        "pre_record_count": 0,
-        "actual_peer_cap": 0.6382,
-        "actual_peer_gross": 932962,
-        "actual_peer_weeks": 11
-      },
-      {
-        "name": "Dr. Seuss' How the Grinch Stole Christmas",
-        "sub": false,
-        "pre_cap": null,
-        "pre_peer_cap": null,
-        "pre_gross": null,
-        "pre_record_count": 0,
-        "actual_peer_cap": 0.488,
-        "actual_peer_gross": 446478,
-        "actual_peer_weeks": 1
-      },
-      {
-        "name": "Anastasia",
-        "sub": true,
-        "pre_cap": null,
-        "pre_peer_cap": null,
-        "pre_gross": null,
-        "pre_record_count": 0,
-        "actual_peer_cap": 0.8982,
-        "actual_peer_gross": 1248878,
-        "actual_peer_weeks": 13
-      },
-      {
-        "name": "Jesus Christ Superstar",
-        "sub": true,
-        "pre_cap": null,
-        "pre_peer_cap": null,
-        "pre_gross": null,
-        "pre_record_count": 0,
-        "actual_peer_cap": 0.7247,
-        "actual_peer_gross": 1060632,
-        "actual_peer_weeks": 16
-      }
-    ]
-  },
   "2021-2022": {
-    "summary": "# 2021-2022 Broadway Season Retrospective\n\nHamilton significantly exceeded its pre-season peer benchmark, achieving 92.1% capacity versus a 99.7% pre-season peer signal. Dear Evan Hansen and My Fair Lady underperformed their pre-season signals, posting 73.8% and 73.3% capacity respectively against benchmarks of 93.3% and 90.4%. Notably, subscription shows—Hamilton, Dear Evan Hansen, My Fair Lady, The Band's Visit, and Pretty Woman—collectively showed actual peer capacity below their pre-season signals, while non-subscription titles Rent and Blue Man Group lacked comparable benchmarks, making season-wide pattern assessment limited by incomplete pre-season data.",
-    "generated_at": "2026-09-04T15:14:43",
+    "summary": "2021-2022 season — recorded peer-venue results.\n\nRent recorded 72.3% actual peer capacity and has no pre-season peer benchmark.\nThe Band's Visit recorded 58.5% actual peer capacity and has no pre-season peer benchmark.\nWhat the Constitution Means to Me recorded no peer-venue capacity this season.\nMy Fair Lady recorded 73.3% actual peer capacity against a pre-season peer benchmark of 90.4%.\nBlue Man Group recorded 47.6% actual peer capacity against a pre-season peer benchmark of 60.7%.\nDear Evan Hansen recorded 73.8% actual peer capacity against a pre-season peer benchmark of 93.3%.\nPretty Woman: The Musical recorded 70.5% actual peer capacity and has no pre-season peer benchmark.\nStomp recorded 26.7% actual peer capacity against a pre-season peer benchmark of 86.4%.\nHamilton recorded 92.1% actual peer capacity against a pre-season peer benchmark of 99.7%.",
+    "generated_at": "2026-09-04T16:26:09",
+    "validation_status": "fallback",
+    "validation_method": "deterministic",
+    "guard_version": "2",
     "shows": [
       {
         "name": "Rent",
@@ -571,6 +525,70 @@
         "actual_peer_cap": 0.921,
         "actual_peer_gross": 2436895,
         "actual_peer_weeks": 9
+      }
+    ]
+  },
+  "2019-2020": {
+    "summary": "# 2019–2020 Broadway Season Retrospective\n\nThis season provided limited pre-season peer benchmarks for comparison. Among shows without prior peer data, Anastasia achieved 89.8% paid capacity at peer venues, while Hello, Dolly! reached 63.8% and Jesus Christ Superstar reached 72.5%. Dr. Seuss' How the Grinch Stole Christmas posted 48.8% capacity in its single week. The Book of Mormon, our highest-grossing title at $1.30M, operated without comparable pre-season signals. Subscription shows (Hello, Dolly!, Anastasia, Jesus Christ Superstar) and add-on programming (The Book of Mormon, Dr. Seuss') showed no consistent performance pattern, suggesting factors beyond subscription status influenced results.",
+    "generated_at": "2026-09-04T16:26:11",
+    "validation_status": "passed",
+    "validation_method": "ai_guard",
+    "guard_version": "2",
+    "shows": [
+      {
+        "name": "The Book of Mormon",
+        "sub": false,
+        "pre_cap": null,
+        "pre_peer_cap": null,
+        "pre_gross": null,
+        "pre_record_count": 0,
+        "actual_peer_cap": 0.7569,
+        "actual_peer_gross": 1296989,
+        "actual_peer_weeks": 9
+      },
+      {
+        "name": "Hello, Dolly!",
+        "sub": true,
+        "pre_cap": null,
+        "pre_peer_cap": null,
+        "pre_gross": null,
+        "pre_record_count": 0,
+        "actual_peer_cap": 0.6382,
+        "actual_peer_gross": 932962,
+        "actual_peer_weeks": 11
+      },
+      {
+        "name": "Dr. Seuss' How the Grinch Stole Christmas",
+        "sub": false,
+        "pre_cap": null,
+        "pre_peer_cap": null,
+        "pre_gross": null,
+        "pre_record_count": 0,
+        "actual_peer_cap": 0.488,
+        "actual_peer_gross": 446478,
+        "actual_peer_weeks": 1
+      },
+      {
+        "name": "Anastasia",
+        "sub": true,
+        "pre_cap": null,
+        "pre_peer_cap": null,
+        "pre_gross": null,
+        "pre_record_count": 0,
+        "actual_peer_cap": 0.8982,
+        "actual_peer_gross": 1248878,
+        "actual_peer_weeks": 13
+      },
+      {
+        "name": "Jesus Christ Superstar",
+        "sub": true,
+        "pre_cap": null,
+        "pre_peer_cap": null,
+        "pre_gross": null,
+        "pre_record_count": 0,
+        "actual_peer_cap": 0.7247,
+        "actual_peer_gross": 1060632,
+        "actual_peer_weeks": 16
       }
     ]
   }

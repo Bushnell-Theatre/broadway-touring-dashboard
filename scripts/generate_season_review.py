@@ -285,17 +285,22 @@ def build_fallback_summary(season_key: str, shows_data: list) -> str:
     for s in shows_data:
         d = derive_relationship(s)
         name = s.get("name", "").strip()
+        # Each statement is kept to a single self-contained sentence naming its
+        # own show. Splitting "No pre-season peer benchmark is available." into
+        # its own sentence left a benchmark claim with no show attached, which
+        # the guard correctly reads as unattributable — deterministic copy
+        # should pass its own validator, not need an exemption from it.
         if d["actual"] is None:
-            lines.append(f"{name}: no peer-venue capacity recorded this season.")
+            lines.append(f"{name} recorded no peer-venue capacity this season.")
         elif d["benchmark"] is None:
             lines.append(
-                f"{name} recorded {d['actual']}% actual peer capacity. "
-                f"No pre-season peer benchmark is available."
+                f"{name} recorded {d['actual']}% actual peer capacity and has "
+                f"no pre-season peer benchmark."
             )
         else:
             lines.append(
-                f"{name} recorded {d['actual']}% actual peer capacity. "
-                f"Its pre-season peer benchmark was {d['benchmark']}%."
+                f"{name} recorded {d['actual']}% actual peer capacity against a "
+                f"pre-season peer benchmark of {d['benchmark']}%."
             )
     return "\n".join(lines)
 
