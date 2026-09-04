@@ -61,7 +61,13 @@ check("fallback states each show's displayed actual",
 check("fallback states the benchmark when one exists",
       "99.7%" in fb, fb)
 check("fallback says so when there is no benchmark",
-      "No pre-season peer benchmark is available" in fb, fb)
+      "has no pre-season peer benchmark" in fb, fb)
+# Each statement must be one self-contained sentence naming its own show, or
+# the benchmark clause is left unattributable and the guard flags deterministic
+# copy that is true by construction.
+check("fallback copy passes the guard's own comparison check",
+      not __import__("highlight_guard").check_comparisons(fb, SHOWS),
+      fb)
 check("fallback uses no comparative language",
       not any(w in fb.lower() for w in
               ("exceed", "underperform", "outperform", "matched", "fell short")),
