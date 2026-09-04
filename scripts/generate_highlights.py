@@ -739,12 +739,27 @@ def build_pulse(week_of: str, scope: str, scope_records: list,
     touring, so it is never printed.
     """
     when = long_date(week_of)
-    noun = "peer venue" if scope in ("peer", "national_fallback") else "venue"
-    body = "peer-venue" if scope in ("peer", "national_fallback") else "national touring"
+    month = datetime.strptime(week_of, "%Y-%m-%d").strftime("%B")
+
+    # Scope semantics — these three are NOT interchangeable:
+    #   peer              peer-venue evidence
+    #   national          national evidence
+    #   national_fallback NATIONAL evidence shown on the Executive Summary
+    #                     because no peer evidence was available
+    # Treating national_fallback as peer-shaped described national records as
+    # peer-venue records, since that path is handed curr_all/season_records.
+    is_peer_scope = (scope == "peer")
+    noun = "peer venue" if is_peer_scope else "venue"
+    body = "peer-venue" if is_peer_scope else "national touring"
+    # Said before anything else on the fallback path, so the reader is never
+    # left to assume these counts are peer counts.
+    fallback_note = ("" if scope != "national_fallback" else
+                     " No peer-venue records were available for this slate, so "
+                     "this update uses national touring evidence.")
 
     if reason == "highlight_validation_failed":
         summary = (
-            f"Data updated through the week of {when}. A configured "
+            f"Data updated through the week of {when}.{fallback_note} A configured "
             f"material-change threshold was detected, but the automated "
             f"narrative did not pass validation. Review the current dashboard "
             f"metrics for detail."
@@ -761,56 +776,56 @@ def build_pulse(week_of: str, scope: str, scope_records: list,
         # week's feed — not a closure, cancellation, weak demand, or a failure
         # to report, none of which this data can establish.
         summary = (
-            f"Data updated through the week of {when}. No season-slate shows "
-            f"appear in {body} data for this week. No configured "
-            f"material-change threshold was reached."
+            f"Data updated through the week of {when}.{fallback_note} No "
+            f"season-slate shows appear in {body} data for this week. No "
+            f"configured material-change threshold was reached."
         )
         return summary, f"week_of {week_of} ({when})"
 
-    n_s, n_v = len(shows), len(venues)
-    show_word = "show" if n_s == 1 else "shows"
-    venue_word = noun if n_v == 1 else noun + "s"
-    counted = (f"{_count_word(n_s, True)} season-slate {show_word} reported "
-               f"at {_count_word(n_v)} {venue_word}")
+    # Shows, records and venues in one clause rather than two near-duplicate
+    # sentences — the three counts differ (a show can produce several records
+    # across venues), so all three are kept, but stated once.
+    n_s, n_v, n_rec = len(shows), len(venues), len(scope_records)
 
-    # Report observed-versus-reference counts, never a qualitative reading of
-    # them. "In line with the usual volume" is a classification with no
-    # deterministic definition behind it — the reader can compare two numbers
-    # without being told what they mean.
-    month = week_of[5:7]
+    # Observed-versus-reference counts, never a qualitative reading of them.
     per_week = defaultdict(int)
     weeks_seen = set()
     for r in all_scope_records:
         wk = r.get("week_of") or ""
-        if wk and wk[5:7] == month and is_active(r):
+        if wk and wk[5:7] == week_of[5:7] and is_active(r):
             weeks_seen.add(wk)
             per_week[wk] += 1
     counts = sorted(per_week.get(w, 0) for w in weeks_seen)
     typical = counts[len(counts) // 2] if counts else 0
-    norm = ""
-    if typical:
-        n_rec = len(scope_records)
-        rec_word = "record" if n_rec == 1 else "records"
-        typ_word = "record" if typical == 1 else "records"
-        norm = (f" This week contains {_count_word(n_rec)} {body} {rec_word} "
-                f"for the season slate; the typical weekly count for this "
-                f"calendar month is {_count_word(typical)} {typ_word}.")
+
+    # For peer scope the venue noun already carries "peer", so the record noun
+    # stays bare rather than reading "one peer-venue record at one peer venue".
+    rec_qualifier = "" if is_peer_scope else "national touring "
+    counted = (f"{_count_word(n_s, True)} season-slate "
+               f"{'show' if n_s == 1 else 'shows'} produced "
+               f"{_count_word(n_rec)} {rec_qualifier}"
+               f"{'record' if n_rec == 1 else 'records'} at "
+               f"{_count_word(n_v)} {noun if n_v == 1 else noun + 's'}")
+    norm = ("" if not typical else
+            f"; the typical weekly count for this slate in {month} is "
+            f"{_count_word(typical)} {'record' if typical == 1 else 'records'}")
 
     status = (comparison or {}).get("comparison_status", "available")
-    clause = _comparison_clause(status, body)
 
-    # Independent checks — show_opens and the all-time highs — do not need a
+    # Independent checks — show_opens and the all-time highs — need no
     # prior-week match and are evaluated whenever the current week has scoped
     # shows. Only claim they ran when they actually did.
     if status == "available":
-        outcome = " No configured material-change threshold was reached."
+        tail = (" Week-over-week comparison was available, and no configured "
+                "material-change threshold was reached.")
     else:
-        outcome = " Other configured checks produced no material highlight."
+        tail = (_comparison_clause(status, body) +
+                " Other configured checks produced no material highlight.")
 
-    summary = (f"Data updated through the week of {when}. {counted}."
-               f"{norm}{clause}{outcome}")
+    summary = (f"Data updated through the week of {when}.{fallback_note} "
+               f"{counted}{norm}.{tail}")
     facts = (f"week_of {week_of} ({when}); shows {n_s}; venues {n_v}; "
-             f"records {len(scope_records)}; typical {typical}")
+             f"records {n_rec}; typical {typical}")
     return summary, facts
 
 

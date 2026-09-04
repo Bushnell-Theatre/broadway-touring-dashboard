@@ -185,7 +185,7 @@ for scope, recs, allr, word in [("peer", PEER, PEER, "peer venue"),
     check(f"{scope} pulse names the reporting week",
           "August 30, 2026" in summ, summ)
     check(f"{scope} pulse states the threshold outcome",
-          "No configured material-change threshold was reached." in summ, summ)
+          "no configured material-change threshold was reached." in summ.lower(), summ)
     check(f"{scope} pulse uses {scope}-appropriate wording",
           word in summ, summ)
     check(f"{scope} pulse passes the guard", not _vs(summ, facts), _vs(summ, facts))
@@ -304,7 +304,8 @@ print()
 print("Suite I - pulse wording matches comparison status")
 
 WORDING = {
-    "available":              "No configured material-change threshold was reached.",
+    "available":              "Week-over-week comparison was available, and no configured "
+                              "material-change threshold was reached.",
     "no_prior_scope_records": "prior reporting week contained no peer-venue records",
     "no_comparable_shows":    "no season-slate show appeared in both weeks",
     "season_boundary":        "intentionally reset at the fiscal-season boundary",
@@ -320,7 +321,7 @@ for expected, prev, same, _ in cases:
                    "report was not", "failed to report")), summ)
     if expected != "available":
         check(f"{expected}: does not claim the comparison ran",
-              "No configured material-change threshold was reached." not in summ, summ)
+              "Week-over-week comparison was available" not in summ, summ)
         check(f"{expected}: credits only independent checks",
               "Other configured checks produced no material highlight." in summ, summ)
 
@@ -405,20 +406,20 @@ for scope, recs in [("peer", PEER), ("national", NATL), ("national", _many)]:
     check(f"{scope}/{len(recs)}rec: no interpretive volume language", not hits,
           f"{hits} in {summ}")
     check(f"{scope}/{len(recs)}rec: states the observed count",
-          "This week contains" in summ, summ)
+          "produced" in summ and ("record" in summ), summ)
     check(f"{scope}/{len(recs)}rec: states the reference count",
-          "typical weekly count for this calendar month is" in summ, summ)
+          "typical weekly count for this slate in" in summ, summ)
     check(f"{scope}/{len(recs)}rec: passes guard", not _vs(summ, facts), _vs(summ, facts))
 
 # singular / plural correctness on both sides of the comparison
 one, _f = gh2.build_pulse(CUR, "peer", PEER, PEER, "no_threshold",
                           gh2.comparison_availability(PEER, [], True))
-check("singular record wording", "one peer-venue record for the season slate" in one, one)
+check("singular record wording", "produced one record at one peer venue" in one, one)
 three, _f = gh2.build_pulse(CUR, "national", _many, _many, "no_threshold",
                             gh2.comparison_availability(_many, [], True))
-check("plural record wording", "three national touring records" in three, three)
+check("plural record wording", "produced three national touring records" in three, three)
 check("plural show/venue wording",
-      "Three season-slate shows reported at three venues" in three, three)
+      "Three season-slate shows produced" in three and "at three venues" in three, three)
 
 # the reference count is only offered when one exists
 none_ref, _f = gh2.build_pulse("2026-08-30", "peer", PEER, [], "no_threshold",
@@ -513,6 +514,43 @@ check("no dry-run artifact was persisted as highlight_validation_failed",
       _entry.get("pulse_reason") != "highlight_validation_failed"
       or "[DRY RUN" not in _entry.get("summary", ""), _entry.get("summary", "")[:60])
 
+
+print()
+print("Suite N - national_fallback describes NATIONAL evidence")
+
+_NATL = [{"week_of": CUR, "show": "The Outsiders", "theatre": "Big House",
+          "similar_bushnell": False, "gross_gross": 900_000, "cap_paid": 77.0,
+          "no_engagement": False}]
+
+for _reason in ("no_threshold", "highlight_validation_failed"):
+    _s, _f = gh2.build_pulse(CUR, "national_fallback", _NATL, _NATL, _reason,
+                             gh2.comparison_availability(_NATL, [], True))
+    check(f"national_fallback/{_reason}: discloses peer evidence was unavailable",
+          "No peer-venue records were available" in _s, _s)
+    check(f"national_fallback/{_reason}: says it uses national touring evidence",
+          "uses national touring evidence" in _s, _s)
+    check(f"national_fallback/{_reason}: never calls national records peer records",
+          "peer-venue record at" not in _s and "peer venue;" not in _s
+          and "national touring record" not in _s.split("uses national touring evidence")[0], _s)
+    check(f"national_fallback/{_reason}: passes guard", not _vs(_s, _f), _vs(_s, _f))
+
+# scope is persisted so the page can label it
+with tempfile.TemporaryDirectory() as _td:
+    _out = Path(_td) / "nf.json"
+    gh2.write_pulse(_out, "2026-2027", CUR, "national_fallback", _NATL, _NATL,
+                    "highlight_validation_failed")
+    _e = json.loads(_out.read_text(encoding="utf-8"))["2026-2027"]
+    check("stored scope is national_fallback", _e["scope"] == "national_fallback", _e["scope"])
+    check("stored kind is pulse", _e["kind"] == "pulse")
+    check("stored pulse_reason is highlight_validation_failed",
+          _e["pulse_reason"] == "highlight_validation_failed")
+
+# peer scope must still read as peer
+_ps, _pf = gh2.build_pulse(CUR, "peer", PEER, PEER, "no_threshold",
+                           gh2.comparison_availability(PEER, [], True))
+check("peer scope still describes peer venues", "peer venue" in _ps, _ps)
+check("peer scope makes no national-fallback disclosure",
+      "national touring evidence" not in _ps, _ps)
 
 print()
 print(f"\n{'=' * 60}\n{PASSED} passed, {FAILED} failed\n{'=' * 60}")
