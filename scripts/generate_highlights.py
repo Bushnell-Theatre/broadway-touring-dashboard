@@ -51,10 +51,29 @@ WOW_THRESHOLD_PCT   = 15.0    # ±15% week-over-week gross change
 CAP_LOW_BAND        = 60.0    # below this = low band
 CAP_HIGH_BAND       = 90.0    # at or above this = high band
 CLOSE_MIN_WEEKS     = 2       # show must have appeared this many prior weeks
-MIN_ABSENCE_WEEKS   = 6       # consecutive calendar weeks a show must be missing
-                              # from scope before "closes"/"left scope" fires —
-                              # a short gap is routine venue-size rotation or
-                              # scheduling, not a signal
+MIN_ABSENCE_WEEKS   = 12      # consecutive calendar weeks a show must be missing
+                              # before an absence is even worth reporting.
+                              #
+                              # This is NOT a closure threshold — no such
+                              # threshold exists. Measured against data.json
+                              # (2019–2026, absence spells with a full year of
+                              # follow-up so the outcome isn't censored):
+                              #   absent ≥6 wks  → 52% of shows came back
+                              #   absent ≥12 wks → 35% came back
+                              #   absent ≥26 wks → 17% came back
+                              # Longest gap a show returned from: 64 weeks.
+                              # Absence from this feed can never prove a tour
+                              # closed, at any threshold. See ABSENCE POLICY.
+
+# ── ABSENCE POLICY ────────────────────────────────────────────────────────────
+#
+# Touring shows routinely go dark and come back. The feed shows ~15 distinct
+# shows reporting nationally in Jul/Aug/Sep vs 23–26 in Jan–Apr — a summer
+# hiatus is normal business activity, not news. Combined with the base rates
+# above, this pipeline must never assert (or let the model infer) that a tour
+# has closed, ended, concluded, or exited touring. It may only report the
+# observable fact: "absent from the feed for N weeks, last seen <date>."
+HIATUS_MONTHS       = {6, 7, 8, 9}   # Jun–Sep: absence carries no signal here
 
 BAND_LABELS = {0: "low (<60%)", 1: "mid (60–89%)", 2: "high (≥90%)"}
 
@@ -164,6 +183,7 @@ def evaluate_thresholds(
     prior_weeks_by_show: dict,
     all_weeks: list,
     national_curr_agg: dict | None = None,
+    national_weeks_by_show: dict | None = None,
 ) -> list:
     """
     Evaluate all hard-coded thresholds for one scope (peer or all-venue).
@@ -172,13 +192,15 @@ def evaluate_thresholds(
     calendar), used to measure how many consecutive weekly snapshots a show
     has been missing from this scope — see MIN_ABSENCE_WEEKS.
 
-    national_curr_agg: when evaluating the peer scope, pass the current week's
-    show aggregation for ALL venues nationally (aggregate_by_show(curr_all)).
-    This lets "show closes" distinguish a show that dropped out of the peer-size
-    band this week (still touring, just not at a comparably-sized venue) from a
-    show that is genuinely absent from Broadway League data nationally. Leave
-    None when evaluating the national scope itself, where "absent from scope"
-    already means absent nationally.
+    national_curr_agg: current week's show aggregation for ALL venues nationally
+    (aggregate_by_show(curr_all)), used by the national-fallback path in run().
+
+    national_weeks_by_show: show → set of every week_of it appeared anywhere
+    nationally (including the current week). Absence claims about national data
+    MUST be measured against this, not against the calling scope's history —
+    reporting a peer-scope "last seen" date next to a claim of national absence
+    previously produced a factually false brief. Leave None when evaluating the
+    national scope itself, where this scope's own history is already national.
 
     Returns list of trigger dicts: { type, show, description }
     where description is the plain-text line sent to the API prompt.
@@ -285,14 +307,16 @@ def evaluate_thresholds(
                 ),
             })
 
-    # — Show closes / left scope (absent ≥ MIN_ABSENCE_WEEKS consecutive
-    # calendar weeks, ≥ CLOSE_MIN_WEEKS prior appearances). A single missed
-    # week is routine venue-size rotation (a show can bounce in and out of
-    # the peer-size band week to week) — only a sustained gap is a signal.
-    if same_season_wow:
+    # — Absence reporting (see ABSENCE POLICY at the top of this file).
+    #
+    # Reports the observable fact that a show has been missing for a sustained
+    # stretch. It NEVER concludes the tour closed — the data does not support
+    # that inference at any threshold. Suppressed entirely during the summer
+    # hiatus window, when going dark is normal business activity.
+    if same_season_wow and int(current_week[5:7]) not in HIATUS_MONTHS:
         for show in season_league_names:
             if show in curr_agg:
-                continue   # still running in this scope
+                continue   # still present in this scope
             prior_weeks = prior_weeks_by_show.get(show, set())
             if len(prior_weeks) < CLOSE_MIN_WEEKS:
                 continue
@@ -302,36 +326,75 @@ def evaluate_thresholds(
                 continue   # can't measure the gap — skip rather than guess
             weeks_absent = all_weeks.index(current_week) - all_weeks.index(last_seen)
             if weeks_absent < MIN_ABSENCE_WEEKS:
-                continue   # gap not sustained yet — likely routine rotation
-            if weeks_absent > MIN_ABSENCE_WEEKS:
-                continue   # already fired the week the threshold was crossed
+                continue   # not a sustained gap yet
 
-            national_hit = (national_curr_agg or {}).get(show)
-            if national_curr_agg is not None and national_hit and national_hit.get("gross_total"):
-                # Still touring nationally — just not at a peer-sized venue for
-                # several weeks running. This is NOT a closure signal; do not
-                # describe it as one.
+            # Report once, on the first week this show is *eligible* to be
+            # reported. Eligibility requires both a sustained gap and a
+            # non-hiatus week, so a show that crosses the threshold during the
+            # summer window is still reported on the first week after it —
+            # rather than being silently suppressed forever by a
+            # fire-exactly-at-the-threshold check.
+            prev_idx = all_weeks.index(current_week) - 1
+            if prev_idx >= 0:
+                prev_wk = all_weeks[prev_idx]
+                prev_gap = prev_idx - all_weeks.index(last_seen)
+                prev_eligible = (
+                    prev_gap >= MIN_ABSENCE_WEEKS
+                    and int(prev_wk[5:7]) not in HIATUS_MONTHS
+                )
+                if prev_eligible:
+                    continue   # already reported on an earlier eligible week
+
+            # National absence must be measured against NATIONAL history, not
+            # this scope's. Reporting a peer-scope "last seen" date alongside a
+            # claim of national absence previously produced a flatly false
+            # statement (a show active nationally days earlier was reported as
+            # having last appeared weeks before, and called closed).
+            nat_weeks = (national_weeks_by_show or {}).get(show, set())
+            nat_last_seen = max(nat_weeks) if nat_weeks else None
+            nat_absent = (
+                all_weeks.index(current_week) - all_weeks.index(nat_last_seen)
+                if nat_last_seen in all_weeks else None
+            )
+
+            if national_weeks_by_show is not None and nat_absent == 0:
+                # Still reporting nationally this week — the gap is peer-scope
+                # only. A venue-size shift, explicitly not a closure.
                 triggers.append({
                     "type": "left_peer_scope",
                     "show": show,
                     "description": (
                         f"{show}: absent from peer-sized venues (~2,400–3,000 seats) "
                         f"for {weeks_absent} consecutive weeks (last seen there week of "
-                        f"{last_seen}), but still active in national Broadway League "
-                        f"data (national gross {fmt_dollars(national_hit.get('gross_total'))}, "
-                        f"week of {current_week}). This is a sustained venue-size shift, "
-                        f"not a closure — the tour is still running."
+                        f"{last_seen}), but still reporting in national Broadway League "
+                        f"data as of the week of {current_week}. This is a venue-size "
+                        f"shift, not a closure — the tour is still running."
                     ),
                 })
+            elif national_weeks_by_show is not None and (
+                nat_absent is None or nat_absent < MIN_ABSENCE_WEEKS
+            ):
+                # Peer gap is sustained but the national gap is not. Not
+                # reportable — a show that merely skipped a national week or two
+                # is not news, and must never be described as absent nationally.
+                continue
             else:
+                # Sustained absence in the scope being described. State the fact
+                # and nothing more; the base rates make any closure inference
+                # unsupportable.
+                shown_absent = nat_absent if nat_absent is not None else weeks_absent
+                shown_last   = nat_last_seen if nat_last_seen else last_seen
                 triggers.append({
-                    "type": "show_closes",
+                    "type": "absent_from_feed",
                     "show": show,
                     "description": (
-                        f"{show}: absent from Broadway League touring data entirely "
-                        f"for {weeks_absent} consecutive weeks — no records at any venue "
-                        f"nationally (last seen week of {last_seen}, "
-                        f"after {len(prior_weeks)} weeks in scope)"
+                        f"{show}: no records anywhere in the Broadway League feed for "
+                        f"{shown_absent} consecutive weeks (last reported week of "
+                        f"{shown_last}). This is an observation about the feed, NOT "
+                        f"evidence the tour has closed: shows routinely go dark and "
+                        f"return — of shows historically absent this long, roughly a "
+                        f"third came back, some after a year or more. Worth confirming "
+                        f"with booking partners; not a closure."
                     ),
                 })
 
@@ -354,9 +417,12 @@ def build_exec_prompt(season_key: str, trigger_lines: list) -> str:
         f"Describe what happened, which show(s) are involved, and what the data "
         f"may signal. Do not speculate beyond what the numbers show. Do not "
         f"recommend booking or cancellation decisions. Only say a tour has "
-        f"closed, ended, or exited touring if the data explicitly states it is "
-        f"absent nationally — never infer a closure from a show simply moving "
-        f"out of the peer-size venue band. Keep it under 80 words."
+        f"NEVER state or imply that a tour has closed, ended, concluded, wrapped, "
+        f"or exited touring, and never speculate about why a show is absent. "
+        f"Absence from this feed does not establish any of that: touring shows "
+        f"routinely go dark for months and return, and a summer hiatus is normal. "
+        f"If a show is absent, say only that it has not reported for N weeks and "
+        f"that it is worth confirming with booking partners. Keep it under 80 words."
     )
 
 
@@ -377,9 +443,11 @@ def build_exec_national_fallback_prompt(season_key: str, trigger_lines: list) ->
         f"comparable-size peer venues reported this week. Describe what "
         f"happened, which show(s) are involved, and what the data may signal. "
         f"Do not speculate beyond what the numbers show. Do not recommend "
-        f"booking or cancellation decisions. Only say a tour has closed, "
-        f"ended, or exited touring if the data explicitly states it is absent "
-        f"nationally. Keep it under 80 words."
+        f"booking or cancellation decisions. NEVER state or imply that a tour "
+        f"has closed, ended, concluded, wrapped, or exited touring, and never "
+        f"speculate about why a show is absent — absence from this feed does "
+        f"not establish any of that, and a summer hiatus is normal. Keep it "
+        f"under 80 words."
     )
 
 
@@ -397,10 +465,12 @@ def build_prog_prompt(season_key: str, trigger_lines: list) -> str:
         f"programming professional. Describe what changed, which show(s) are "
         f"involved, and what the data signals about national touring demand. "
         f"Do not recommend booking or cancellation decisions. Do not speculate "
-        f"beyond the data. Only say a tour has closed, ended, or exited touring "
-        f"if the data explicitly states it is absent nationally — never infer "
-        f"a closure from a show simply moving out of the peer-size venue band. "
-        f"Keep it under 80 words."
+        f"beyond the data. NEVER state or imply that a tour has closed, ended, "
+        f"concluded, wrapped, or exited touring, and never speculate about why a "
+        f"show is absent. Absence from this feed does not establish any of that: "
+        f"touring shows routinely go dark for months and return, and a summer "
+        f"hiatus is normal. If a show is absent, say only that it has not "
+        f"reported for N weeks. Keep it under 80 words."
     )
 
 
@@ -543,11 +613,21 @@ def run(dry_run: bool = False) -> list:
     log.info(f"Exec scope   — current week peer records : {len(curr_peer)}")
     log.info(f"Exec scope   — prior week peer records   : {len(prev_peer)}")
 
-    # ── PROG SCOPE inputs computed early so exec scope can check national
-    # presence before calling a show "closed" (see national_curr_agg below)
+    # ── PROG SCOPE inputs computed early so the exec scope can check national
+    # presence before saying anything about a show being absent nationally
     curr_all = [r for r in season_records if r.get("week_of") == current_week]
     prev_all = [r for r in season_records if r.get("week_of") == prior_week]
     national_curr_agg = aggregate_by_show(curr_all)
+
+    # Full national appearance history (INCLUDING the current week) — any claim
+    # about national absence must be measured against this, never against the
+    # peer-scope history, which describes a different population entirely.
+    national_weeks_by_show = defaultdict(set)
+    for r in season_records:
+        show = (r.get("show") or "").strip()
+        wk   = r.get("week_of") or ""
+        if show and wk and is_active(r):
+            national_weeks_by_show[show].add(wk)
 
     exec_triggers = evaluate_thresholds(
         season_league_names = season_league_names,
@@ -557,9 +637,10 @@ def run(dry_run: bool = False) -> list:
         curr_records        = curr_peer,
         prev_records        = prev_peer,
         all_scope_records   = peer_records,
-        prior_weeks_by_show = prior_weeks_peer,
-        all_weeks           = all_weeks,
-        national_curr_agg   = national_curr_agg,
+        prior_weeks_by_show    = prior_weeks_peer,
+        all_weeks              = all_weeks,
+        national_curr_agg      = national_curr_agg,
+        national_weeks_by_show = national_weeks_by_show,
     )
 
     # ── PROG SCOPE: all venues nationally

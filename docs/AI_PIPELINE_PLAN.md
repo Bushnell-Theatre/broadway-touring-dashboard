@@ -43,30 +43,54 @@ unchanged. Thresholds and prompt text were revised again on August 28, 2026 —
 see the next two subsections, which supersede any threshold/prompt detail
 elsewhere in this doc or in `AI_HIGHLIGHT_PIPELINE.md`.
 
-### Show-closes rework (August 28, 2026)
+### Absence policy — no closure claims, ever (September 4, 2026)
 
-The original "show closes" trigger fired as soon as a show was absent from a
-scope for a single week compared to the prior week — this produced a false
-positive (a real incident: it claimed a touring show's tour had "concluded"
-when it had simply played a differently-sized venue that week). The shipped
-logic in `scripts/generate_highlights.py` now:
+**The pipeline never asserts that a tour has closed.** Three successive false
+briefs (Aug 28: a show "concluded" when it had only played a differently-sized
+venue; Sep 4: a show reported as having "exited the Broadway League tracking
+system" when it had reported nationally *the previous week*) established that
+absence from this feed cannot support that inference.
 
-- Requires **`MIN_ABSENCE_WEEKS = 6`** consecutive calendar weeks of absence
-  (measured against the full weekly calendar, not just the immediate prior
-  week) before firing at all, on top of the existing `CLOSE_MIN_WEEKS = 2`
-  (the show must have appeared in scope at least twice before).
-- Splits the outcome into two distinct trigger types instead of one:
-  - **`show_closes`** — absent from Broadway League data nationally, at any
-    venue. This is the only case where the AI prompt is allowed to describe
-    the tour as closed/ended/exited.
-  - **`left_peer_scope`** — absent from the peer-size venue band specifically,
-    but still active nationally. Worded as a venue-size shift, never a
-    closure.
-- Both exec and programming prompts (`build_exec_prompt`, `build_prog_prompt`)
-  now include an explicit guardrail sentence: *"Only say a tour has closed,
-  ended, or exited touring if the data explicitly states it is absent
-  nationally — never infer a closure from a show simply moving out of the
-  peer-size venue band."*
+Measured against `data.json` (2019–2026), counting only absence spells with a
+full year of follow-up so outcomes aren't censored:
+
+| Absence | Came back later | Never returned | Share of "closures" that were wrong |
+|---|---|---|---|
+| ≥ 6 weeks | 114 | 106 | **52%** |
+| ≥ 12 weeks | 58 | 106 | 35% |
+| ≥ 26 weeks | 22 | 106 | 17% |
+
+The longest gap a show returned from is **64 weeks**. There is no threshold at
+which feed absence proves closure, so the pipeline reports only the observable
+fact and explicitly disclaims the inference.
+
+The shipped logic in `scripts/generate_highlights.py`:
+
+- **`MIN_ABSENCE_WEEKS = 12`** — how long before an absence is worth *mentioning*.
+  Not a closure threshold; no such threshold exists.
+- **Summer hiatus suppressed.** Absence triggers do not fire when the current
+  week falls in `HIATUS_MONTHS` (Jun–Sep). Going dark over the summer is normal
+  business activity — the feed carries ~15 distinct shows reporting nationally
+  in Jul/Aug/Sep versus 23–26 in Jan–Apr. A show that crosses the threshold
+  *during* the hiatus is reported on the first non-hiatus week afterward, not
+  silently dropped.
+- **Trigger types:**
+  - **`absent_from_feed`** (renamed from `show_closes`) — states only that the
+    show has not reported for N weeks, names the last reported week, and says
+    outright that this is not evidence of closure and is worth confirming with
+    booking partners.
+  - **`left_peer_scope`** — absent from the peer-size venue band but still
+    reporting nationally. A venue-size shift, never a closure.
+- **National claims use national history.** Any statement about national absence
+  is measured against `national_weeks_by_show` (every week the show appeared at
+  any venue), never against the peer-scope history. Mixing these produced the
+  Sep 4 false brief: a peer-scope "last seen" date was printed alongside a claim
+  of national absence for a show that was nationally active days earlier. A
+  sustained peer gap combined with a merely one-week national gap now reports
+  nothing at all.
+- **Prompt guardrails** in all three prompt builders forbid the words outright:
+  the model may never state or imply a tour has closed, ended, concluded,
+  wrapped, or exited touring, and may not speculate about why a show is absent.
 
 ### National fallback (August 28, 2026)
 
@@ -113,9 +137,12 @@ itself produced a trigger) or `"national_fallback"` (peer scope had zero
 data this week, so the entry is based on national data instead — see the
 National fallback subsection above). `programming_highlight.json` entries
 never carry `scope`; that scope is always national. Possible `trigger`
-values now also include `left_peer_scope` alongside the original
-`wow_gross_change`, `cap_band_crossing`, `show_opens`, `show_closes`,
-`all_time_high_gross`, and `all_time_high_cap`.
+values are `wow_gross_change`, `cap_band_crossing`, `show_opens`,
+`all_time_high_gross`, `all_time_high_cap`, `left_peer_scope`, and
+`absent_from_feed`. **`show_closes` no longer exists** — it was renamed to
+`absent_from_feed` and stripped of any closure claim (see the Absence policy
+section above). Entries written before September 4, 2026 may still carry the
+old `show_closes` value.
 
 Each season key is written once per triggering week. A season's entry is
 overwritten if a later week in that same season also trips a threshold.
