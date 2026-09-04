@@ -467,6 +467,29 @@ console.log('\n── Suite 9: Source compliance — real page contracts ──'
   assert('programming does not reintroduce a page-local confidenceLabel()',
     !/function\s+confidenceLabel\s*\(/.test(progSrc));
 
+  // ── Weekly entry states: highlight / pulse / stale / legacy / empty ──
+  // Every ingestion writes a current-week entry, so "nothing rendered" must no
+  // longer be reachable for four different reasons at once.
+  [['exec_summary', execSrc], ['programming', progSrc]].forEach(function (pair) {
+    var name = pair[0], src = pair[1];
+    assert(name + ' resolves weekly entry state via weeklyCalloutMeta',
+      src.includes('function weeklyCalloutMeta('));
+    assert(name + ' labels a routine pulse distinctly',
+      src.includes('Weekly Data Pulse — No Material Threshold Changes'));
+    assert(name + ' labels a validation-fallback pulse distinctly',
+      src.includes('Weekly Data Pulse — Narrative Unavailable'));
+    assert(name + ' labels an older entry as an earlier update',
+      src.includes("'Earlier Update · '"));
+    assert(name + ' renders an explicit unavailable state',
+      src.includes('No weekly intelligence entry is available.'));
+    assert(name + ' always shows the entry week',
+      src.includes("' · Week of '"));
+    assert(name + ' treats a legacy entry without kind as a highlight',
+      src.includes("entry.kind || 'highlight'"));
+    assert(name + ' decides staleness against the newest loaded week',
+      src.includes('entry.week_of < latestWeek'));
+  });
+
   // ── filters.js fail-closed comment present ──
   const filtersSrc = fs.readFileSync(path.join(ROOT, 'src/js/core/filters.js'), 'utf8');
   assert('filters.js documents fail-closed boundary contract',
