@@ -2364,6 +2364,44 @@
            for this season, shows the amber retrospective (season complete).
            Otherwise shows the teal weekly highlight if one exists.
            Silent on any fetch error — the page renders normally either way. */
+        /* Resolve a weekly entry to its label, colour and text.
+           States: current highlight · current routine pulse · current
+           validation-fallback pulse · earlier (stale) entry · no entry.
+           Entries written before the kind/pulse_reason fields existed lack
+           them, so a missing `kind` is treated as a highlight. */
+        function weeklyCalloutMeta(entry, latestWeek) {
+          if (!entry || !entry.summary) {
+            return {
+              label: 'Weekly Intelligence',
+              color: 'var(--ink3)',
+              text: 'No weekly intelligence entry is available.'
+            };
+          }
+          var kind = entry.kind || 'highlight';
+          var base;
+          if (kind === 'pulse' && entry.pulse_reason === 'highlight_validation_failed') {
+            base = 'Weekly Data Pulse — Narrative Unavailable';
+          } else if (kind === 'pulse') {
+            base = 'Weekly Data Pulse — No Material Threshold Changes';
+          } else if (entry.scope === 'national_fallback') {
+            base = 'Weekly Intelligence (National Data — No Peer Venues Reported)';
+          } else {
+            base = 'Weekly Intelligence';
+          }
+          /* Only claim an entry is current when it matches the newest week the
+             loaded data actually contains. This does not assert that a report
+             is missing — the page has no authoritative expected-report
+             schedule — only that this entry describes an earlier week. */
+          if (latestWeek && entry.week_of && entry.week_of < latestWeek) {
+            base = 'Earlier Update · ' + base;
+          }
+          return {
+            label: base + ' · Week of ' + (entry.week_of || 'unknown'),
+            color: kind === 'pulse' ? 'var(--ink3)' : 'var(--teal)',
+            text: entry.summary
+          };
+        }
+
         Promise.all([
           fetch('data/season_review.json').then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; }),
           fetch('data/exec_brief_highlight.json').then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; })
@@ -2384,18 +2422,25 @@
               '<p style="margin:0;"></p>';
             el.querySelector('p').textContent = reviewEntry.summary;
             document.getElementById('tab-brief').prepend(el);
-          } else if (highlightEntry && highlightEntry.summary) {
-            color = 'var(--teal)';
-            label = (highlightEntry.scope === 'national_fallback'
-              ? 'Weekly Intelligence (National Data — No Peer Venues Reported) · '
-              : 'Weekly Intelligence · ') + highlightEntry.week_of;
+          } else {
+            /* Five distinguishable states. Previously there was no else-branch
+               at all, so "nothing rendered" meant any of: no data, the watcher
+               never ran, the guard rejected the copy, or a genuinely quiet
+               week — and a prior week's callout could sit on screen reading as
+               current. week_of is now always shown, and an entry older than
+               the latest week in the loaded data is labelled as earlier. */
+            var latestWeek = '';
+            for (var i = 0; i < ALL.length; i++) {
+              if (ALL[i].week_of && ALL[i].week_of > latestWeek) latestWeek = ALL[i].week_of;
+            }
+            var meta = weeklyCalloutMeta(highlightEntry, latestWeek);
             el = document.createElement('div');
             el.className = 'callout ai-highlight';
-            el.style.cssText = 'border-left-color:' + color + ';margin-bottom:16px;';
+            el.style.cssText = 'border-left-color:' + meta.color + ';margin-bottom:16px;';
             el.innerHTML =
-              '<div style="font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:' + color + ';margin-bottom:6px;">' + label + '</div>' +
+              '<div style="font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:' + meta.color + ';margin-bottom:6px;">' + meta.label + '</div>' +
               '<p style="margin:0;"></p>';
-            el.querySelector('p').textContent = highlightEntry.summary;
+            el.querySelector('p').textContent = meta.text;
             document.getElementById('tab-brief').prepend(el);
           }
         });
