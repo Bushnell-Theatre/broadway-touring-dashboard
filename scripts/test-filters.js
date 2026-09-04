@@ -490,6 +490,53 @@ console.log('\n── Suite 9: Source compliance — real page contracts ──'
       src.includes('entry.week_of < latestWeek'));
   });
 
+  // ── Runtime JSON freshness: governed fetches must bypass the HTTP cache ──
+  // A normal reload served a stale versions.json from the browser cache while a
+  // cache-bypassed request returned the new one. Azure sends Cache-Control:
+  // no-store, but the fetch must not rely on the server for correctness.
+  {
+    // Read sources locally — dashSrc is declared later in this file, so this
+    // block must not depend on outer declaration order.
+    const rd = function (f) { return fs.readFileSync(path.join(ROOT, f), 'utf8'); };
+    const idxSrc  = rd('src/index.html');
+    const utilSrc = rd('src/js/utils.js');
+    const dataSrc = rd('src/js/core/data.js');
+    const dashSrc2 = rd('src/dashboard.html');
+    const pages = [['dashboard', dashSrc2], ['programming', progSrc],
+                   ['exec_summary', execSrc], ['index', idxSrc]];
+
+    // Every fetch of a runtime .json (or a URL constant holding one) must pass
+    // the no-store option.
+    pages.concat([['utils.js', utilSrc], ['data.js', dataSrc]]).forEach(function (pair) {
+      const name = pair[0], src = pair[1];
+      const calls = src.match(/fetch\((?:[^()]|\([^()]*\))*\)/g) || [];
+      const governed = calls.filter(function (c) {
+        return /\.json|DATA_JSON_URL|PEERS_JSON_URL|PEERS_URL|urls\[i\]|url/.test(c);
+      });
+      const stale = governed.filter(function (c) { return !/no-store/.test(c); });
+      assert(name + ': all governed runtime JSON fetches use cache no-store',
+        stale.length === 0, stale.join(' | '));
+    });
+
+    // The files that must never be stale, named explicitly.
+    assert('exec_summary fetches exec_brief_highlight.json with no-store',
+      /exec_brief_highlight\.json'\s*,\s*\{\s*cache:\s*'no-store'/.test(execSrc));
+    assert('programming fetches programming_highlight.json with no-store',
+      /programming_highlight\.json'\s*,\s*\{\s*cache:\s*'no-store'/.test(progSrc));
+    pages.forEach(function (pair) {
+      assert(pair[0] + ' fetches versions.json with no-store',
+        /versions\.json'\s*,\s*\{\s*cache:\s*'no-store'/.test(pair[1]));
+    });
+    assert('shared loader data.js already applies no-store',
+      /fetch\(urls\[i\],\s*\{\s*cache:\s*'no-store'/.test(dataSrc));
+
+    // Optional files must still degrade gracefully rather than fail the page.
+    assert('exec_summary tolerates a missing highlight file',
+      execSrc.includes("exec_brief_highlight.json'") && execSrc.includes('.catch(function()'));
+    assert('programming tolerates a missing highlight file',
+      progSrc.includes(".catch(function() { return null; })"));
+  }
+
   // ── filters.js fail-closed comment present ──
   const filtersSrc = fs.readFileSync(path.join(ROOT, 'src/js/core/filters.js'), 'utf8');
   assert('filters.js documents fail-closed boundary contract',

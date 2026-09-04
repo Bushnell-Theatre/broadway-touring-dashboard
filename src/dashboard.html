@@ -2097,9 +2097,9 @@
         try {
           // Fetch data.json and peers.json in parallel
           const [res, peersRes, seasonsRes] = await Promise.all([
-            fetch(DATA_JSON_URL),
-            fetch(PEERS_JSON_URL).catch(() => null),
-            fetch('data/seasons.json').catch(() => null),
+            fetch(DATA_JSON_URL, { cache: 'no-store' }),
+            fetch(PEERS_JSON_URL, { cache: 'no-store' }).catch(() => null),
+            fetch('data/seasons.json', { cache: 'no-store' }).catch(() => null),
           ]);
           if (seasonsRes && seasonsRes.ok) {
             const sj = await seasonsRes.json();
@@ -4750,7 +4750,7 @@ async function processFile(file) {
   <script>
     /* ── Load version from versions.json — single source of truth ── */
     (function () {
-      fetch('data/versions.json')
+      fetch('data/versions.json', { cache: 'no-store' })
         .then(function (r) { return r.json(); })
         .then(function (v) {
           if (!v.dashboard) return;

@@ -1945,11 +1945,11 @@
 
       function loadData() {
         Promise.all([
-          fetch(DATA_JSON_URL).then((r) => {
+          fetch(DATA_JSON_URL, { cache: 'no-store' }).then((r) => {
             if (!r.ok) throw new Error(`${DATA_JSON_URL} returned ${r.status}`);
             return r.json();
           }),
-          fetch(PEERS_JSON_URL)
+          fetch(PEERS_JSON_URL, { cache: 'no-store' })
             .then((r) =>
               r.ok
                 ? r.json()
@@ -1960,17 +1960,17 @@
             .catch(() => ({
               venues: [],
             })),
-          fetch('data/seasons.json')
+          fetch('data/seasons.json', { cache: 'no-store' })
             .then((r) => (r.ok ? r.json() : null))
             .catch(() => null),
-          fetch('https://white-pebble-01710020f.7.azurestaticapps.net/data/context.json')
+          fetch('https://white-pebble-01710020f.7.azurestaticapps.net/data/context.json', { cache: 'no-store' })
             .then((r) => (r.ok ? r.json() : {}))
             .catch(() =>
-              fetch('data/context.json')
+              fetch('data/context.json', { cache: 'no-store' })
                 .then((r) => (r.ok ? r.json() : {}))
                 .catch(() => ({})),
             ),
-          fetch('data/factsheets.json')
+          fetch('data/factsheets.json', { cache: 'no-store' })
             .then((r) => (r.ok ? r.json() : {}))
             .catch(() => ({})),
         ])
@@ -2403,8 +2403,8 @@
         }
 
         Promise.all([
-          fetch('data/season_review.json').then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; }),
-          fetch('data/exec_brief_highlight.json').then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; })
+          fetch('data/season_review.json', { cache: 'no-store' }).then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; }),
+          fetch('data/exec_brief_highlight.json', { cache: 'no-store' }).then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; })
         ]).then(function(results) {
           var reviewData    = results[0];
           var highlightData = results[1];
@@ -3383,7 +3383,7 @@
   <script>
     /* ── Load version from versions.json — single source of truth ── */
     (function () {
-      fetch('data/versions.json')
+      fetch('data/versions.json', { cache: 'no-store' })
         .then(function (r) { return r.json(); })
         .then(function (v) {
           if (!v.exec_summary) return;

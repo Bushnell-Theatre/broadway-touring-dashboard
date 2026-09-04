@@ -159,7 +159,7 @@ window.initData = async function initData(onReady, onError) {
 
   // Load peers (optional — pages degrade gracefully without it)
   try {
-    const r = await fetch(PEERS_URL);
+    const r = await fetch(PEERS_URL, { cache: 'no-store' });
     if (r.ok) {
       const peersData = await r.json();
       const venues = peersData.venues || peersData;

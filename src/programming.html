@@ -1128,7 +1128,7 @@
           } catch (e) {}
         }
         try {
-          const pr = await fetch('data/peers.json');
+          const pr = await fetch('data/peers.json', { cache: 'no-store' });
           if (pr.ok) {
             const pj = await pr.json();
             (pj.venues || []).forEach((v) => {
@@ -1137,28 +1137,28 @@
           }
         } catch (e) {}
         try {
-          const sr = await fetch('data/seasons.json');
+          const sr = await fetch('data/seasons.json', { cache: 'no-store' });
           if (sr.ok) {
             const sj = await sr.json();
             _buildSeasons(sj);
           }
         } catch (e) {}
         try {
-          const cx = await fetch('https://white-pebble-01710020f.7.azurestaticapps.net/data/context.json');
+          const cx = await fetch('https://white-pebble-01710020f.7.azurestaticapps.net/data/context.json', { cache: 'no-store' });
           if (cx.ok) {
             CONTEXT = await cx.json();
           } else {
-            const cx2 = await fetch('data/context.json');
+            const cx2 = await fetch('data/context.json', { cache: 'no-store' });
             if (cx2.ok) CONTEXT = await cx2.json();
           }
         } catch (e) {
           try {
-            const cx2 = await fetch('data/context.json');
+            const cx2 = await fetch('data/context.json', { cache: 'no-store' });
             if (cx2.ok) CONTEXT = await cx2.json();
           } catch (e2) {}
         }
         try {
-          const fsr = await fetch('data/factsheets.json');
+          const fsr = await fetch('data/factsheets.json', { cache: 'no-store' });
           if (fsr.ok) {
             const fsj = await fsr.json();
             _factsheets = fsj && fsj.shows ? fsj.shows : {};
@@ -1517,7 +1517,7 @@
           };
         }
 
-        fetch('data/programming_highlight.json')
+        fetch('data/programming_highlight.json', { cache: 'no-store' })
           .then(function(r) { return r.ok ? r.json() : null; })
           .catch(function() { return null; })
           .then(function(h) {
@@ -2709,7 +2709,7 @@
   <script>
     /* ── Load version from versions.json — single source of truth ── */
     (function () {
-      fetch('data/versions.json')
+      fetch('data/versions.json', { cache: 'no-store' })
         .then(function (r) { return r.json(); })
         .then(function (v) {
           if (!v.programming) return;
