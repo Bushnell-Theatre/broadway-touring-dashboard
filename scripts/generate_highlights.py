@@ -407,8 +407,56 @@ def evaluate_thresholds(
 # ── PROMPT BUILDERS ───────────────────────────────────────────────────────────
 
 
-def build_exec_prompt(season_key: str, trigger_lines: list) -> str:
+def build_evidence_note(curr_scope_records: list, all_records: list,
+                        current_week: str, scope_label: str) -> str:
+    """
+    Describe the evidence base behind THIS week's aggregation, in this week's
+    own numbers, plus the seasonal norm for the same calendar month.
+
+    The weekly aggregation is what every note ultimately rests on, so how much
+    data sits behind it belongs in the brief. This matters most in summer: the
+    peer sample thins by roughly a third (median ~6.5 peer records/week Jun–Sep
+    vs ~10 Oct–May), so a peer comparison made in August rests on materially
+    less evidence than the same comparison in February.
+
+    Deliberately says nothing about demand. Measured across 2019–2026, summer
+    does NOT soften per-show performance — median paid capacity at peer venues
+    is 85.2% Jun–Sep vs 85.6% Oct–May, and median weekly gross is ~5% HIGHER in
+    summer. What summer changes is how many tours are on the road (~15 distinct
+    shows reporting nationally vs 23–26 in Jan–Apr), i.e. the size of the
+    sample — not how well the shows in it sell. Attributing a specific show's
+    decline to "summer" would be inventing a cause the data contradicts.
+    """
+    n_records = len(curr_scope_records)
+    n_venues  = len({(r.get("theatre") or "").strip() for r in curr_scope_records
+                     if (r.get("theatre") or "").strip()})
+
+    # Seasonal norm for this calendar month, computed from the data itself
+    # rather than hardcoded, so it stays true as the dataset grows.
+    month = current_week[5:7]
+    per_week = defaultdict(int)
+    weeks_in_month = set()
+    for r in all_records:
+        wk = r.get("week_of") or ""
+        if not wk or wk[5:7] != month or not is_active(r):
+            continue
+        weeks_in_month.add(wk)
+        per_week[wk] += 1
+    counts = sorted(per_week.get(w, 0) for w in weeks_in_month)
+    typical = counts[len(counts) // 2] if counts else 0
+
+    return (
+        f"EVIDENCE BASE FOR THIS WEEK: the figures above aggregate "
+        f"{n_records} {scope_label} record(s) across {n_venues} venue(s) for the "
+        f"week of {current_week}. The typical count for this calendar month "
+        f"across all years in the dataset is {typical}."
+    )
+
+
+def build_exec_prompt(season_key: str, trigger_lines: list,
+                      evidence_note: str = "") -> str:
     trigger_text = "\n".join(f"- {line}" for line in trigger_lines)
+    evidence_block = f"{evidence_note}\n\n" if evidence_note else ""
     return (
         f"You are writing a one-paragraph executive brief for the COO of "
         f"The Bushnell Center for the Performing Arts in Hartford, CT.\n\n"
@@ -416,6 +464,13 @@ def build_exec_prompt(season_key: str, trigger_lines: list) -> str:
         f"touring data for shows in Bushnell's {season_key} season slate, measured "
         f"against peer venues of comparable size (~2,400–3,000 seats):\n\n"
         f"{trigger_text}\n\n"
+        f"{evidence_block}"
+        f"If the evidence base above is materially thinner than the typical count "
+        f"for this month, note that this week's read rests on fewer records — but "
+        f"do NOT suggest that a thin sample, the season, or the time of year "
+        f"explains any show's performance. Fewer tours report in summer; the ones "
+        f"that do sell no worse than in winter. Never attribute a change to "
+        f"seasonality.\n\n"
         f"Write 2–3 sentences in plain language suitable for senior leadership. "
         f"Describe what happened, which show(s) are involved, and what the data "
         f"may signal. Do not speculate beyond what the numbers show. Do not "
@@ -454,8 +509,10 @@ def build_exec_national_fallback_prompt(season_key: str, trigger_lines: list) ->
     )
 
 
-def build_prog_prompt(season_key: str, trigger_lines: list) -> str:
+def build_prog_prompt(season_key: str, trigger_lines: list,
+                      evidence_note: str = "") -> str:
     trigger_text = "\n".join(f"- {line}" for line in trigger_lines)
+    evidence_block = f"{evidence_note}\n\n" if evidence_note else ""
     return (
         f"You are writing a one-paragraph weekly intelligence note for the "
         f"programming director at The Bushnell Center for the Performing Arts "
@@ -464,6 +521,13 @@ def build_prog_prompt(season_key: str, trigger_lines: list) -> str:
         f"touring data for shows in Bushnell's {season_key} season slate, across "
         f"all national touring markets:\n\n"
         f"{trigger_text}\n\n"
+        f"{evidence_block}"
+        f"If the evidence base above is materially thinner than the typical count "
+        f"for this month, note that this week's read rests on fewer records — but "
+        f"do NOT suggest that a thin sample, the season, or the time of year "
+        f"explains any show's performance. Fewer tours report in summer; the ones "
+        f"that do sell no worse than in winter. Never attribute a change to "
+        f"seasonality.\n\n"
         f"Write 2–3 sentences in a direct, analytical tone appropriate for a "
         f"programming professional. Describe what changed, which show(s) are "
         f"involved, and what the data signals about national touring demand. "
@@ -718,7 +782,9 @@ def run(dry_run: bool = False) -> list:
         log.info(f"EXEC triggers ({len(exec_triggers)}):")
         for t in exec_triggers:
             log.info(f"  [{t['type']}] {t['description']}")
-        prompt  = build_exec_prompt(current_season, [t["description"] for t in exec_triggers])
+        prompt  = build_exec_prompt(current_season, [t["description"] for t in exec_triggers],
+                                    build_evidence_note(curr_peer, peer_records, current_week,
+                                                        "peer-venue"))
         summary = call_api(prompt, dry_run, season_league_names)
         if summary:
             write_highlight(EXEC_OUT, current_season, current_week, exec_triggers, summary, scope="peer")
@@ -747,7 +813,9 @@ def run(dry_run: bool = False) -> list:
         log.info(f"PROG triggers ({len(prog_triggers)}):")
         for t in prog_triggers:
             log.info(f"  [{t['type']}] {t['description']}")
-        prompt  = build_prog_prompt(current_season, [t["description"] for t in prog_triggers])
+        prompt  = build_prog_prompt(current_season, [t["description"] for t in prog_triggers],
+                                    build_evidence_note(curr_all, season_records, current_week,
+                                                        "national"))
         summary = call_api(prompt, dry_run, season_league_names)
         if summary:
             write_highlight(PROG_OUT, current_season, current_week, prog_triggers, summary)

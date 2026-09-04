@@ -454,8 +454,18 @@ console.log('\n── Suite 9: Source compliance — real page contracts ──'
   // ── Canonical confidence explanation in Needs Validation uses p.metrics ──
   assert('programming Needs More Data label uses canonical count ("historical records")',
     progSrc.includes('historical records · validate with comparables'));
+  // Asserts the CANONICAL confidence label from signals.js
+  // (p.signals.confidence.label). This previously asserted a page-local
+  // confidenceLabel(p) that shadowed the canonical one with different
+  // thresholds and a different label set — a contract violation that made the
+  // same show read differently on Programming vs Exec Summary. The page-local
+  // versions were removed; do not reintroduce them.
   assert('exec_summary Needs Validation label uses canonical count ("historical records")',
-    execSrc.includes('historical records') && execSrc.includes('confidenceLabel(p)'));
+    execSrc.includes('historical records') && execSrc.includes('p.signals.confidence.label'));
+  assert('exec_summary does not reintroduce a page-local confidenceLabel()',
+    !/function\s+confidenceLabel\s*\(/.test(execSrc));
+  assert('programming does not reintroduce a page-local confidenceLabel()',
+    !/function\s+confidenceLabel\s*\(/.test(progSrc));
 
   // ── filters.js fail-closed comment present ──
   const filtersSrc = fs.readFileSync(path.join(ROOT, 'src/js/core/filters.js'), 'utf8');
