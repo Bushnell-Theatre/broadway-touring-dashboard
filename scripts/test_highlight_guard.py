@@ -121,9 +121,18 @@ accepts(
     "Hell's Kitchen paid capacity moved from 95% to 51%.",
     PROMPT_TYPICAL, SHOWS,
 )
-accepts(
-    "prose counts are not treated as statistics",
+# Policy change (Sep 4): counts of shows/titles were originally allowed
+# through as harmless prose. They are not — a regenerated retrospective used
+# them to tally shows into "exceeded"/"underperformed" buckets it had no
+# benchmark for. Counts of shows are now rejected; see Suite 5c.
+rejects(
+    "counts of titles are rejected, not waved through as prose",
     "Three titles moved materially this week.",
+    PROMPT_TYPICAL, SHOWS, expect="count of shows",
+)
+accepts(
+    "a bare integer that is not counting shows still passes",
+    "Hell's Kitchen fell 62% week-over-week, from $2.00M to $761K.",
     PROMPT_TYPICAL, SHOWS,
 )
 
@@ -190,6 +199,37 @@ accepts(
     PROMPT_TYPICAL, SHOWS,
 )
 
+
+print("\nSuite 5c — derived counts of shows (regenerated 2024-25 retrospective)")
+
+# The regenerated retrospective counted shows with NO pre-season benchmark
+# among those that "exceeded" one, and miscounted subscriber titles.
+rejects(
+    "counts of shows are not verifiable against the input",
+    "Three shows exceeded their pre-season peer benchmarks.",
+    PROMPT_TYPICAL, SHOWS, expect="count of shows",
+)
+rejects(
+    "counts of subscriber titles are blocked too",
+    "Three subscriber titles performed at or above peer signal, two fell short.",
+    PROMPT_TYPICAL, SHOWS, expect="count of shows",
+)
+accepts(
+    "naming shows individually with their own figures is still fine",
+    "The Outsiders rose 41% to $1.56M; Hell's Kitchen fell 62% to $761K.",
+    PROMPT_TYPICAL, SHOWS,
+)
+
+accepts(
+    "en-dash year range must not read the second year as a bare number",
+    "# 2026–2027 Season Retrospective: capacity reached 94.7%.",
+    PROMPT_TYPICAL, SHOWS,
+)
+accepts(
+    "em-dash year range is folded too",
+    "The 2026—2027 season closed with capacity at 94.7%.",
+    PROMPT_TYPICAL, SHOWS,
+)
 
 print("\nSuite 6 — an acceptable brief still passes (guard is not a blanket block)")
 

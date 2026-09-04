@@ -288,7 +288,19 @@ def build_season_prompt(season_key: str, shows_data: list) -> str:
         f"subscription shows performed differently from add-ons, or whether there "
         f"was a consistent gap between national signal and peer-venue results. "
         f"Do not recommend future booking decisions. Write in plain language "
-        f"appropriate for a leadership team. Keep it under 120 words."
+        f"appropriate for a leadership team. Keep it under 120 words.\n\n"
+        f"Cite ONLY figures that appear in the table above, exactly as given. "
+        f"Do not calculate new numbers — no differences, gaps in percentage "
+        f"points, averages, or totals. "
+        f"Do NOT count shows: never write 'three shows exceeded' or 'two "
+        f"titles fell short'. Name the specific shows instead, each with its "
+        f"own figures. "
+        f"A show whose Pre Peer% is '—' has NO pre-season benchmark: it cannot "
+        f"have exceeded, met, or underperformed one, so never place it in "
+        f"either group — report only its actual figure. A show whose actual "
+        f"equals its pre-season figure matched it; it did not exceed it. "
+        f"Do not state why any result happened; the data shows what happened, "
+        f"not why. Never say a tour closed, ended, or stopped touring."
     )
 
 

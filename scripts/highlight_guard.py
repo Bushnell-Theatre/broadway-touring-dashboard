@@ -83,6 +83,18 @@ _BANNED = [
     (r"\bappears?\s+to\s+be\s+(closing|ending|winding)\b",
      "speculates about a tour ending"),
 
+    # — Derived counts of shows. "three shows exceeded their benchmark" is
+    # arithmetic performed over the table, not a figure the model was given,
+    # and in practice it has been wrong: a regenerated 2024-2025 retrospective
+    # counted shows with NO pre-season benchmark among those that "exceeded"
+    # one, and miscounted subscriber titles in both directions. Counts cannot
+    # be checked against the input, so they are not allowed.
+    (r"\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|\d+)\s+"
+     r"(of\s+(the\s+)?\w+\s+)?"
+     r"(subscriber\s+|subscription\s+|non-subscription\s+|major\s+)?"
+     r"(shows?|titles?|productions?|engagements?)\b",
+     "states a count of shows — counts are derived, not given, and cannot be verified"),
+
     # — Invented business consequences for Bushnell. The pipeline is given
     # touring performance data only; it knows nothing about our contracts,
     # holds, routing, or availability.
@@ -143,12 +155,24 @@ def _to_float(raw: str, suffix: str | None = None) -> float | None:
     return v
 
 
+def _normalize_dashes(text: str) -> str:
+    """
+    Fold en/em dashes and the minus sign to a plain hyphen.
+
+    Without this, a model writing "2025–2026" (en dash) against a prompt
+    containing "2025-2026" (hyphen) had the second year read as a standalone
+    unsupported number, and three sound season retrospectives were rejected.
+    """
+    return re.sub(r"[‐-―−]", "-", text)
+
+
 def extract_numbers(text: str) -> list[tuple[float, str]]:
     """
     Pull every quantity out of `text` as (value, kind) where kind is
     'money' | 'percent' | 'bare'. Money is normalized to whole dollars so
     "$761K" and "$761,000" compare equal.
     """
+    text = _normalize_dashes(text)
     found: list[tuple[float, str]] = []
     consumed: list[tuple[int, int]] = []
 
@@ -173,6 +197,7 @@ def extract_numbers(text: str) -> list[tuple[float, str]]:
 
 def extract_dates(text: str) -> set[str]:
     """Every date in `text`, normalized to ISO `YYYY-MM-DD` (or `YYYY-MM`)."""
+    text = _normalize_dashes(text)
     out: set[str] = set()
     for y, mo, d in _ISO_DATE.findall(text):
         out.add(f"{y}-{mo}-{d}")
