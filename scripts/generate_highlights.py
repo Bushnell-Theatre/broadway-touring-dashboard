@@ -619,40 +619,183 @@ def call_api(prompt: str, dry_run: bool, show_names: set | None = None) -> str |
 # ── FILE WRITE ────────────────────────────────────────────────────────────────
 
 
-def write_highlight(out_path: Path, season_key: str, week_of: str,
-                    triggers: list, summary: str, scope: str | None = None) -> None:
-    """
-    Merge one season's entry into the existing season-keyed JSON file.
+# ── WEEKLY DATA PULSE ─────────────────────────────────────────────────────────
+#
+# Every successful ingestion writes a current-week entry for each page, so a
+# reader can always tell the week was processed. Without this, four different
+# situations rendered identically — no data, the watcher never ran, the guard
+# rejected the AI copy, and a genuinely uneventful week — and the previous
+# week's confidently-worded callout stayed on screen looking current.
+#
+# Pulse copy is built entirely in Python. Routing the COMMON case through the
+# model would put a failure surface on the quiet weeks, which is backwards.
 
-    scope: optional tag for the exec brief distinguishing which data the
-    summary is based on — "peer" (peer-sized venues, the normal case) or
-    "national_fallback" (peer scope had no data this week, so national data
-    was used instead). The dashboard uses this to label the callout so
-    leadership isn't misled about what it's being compared against.
+_SMALL_NUMBERS = {
+    0: "No", 1: "One", 2: "Two", 3: "Three", 4: "Four", 5: "Five", 6: "Six",
+    7: "Seven", 8: "Eight", 9: "Nine", 10: "Ten", 11: "Eleven", 12: "Twelve",
+}
+
+
+def _count_word(n: int, capitalize: bool = False) -> str:
+    w = _SMALL_NUMBERS.get(n, str(n))
+    return w if capitalize else w.lower()
+
+
+def long_date(iso: str) -> str:
+    """2026-08-30 -> 'August 30, 2026' (the form the pulse prints)."""
+    return datetime.strptime(iso, "%Y-%m-%d").strftime("%B %-d, %Y") \
+        if os.name != "nt" else \
+        datetime.strptime(iso, "%Y-%m-%d").strftime("%B ") + \
+        str(datetime.strptime(iso, "%Y-%m-%d").day) + \
+        datetime.strptime(iso, "%Y-%m-%d").strftime(", %Y")
+
+
+def build_pulse(week_of: str, scope: str, scope_records: list,
+                all_scope_records: list, reason: str) -> tuple:
+    """
+    Build deterministic current-week confirmation copy, plus the fact string it
+    is checked against.
+
+    reason:
+      "no_threshold"                — a normal quiet week
+      "highlight_validation_failed" — a threshold DID fire but the AI narrative
+                                      failed validation twice. This must not
+                                      claim that nothing happened.
+
+    Returns (summary, facts).
+
+    Deliberately describes the evidence that IS present rather than the
+    evidence that is absent. "9 of 10 slate shows did not report" is true but
+    predictably misleading in a season where most productions have not begun
+    touring, so it is never printed.
+    """
+    when = long_date(week_of)
+    noun = "peer venue" if scope in ("peer", "national_fallback") else "venue"
+    body = "peer-venue" if scope in ("peer", "national_fallback") else "national touring"
+
+    if reason == "highlight_validation_failed":
+        summary = (
+            f"Data updated through the week of {when}. A configured "
+            f"material-change threshold was detected, but the automated "
+            f"narrative did not pass validation. Review the current dashboard "
+            f"metrics for detail."
+        )
+        return summary, f"week_of {week_of} ({when})"
+
+    shows  = {(r.get("show") or "").strip() for r in scope_records
+              if is_active(r) and (r.get("show") or "").strip()}
+    venues = {(r.get("theatre") or "").strip() for r in scope_records
+              if is_active(r) and (r.get("theatre") or "").strip()}
+
+    if not shows:
+        # State the absence plainly. It reflects which venues appear in this
+        # week's feed — not a closure, cancellation, weak demand, or a failure
+        # to report, none of which this data can establish.
+        summary = (
+            f"Data updated through the week of {when}. No season-slate shows "
+            f"appear in {body} data for this week. No configured "
+            f"material-change threshold was reached."
+        )
+        return summary, f"week_of {week_of} ({when})"
+
+    n_s, n_v = len(shows), len(venues)
+    show_word = "show" if n_s == 1 else "shows"
+    venue_word = noun if n_v == 1 else noun + "s"
+    counted = (f"{_count_word(n_s, True)} season-slate {show_word} reported "
+               f"across {_count_word(n_v)} {venue_word}")
+
+    # The calendar-month norm is included only when this week is at or above
+    # it. Printing it on a below-norm week frames an ordinary quiet week as a
+    # shortfall, which is exactly the inference this copy must not invite.
+    month = week_of[5:7]
+    per_week = defaultdict(int)
+    weeks_seen = set()
+    for r in all_scope_records:
+        wk = r.get("week_of") or ""
+        if wk and wk[5:7] == month and is_active(r):
+            weeks_seen.add(wk)
+            per_week[wk] += 1
+    counts = sorted(per_week.get(w, 0) for w in weeks_seen)
+    typical = counts[len(counts) // 2] if counts else 0
+    norm = ""
+    if typical and len(scope_records) >= typical:
+        norm = (f" That is in line with the usual volume of {body} records for "
+                f"this point in the year.")
+
+    summary = (f"Data updated through the week of {when}. {counted}."
+               f"{norm} No configured material-change threshold was reached.")
+    facts = (f"week_of {week_of} ({when}); shows {n_s}; venues {n_v}; "
+             f"records {len(scope_records)}; typical {typical}")
+    return summary, facts
+
+
+def write_entry(out_path: Path, season_key: str, week_of: str,
+                summary: str, kind: str, scope: str,
+                triggers: list | None = None,
+                pulse_reason: str | None = None,
+                validation_status: str = "passed",
+                validation_method: str = "ai_guard") -> None:
+    """
+    Merge one season's entry into the season-keyed JSON file.
+
+    kind:         "highlight" (guarded AI narrative) or "pulse" (deterministic
+                  current-week confirmation).
+    pulse_reason: "no_threshold" | "highlight_validation_failed" | None.
+    scope:        "peer" | "national" | "national_fallback" — which evidence
+                  the entry describes, so the page cannot mislabel what the
+                  reader is looking at.
+
+    Entries written before these fields existed simply lack them; consumers
+    must treat a missing `kind` as a highlight (see the page renderers).
     """
     existing = {}
     if out_path.exists():
         with open(out_path, encoding="utf-8") as f:
             existing = json.load(f)
 
-    # Weekly copy is only ever written after passing the guard — a failed
-    # summary writes nothing at all (see call_api). Provenance is recorded for
-    # auditing; it never gates publication.
-    entry = {
+    existing[season_key] = {
+        "kind":              kind,
+        "pulse_reason":      pulse_reason,
+        "scope":             scope,
         "week_of":           week_of,
-        "trigger":           ",".join(sorted({t["type"] for t in triggers})),
+        "trigger":           ",".join(sorted({t["type"] for t in (triggers or [])})),
         "summary":           summary,
         "generated_at":      datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S"),
-        "validation_status": "passed",
-        "validation_method": "ai_guard",
+        "validation_status": validation_status,
+        "validation_method": validation_method,
         "guard_version":     GUARD_VERSION,
     }
-    if scope:
-        entry["scope"] = scope
-    existing[season_key] = entry
 
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(existing, f, indent=2, ensure_ascii=False)
+
+
+def write_pulse(out_path: Path, season_key: str, week_of: str, scope: str,
+                scope_records: list, all_scope_records: list, reason: str,
+                triggers: list | None = None) -> bool:
+    """
+    Build, validate and write a deterministic pulse. Returns True if written.
+
+    The pulse is checked by the same guard that polices AI copy. It should
+    never fail: if it does, that is a defect in this function, not untrusted
+    model output — so it is logged loudly and the write is abandoned. Rejected
+    AI copy is never substituted, and the rest of the pipeline continues.
+    """
+    summary, facts = build_pulse(week_of, scope, scope_records,
+                                 all_scope_records, reason)
+    problems = validate_summary(summary, facts)
+    if problems:
+        log.error(f"DEFECT: deterministic pulse for {out_path.name} failed its own "
+                  f"validation — not writing. This is a code bug, not model output:")
+        for p in problems:
+            log.error(f"    • {p}")
+        return False
+
+    write_entry(out_path, season_key, week_of, summary, "pulse", scope,
+                triggers=triggers, pulse_reason=reason,
+                validation_status="fallback", validation_method="deterministic")
+    log.info(f"Wrote {scope} pulse ({reason}) for {season_key} → {out_path.name}")
+    return True
 
 
 # ── MAIN ──────────────────────────────────────────────────────────────────────
@@ -783,7 +926,10 @@ def run(dry_run: bool = False) -> list:
 
     written = []
 
-    # ── Write exec highlight
+    # ── Write exec entry — ALWAYS one of three outcomes, never nothing.
+    # A guard rejection must not be left looking like an old callout, so it
+    # publishes a current-week pulse that says a threshold fired but the
+    # narrative could not be validated.
     if exec_triggers:
         log.info(f"EXEC triggers ({len(exec_triggers)}):")
         for t in exec_triggers:
@@ -793,8 +939,13 @@ def run(dry_run: bool = False) -> list:
                                                         "peer-venue"))
         summary = call_api(prompt, dry_run, season_league_names)
         if summary:
-            write_highlight(EXEC_OUT, current_season, current_week, exec_triggers, summary, scope="peer")
+            write_entry(EXEC_OUT, current_season, current_week, summary,
+                        "highlight", "peer", triggers=exec_triggers)
             log.info(f"Wrote exec highlight for {current_season} → {EXEC_OUT.name}")
+            written.append(str(EXEC_OUT.relative_to(REPO)))
+        elif write_pulse(EXEC_OUT, current_season, current_week, "peer",
+                         curr_peer, peer_records, "highlight_validation_failed",
+                         exec_triggers):
             written.append(str(EXEC_OUT.relative_to(REPO)))
     elif not curr_peer and prog_triggers:
         # No peer-sized venues reported anything this week, so there's nothing
@@ -808,11 +959,17 @@ def run(dry_run: bool = False) -> list:
         prompt  = build_exec_national_fallback_prompt(current_season, [t["description"] for t in prog_triggers])
         summary = call_api(prompt, dry_run, season_league_names)
         if summary:
-            write_highlight(EXEC_OUT, current_season, current_week, prog_triggers, summary, scope="national_fallback")
+            write_entry(EXEC_OUT, current_season, current_week, summary,
+                        "highlight", "national_fallback", triggers=prog_triggers)
             log.info(f"Wrote exec highlight (national fallback) for {current_season} → {EXEC_OUT.name}")
             written.append(str(EXEC_OUT.relative_to(REPO)))
-    else:
-        log.info("No exec triggers — skipping exec highlight")
+        elif write_pulse(EXEC_OUT, current_season, current_week, "national_fallback",
+                         curr_all, season_records, "highlight_validation_failed",
+                         prog_triggers):
+            written.append(str(EXEC_OUT.relative_to(REPO)))
+    elif write_pulse(EXEC_OUT, current_season, current_week, "peer",
+                     curr_peer, peer_records, "no_threshold"):
+        written.append(str(EXEC_OUT.relative_to(REPO)))
 
     # ── Write programming highlight
     if prog_triggers:
@@ -824,11 +981,17 @@ def run(dry_run: bool = False) -> list:
                                                         "national"))
         summary = call_api(prompt, dry_run, season_league_names)
         if summary:
-            write_highlight(PROG_OUT, current_season, current_week, prog_triggers, summary)
+            write_entry(PROG_OUT, current_season, current_week, summary,
+                        "highlight", "national", triggers=prog_triggers)
             log.info(f"Wrote programming highlight for {current_season} → {PROG_OUT.name}")
             written.append(str(PROG_OUT.relative_to(REPO)))
-    else:
-        log.info("No programming triggers — skipping programming highlight")
+        elif write_pulse(PROG_OUT, current_season, current_week, "national",
+                         curr_all, season_records, "highlight_validation_failed",
+                         prog_triggers):
+            written.append(str(PROG_OUT.relative_to(REPO)))
+    elif write_pulse(PROG_OUT, current_season, current_week, "national",
+                     curr_all, season_records, "no_threshold"):
+        written.append(str(PROG_OUT.relative_to(REPO)))
 
     return written
 
