@@ -18,6 +18,7 @@ Also covers the schema/provenance metadata stored for auditing.
 from __future__ import annotations
 
 import json
+import re
 import sys
 import tempfile
 from pathlib import Path
@@ -288,8 +289,12 @@ for expected, prev, same, comparable in cases:
     check(f"status {expected}", c["comparison_status"] == expected, c)
     check(f"{expected}: comparable show count = {comparable}",
           c["comparable_shows"] == comparable, c)
-    check(f"{expected}: tracks both record counts",
-          c["current_records"] == len(cur) and c["prior_records"] == len(prev), c)
+    check(f"{expected}: tracks both ACTIVE record counts",
+          c["current_records"] == len([r for r in cur if gh2.is_active(r)])
+          and c["prior_records"] == len([r for r in prev if gh2.is_active(r)]), c)
+    check(f"{expected}: retains labelled raw counts",
+          c["current_raw_records"] == len(cur)
+          and c["prior_raw_records"] == len(prev), c)
     check(f"{expected}: tracks both show counts",
           "current_shows" in c and "prior_shows" in c, c)
     check(f"{expected}: records same-season flag", c["same_season"] is same, c)
@@ -306,7 +311,7 @@ print("Suite I - pulse wording matches comparison status")
 WORDING = {
     "available":              "Week-over-week comparison was available, and no configured "
                               "material-change threshold was reached.",
-    "no_prior_scope_records": "prior reporting week contained no peer-venue records",
+    "no_prior_scope_records": "prior reporting week contained no peer-venue engagements",
     "no_comparable_shows":    "no season-slate show appeared in both weeks",
     "season_boundary":        "intentionally reset at the fiscal-season boundary",
 }
@@ -407,8 +412,10 @@ for scope, recs in [("peer", PEER), ("national", NATL), ("national", _many)]:
           f"{hits} in {summ}")
     check(f"{scope}/{len(recs)}rec: states the observed count",
           "produced" in summ and ("record" in summ), summ)
-    check(f"{scope}/{len(recs)}rec: states the reference count",
-          "typical weekly count for this slate in" in summ, summ)
+    check(f"{scope}/{len(recs)}rec: names the statistic as a median",
+          "is a median of" in summ, summ)
+    check(f"{scope}/{len(recs)}rec: states the reference evidence depth",
+          "available reporting week" in summ, summ)
     check(f"{scope}/{len(recs)}rec: passes guard", not _vs(summ, facts), _vs(summ, facts))
 
 # singular / plural correctness on both sides of the comparison
@@ -424,8 +431,8 @@ check("plural show/venue wording",
 # the reference count is only offered when one exists
 none_ref, _f = gh2.build_pulse("2026-08-30", "peer", PEER, [], "no_threshold",
                                gh2.comparison_availability(PEER, [], True))
-check("no reference count invented when none is computable",
-      "typical weekly count" not in none_ref or "is no" not in none_ref, none_ref)
+check("no reference sentence invented when no qualifying week exists",
+      "reference for this slate" not in none_ref, none_ref)
 
 
 print()
@@ -588,7 +595,138 @@ _s2, _f2 = gh2.build_pulse(CUR, "national", _mixed, _ref_pop, "no_threshold",
                            gh2.comparison_availability(_mixed, [], True))
 check("reference counts active rows only, matching the observed count",
       "produced one national touring record" in _s2
-      and "typical weekly count for this slate in August is one record" in _s2, _s2)
+      and "is a median of one record per week" in _s2, _s2)
+
+
+print("Suite P - comparison_detail and the pulse share one active population")
+
+
+def _live(week, show, theatre="Big House"):
+    return {"week_of": week, "show": show, "theatre": theatre, "city": "X",
+            "tier": "Primary", "similar_bushnell": False, "gross_gross": 900_000.0,
+            "cap_paid": 85.0, "no_engagement": False, "num_perf": 8}
+
+
+def _dark_row(week, show, theatre="Dark House"):
+    return {"week_of": week, "show": show, "theatre": theatre, "city": "X",
+            "tier": "Primary", "similar_bushnell": False, "gross_gross": None,
+            "cap_paid": None, "no_engagement": True, "num_perf": 0}
+
+
+# (1) current week: one active row, two dark rows
+_cur_mixed = [_live(CUR, "The Outsiders"),
+              _dark_row(CUR, "Hell's Kitchen"),
+              _dark_row(CUR, "The Great Gatsby", "Other Dark")]
+_prev_live = [_live(PRV, "The Outsiders")]
+_c = gh2.comparison_availability(_cur_mixed, _prev_live, True)
+check("mixed current week: current_records counts active rows only",
+      _c["current_records"] == 1, _c)
+check("mixed current week: raw count is retained under its own label",
+      _c["current_raw_records"] == 3, _c)
+check("mixed current week: dark rows do not inflate the show count",
+      _c["current_shows"] == 1, _c)
+
+# (3) the stored count must equal the count the pulse prints
+_summ, _facts = gh2.build_pulse(CUR, "national", _cur_mixed,
+                                _cur_mixed + _prev_live, "no_threshold", _c)
+check("comparison_detail.current_records matches the pulse record count",
+      _c["current_records"] == 1 and "produced one national touring record" in _summ,
+      f"{_c['current_records']} / {_summ}")
+check("mixed-week pulse passes the guard", not _vs(_summ, _facts), _vs(_summ, _facts))
+
+# (2) + (4) prior week holding ONLY dark rows
+_prev_dark = [_dark_row(PRV, "The Outsiders"), _dark_row(PRV, "Hell's Kitchen")]
+_d = gh2.comparison_availability(_cur_mixed, _prev_dark, True)
+check("prior week of dark rows only: status is no_prior_scope_records",
+      _d["comparison_status"] == "no_prior_scope_records", _d)
+check("prior week of dark rows only: prior_records is zero",
+      _d["prior_records"] == 0, _d)
+check("prior week of dark rows only: raw prior count still visible",
+      _d["prior_raw_records"] == 2, _d)
+
+# (5) dark rows must never create show comparability
+_d2 = gh2.comparison_availability([_dark_row(CUR, "The Outsiders")],
+                                  [_dark_row(PRV, "The Outsiders")], True)
+check("a show dark in both weeks is not comparable",
+      _d2["comparable_shows"] == 0, _d2)
+check("dark-only current and prior weeks report no shows",
+      _d2["current_shows"] == 0 and _d2["prior_shows"] == 0, _d2)
+
+# the clause for this status must not claim the week held no records at all
+_ds, _df = gh2.build_pulse(CUR, "national", _cur_mixed,
+                           _cur_mixed + _prev_dark, "no_threshold", _d)
+check("dark-only prior week is described as no engagements, not no records",
+      "contained no national touring engagements" in _ds, _ds)
+
+
+print()
+print("Suite Q - the reference names its statistic and its evidence depth")
+
+_ref_pop = ([_live(CUR, "The Outsiders")]
+            + [_live("2026-08-16", "The Outsiders")]
+            + [_live("2026-08-09", "The Outsiders"), _live("2026-08-09", "Six")]
+            + [_live("2026-01-05", "Six")])          # other month: must not count
+_rc = gh2.comparison_availability([_live(CUR, "The Outsiders")], [], True)
+_rs, _rf = gh2.build_pulse(CUR, "national", [_live(CUR, "The Outsiders")],
+                           _ref_pop, "no_threshold", _rc)
+_meta = gh2.month_reference(CUR, _ref_pop)
+check("reference names the calendar month", "The August reference" in _rs, _rs)
+check("reference names the statistic as a median", "is a median of" in _rs, _rs)
+check("reference states the median active-record count",
+      "median of one record per week" in _rs, _rs)
+check("reference states how many reporting weeks stand behind it",
+      "based on three available reporting weeks" in _rs, _rs)
+check("reference names the slate and the page scope",
+      "for this slate in national touring data" in _rs, _rs)
+check("reference discloses that the current week is in its own population",
+      "including the current week" in _rs, _rs)
+check("reference does not classify the observed count",
+      not [w for w in ["normal", "abnormal", "strong", "weak", "high", "low"]
+           if re.search(r"\b" + w + r"\b", _rs, re.I)], _rs)
+check("reference metadata: month", _meta["reference_month"] == "August", _meta)
+check("reference metadata: median", _meta["reference_median_records"] == 1, _meta)
+check("reference metadata: week count", _meta["reference_week_count"] == 3, _meta)
+check("reference metadata: current week disclosed",
+      _meta["reference_includes_current_week"] is True, _meta)
+check("weeks outside the reporting month are excluded",
+      _meta["reference_week_count"] == 3, _meta)
+
+# peer scope names peer venues
+_ps, _pf = gh2.build_pulse(CUR, "peer", PEER, PEER, "no_threshold",
+                           gh2.comparison_availability(PEER, [], True))
+check("peer-scope reference names peer venues",
+      "for this slate at peer venues" in _ps, _ps)
+
+# zero qualifying weeks -> no sentence, and zeroed metadata
+_zero = gh2.month_reference(CUR, [])
+check("no qualifying week: median stored as zero",
+      _zero["reference_median_records"] == 0, _zero)
+check("no qualifying week: week count stored as zero",
+      _zero["reference_week_count"] == 0, _zero)
+check("no qualifying week: current week not claimed",
+      _zero["reference_includes_current_week"] is False, _zero)
+
+# dark rows must not be counted as a reference week
+_dark_ref = gh2.month_reference(CUR, [_dark_row("2026-08-16", "Six")])
+check("a week of dark rows is not a reference week",
+      _dark_ref["reference_week_count"] == 0, _dark_ref)
+
+# the stored entry carries the reference metadata
+_tmp = Path(tempfile.mkdtemp()) / "entry.json"
+gh2.write_entry(_tmp, "2026-2027", CUR, _rs, "pulse", "national",
+                pulse_reason="no_threshold", comparison=_rc, reference=_meta)
+_stored = json.loads(_tmp.read_text(encoding="utf-8"))["2026-2027"]
+check("stored entry carries reference_month",
+      _stored["reference_month"] == "August", _stored)
+check("stored entry carries reference_median_records",
+      _stored["reference_median_records"] == 1, _stored)
+check("stored entry carries reference_week_count",
+      _stored["reference_week_count"] == 3, _stored)
+check("stored entry discloses the current week is in the population",
+      _stored["reference_includes_current_week"] is True, _stored)
+check("stored comparison_detail exposes both active and raw counts",
+      _stored["comparison_detail"]["current_records"] == 1
+      and "current_raw_records" in _stored["comparison_detail"], _stored)
 
 
 print()

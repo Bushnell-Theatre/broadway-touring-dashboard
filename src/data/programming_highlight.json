@@ -5,19 +5,25 @@
     "scope": "national",
     "week_of": "2026-08-30",
     "trigger": "",
-    "summary": "Data updated through the week of August 30, 2026. One season-slate show produced one national touring record at one venue; the typical weekly count for this slate in August is two records. Week-over-week comparison was available, and no configured material-change threshold was reached.",
-    "generated_at": "2026-09-10T15:22:29",
+    "summary": "Data updated through the week of August 30, 2026. One season-slate show produced one national touring record at one venue. The August reference for this slate in national touring data is a median of two records per week, based on eight available reporting weeks, including the current week. Week-over-week comparison was available, and no configured material-change threshold was reached.",
+    "generated_at": "2026-09-10T16:20:29",
     "validation_status": "fallback",
     "validation_method": "deterministic",
     "guard_version": "2",
     "comparison_status": "available",
     "comparison_detail": {
-      "current_records": 3,
+      "current_records": 1,
       "prior_records": 3,
+      "current_raw_records": 3,
+      "prior_raw_records": 3,
       "current_shows": 1,
       "prior_shows": 3,
       "comparable_shows": 1,
       "same_season": true
-    }
+    },
+    "reference_month": "August",
+    "reference_median_records": 2,
+    "reference_week_count": 8,
+    "reference_includes_current_week": true
   }
 }

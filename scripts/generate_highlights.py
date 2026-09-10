@@ -650,19 +650,32 @@ def comparison_availability(curr_records: list, prev_records: list,
     exists in data.json either way. `prior_week` is derived globally from the
     dataset and is never inferred from these counts or from the output files.
 
+    Every count and the status itself are derived from ACTIVE records only,
+    the same population aggregate_by_show() and the pulse use. The stored
+    counts were previously raw len() over the scoped rows, so a week holding
+    one active and two dark rows reported current_records 3 against a summary
+    saying one record, and a prior week holding nothing but dark rows was
+    classified no_comparable_shows — implying two populated weeks with no show
+    in common — when it in fact held no active records at all. Raw counts are
+    retained under explicit *_raw_records names for operational triage.
+
     Returns the counts plus one of:
       available               at least one show appears in both scoped weeks
-      no_prior_scope_records  prior reporting week holds no records in scope
-      no_comparable_shows     both weeks hold records, no show in common
+      no_prior_scope_records  prior reporting week holds no active records in
+                              scope, whether or not dark rows are present
+      no_comparable_shows     both weeks hold active records, no show in common
       season_boundary         WoW intentionally reset across the fiscal boundary
     """
-    curr_agg  = aggregate_by_show(curr_records)
-    prior_agg = aggregate_by_show(prev_records)
+    active_current = [r for r in curr_records if is_active(r)]
+    active_prior   = [r for r in prev_records if is_active(r)]
+
+    curr_agg  = aggregate_by_show(active_current)
+    prior_agg = aggregate_by_show(active_prior)
     comparable = set(curr_agg) & set(prior_agg)
 
     if not same_season_wow:
         status = "season_boundary"
-    elif not prev_records:
+    elif not active_prior:
         status = "no_prior_scope_records"
     elif not comparable:
         status = "no_comparable_shows"
@@ -670,13 +683,15 @@ def comparison_availability(curr_records: list, prev_records: list,
         status = "available"
 
     return {
-        "comparison_status": status,
-        "current_records":   len(curr_records),
-        "prior_records":     len(prev_records),
-        "current_shows":     len(curr_agg),
-        "prior_shows":       len(prior_agg),
-        "comparable_shows":  len(comparable),
-        "same_season":       bool(same_season_wow),
+        "comparison_status":  status,
+        "current_records":    len(active_current),
+        "prior_records":      len(active_prior),
+        "current_raw_records": len(curr_records),
+        "prior_raw_records":   len(prev_records),
+        "current_shows":      len(curr_agg),
+        "prior_shows":        len(prior_agg),
+        "comparable_shows":   len(comparable),
+        "same_season":        bool(same_season_wow),
     }
 
 
@@ -705,8 +720,11 @@ def _comparison_clause(status: str, body: str) -> str:
     reporting week exists in the dataset in every one of these cases.
     """
     if status == "no_prior_scope_records":
-        return (f" The prior reporting week contained no {body} records for "
-                f"this slate, so a week-over-week comparison was not available.")
+        # This status now also covers a prior week holding only dark rows, so
+        # it must not claim the week held no records at all.
+        return (f" The prior reporting week contained no {body} engagements "
+                f"for this slate, so a week-over-week comparison was not "
+                f"available.")
     if status == "no_comparable_shows":
         return (" Both reporting weeks contained relevant records, but no "
                 "season-slate show appeared in both weeks, so a like-for-like "
@@ -716,6 +734,34 @@ def _comparison_clause(status: str, body: str) -> str:
                 "fiscal-season boundary, so no comparison against the prior "
                 "reporting week was made.")
     return ""
+
+
+def month_reference(week_of: str, all_scope_records: list) -> dict:
+    """
+    Median active-record count per reporting week for the reporting week's
+    calendar month, within the current season slate and the page's own scope.
+
+    The reference population INCLUDES the reporting week itself, so when that
+    is the only qualifying week the median necessarily equals the observed
+    count and the comparison carries no information. week_count is returned
+    and printed alongside the median for exactly that reason: a bare "typical"
+    figure let a two-week median read like a settled historical baseline.
+
+    This is not an independent historical baseline. Callers must say so.
+    """
+    month_num = week_of[5:7]
+    per_week = defaultdict(int)
+    for r in all_scope_records:
+        wk = r.get("week_of") or ""
+        if wk and wk[5:7] == month_num and is_active(r):
+            per_week[wk] += 1
+    counts = sorted(per_week.values())
+    return {
+        "reference_month": datetime.strptime(week_of, "%Y-%m-%d").strftime("%B"),
+        "reference_median_records": counts[len(counts) // 2] if counts else 0,
+        "reference_week_count": len(counts),
+        "reference_includes_current_week": week_of in per_week,
+    }
 
 
 def build_pulse(week_of: str, scope: str, scope_records: list,
@@ -739,7 +785,6 @@ def build_pulse(week_of: str, scope: str, scope_records: list,
     touring, so it is never printed.
     """
     when = long_date(week_of)
-    month = datetime.strptime(week_of, "%Y-%m-%d").strftime("%B")
 
     # Scope semantics — these three are NOT interchangeable:
     #   peer              peer-venue evidence
@@ -795,15 +840,8 @@ def build_pulse(week_of: str, scope: str, scope_records: list,
     n_s, n_v, n_rec = len(shows), len(venues), len(active)
 
     # Observed-versus-reference counts, never a qualitative reading of them.
-    per_week = defaultdict(int)
-    weeks_seen = set()
-    for r in all_scope_records:
-        wk = r.get("week_of") or ""
-        if wk and wk[5:7] == week_of[5:7] and is_active(r):
-            weeks_seen.add(wk)
-            per_week[wk] += 1
-    counts = sorted(per_week.get(w, 0) for w in weeks_seen)
-    typical = counts[len(counts) // 2] if counts else 0
+    ref = month_reference(week_of, all_scope_records)
+    med, n_weeks = ref["reference_median_records"], ref["reference_week_count"]
 
     # For peer scope the venue noun already carries "peer", so the record noun
     # stays bare rather than reading "one peer-venue record at one peer venue".
@@ -813,9 +851,19 @@ def build_pulse(week_of: str, scope: str, scope_records: list,
                f"{_count_word(n_rec)} {rec_qualifier}"
                f"{'record' if n_rec == 1 else 'records'} at "
                f"{_count_word(n_v)} {noun if n_v == 1 else noun + 's'}")
-    norm = ("" if not typical else
-            f"; the typical weekly count for this slate in {month} is "
-            f"{_count_word(typical)} {'record' if typical == 1 else 'records'}")
+    # Name the statistic and its evidence depth rather than calling a figure
+    # "typical", which hid how many weeks stood behind it. Nothing here
+    # classifies the observed count against the reference.
+    scope_phrase = "at peer venues" if is_peer_scope else "in national touring data"
+    med_word = "zero" if med == 0 else _count_word(med)
+    norm = ("" if not n_weeks else
+            f" The {ref['reference_month']} reference for this slate "
+            f"{scope_phrase} is a median of {med_word} "
+            f"{'record' if med == 1 else 'records'} per week, based on "
+            f"{_count_word(n_weeks)} available reporting "
+            f"{'week' if n_weeks == 1 else 'weeks'}"
+            + (", including the current week." if ref["reference_includes_current_week"]
+               else "."))
 
     status = (comparison or {}).get("comparison_status", "available")
 
@@ -830,9 +878,10 @@ def build_pulse(week_of: str, scope: str, scope_records: list,
                 " Other configured checks produced no material highlight.")
 
     summary = (f"Data updated through the week of {when}.{fallback_note} "
-               f"{counted}{norm}.{tail}")
+               f"{counted}.{norm}{tail}")
     facts = (f"week_of {week_of} ({when}); shows {n_s}; venues {n_v}; "
-             f"records {n_rec}; typical {typical}")
+             f"records {n_rec}; reference_median {med}; "
+             f"reference_weeks {n_weeks}; month {ref['reference_month']}")
     return summary, facts
 
 
@@ -842,7 +891,8 @@ def write_entry(out_path: Path, season_key: str, week_of: str,
                 pulse_reason: str | None = None,
                 validation_status: str = "passed",
                 validation_method: str = "ai_guard",
-                comparison: dict | None = None) -> None:
+                comparison: dict | None = None,
+                reference: dict | None = None) -> None:
     """
     Merge one season's entry into the season-keyed JSON file.
 
@@ -852,6 +902,12 @@ def write_entry(out_path: Path, season_key: str, week_of: str,
     scope:        "peer" | "national" | "national_fallback" — which evidence
                   the entry describes, so the page cannot mislabel what the
                   reader is looking at.
+
+    reference:    month_reference() output — the calendar-month median, the
+                  number of reporting weeks behind it, and whether the
+                  reporting week is itself one of them. It is NOT an
+                  independent historical baseline; the reporting week is part
+                  of its own reference population.
 
     Entries written before these fields existed simply lack them; consumers
     must treat a missing `kind` as a highlight (see the page renderers).
@@ -877,6 +933,13 @@ def write_entry(out_path: Path, season_key: str, week_of: str,
         "comparison_status": (comparison or {}).get("comparison_status"),
         "comparison_detail": {k: v for k, v in (comparison or {}).items()
                               if k != "comparison_status"} or None,
+        # Calendar-month reference and its evidence depth. Stored even when no
+        # qualifying week exists, as a consistent zero rather than a gap.
+        "reference_month":            (reference or {}).get("reference_month"),
+        "reference_median_records":   (reference or {}).get("reference_median_records", 0),
+        "reference_week_count":       (reference or {}).get("reference_week_count", 0),
+        "reference_includes_current_week":
+            (reference or {}).get("reference_includes_current_week", False),
     }
 
     with open(out_path, "w", encoding="utf-8") as f:
@@ -915,7 +978,8 @@ def write_pulse(out_path: Path, season_key: str, week_of: str, scope: str,
     write_entry(out_path, season_key, week_of, summary, "pulse", scope,
                 triggers=triggers, pulse_reason=reason,
                 validation_status="fallback", validation_method="deterministic",
-                comparison=comparison)
+                comparison=comparison,
+                reference=month_reference(week_of, all_scope_records))
     log.info(f"Wrote {scope} pulse ({reason}) for {season_key} → {out_path.name}")
     return True
 
@@ -1084,7 +1148,8 @@ def run(dry_run: bool = False) -> list:
             if summary:
                 write_entry(EXEC_OUT, current_season, current_week, summary,
                             "highlight", "peer", triggers=exec_triggers,
-                            comparison=exec_cmp)
+                            comparison=exec_cmp,
+                            reference=month_reference(current_week, peer_records))
                 log.info(f"Wrote exec highlight for {current_season} → {EXEC_OUT.name}")
                 written.append(str(EXEC_OUT.relative_to(REPO)))
             elif write_pulse(EXEC_OUT, current_season, current_week, "peer",
@@ -1113,7 +1178,8 @@ def run(dry_run: bool = False) -> list:
             if summary:
                 write_entry(EXEC_OUT, current_season, current_week, summary,
                             "highlight", "national_fallback", triggers=prog_triggers,
-                            comparison=prog_cmp)
+                            comparison=prog_cmp,
+                            reference=month_reference(current_week, season_records))
                 log.info(f"Wrote exec highlight (national fallback) for {current_season} → {EXEC_OUT.name}")
                 written.append(str(EXEC_OUT.relative_to(REPO)))
             elif write_pulse(EXEC_OUT, current_season, current_week, "national_fallback",
@@ -1145,7 +1211,8 @@ def run(dry_run: bool = False) -> list:
             if summary:
                 write_entry(PROG_OUT, current_season, current_week, summary,
                             "highlight", "national", triggers=prog_triggers,
-                            comparison=prog_cmp)
+                            comparison=prog_cmp,
+                            reference=month_reference(current_week, season_records))
                 log.info(f"Wrote programming highlight for {current_season} → {PROG_OUT.name}")
                 written.append(str(PROG_OUT.relative_to(REPO)))
             elif write_pulse(PROG_OUT, current_season, current_week, "national",
