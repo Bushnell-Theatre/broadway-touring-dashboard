@@ -206,13 +206,24 @@ productions have not begun touring, so it is never printed. Zero records is
 stated plainly, without implying closure, cancellation, weak demand, or a
 failure to report.
 
-**Observed and typical counts are presented as neutral facts.** The pulse
-states how many records the reporting week produced alongside the typical
-weekly count for the same calendar month, and it does so whether the current
-count is above, below, or equal to the reference. An earlier rule withheld the
-reference unless the week was at or above it; commit `806ccc6` removed that
-rule, because suppressing the reference left the reader with an observed count
-and nothing to size it against, which is its own form of editorialising.
+**Observed and reference counts are presented as neutral facts.** The pulse
+states how many records the reporting week produced alongside the calendar-month
+reference, and it does so whether the current count is above, below, or equal to
+it. An earlier rule withheld the reference unless the week was at or above it;
+commit `806ccc6` removed that rule, because suppressing the reference left the
+reader with an observed count and nothing to size it against, which is its own
+form of editorialising.
+
+The reference names its own statistic and evidence depth rather than calling a
+figure "typical", which let a two-week median read like a settled baseline:
+
+> The August reference for this slate at peer venues is a median of one record
+> per week, based on two available reporting weeks, including the current week.
+
+The same figures are stored on the entry as `reference_month`,
+`reference_median_records`, `reference_week_count` and
+`reference_includes_current_week`. When no qualifying week exists the sentence
+is omitted and the counts are stored as zero.
 
 The pipeline does not characterise the relationship between the two counts. It
 never describes a week as good, bad, normal, strong, weak, or concerning, and
@@ -233,6 +244,16 @@ are excluded from it, exactly as they are from the show count, the venue count
 and the reference. Counting them in the observed figure alone produced a
 sentence whose two halves described different populations.
 
+`comparison_availability()` uses that same active population for both its
+status and its stored counts. It previously stored raw `len()` over the scoped
+rows, so a week holding one active and two dark rows reported
+`current_records` 3 against a summary saying one record, and a prior week
+holding nothing but dark rows was classified `no_comparable_shows` — implying
+two populated weeks with no show in common — when it held no active records at
+all. That case is now `no_prior_scope_records`, and its clause says the week
+contained no *engagements* rather than no records. Raw counts are retained
+under the explicit names `current_raw_records` and `prior_raw_records`.
+
 Two properties of this reference are worth stating plainly, because they limit
 what it can support:
 
@@ -240,11 +261,14 @@ what it can support:
   is taken over every matching week including the current one, so when the
   current week is the only one available for that month, the reference
   necessarily equals the observed count and the comparison carries no
-  information.
+  information. This is not an independent historical baseline; the copy says
+  "including the current week" and `reference_includes_current_week` records
+  it.
 - **Early in a season the population can be very small.** The executive
-  brief's August reference for 2026-2027 is a median over two weeks. A median
-  over two weeks is reported the same way as a median over twenty; the copy
-  does not distinguish them.
+  brief's August reference for 2026-2027 is a median over two weeks; the
+  programming reference for the same month is a median over eight. The
+  sentence states the week count in both cases, so a thin reference is visible
+  rather than inferred.
 
 #### Comparison availability
 
