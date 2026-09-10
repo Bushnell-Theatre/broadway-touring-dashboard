@@ -552,6 +552,45 @@ check("peer scope still describes peer venues", "peer venue" in _ps, _ps)
 check("peer scope makes no national-fallback disclosure",
       "national touring evidence" not in _ps, _ps)
 
+print("Suite O - dark rows never inflate the observed record count")
+
+# A week where one show played and two sat dark used to read "one season-slate
+# show produced three records at one venue", because the record count included
+# no-engagement rows while the show, venue and reference counts did not.
+_dark = [{"week_of": CUR, "show": "Hell's Kitchen", "theatre": "Dark House",
+          "city": "X", "tier": "Primary", "similar_bushnell": False,
+          "gross_gross": None, "cap_paid": None, "no_engagement": True,
+          "num_perf": 0},
+         {"week_of": CUR, "show": "The Great Gatsby", "theatre": "Other Dark",
+          "city": "X", "tier": "Primary", "similar_bushnell": False,
+          "gross_gross": None, "cap_paid": None, "no_engagement": True,
+          "num_perf": 0}]
+_live = [{"week_of": CUR, "show": "The Outsiders", "theatre": "Big House",
+          "city": "X", "tier": "Primary", "similar_bushnell": False,
+          "gross_gross": 1_533_274.0, "cap_paid": 88.0, "no_engagement": False,
+          "num_perf": 8}]
+
+_mixed = _live + _dark
+_summ, _facts = gh2.build_pulse(CUR, "national", _mixed, _mixed, "no_threshold",
+                                gh2.comparison_availability(_mixed, [], True))
+check("dark rows are excluded from the observed record count",
+      "produced one national touring record" in _summ, _summ)
+check("dark rows do not appear as extra records",
+      "three national touring records" not in _summ, _summ)
+check("show and record counts agree on one active show",
+      "One season-slate show produced one" in _summ, _summ)
+check("mixed-week pulse still passes the guard",
+      not _vs(_summ, _facts), _vs(_summ, _facts))
+
+# the observed count and the reference must be computed over the same rows
+_ref_pop = _mixed + [dict(_live[0], week_of="2025-08-10")]
+_s2, _f2 = gh2.build_pulse(CUR, "national", _mixed, _ref_pop, "no_threshold",
+                           gh2.comparison_availability(_mixed, [], True))
+check("reference counts active rows only, matching the observed count",
+      "produced one national touring record" in _s2
+      and "typical weekly count for this slate in August is one record" in _s2, _s2)
+
+
 print()
 print(f"\n{'=' * 60}\n{PASSED} passed, {FAILED} failed\n{'=' * 60}")
 sys.exit(1 if FAILED else 0)

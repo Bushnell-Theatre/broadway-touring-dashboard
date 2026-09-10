@@ -785,7 +785,14 @@ def build_pulse(week_of: str, scope: str, scope_records: list,
     # Shows, records and venues in one clause rather than two near-duplicate
     # sentences — the three counts differ (a show can produce several records
     # across venues), so all three are kept, but stated once.
-    n_s, n_v, n_rec = len(shows), len(venues), len(scope_records)
+    #
+    # All three count ACTIVE records only, as does the reference below.  Using
+    # len(scope_records) here counted dark no-engagement rows, so a week where
+    # one show played and two sat dark read "one season-slate show produced
+    # three records at one venue" — and compared that 3 against a reference
+    # median computed over active rows alone.
+    active = [r for r in scope_records if is_active(r)]
+    n_s, n_v, n_rec = len(shows), len(venues), len(active)
 
     # Observed-versus-reference counts, never a qualitative reading of them.
     per_week = defaultdict(int)
