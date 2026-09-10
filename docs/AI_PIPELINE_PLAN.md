@@ -202,11 +202,49 @@ published.
 through the model would put a failure surface on the quiet weeks. It describes
 evidence that is present, never evidence that is absent: "9 of 10 slate shows
 did not report" is true but predictably misleading in a season where most
-productions have not begun touring, so it is never printed. The calendar-month
-norm appears only when the week is at or above it, since printing it on a
-below-norm week frames an ordinary week as a shortfall. Zero records is stated
-plainly, without implying closure, cancellation, weak demand, or a failure to
-report.
+productions have not begun touring, so it is never printed. Zero records is
+stated plainly, without implying closure, cancellation, weak demand, or a
+failure to report.
+
+**Observed and typical counts are presented as neutral facts.** The pulse
+states how many records the reporting week produced alongside the typical
+weekly count for the same calendar month, and it does so whether the current
+count is above, below, or equal to the reference. An earlier rule withheld the
+reference unless the week was at or above it; commit `806ccc6` removed that
+rule, because suppressing the reference left the reader with an observed count
+and nothing to size it against, which is its own form of editorialising.
+
+The pipeline does not characterise the relationship between the two counts. It
+never describes a week as good, bad, normal, strong, weak, or concerning, and
+it never names a direction of travel. Two counts are stated; the reader draws
+the inference.
+
+**How the reference is calculated.** It is computed for the current season
+slate, for the page's own scope — peer venues for the executive brief, all
+venues nationally for programming — and for the reporting week's calendar
+month, across every year present in the data. Records are counted per week for
+the weeks matching that month, rows carrying no engagement and no gross are
+excluded, and the median of those weekly counts is the reference. If no such
+weeks exist, or the median works out to zero, no typical count is displayed at
+all.
+
+The observed count is computed over the same rows: dark no-engagement records
+are excluded from it, exactly as they are from the show count, the venue count
+and the reference. Counting them in the observed figure alone produced a
+sentence whose two halves described different populations.
+
+Two properties of this reference are worth stating plainly, because they limit
+what it can support:
+
+- **The reporting week is part of its own reference population.** The median
+  is taken over every matching week including the current one, so when the
+  current week is the only one available for that month, the reference
+  necessarily equals the observed count and the comparison carries no
+  information.
+- **Early in a season the population can be very small.** The executive
+  brief's August reference for 2026-2027 is a median over two weeks. A median
+  over two weeks is reported the same way as a median over twenty; the copy
+  does not distinguish them.
 
 #### Comparison availability
 
