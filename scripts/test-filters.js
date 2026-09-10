@@ -505,18 +505,38 @@ console.log('\n── Suite 9: Source compliance — real page contracts ──'
     const pages = [['dashboard', dashSrc2], ['programming', progSrc],
                    ['exec_summary', execSrc], ['index', idxSrc]];
 
-    // Every fetch of a runtime .json (or a URL constant holding one) must pass
-    // the no-store option.
+    // A fetch is governed when it names a runtime .json, a URL constant that
+    // holds one, or a bare url/urls variable resolved at run time.  Declared
+    // once so the fixtures below exercise the same predicate as the real scan.
+    const GOVERNED_FETCH = /\.json|DATA_JSON_URL|PEERS_JSON_URL|PEERS_URL|urls\[i\]|\burl\b/;
+    const isGoverned = function (c) { return GOVERNED_FETCH.test(c); };
+    const isStale = function (c) { return isGoverned(c) && !/no-store/.test(c); };
+
     pages.concat([['utils.js', utilSrc], ['data.js', dataSrc]]).forEach(function (pair) {
       const name = pair[0], src = pair[1];
       const calls = src.match(/fetch\((?:[^()]|\([^()]*\))*\)/g) || [];
-      const governed = calls.filter(function (c) {
-        return /\.json|DATA_JSON_URL|PEERS_JSON_URL|PEERS_URL|urls\[i\]|url/.test(c);
-      });
-      const stale = governed.filter(function (c) { return !/no-store/.test(c); });
+      const stale = calls.filter(isStale);
       assert(name + ': all governed runtime JSON fetches use cache no-store',
         stale.length === 0, stale.join(' | '));
     });
+
+    // Fixtures: the predicate above must actually catch a run-time-resolved
+    // fetch(url).  The regex previously held two literal backspace bytes
+    // instead of a word boundary, so this call scanned as ungoverned and any
+    // missing no-store on it would have passed the suite silently.
+    assert('fixture: fetch(url) is recognized as a governed fetch',
+      isGoverned('fetch(url)'));
+    assert('fixture: fetch(url) without no-store fails the cache-policy check',
+      isStale('fetch(url)'));
+    assert("fixture: fetch(url, { cache: no-store }) passes",
+      isGoverned("fetch(url, { cache: 'no-store' })")
+      && !isStale("fetch(url, { cache: 'no-store' })"));
+    assert('fixture: fetch(urls[i]) without no-store fails the check',
+      isStale('fetch(urls[i])'));
+    assert('fixture: a non-JSON fetch is not governed',
+      !isGoverned("fetch('https://api.example.com/ping')"));
+    assert('fixture: the governed pattern holds no control characters',
+      !/[\x00-\x1f]/.test(GOVERNED_FETCH.source), GOVERNED_FETCH.source);
 
     // The files that must never be stale, named explicitly.
     assert('exec_summary fetches exec_brief_highlight.json with no-store',
