@@ -1,7 +1,7 @@
 @echo off
-title Broadway Touring Dashboard — Full Update
+title Broadway Touring Dashboard - Full Update
 echo ============================================================
-echo  Broadway Touring Dashboard — Full Update
+echo  Broadway Touring Dashboard - Full Update
 echo  Bushnell Center for the Performing Arts
 echo ============================================================
 echo.
