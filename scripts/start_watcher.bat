@@ -1,7 +1,7 @@
 @echo off
-title Broadway Touring Dashboard — File Watcher
+title Broadway Touring Dashboard - File Watcher
 echo ============================================================
-echo  Broadway Touring Dashboard — File Watcher
+echo  Broadway Touring Dashboard - File Watcher
 echo  Bushnell Center for the Performing Arts
 echo ============================================================
 echo.
