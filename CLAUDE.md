@@ -87,8 +87,8 @@ bump with a stale date is misleading.
 | Page | Current | Last meaningful change |
 |---|---|---|
 | dashboard.html | v5.1 | August 14, 2026 — universal Season / Date Range filtering with fail-closed boundary validation |
-| programming.html | v6.2 | September 4, 2026 — Weekly Data Pulse — every ingestion writes a current-week entry with explicit comparison status |
-| exec_summary.html | v6.2 | September 4, 2026 — Weekly Data Pulse — every ingestion writes a current-week entry with explicit comparison status |
+| programming.html | v6.3 | September 11, 2026 — Data Table tab — raw engagement records sortable table |
+| exec_summary.html | v6.3 | September 11, 2026 — Data Table tab — raw engagement records sortable table |
 | box_office.html | v2.1 | June 30, 2026 — venues.json integration |
 
 ---
