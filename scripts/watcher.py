@@ -10,19 +10,23 @@ When a new file is detected:
         the code's own inline comment still just says "Step 2")
   2.75. Runs generate_highlights.py to write AI weekly highlight blurbs
   2.8.  Runs generate_season_review.py to write end-of-season AI retrospective
-  3.    Commits updated files to a dedicated data-import branch, merges that
-        straight to main, and pushes — auto-deploying to production. main is
-        then fast-forward merged back into dev so dev never drifts behind on
-        data files. This branch is separate from dev on purpose: the watcher
-        runs unattended, so it must never be able to pick up or interfere
-        with whatever feature work is in progress on dev.
+  3.    Publishes the updated data files: builds a commit from origin/main's
+        tree with only those files overlaid, pushes it to main — auto-
+        deploying to production — and folds the same commit into dev so dev
+        never drifts behind main on data files.
 
 Steps 2.75 and 2.8 are non-fatal: if either fails the pipeline logs a
-warning and continues to the git commit.
+warning and continues to the publish step.
 
-If folding the deploy back into dev conflicts with in-progress work there,
-the merge is aborted and dev is left clean — production still got the
-update, but a human needs to `git merge main` into dev manually afterward.
+The watcher never checks out a branch and never touches the repository
+index. It runs unattended in a repo a human may be working in, so the
+commit is assembled with git plumbing in a scratch index instead: by
+construction it can contain nothing but the data files listed above, and
+no in-progress work can be swept into it. See GIT PUBLISHING below.
+
+If folding the deploy into dev conflicts with work already on dev, dev is
+left alone — production still got the update, but a human needs to merge
+main into dev manually afterward.
 
 Startup behaviour
 -----------------
@@ -59,6 +63,7 @@ import json
 import sys
 import subprocess
 import logging
+import tempfile
 import time
 from datetime import datetime
 from pathlib import Path
@@ -69,10 +74,6 @@ from watchdog.events import FileSystemEventHandler
 
 WATCH_FOLDER = r"C:\Users\rnunley\Bushnell Center for the Performing Arts\AI Taskforce Group-Testing-Development - Broadway League Report Uploads\reports"
 REPO_FOLDER = r"C:\Users\rnunley\OneDrive - Bushnell Center for the Performing Arts\Documents\GitHub\broadway-touring-dashboard"
-# Dedicated branch for automated weekly commits. Cut fresh from main and
-# merged straight back into main on every run — never touches dev, so
-# in-progress feature work is never at risk from an unattended auto-deploy.
-DATA_BRANCH = "data-import"
 SCRIPT_PATH    = os.path.join(REPO_FOLDER, "scripts", "process_touring.py")
 CONTEXT_PATH   = os.path.join(REPO_FOLDER, "scripts", "scrape_context.py")
 HIGHLIGHTS_PATH = os.path.join(REPO_FOLDER, "scripts", "generate_highlights.py")
@@ -176,7 +177,7 @@ def process_new_file(filepath):
             log.warning(rv_result.stderr.strip())
     season_review_updated = rv_result.returncode == 0 and os.path.isfile(SEASON_REVIEW_JSON)
 
-    # Step 3: Git add, commit, push
+    # Step 3: Publish the updated data files (see GIT PUBLISHING below)
     files_to_add = ["src/data/data.json"]
     if context_updated:
         files_to_add.append("src/data/context.json")
@@ -187,74 +188,269 @@ def process_new_file(filepath):
     if season_review_updated:
         files_to_add.append("src/data/season_review.json")
 
-    log.info(f"Committing {', '.join(files_to_add)} to GitHub...")
-    commit_msg = f"Weekly update: {fname} — {
-        datetime.now().strftime('%Y-%m-%d %H:%M')}"
+    publish(fname, files_to_add)
 
-    # The watcher runs on its own branch (DATA_BRANCH), cut fresh from main
-    # each run, and merges straight to main — it never touches dev. This
-    # keeps automated weekly data imports fully separate from whatever
-    # feature work is in progress on dev, so the watcher can deploy without
-    # any risk of picking up or clobbering in-progress changes, and nobody
-    # has to remember to manually deploy a data-only update.
-    #
-    # After merging to main, main is fast-forward merged back into dev so
-    # dev never drifts behind main on data files — this prevents a data.json
-    # merge conflict the next time a feature branch merges dev into main.
-    add_cmd = ["git", "-C", REPO_FOLDER, "add"] + files_to_add
-    git_commands = [
-        ["git", "-C", REPO_FOLDER, "fetch", "origin"],
-        ["git", "-C", REPO_FOLDER, "checkout", "main"],
-        ["git", "-C", REPO_FOLDER, "pull", "--ff-only", "origin", "main"],
-        ["git", "-C", REPO_FOLDER, "checkout", "-B", DATA_BRANCH, "main"],
-        add_cmd,
-        ["git", "-C", REPO_FOLDER, "commit", "-m", commit_msg],
-        ["git", "-C", REPO_FOLDER, "checkout", "main"],
-        # --ff-only: DATA_BRANCH is always exactly one commit ahead of the
-        # main we just pulled, so this must be a fast-forward. If it isn't
-        # (main moved between the pull and here), fail loudly rather than
-        # create an unexpected merge commit unattended.
-        ["git", "-C", REPO_FOLDER, "merge", "--ff-only", DATA_BRANCH],
-        ["git", "-C", REPO_FOLDER, "push", "origin", "main"],
-        ["git", "-C", REPO_FOLDER, "branch", "-D", DATA_BRANCH],
-        ["git", "-C", REPO_FOLDER, "checkout", "dev"],
-        ["git", "-C", REPO_FOLDER, "pull", "origin", "dev"],
-        ["git", "-C", REPO_FOLDER, "merge", "main", "-m", f"sync: fold {fname} update into dev"],
-        ["git", "-C", REPO_FOLDER, "push", "origin", "dev"],
-    ]
 
-    for cmd in git_commands:
-        r = subprocess.run(cmd, capture_output=True, text=True)
+# ── GIT PUBLISHING ──────────────────────────────────────────────────────
+#
+# The watcher runs unattended in a repo a human may be actively working in,
+# so it never checks out a branch, never moves HEAD, and never touches the
+# repository index.
+#
+# That restraint is not theoretical. This script used to run `git checkout
+# main` / `checkout -B data-import` in the shared working tree. An
+# interactive session that happened to be committing at the same moment had
+# HEAD moved out from under it, and its commits landed on main and
+# auto-deployed to production. Checking out a branch in a tree somebody else
+# is using is the whole problem; the dedicated data-import branch did not
+# help, because the hazard was the checkout, not the branch.
+#
+# So the commit is assembled with plumbing instead: take the tree of
+# origin/main, overlay ONLY the data files this script owns, and write the
+# result with commit-tree. Whatever state the working tree is in, nothing
+# else can end up in the commit — a structural guarantee rather than a
+# convention somebody has to remember.
+
+
+def _git(args, index_file=None):
+    """Run a git command against REPO_FOLDER. Never checks anything out."""
+    env = None
+    if index_file:
+        env = os.environ.copy()
+        env["GIT_INDEX_FILE"] = index_file
+    return subprocess.run(["git", "-C", REPO_FOLDER] + args,
+                          capture_output=True, text=True, env=env)
+
+
+def _git_out(args, index_file=None):
+    """Stripped stdout of a git command, or None if it failed."""
+    r = _git(args, index_file)
+    return r.stdout.strip() if r.returncode == 0 else None
+
+
+def _scratch_index(kind):
+    """Path for a throwaway index — never the repository's own index."""
+    return os.path.join(tempfile.gettempdir(),
+                        f"btd-watcher-{kind}-{os.getpid()}.index")
+
+
+def build_data_commit(files, message):
+    """
+    Build a commit that is origin/main with `files` overlaid on top.
+
+    Returns the new commit sha; "" if the data is already identical to
+    origin/main (nothing to deploy); None on failure.
+    """
+    parent = _git_out(["rev-parse", "--verify", "origin/main"])
+    if not parent:
+        log.error("Cannot resolve origin/main — is the fetch working?")
+        return None
+
+    index = _scratch_index("build")
+    try:
+        if _git(["read-tree", parent], index).returncode != 0:
+            log.error("Could not read origin/main into the scratch index.")
+            return None
+
+        for rel in files:
+            abs_path = os.path.join(REPO_FOLDER, rel.replace("/", os.sep))
+            # --path applies .gitattributes filters (line-ending
+            # normalisation) for the destination path, exactly as `git add`
+            # would have done.
+            blob = _git_out(["hash-object", "-w", "--path", rel, abs_path])
+            if not blob:
+                log.error(f"Could not hash {rel}.")
+                return None
+            if _git(["update-index", "--add", "--cacheinfo",
+                     f"100644,{blob},{rel}"], index).returncode != 0:
+                log.error(f"Could not stage {rel} in the scratch index.")
+                return None
+
+        tree = _git_out(["write-tree"], index)
+    finally:
+        if os.path.exists(index):
+            os.remove(index)
+
+    if not tree:
+        log.error("Could not write the data tree.")
+        return None
+    if tree == _git_out(["rev-parse", f"{parent}^{{tree}}"]):
+        return ""
+
+    commit = _git_out(["commit-tree", tree, "-p", parent, "-m", message])
+    if not commit:
+        log.error("Could not create the data commit.")
+        return None
+    return commit
+
+
+def fold_into_dev(data_commit, fname):
+    """
+    Work out what dev should point at, without checking dev out.
+
+    A fast-forward when dev carries no work of its own; otherwise a merge
+    commit built in a scratch index. Returns None if the merge conflicts,
+    which means a human has to resolve it.
+    """
+    dev = _git_out(["rev-parse", "--verify", "origin/dev"])
+    if not dev:
+        log.error("Cannot resolve origin/dev.")
+        return None
+    if _git(["merge-base", "--is-ancestor", dev, data_commit]).returncode == 0:
+        return data_commit          # plain fast-forward, no merge commit
+
+    base = _git_out(["merge-base", dev, data_commit])
+    if not base:
+        return None
+
+    index = _scratch_index("merge")
+    try:
+        if _git(["read-tree", "-m", "--aggressive", base, dev, data_commit],
+                index).returncode != 0:
+            return None
+        # write-tree fails if any path is left unmerged — that is how a
+        # conflict is detected here, with no working tree involved.
+        tree = _git_out(["write-tree"], index)
+    finally:
+        if os.path.exists(index):
+            os.remove(index)
+
+    if not tree:
+        return None
+    return _git_out(["commit-tree", tree, "-p", dev, "-p", data_commit,
+                     "-m", f"sync: fold {fname} update into dev"])
+
+
+def sync_local_refs(data_commit, files):
+    """
+    Bring the local main/dev refs up to what was just pushed, without ever
+    switching branches.
+
+    A branch that is not checked out is moved with a ref-only fetch. The
+    branch that IS checked out is fast-forwarded only when the working
+    tree's sole modifications are the data files this run published, and
+    their contents match what was published byte for byte — so restoring
+    them before the fast-forward cannot lose anything. Anything else in the
+    working tree and this stops and says so: moving somebody's branch out
+    from under them is exactly what this script must not do.
+    """
+    current = _git_out(["symbolic-ref", "--quiet", "--short", "HEAD"])
+
+    for branch in ("main", "dev"):
+        if branch == current:
+            continue                # checked out — a ref fetch would refuse
+        r = _git(["fetch", "origin", f"{branch}:{branch}"])
         if r.returncode != 0:
-            log.error(f"Git command failed: {' '.join(cmd)}")
-            if r.stderr:
-                log.error(r.stderr.strip())
+            log.warning(f"Could not fast-forward local {branch}: "
+                        f"{r.stderr.strip()}")
 
-            # The main deploy already succeeded if we get this far into the
-            # command list — only the dev-sync step can still fail (e.g. a
-            # conflict with in-progress feature work on dev). Leave the repo
-            # clean on dev rather than mid-merge, and flag that dev needs a
-            # manual `git merge main` to pick up the data update.
-            if cmd == ["git", "-C", REPO_FOLDER, "merge", "main", "-m", f"sync: fold {fname} update into dev"]:
-                subprocess.run(["git", "-C", REPO_FOLDER, "merge", "--abort"],
-                                capture_output=True, text=True)
-                log.error(
-                    f"Production deploy for {fname} succeeded, but folding it back "
-                    "into dev conflicted with in-progress work there. Merge aborted "
-                    "— dev is left clean. A human needs to `git merge main` into dev "
-                    "manually to resolve before the next feature merges to main."
-                )
-            else:
-                log.error(
-                    "Aborting git pipeline for this file — repo may be left on "
-                    f"branch '{DATA_BRANCH}' or 'main' rather than 'dev'. Check "
-                    "state manually before the next run."
-                )
+    if not current:
+        log.info("Repo HEAD is detached — local branches left as they are.")
+        return
+    if current not in ("main", "dev"):
+        log.info(f"Repo is on '{current}' — left untouched. It picks this "
+                 f"update up the next time it merges dev.")
+        return
+
+    # Only touch the working tree when this branch actually ends up
+    # carrying the data commit. If folding into dev conflicted, dev still
+    # holds older data, and restoring the files below would quietly revert
+    # the freshly generated ones — so leave them alone and say so.
+    if _git(["merge-base", "--is-ancestor", data_commit,
+             f"origin/{current}"]).returncode != 0:
+        log.info(f"origin/{current} does not carry this update, so the "
+                 f"working tree was left exactly as it is.")
+        return
+
+    # Tracked paths that differ from HEAD, staged or not. Untracked files
+    # are irrelevant: this commit only touches already-tracked paths under
+    # src/data, so nothing untracked can collide with the fast-forward.
+    diff = _git_out(["diff", "--name-only", "HEAD"])
+    if diff is None:
+        log.warning("Could not read the working tree state; "
+                    f"local '{current}' left alone.")
+        return
+    dirty = {line.strip() for line in diff.splitlines() if line.strip()}
+
+    stray = dirty - set(files)
+    if stray:
+        log.info(f"Local '{current}' is behind origin/{current}, but the "
+                 f"working tree has other changes ({', '.join(sorted(stray))}). "
+                 f"Left it alone — run `git pull --ff-only` when you are ready.")
+        return
+
+    for rel in sorted(dirty):
+        abs_path = os.path.join(REPO_FOLDER, rel.replace("/", os.sep))
+        if (_git_out(["hash-object", "--path", rel, abs_path])
+                != _git_out(["rev-parse", f"{data_commit}:{rel}"])):
+            log.info(f"{rel} in the working tree differs from what was "
+                     f"published — left '{current}' alone. Run "
+                     f"`git pull --ff-only` yourself.")
             return
-        if r.stdout.strip():
-            log.info(f"  {r.stdout.strip()}")
 
-    log.info(f"Done. Deployed to production for {fname}")
+    if dirty:
+        # Verified identical to what was just pushed, so restoring these
+        # loses nothing and lets the fast-forward through.
+        if _git(["checkout", "--"] + sorted(dirty)).returncode != 0:
+            log.warning(f"Could not restore the published data files — local "
+                        f"'{current}' left behind origin/{current}.")
+            return
+
+    r = _git(["merge", "--ff-only", f"origin/{current}"])
+    if r.returncode == 0:
+        log.info(f"Local '{current}' fast-forwarded to origin/{current}.")
+    else:
+        log.warning(f"Could not fast-forward local '{current}': "
+                    f"{r.stderr.strip()}")
+
+
+def publish(fname, files):
+    """Commit the data files, deploy them to main, then fold them into dev."""
+    log.info(f"Publishing {', '.join(files)} ...")
+
+    if _git(["fetch", "origin"]).returncode != 0:
+        log.error("git fetch failed — nothing published for this file.")
+        return
+
+    message = (f"Weekly update: {fname} — "
+               f"{datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    data_commit = build_data_commit(files, message)
+    if data_commit is None:
+        log.error(f"Aborting publish for {fname}. The repo was not modified.")
+        return
+    if data_commit == "":
+        log.info("Data files are already identical to origin/main — "
+                 "nothing to deploy.")
+        log.info("-" * 60)
+        return
+
+    # Rejected if origin/main moved since the fetch above: the commit is
+    # parented on that exact sha, so a non-fast-forward means somebody else
+    # pushed and this run's tree is stale. Fail rather than force.
+    r = _git(["push", "origin", f"{data_commit}:refs/heads/main"])
+    if r.returncode != 0:
+        log.error(f"Could not push to main: {r.stderr.strip()}")
+        log.error(f"Nothing was deployed for {fname}. The repo was not "
+                  f"modified — re-drop the file to retry.")
+        return
+    log.info(f"Deployed to production for {fname} ({data_commit[:7]}).")
+
+    dev_target = fold_into_dev(data_commit, fname)
+    if dev_target is None:
+        log.error(f"Production deploy for {fname} succeeded, but folding it "
+                  f"into dev conflicts with work already on dev. dev was left "
+                  f"untouched — a human needs to merge main into dev manually "
+                  f"before the next feature merges to main.")
+    else:
+        r = _git(["push", "origin", f"{dev_target}:refs/heads/dev"])
+        if r.returncode != 0:
+            log.error(f"Could not push to dev: {r.stderr.strip()}")
+            log.error("Production has the update; dev does not. Merge main "
+                      "into dev manually.")
+        else:
+            log.info("Folded into dev.")
+
+    sync_local_refs(data_commit, files)
     log.info("-" * 60)
 
 
