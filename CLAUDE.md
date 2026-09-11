@@ -112,22 +112,33 @@ and required a full revert. It is not optional.
 main          ← production (Azure auto-deploy, ~30 sec)
   └── dev     ← staging / integration (always contains finished work only)
         └── feat/xxx  ← active development (one feature or fix per branch)
-  └── data-import  ← ephemeral, watcher.py only (see exception below)
 ```
 
 **Exception — the automated weekly-data watcher.** `scripts/watcher.py`
 deploys weekly xlsx-derived data updates straight to `main` on its own,
 unattended, with no confirmation step — deliberately, so a weekly import is
-never blocked on a human. It uses a dedicated `data-import` branch (recreated
-from `main` and merged straight back into it on every run) and never touches
-`dev`, so it can never pick up or clobber in-progress feature work sitting
-there. It then fast-forward-merges `main` back into `dev` to keep them in
-sync; if that sync conflicts with feature work, it aborts and leaves `dev`
-clean, flagging that a human must merge manually. **This exception applies
-only to `watcher.py`'s own commits.** Everything else — every change made in
-a Claude Code session, including data-file edits — still follows the full
-manual `feat/xxx → dev → main` flow, and still waits for the user to ask
-before anything reaches `main` (see Step 3).
+never blocked on a human.
+
+**It does this without checking anything out.** The watcher builds its
+commit with git plumbing — the tree of `origin/main` with only its own
+`src/data/*.json` files overlaid — and pushes it by sha. It never switches
+branches, never moves `HEAD`, and never touches the repository index, so by
+construction it cannot sweep in-progress work into a deploy or move `HEAD`
+out from under a session that is working in the repo. It then folds the
+same commit into `dev`; if that conflicts with work already on `dev`, `dev`
+is left alone and the log flags that a human must merge `main` into `dev`.
+
+This is not a stylistic preference. The watcher used to run `git checkout
+main` in the shared working tree, and it captured an interactive session's
+commits onto `main` and auto-deployed them. **Never reintroduce a branch
+checkout, `git add -A`, stash, or `git commit` without explicit paths into
+`watcher.py`.** `scripts/test_watcher_publish.py` guards this — run it after
+any change to the watcher's git handling.
+
+**This exception applies only to `watcher.py`'s own commits.** Everything
+else — every change made in a Claude Code session, including data-file edits
+— still follows the full manual `feat/xxx → dev → main` flow, and still
+waits for the user to ask before anything reaches `main` (see Step 3).
 
 ### Publishing workflow — follow every time, no exceptions
 
