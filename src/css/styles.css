@@ -142,10 +142,10 @@ body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-
   margin-right: auto;
   width: 100%;
 }
-.kpi-cell { padding: 18px 22px; border-right: 1px solid var(--rule); position: relative; }
+.kpi-cell { padding: 18px 22px; border-right: 1px solid var(--rule); }
 .kpi-cell:last-child { border-right: none; }
-.kpi-cell:after { content: ''; position: absolute; bottom: 0; left: 22px; right: 22px; height: 2px; background: transparent; transition: background .2s; }
-.kpi-cell:hover:after { background: var(--amber); }
+/* KPI cells are read-only displays — no hover or cursor effects. The info-btn inside each
+   cell is the only interactive element; it handles its own affordance. */
 .kpi-label { font-size: .58rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ink3); margin-bottom: 6px; font-weight: 500; }
 .kpi-value { font-family: var(--serif); font-size: var(--kpi-value); font-weight: 700; color: var(--ink); line-height: 1; letter-spacing: -.02em; }
 .kpi-sub { font-size: .58rem; color: var(--ink3); margin-top: 4px; }
@@ -239,14 +239,17 @@ select:focus, input:focus { outline: 2px solid var(--amber); outline-offset: 2px
   font-size: .62rem; font-weight: 600;
   letter-spacing: .1em; text-transform: uppercase;
   padding: 10px 16px;
-  cursor: pointer; color: var(--ink3);
-  border-bottom: 3px solid transparent;
+  cursor: pointer; color: var(--ink2);
+  /* Resting bottom border makes the tab shape visible even when unselected,
+     so the row reads as a set of controls rather than a label row. */
+  border-bottom: 3px solid var(--rule);
   margin-bottom: -1px;
   border-radius: 3px 3px 0 0;
-  transition: all .15s; user-select: none;
+  transition: color .15s, background .15s, border-bottom-color .15s; user-select: none;
   white-space: nowrap;
 }
-.nav-tab:hover { color: var(--ink); background: rgba(0,56,101,.06); }
+.nav-tab:hover { color: var(--ink); background: rgba(0,56,101,.06); border-bottom-color: var(--ink2); }
+.nav-tab:focus-visible { outline: 2px solid var(--amber); outline-offset: -2px; border-bottom-color: var(--amber); }
 .nav-tab.active { color: var(--bg); background: var(--ink); border-bottom-color: var(--ink); }
 /* Push tab(s) to the right edge — used on dashboard and box_office */
 .nav-tab.tab-right { margin-left: auto; }
