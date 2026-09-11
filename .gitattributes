@@ -1,6 +1,10 @@
 # Normalize line endings to LF in the repo; checkout as-is on all platforms
 * text=auto eol=lf
 
+# Windows batch files must check out with CRLF - cmd.exe mis-parses LF-only .bat
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+
 # Explicitly binary — never touch line endings
 *.png  binary
 *.jpg  binary
