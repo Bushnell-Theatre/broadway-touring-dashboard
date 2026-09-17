@@ -799,14 +799,6 @@
           display: none !important;
         }
 
-        /* The "Desktop Recommended" overlay is position:fixed with a dark
-           backdrop over the whole viewport. Printing from a narrow window
-           would otherwise paint it over every page. Its screen behaviour sets
-           display inline, so !important is required to beat that. */
-        #mobileWarningModal {
-          display: none !important;
-        }
-
         .sidebar,
         .sidebar-toggle,
         .sidebar-backdrop,
@@ -848,16 +840,18 @@
           background: #fff !important;
         }
 
+        /* The screen masthead is not printed. Printed pages identify themselves
+           through the repeating classification bars, the print-only report
+           header and date, and the active filter context — the masthead adds
+           only navigation chrome and a second, competing page header.
+
+           The `position: running(header)` / `@page { @top-center { content:
+           element(header) } }` pair that used to live here is gone with it: no
+           browser implements CSS generated-content-for-paged-media, so it never
+           did anything, and the repeating thead now provides the running
+           header it was reaching for. Screen masthead is untouched. */
         .masthead {
-          position: running(header);
-          display: block !important;
-          border-bottom: 2px solid #003865;
-          margin-bottom: 12pt;
-        }
-        @page {
-          @top-center {
-            content: element(header);
-          }
+          display: none !important;
         }
 
         .print-header {
@@ -5413,7 +5407,6 @@ async function processFile(file) {
     </table>
     <!-- ══ end print frame ══════════════════════════════════════════════════ -->
 
-  <!-- Mobile Warning Modal -->
   <!-- ── CHART INFO MODAL ── -->
   <div id="infoModal" role="dialog" aria-modal="true" aria-labelledby="infoModalTitle">
     <div class="info-modal-box">
@@ -5478,14 +5471,10 @@ async function processFile(file) {
     </div>
   </div>
 
-  <div id="mobileWarningModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
-    <div style="background:#fff;border-radius:8px;padding:2rem;max-width:380px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.3);">
-      <h2 style="margin:0 0 .75rem;font-size:1.25rem;">Desktop Recommended</h2>
-      <p style="margin:0 0 1.25rem;color:#555;line-height:1.5;">This tool is designed for desktop or laptop use. The layout may not display correctly on smaller screens.</p>
-      <button onclick="document.getElementById('mobileWarningModal').style.display='none'" style="padding:.5rem 1.5rem;border:1px solid #ccc;border-radius:4px;background:#fff;cursor:pointer;font-size:.95rem;">Continue Anyway</button>
-    </div>
-  </div>
-  <script>(function(){if(window.innerWidth<768){document.getElementById('mobileWarningModal').style.display='flex';}}());</script>
+  <!-- The "Desktop Recommended" advisory overlay was removed from the Dashboard
+       (v5.2). It was position:fixed over the whole viewport, so it painted over
+       printed output, and printing and export reliability take priority over the
+       advisory. The other pages keep theirs. -->
   <script>
     /* ── Load version from versions.json — single source of truth ── */
     (function () {
