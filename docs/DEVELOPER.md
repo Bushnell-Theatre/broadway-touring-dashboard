@@ -333,6 +333,54 @@ See [CHARTS.md](CHARTS.md) for what each chart shows and what decisions it suppo
 
 ---
 
+## Known maintenance risk — custom export formats
+
+**The Dashboard's ZIP and PDF files are assembled by repository-owned code in
+`src/js/core/export.js`.** They are not produced by a third-party library.
+
+### Why it was done this way
+
+Writing the two formats directly avoided a new third-party dependency and everything
+that comes with one: no external data transfer (all bytes are assembled in the page
+and handed to the browser as a Blob), no new licensing obligations, and no new CDN
+origin to admit to the content-security posture.
+
+### What was deliberately left out
+
+Both writers are narrow on purpose:
+
+- **ZIP** — stored (uncompressed, method 0) entries only, holding PNGs. PNG payloads
+  are already DEFLATE-compressed, so store mode costs almost nothing and keeps the
+  writer to one code path. There is no compression, no encryption, no Zip64.
+- **PDF** — raster chart pages only: one image XObject per page plus basic base-14
+  text for the header and footer. There is no selectable chart content, no vector
+  chart output, no tagging or accessibility structure, no outlines, no hyperlinks,
+  and no pagination beyond one chart per page.
+
+### What that means for maintenance
+
+**The project owns file-format correctness, compatibility and maintenance.** A reader
+that rejects one of these files is our defect, not a vendor's, and there is no
+upstream release to wait for.
+
+Generated files must continue to be tested in **Windows Explorer** (ZIP), and in
+**Edge/Chrome and Adobe Acrobat** (PDF). These three do not always agree, and a file
+that opens in one is not evidence for the others. See
+[OPERATIONS.md](OPERATIONS.md#validate-a-dashboard-export) for the validation steps.
+
+### Where to stop
+
+**Do not keep extending the custom PDF writer** for advanced layout, accessibility,
+selectable chart content, hyperlinks or complex pagination. Each of those pushes the
+writer toward being a general-purpose PDF library that the project would then have to
+maintain and keep spec-compliant.
+
+If a request needs any of them, reassess adopting a maintained PDF library instead.
+**Treat format expansion as an architectural decision, not a routine feature edit** —
+it changes what this repository is responsible for.
+
+---
+
 ## CSS Design System
 
 All colors, spacing, and typography are CSS custom properties in `src/css/styles.css`.
@@ -561,3 +609,4 @@ These constraints are intentional:
 4. Do not remove above-100 capacity/gross values — they are valid Broadway League reporting conditions.
 5. Do not put scoring or threshold logic in page controllers — all thresholds belong in `config.js` and `signals.js`.
 6. Do not add a frontend build step without explicit agreement — the no-build constraint keeps hosting free and deployments trivial.
+7. Do not extend the custom ZIP/PDF writers in `export.js` beyond their present scope without reassessing a maintained library — see [Known maintenance risk](#known-maintenance-risk--custom-export-formats).

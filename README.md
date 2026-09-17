@@ -21,6 +21,22 @@ The application supports three active experiences built on the same touring data
 | [Executive Summary](src/exec_summary.html) | Leadership | Review a concise season-level view of performance, candidates, and notable signals. Shares the same two-contract design as Programming: Show Slate always visible; Display Evidence pill controls display scope; canonical Planning Signals are date-range-independent. |
 | [Development Hub](src/index.html) | All internal users | Choose an experience and see data currency/version information |
 
+### Dashboard exports
+
+The Sales Intelligence Dashboard can export what is currently on screen:
+
+- **Data Table → CSV.** Exports the whole filtered Data Table population — all 14
+  displayed columns, in the table's current sort order, not just the rows in view.
+- **Charts → PNG or PDF.** Pick one or more Dashboard charts, then download them
+  either as a ZIP containing one PNG per chart, or as a single PDF.
+
+Exports reflect the Dashboard's active filters — the Season or Date Range selection
+and any other filters in force at the moment of export — and each exported chart
+records that context on the image or page.
+
+Export is currently **Dashboard-only**. Programming and Executive Summary have no
+export controls.
+
 The former Box Office scenario model remains in the repository, but its work is suspended and it is not presented as an active product experience.
 
 All active pages are in development. They are different views of the same evidence, not production/demonstration versions of one another.

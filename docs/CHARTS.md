@@ -244,3 +244,69 @@ The Dashboard is the operations and QA layer. Its charts are built from raw Broa
 **How to read it:** If the peer line is consistently above the non-peer line, mid-size venues perform better than the national average. If the gap narrows or reverses, it signals a structural shift in how shows are touring mid-size markets.
 
 **What it supports:** Market context. Helps answer whether Bushnell's peer group is performing differently from the broader Broadway touring market — and whether national benchmarks are actually relevant to our scale.
+
+---
+
+## Exporting Dashboard Charts
+
+The Dashboard's **Export Charts** control offers the thirteen Chart.js charts below.
+KPI cards, ranking lists, the theatre-size summary grid and the Data Table are not
+charts and are deliberately not offered.
+
+| Tab | Chart | Canvas |
+|---|---|---|
+| Charts | Top 12 Shows by Total Gross | `cShowGross` |
+| Charts | Avg GG% of Potential by Show | `cGgPct` |
+| Charts | Weekly Gross Trend | `cWeekly` |
+| Charts | % Capacity Paid by Market | `cMarketCap` |
+| Charts | Subscription vs Non-Subscription | `cSubComp` |
+| Rankings | Capacity Utilization by Theatre Size | `cTheatreSize` |
+| Analytics | Seasonality | `cSeasonality` |
+| Analytics | Year over Year Comparison | `cYoY` |
+| Analytics | Show Longevity | `cLongevity` |
+| Analytics | Top Shows by % Capacity | `cCapRank` |
+| Analytics | Most Consistent Shows | `cConsistency` |
+| Analytics | No Performance Rate | `cNoEng` |
+| Analytics | Bushnell vs Peer Gap | `cPeerGap` |
+
+A chart on a tab the user has not opened is still exportable — its panel is rendered
+off-screen for the capture.
+
+### Fixed capture dimensions
+
+Charts are captured at a fixed staging width, independent of the browser window size
+and of which tab happens to be open. The same chart with the same filters exports at
+the same proportions from a laptop and from a 4K display.
+
+### Show names wrap, they do not truncate
+
+Show names routinely run past the space a category axis gives them — the longest in
+`data.json` is 56 characters. They are wrapped at word boundaries onto extra lines
+rather than cut short with an ellipsis, and the affected charts grow in height so
+that every wrapped label has room for all of its lines. An unusually long single
+word is hard-broken rather than allowed to overrun the axis.
+
+This applies on screen and in exports alike: exports capture the same canvases the
+screen shows, so an export cannot regress from the screen presentation.
+
+### What an exported chart carries
+
+Every exported chart — PNG or PDF — includes:
+
+- the chart title and its on-screen sub-caption;
+- the active season or date range;
+- the other active filters that materially affect that chart;
+- the record count in view;
+- the export date;
+- `CONFIDENTIAL — INTERNAL USE ONLY` in both the header and the footer.
+
+For PNG the confidentiality bands are drawn into the image itself, because the image
+travels on its own. For PDF they are drawn as real page text, so they remain
+searchable and selectable.
+
+### PDF layout
+
+One selected chart per page. Page orientation is chosen per chart to keep labels
+readable: a chart that wrapped show names have made taller than it is wide is given
+a portrait page, because forcing it onto landscape would shrink it until the labels
+stopped being legible. Everything else gets landscape.

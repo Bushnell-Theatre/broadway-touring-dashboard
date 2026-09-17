@@ -187,6 +187,60 @@ Above-100 values are **not errors** — Broadway League reports sometimes record
 
 ---
 
+## Validate a Dashboard Export
+
+Exports are produced entirely in the browser, so there is no pipeline log to check —
+validation is done by opening what came out.
+
+### CSV
+
+- The row count must match the Data Table. The Data Table shows `N engagements`
+  above the table; the CSV must contain `N` data rows plus one header row.
+- All 14 displayed columns must be present, in the table's display order, and the
+  rows must follow the sort order that was active when the export ran.
+- The CSV carries **no confidentiality banner row**. That is deliberate: a banner
+  above the header row breaks every tool that expects row 1 to be the header.
+  Confidentiality is conveyed through the filename, which always ends
+  `CONFIDENTIAL_INTERNAL_USE_ONLY.csv`.
+
+### PNG / ZIP
+
+- The ZIP must open normally in Windows Explorer — double-click, no repair prompt,
+  no third-party tool required.
+- It must contain one PNG per chart that exported successfully. The dialog reports
+  any chart it skipped for having no data under the current filters.
+- Open the PNGs. Every one must show `CONFIDENTIAL — INTERNAL USE ONLY` in both the
+  header band and the footer band of the image itself, not only in the filename.
+
+### PDF
+
+- Open the PDF in **Edge or Chrome and in Adobe Acrobat**. Both are in use here and
+  they do not always agree; a file that renders in one is not evidence for the other.
+- The page count must equal the number of charts selected.
+- Every page must show `CONFIDENTIAL — INTERNAL USE ONLY` at the top and at the
+  bottom, and the chart and its labels must be readable at 100% zoom.
+
+### Ctrl+P
+
+**After any material change to the print CSS, check Ctrl+P by hand.** Per-page
+repetition of the classification bars is a browser paged-media behaviour; it cannot
+be proven from the DOM, and a rule that looks right on screen can still fail when
+paginated.
+
+Check the first page, a middle page and the final page, and confirm:
+
+- `CONFIDENTIAL — INTERNAL USE ONLY` appears at the top and the bottom of each;
+- neither bar covers page content;
+- the active filter summary under the print header is current, not stale;
+- export and navigation controls are absent;
+- the "Desktop Recommended" overlay is absent — it is `position: fixed` over the
+  whole viewport, so if it ever returns in print it blacks out every page.
+
+Do this from a narrow window as well as a wide one: some screen-only overlays only
+appear below 768px, and those are exactly the ones that damage print.
+
+---
+
 ## Add a New Show to the Slate
 
 Shows on the season slate come from `src/data/seasons.json`. Edit that file to add a show:
