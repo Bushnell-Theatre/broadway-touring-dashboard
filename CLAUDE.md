@@ -86,7 +86,7 @@ bump with a stale date is misleading.
 
 | Page | Current | Last meaningful change |
 |---|---|---|
-| dashboard.html | v5.1 | August 14, 2026 — universal Season / Date Range filtering with fail-closed boundary validation |
+| dashboard.html | v5.2 | September 17, 2026 — dashboard export: filtered Data Table CSV, chart PNG/ZIP and PDF, classified browser print |
 | programming.html | v6.3 | September 11, 2026 — Data Table tab — raw engagement records sortable table |
 | exec_summary.html | v6.3 | September 11, 2026 — Data Table tab — raw engagement records sortable table |
 | box_office.html | v2.1 | June 30, 2026 — venues.json integration |
