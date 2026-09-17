@@ -799,6 +799,14 @@
           display: none !important;
         }
 
+        /* The chart/KPI information modal is position:fixed over the whole
+           viewport. Printing while it is open would paint it across the page.
+           !important is required: `#infoModal.open { display: flex }` in
+           styles.css outranks a plain #infoModal selector. */
+        #infoModal {
+          display: none !important;
+        }
+
         .sidebar,
         .sidebar-toggle,
         .sidebar-backdrop,
