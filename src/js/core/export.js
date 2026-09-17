@@ -442,8 +442,17 @@
     var footerText = spec.footerText || '';
 
     var MARGIN = 36; /* 0.5in side margins */
-    var HEADER_BAND = 30; /* reserved strip at the top of each page    */
-    var FOOTER_BAND = 34; /* reserved strip at the bottom of each page */
+    var HEADER_BAND = 30; /* reserved strip at the top of each page */
+
+    /* The footer holds two stacked lines, not one. Putting the caption, the
+       classification and the page counter on a single baseline made a long
+       chart caption run straight through the centred classification — 32pt of
+       overlap on a landscape page, 122pt on a portrait one, where the centre
+       sits further left. The classification keeps the lower, centred baseline;
+       the caption and counter move to their own baseline above it. */
+    var FOOTER_CLASS_Y = 14; /* lower line: classification, centred          */
+    var FOOTER_META_Y = 31; /* upper line: caption (left), counter (right)  */
+    var FOOTER_BAND = 48; /* reserved strip for both lines plus clearance */
 
     var objects = []; /* objects[n] holds the body of object number n+1 */
 
@@ -517,42 +526,49 @@
         pdfString(headerText) +
         ' Tj ET\n';
 
-      /* Classification footer — centred in the reserved bottom band. */
+      /* Classification footer — centred, alone on the lower footer line. */
       content +=
         'BT /F1 ' +
         ftrSize +
         ' Tf ' +
         ((PW - approxTextWidth(footerText, ftrSize, true)) / 2).toFixed(2) +
         ' ' +
-        (FOOTER_BAND - 12).toFixed(2) +
+        FOOTER_CLASS_Y.toFixed(2) +
         ' Td ' +
         pdfString(footerText) +
         ' Tj ET\n';
 
-      /* Page counter, right-aligned on the same baseline as the footer. */
+      /* Page counter, right-aligned on the upper footer line. */
       var counter = 'Page ' + (index + 1) + ' of ' + pages.length;
+      var counterX = PW - MARGIN - approxTextWidth(counter, ftrSize, false);
       content +=
         'BT /F2 ' +
         ftrSize +
         ' Tf ' +
-        (PW - MARGIN - approxTextWidth(counter, ftrSize, false)).toFixed(2) +
+        counterX.toFixed(2) +
         ' ' +
-        (FOOTER_BAND - 12).toFixed(2) +
+        FOOTER_META_Y.toFixed(2) +
         ' Td ' +
         pdfString(counter) +
         ' Tj ET\n';
 
-      /* Per-page caption (chart title / export date), left-aligned. */
+      /* Per-page caption (chart title / export date), left-aligned on the same
+         upper line. Clamped to the space before the counter so the two cannot
+         run together — with the current chart titles this never fires. */
       if (page.footerLeft) {
+        var caption = String(page.footerLeft);
+        var captionRoom = counterX - 12 - MARGIN;
+        var maxChars = Math.floor(captionRoom / (ftrSize * 0.52));
+        if (caption.length > maxChars) caption = caption.slice(0, Math.max(1, maxChars - 1)) + '…';
         content +=
           'BT /F2 ' +
           ftrSize +
           ' Tf ' +
           MARGIN +
           ' ' +
-          (FOOTER_BAND - 12).toFixed(2) +
+          FOOTER_META_Y.toFixed(2) +
           ' Td ' +
-          pdfString(page.footerLeft) +
+          pdfString(caption) +
           ' Tj ET\n';
       }
 

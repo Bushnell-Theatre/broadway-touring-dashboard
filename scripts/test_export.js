@@ -394,6 +394,119 @@ const footerY = contentStream.match(/\/F1 9 Tf [\d.]+ ([\d.]+) Td/);
 ok('classification header is drawn in the top band', headerY && Number(headerY[1]) > 570);
 ok('classification footer is drawn in the bottom band', footerY && Number(footerY[1]) < 40);
 
+/* ── Footer layout — the three footer items must not collide ───────────────
+   Regression guard. All three once shared one baseline, which put a long
+   chart caption straight through the centred classification: 32pt of overlap
+   on a landscape page, 122pt on a portrait one. */
+section('Suite 8c — PDF footer layout');
+
+const MARGIN_PT = 36; /* the side margin buildPdf() lays out against */
+
+/* The longest caption the dashboard actually produces. */
+const LONG_CAPTION = 'Capacity Utilization by Theatre Size · Exported September 17, 2026';
+
+/* Same width approximation buildPdf() lays the text out with. */
+const textWidth = (s, size, bold) => s.length * size * (bold ? 0.58 : 0.52);
+
+/* Pull every text placement out of a page's content stream. */
+function footerItems(latinPdf) {
+  const body = latinPdf.slice(latinPdf.indexOf('/Im0 Do'));
+  return [...body.matchAll(/BT \/(F\d) ([\d.]+) Tf ([\d.]+) ([\d.]+) Td \((.*?)\) Tj ET/g)].map((m) => ({
+    font: m[1],
+    size: Number(m[2]),
+    x: Number(m[3]),
+    y: Number(m[4]),
+    text: m[5],
+    bold: m[1] === 'F1',
+  }));
+}
+
+[
+  { label: 'landscape', PW: 792, PH: 612 },
+  { label: 'portrait', PW: 612, PH: 792 },
+].forEach(({ label, PW, PH }) => {
+  const pdf = Buffer.from(
+    X.buildPdf({
+      pages: [{ image: fakeImage(1468, 1443), footerLeft: LONG_CAPTION, pageWidth: PW, pageHeight: PH }],
+      headerText: CLASS,
+      footerText: CLASS,
+    }),
+  ).toString('latin1');
+
+  const items = footerItems(pdf);
+  const header = items.find((i) => i.bold && i.y > PH / 2);
+  const classification = items.find((i) => i.bold && i.y < PH / 2);
+  const counter = items.find((i) => /^Page \d+ of \d+$/.test(i.text));
+  const caption = items.find((i) => i !== counter && !i.bold);
+
+  ok(`${label}: all four text items are placed`, !!(header && classification && counter && caption));
+
+  /* 1. The classification sits on its own baseline, apart from both others. */
+  ok(
+    `${label}: classification baseline differs from the caption's`,
+    classification.y !== caption.y,
+    `both at y=${classification.y}`,
+  );
+  ok(
+    `${label}: classification baseline differs from the page counter's`,
+    classification.y !== counter.y,
+    `both at y=${counter.y}`,
+  );
+
+  /* 2. Caption and counter share the upper line, above the classification. */
+  eq(`${label}: caption and counter share one baseline`, caption.y, counter.y);
+  ok(
+    `${label}: that baseline sits above the classification`,
+    caption.y > classification.y,
+    `caption y=${caption.y}, classification y=${classification.y}`,
+  );
+  ok(
+    `${label}: the two baselines clear each other by at least the font size`,
+    caption.y - classification.y >= caption.size,
+    `gap ${caption.y - classification.y}pt at ${caption.size}pt`,
+  );
+
+  /* 3. Nothing on either footer line overlaps horizontally. */
+  const capRight = caption.x + textWidth(caption.text, caption.size, false);
+  ok(
+    `${label}: caption does not reach the page counter`,
+    capRight <= counter.x,
+    `caption ends ${capRight.toFixed(1)}, counter starts ${counter.x}`,
+  );
+
+  const classLeft = classification.x;
+  const classRight = classLeft + textWidth(CLASS, classification.size, true);
+  ok(`${label}: classification stays inside the page margins`, classLeft >= MARGIN_PT && classRight <= PW - MARGIN_PT);
+  ok(`${label}: classification is horizontally centred`, Math.abs((classLeft + classRight) / 2 - PW / 2) < 1);
+
+  /* 4. Neither footer line runs into the chart image. */
+  const cm = pdf.match(/q\n([\d.]+) 0 0 ([\d.]+) ([\d.]+) ([\d.]+) cm/);
+  const imageBottom = Number(cm[4]);
+  const footerTop = caption.y + caption.size; /* ascender of the upper line */
+  ok(
+    `${label}: the chart image clears the footer block`,
+    imageBottom > footerTop,
+    `image bottom ${imageBottom}, footer top ${footerTop}`,
+  );
+  ok(`${label}: the header band clears the chart image`, Number(cm[4]) + Number(cm[2]) <= header.y);
+});
+
+/* An over-long caption is clamped rather than allowed to reach the counter. */
+const absurd = Buffer.from(
+  X.buildPdf({
+    pages: [{ image: fakeImage(100, 100), footerLeft: 'X'.repeat(400), pageWidth: 612, pageHeight: 792 }],
+    headerText: CLASS,
+    footerText: CLASS,
+  }),
+).toString('latin1');
+const absurdItems = footerItems(absurd);
+const absurdCounter = absurdItems.find((i) => /^Page \d+ of \d+$/.test(i.text));
+const absurdCaption = absurdItems.find((i) => i !== absurdCounter && !i.bold);
+ok(
+  'an over-long caption is clamped before the page counter',
+  absurdCaption.x + textWidth(absurdCaption.text, absurdCaption.size, false) <= absurdCounter.x,
+);
+
 /* PDF string escaping. */
 section('Suite 8b — PDF string escaping');
 eq('parentheses are escaped', X.pdfString('Show (Tour)'), '(Show \\(Tour\\))');

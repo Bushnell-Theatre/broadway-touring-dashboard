@@ -721,6 +721,14 @@
          * optional "Headers and footers" print setting, which users can switch
          * off and which prints the URL rather than a classification.
          * The body padding below keeps page content clear of both bars.
+         *
+         * KNOWN LIMITATION — the body padding reserves space at the top of the
+         * DOCUMENT, not of every page, so on pages after the first a line of
+         * content can pass beneath the header bar. Offsetting the bars into the
+         * @page margin does not fix it: Chrome clips fixed positioning to the
+         * page content box and the bar is dropped altogether. A real fix needs
+         * the repeating content in a table thead/tfoot, which reserves space on
+         * every page — a DOM change, tracked separately.
          * ─────────────────────────────────────────────────────────────────── */
         .print-class {
           display: block !important;
@@ -757,6 +765,14 @@
         #exportCsvBtn,
         .export-overlay,
         .info-btn {
+          display: none !important;
+        }
+
+        /* The "Desktop Recommended" overlay is position:fixed with a dark
+           backdrop over the whole viewport. Printing from a narrow window
+           would otherwise paint it over every page. Its screen behaviour sets
+           display inline, so !important is required to beat that. */
+        #mobileWarningModal {
           display: none !important;
         }
 
