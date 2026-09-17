@@ -35,6 +35,8 @@
     <script src="js/core/components.js"></script>
     <script src="js/core/page-common.js"></script>
     <script src="js/core/dashboard-analytics.js"></script>
+    <!-- Export utilities — CSV / ZIP / PDF writers, all client-side, no new deps -->
+    <script src="js/core/export.js"></script>
     <style>
       /* ── DASHBOARD — page-specific inline styles ────────────────────────────────
        * All shared rules (reset, masthead, buttons, kpi-strip, workspace, sidebar,
@@ -542,11 +544,220 @@
         border: 1px solid #b0c4d8;
       }
 
+      /* ── EXPORT ──────────────────────────────────────────────────────────────
+       * page-specific — the Export Charts picker exists only on dashboard.html.
+       * Programming and Exec Summary deliberately have no export controls.
+       * ───────────────────────────────────────────────────────────────────── */
+
+      /* page-specific — export chart picker overlay */
+      .export-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        z-index: 9000;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+      .export-overlay.open {
+        display: flex;
+      }
+
+      /* page-specific — export picker dialog box */
+      .export-box {
+        background: #fff;
+        border-radius: 6px;
+        box-shadow: 0 12px 48px rgba(0, 0, 0, 0.35);
+        width: 100%;
+        max-width: 620px;
+        max-height: 88vh;
+        display: flex;
+        flex-direction: column;
+        font-family: var(--sans);
+      }
+      .export-head {
+        padding: 18px 22px 12px;
+        border-bottom: 1px solid var(--rule2);
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .export-title {
+        font-family: var(--serif);
+        font-size: 1.05rem;
+        color: var(--ink);
+        margin: 0;
+      }
+      .export-desc {
+        font-size: 0.68rem;
+        color: var(--ink3);
+        margin-top: 4px;
+        line-height: 1.45;
+      }
+      .export-close {
+        background: none;
+        border: none;
+        font-size: 1rem;
+        color: var(--ink3);
+        cursor: pointer;
+        line-height: 1;
+        padding: 2px 4px;
+      }
+
+      /* page-specific — classification banner inside the export dialog */
+      .export-class {
+        background: var(--rose);
+        color: #fff;
+        font-size: 0.6rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-align: center;
+        padding: 6px 8px;
+        border-radius: 6px 6px 0 0;
+      }
+
+      /* page-specific — scrollable chart checkbox list */
+      .export-list {
+        overflow-y: auto;
+        padding: 10px 22px 14px;
+        flex: 1;
+      }
+      .export-group-label {
+        font-size: 0.58rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--ink3);
+        margin: 14px 0 6px;
+      }
+      .export-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 9px;
+        padding: 6px 4px;
+        border-radius: 3px;
+        cursor: pointer;
+      }
+      .export-item:hover {
+        background: var(--paper2, rgba(0, 56, 101, 0.04));
+      }
+      .export-item input {
+        margin-top: 3px;
+        flex-shrink: 0;
+      }
+      .export-item-name {
+        font-size: 0.72rem;
+        color: var(--ink);
+        font-weight: 500;
+      }
+      .export-item-sub {
+        font-size: 0.6rem;
+        color: var(--ink3);
+        margin-top: 1px;
+      }
+
+      /* page-specific — select all / clear all row */
+      .export-bulk {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        padding: 10px 22px 0;
+      }
+      .export-bulk .export-count {
+        margin-left: auto;
+        font-size: 0.62rem;
+        color: var(--ink3);
+        font-family: var(--mono);
+      }
+
+      /* page-specific — dialog action footer */
+      .export-foot {
+        border-top: 1px solid var(--rule2);
+        padding: 14px 22px;
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .export-status {
+        margin-right: auto;
+        font-size: 0.62rem;
+        color: var(--ink3);
+      }
+      .export-foot .btn[disabled] {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      /* page-specific — Export CSV action sits at the right edge of the
+         Data Table's section divider, after the flexible rule */
+      .export-csv-btn {
+        margin-left: 12px;
+        flex-shrink: 0;
+      }
+
+      /* page-specific — classification bar shown only when printing */
+      .print-class {
+        display: none;
+      }
+
       /* page-specific — print layout for full dashboard export */
       @media print {
+        /* Top and bottom margins are widened from 0.5in to 0.75in so the fixed
+           classification bars below have a reserved strip to live in and can
+           never overlap chart or table content. */
         @page {
           size: landscape;
-          margin: 0.5in;
+          margin: 0.75in 0.5in;
+        }
+
+        /* ── CLASSIFICATION ON EVERY PRINTED PAGE ──────────────────────────
+         * position: fixed inside a print context paints the element once per
+         * printed page, so these two bars repeat on page 1 and page N alike.
+         * They are drawn by the page itself — they do NOT rely on the browser's
+         * optional "Headers and footers" print setting, which users can switch
+         * off and which prints the URL rather than a classification.
+         * The body padding below keeps page content clear of both bars.
+         * ─────────────────────────────────────────────────────────────────── */
+        .print-class {
+          display: block !important;
+          position: fixed;
+          left: 0;
+          right: 0;
+          text-align: center;
+          font-family: 'Libre Franklin', Arial, sans-serif;
+          font-size: 9pt;
+          font-weight: 700;
+          letter-spacing: 0.12em;
+          color: #b0303a;
+          background: #fff;
+          z-index: 2147483647;
+        }
+        #printClassHeader {
+          top: 0;
+          padding-bottom: 4pt;
+          border-bottom: 1pt solid #b0303a;
+        }
+        #printClassFooter {
+          bottom: 0;
+          padding-top: 4pt;
+          border-top: 1pt solid #b0303a;
+        }
+        body {
+          padding-top: 26pt !important;
+          padding-bottom: 26pt !important;
+        }
+
+        /* Screen-only controls — hidden so they never print. */
+        .masthead-actions,
+        #exportChartsBtn,
+        #exportCsvBtn,
+        .export-overlay,
+        .info-btn {
+          display: none !important;
         }
 
         .sidebar,
@@ -671,6 +882,14 @@
     </style>
   </head>
   <body>
+    <!-- ── PRINT CLASSIFICATION BARS ──────────────────────────────────────────
+     * Hidden on screen; repeated on every printed page by the fixed-position
+     * rules in the @media print block above. Any Ctrl+P of this page carries
+     * the classification at the top and the bottom of every sheet.
+     * ─────────────────────────────────────────────────────────────────────── -->
+    <div class="print-class" id="printClassHeader">CONFIDENTIAL — INTERNAL USE ONLY</div>
+    <div class="print-class" id="printClassFooter">CONFIDENTIAL — INTERNAL USE ONLY</div>
+
     <!-- PRINT HEADER (visible only in print) -->
     <div class="print-header" id="printHeader">
       <strong>The Bushnell Center for the Performing Arts</strong>
@@ -741,6 +960,14 @@
         <button class="btn btn-outline" onclick="clearAllData()" aria-label="Reload data from source">↺ Reset</button>
         <button class="btn btn-outline" id="printBtn" onclick="printDashboard()" aria-label="Print dashboard">
           ⎙ Print
+        </button>
+        <button
+          class="btn btn-outline"
+          id="exportChartsBtn"
+          onclick="openChartExport()"
+          aria-label="Export dashboard charts as PNG or PDF"
+        >
+          ⬇ Export Charts
         </button>
         <!-- Import button — commented out pending Power Automate / SharePoint List wiring
     <button class="btn btn-primary" onclick="openImport()">+ Import Week</button>
@@ -1085,6 +1312,16 @@
             <h2>Engagement Data</h2>
             <div class="section-divider-line"></div>
             <div class="section-divider-meta" id="tableCount"></div>
+            <!-- Exports the whole filtered population in the table's current
+                 sort order — not just the rows currently scrolled into view. -->
+            <button
+              class="btn btn-ghost export-csv-btn"
+              id="exportCsvBtn"
+              onclick="exportDataTableCSV()"
+              aria-label="Export the filtered data table to CSV"
+            >
+              ⬇ Export CSV
+            </button>
           </div>
           <div class="tbl-wrap">
             <table>
@@ -2381,8 +2618,11 @@
         renderTable();
       }
 
-      function renderTable() {
-        const sorted = [...FILTERED].sort((a, b) => {
+      /* The full filtered population in the table's current sort order.
+         Single source of truth for both the rendered table and the CSV export,
+         so the two can never disagree about row count or ordering. */
+      function getSortedTableRows() {
+        return [...FILTERED].sort((a, b) => {
           const av = a[SORT_COL],
             bv = b[SORT_COL];
           if (av == null && bv == null) return 0;
@@ -2390,6 +2630,10 @@
           if (bv == null) return -1;
           return SORT_DIR * (av > bv ? 1 : av < bv ? -1 : 0);
         });
+      }
+
+      function renderTable() {
+        const sorted = getSortedTableRows();
         const tb = document.getElementById('tableBody');
         document.getElementById('tableCount').textContent = `${sorted.length.toLocaleString()} engagements`;
         if (!sorted.length) {
@@ -2432,6 +2676,40 @@
         text: '#6b6b6b',
         cobalt: '#1A4E8A',
       };
+
+      /* ── SHOW NAME LABELS ──────────────────────────────────────────────────────
+       * Show names routinely run past the space a category axis gives them
+       * ("Dr. Seuss' How the Grinch Stole Christmas 2024-Young Max" is 56
+       * characters). They are wrapped onto extra lines at word boundaries rather
+       * than cut short, so the complete name stays readable — on screen and in
+       * every exported PNG and PDF, which capture these same canvases.
+       *
+       * SHOW_LABEL_WRAP is set to the number of characters the axis already
+       * reserves at the smaller tick size, so wrapping costs no extra width.
+       * ─────────────────────────────────────────────────────────────────────── */
+      const SHOW_LABEL_WRAP = 30;
+      const SHOW_LABEL_LINE_PX = 12; /* one 9px tick line, including leading */
+
+      /* Tick options shared by every show-name axis. autoSkip is off because
+         dropping a show from the axis is its own kind of silent truncation. */
+      const SHOW_LABEL_TICKS = { font: { size: 9 }, autoSkip: false };
+
+      /* Complete show name, wrapped to however many lines it needs. */
+      function showLabel(name) {
+        return BTD.charts.wrapLabel(name, SHOW_LABEL_WRAP);
+      }
+
+      /* Grow a show-name chart until every wrapped label has room for all of its
+         lines, so no label can touch its neighbour or the plot area.
+         minPx is the height the stylesheet gives the canvas — never go below it. */
+      function fitShowLabelHeight(canvasId, labels, minPx) {
+        return BTD.charts.fitCategoryHeight(canvasId, labels, {
+          linePx: SHOW_LABEL_LINE_PX,
+          gapPx: 8,
+          axisPx: 56,
+          minPx: minPx,
+        });
+      }
 
       function dc(id) {
         if (CHARTS[id]) {
@@ -2657,10 +2935,12 @@
           .map(([s, v]) => [s, v.gross])
           .sort((a, b) => b[1] - a[1])
           .slice(0, 12);
+        const sgLabels = se.map(([s]) => showLabel(s));
+        fitShowLabelHeight('cShowGross', sgLabels, 380);
         CHARTS.sg = new Chart(document.getElementById('cShowGross'), {
           type: 'bar',
           data: {
-            labels: se.map(([s]) => (s.length > 22 ? s.slice(0, 22) + '…' : s)),
+            labels: sgLabels,
             datasets: [{ data: se.map(([, v]) => v), backgroundColor: CC.amber, borderRadius: 2 }],
           },
           options: {
@@ -2673,7 +2953,7 @@
             },
             scales: {
               x: { grid: { color: CC.grid }, ticks: { callback: (v) => fmt$(v) } },
-              y: { grid: { display: false } },
+              y: { grid: { display: false }, ticks: SHOW_LABEL_TICKS },
             },
             datasets: { bar: { maxBarThickness: 22, minBarLength: 2 } },
           },
@@ -2688,10 +2968,12 @@
           .map(([s, v]) => [s, v.ggSum / v.ggCnt])
           .sort((a, b) => b[1] - a[1])
           .slice(0, 12);
+        const gpLabels = ge.map(([s]) => showLabel(s));
+        fitShowLabelHeight('cGgPct', gpLabels, 380);
         CHARTS.gp = new Chart(document.getElementById('cGgPct'), {
           type: 'bar',
           data: {
-            labels: ge.map(([s]) => (s.length > 22 ? s.slice(0, 22) + '…' : s)),
+            labels: gpLabels,
             datasets: [
               {
                 data: ge.map(([, v]) => v),
@@ -2710,7 +2992,7 @@
             },
             scales: {
               x: { grid: { color: CC.grid }, ticks: { callback: (v) => v + '%' } },
-              y: { grid: { display: false } },
+              y: { grid: { display: false }, ticks: SHOW_LABEL_TICKS },
             },
             datasets: { bar: { maxBarThickness: 22, minBarLength: 2 } },
           },
@@ -3273,16 +3555,38 @@
         btn.setAttribute('aria-expanded', open);
       }
 
-      function printDashboard() {
-        // Update print header date
-        const hdr = document.getElementById('printHeaderDate');
-        if (hdr)
-          hdr.textContent =
-            'Printed ' + new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      /* ── ACTIVE FILTER CONTEXT ────────────────────────────────────────────────
+       * One description of "what is on screen right now", shared by the print
+       * header, the CSV filename, and the header block drawn into every
+       * exported chart image and PDF page.
+       *
+       * Returns:
+       *   timeLabel  human-readable season or date-range line
+       *   timeSlug   filename-safe form of the same
+       *   filters[]  every other active filter that materially changes what a
+       *              chart is showing — tier, subscription, peer set, equity
+       *              status, engagement status, venue, city, and the advanced
+       *              numeric ranges
+       *   showNote   non-empty only when the show list is a genuine subset
+       * ───────────────────────────────────────────────────────────────────── */
+      function buildFilterContext() {
+        // Time selector — a date range overrides the season pills entirely,
+        // matching the precedence enforced in applyFilters().
+        let timeLabel, timeSlug;
+        if (window._DATE_RANGE) {
+          timeLabel =
+            'Date Range: ' + fmtWeek(window._DATE_RANGE.start) + ' — ' + fmtWeek(window._DATE_RANGE.end);
+          timeSlug = 'Range_' + window._DATE_RANGE.start + '_to_' + window._DATE_RANGE.end;
+        } else if (ACTIVE_SEASONS.size > 0) {
+          const seasons = [...ACTIVE_SEASONS].sort();
+          timeLabel = 'Season' + (seasons.length > 1 ? 's' : '') + ': ' + seasons.join(' + ');
+          timeSlug = 'Season_' + seasons.join('_and_');
+        } else {
+          timeLabel = 'Season: All seasons';
+          timeSlug = 'All_Seasons';
+        }
 
-        // Build active filter summary
         const filters = [];
-        if (ACTIVE_SEASONS.size > 0) filters.push('Season(s): ' + [...ACTIVE_SEASONS].join(' + '));
         if (ACTIVE_TIER) filters.push('Tier: ' + ACTIVE_TIER);
         if (ACTIVE_SUB !== '') filters.push('Subscription: ' + (ACTIVE_SUB === '1' ? 'Sub Only' : 'Non-Sub Only'));
         if (ACTIVE_PEER)
@@ -3294,16 +3598,444 @@
                   ? 'Extended'
                   : ACTIVE_PEER.charAt(0).toUpperCase() + ACTIVE_PEER.slice(1)),
           );
+        if (ACTIVE_EQUITY) filters.push('Tour Type: ' + (ACTIVE_EQUITY === 'yes' ? 'Non-Equity' : 'Equity'));
+        if (ACTIVE_ENGAGE)
+          filters.push('Engagement: ' + (ACTIVE_ENGAGE === 'yes' ? 'Dark Weeks Only' : 'Performed Weeks Only'));
+
         const v = document.getElementById('fVenue')?.value;
         const c = document.getElementById('fCity')?.value;
         if (v) filters.push('Venue: ' + v);
         if (c) filters.push('City: ' + c);
-        if (window._DATE_RANGE)
-          filters.push('Date: ' + fmtWeek(window._DATE_RANGE.start) + ' — ' + fmtWeek(window._DATE_RANGE.end));
-        const fl = document.getElementById('printFilterList');
-        if (fl) fl.textContent = filters.length ? filters.join(' · ') : 'None (showing all data)';
 
+        // Advanced numeric ranges — these change chart values, so they belong
+        // in the exported context even though they live behind a disclosure.
+        const range = (minId, maxId, label, suffix) => {
+          const lo = document.getElementById(minId)?.value;
+          const hi = document.getElementById(maxId)?.value;
+          if (!lo && !hi) return;
+          filters.push(label + ': ' + (lo || 'min') + (suffix || '') + '–' + (hi || 'max') + (suffix || ''));
+        };
+        range('fGrossMin', 'fGrossMax', 'Gross', '');
+        range('fCapMin', 'fCapMax', '% Cap Paid', '%');
+        range('fPerfMin', 'fPerfMax', '# Perf', '');
+
+        // Show list — only noted when it is a real subset of what is available.
+        const boxes = [...document.querySelectorAll('.sCb')];
+        const checked = boxes.filter((b) => b.checked).length;
+        const showNote =
+          boxes.length && checked < boxes.length ? 'Shows: ' + checked + ' of ' + boxes.length + ' selected' : '';
+
+        return { timeLabel, timeSlug, filters, showNote };
+      }
+
+      /* Flatten the context into the lines drawn onto an exported chart. */
+      function exportContextLines(ctx) {
+        const lines = [ctx.timeLabel];
+        lines.push('Filters: ' + (ctx.filters.length ? ctx.filters.join(' · ') : 'None'));
+        if (ctx.showNote) lines.push(ctx.showNote);
+        lines.push('Records in view: ' + FILTERED.length.toLocaleString() + ' engagements');
+        return lines;
+      }
+
+      /* Today, formatted for display and for filenames. */
+      function exportDateLabel() {
+        return new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      }
+      function exportDateSlug() {
+        const d = new Date();
+        return (
+          d.getFullYear() +
+          '-' +
+          String(d.getMonth() + 1).padStart(2, '0') +
+          '-' +
+          String(d.getDate()).padStart(2, '0')
+        );
+      }
+
+      /* Fill the print-only header and filter summary from current state.
+         Called for the Print button AND from beforeprint, so a plain Ctrl+P
+         carries the same context as the button does rather than the stale
+         "None" the markup ships with. */
+      function refreshPrintContext() {
+        const hdr = document.getElementById('printHeaderDate');
+        if (hdr) hdr.textContent = 'Printed ' + exportDateLabel();
+
+        const ctx = buildFilterContext();
+        const parts = [ctx.timeLabel].concat(ctx.filters);
+        if (ctx.showNote) parts.push(ctx.showNote);
+        const fl = document.getElementById('printFilterList');
+        if (fl) fl.textContent = parts.join(' · ');
+      }
+
+      window.addEventListener('beforeprint', refreshPrintContext);
+
+      function printDashboard() {
+        refreshPrintContext();
         window.print();
+      }
+
+      /* ═══════════════════════════════════════════════════════════════════════
+       * EXPORT — Data Table CSV, chart PNG/ZIP, chart PDF
+       *
+       * All three run entirely in the browser. Nothing is uploaded: bytes are
+       * assembled by BTD.exportUtils (js/core/export.js) and handed straight to
+       * the browser's download mechanism.
+       * ═══════════════════════════════════════════════════════════════════════ */
+
+      /* ── DATA TABLE CSV ───────────────────────────────────────────────────── */
+
+      /* The Data Table's 14 displayed columns, in display order.
+         `text: true` marks a free-text column that gets the CSV formula-injection
+         guard. Numeric columns export raw values — no $ / % / K-M-B formatting —
+         so the file stays machine-readable; Week exports as ISO YYYY-MM-DD so it
+         sorts correctly and Excel parses it as a date. */
+      const CSV_COLUMNS = [
+        { label: 'Week', key: 'week_of', text: true },
+        { label: 'Tier', key: 'tier', text: true },
+        { label: 'Show', key: 'show', text: true },
+        { label: 'City', key: 'city', text: true },
+        { label: '# Perf', key: 'num_perf' },
+        { label: 'Gross', key: 'gross_gross' },
+        { label: 'Potential', key: 'gross_potential' },
+        { label: 'GG%GP', key: 'gg_pct_gp' },
+        { label: '% Cap Paid', key: 'cap_paid' },
+        { label: 'Total Cap', key: 'capacity' },
+        { label: 'Paid Tix', key: 'paid_tix' },
+        { label: 'Avg Adm', key: 'avg_adm' },
+        { label: 'Top Price', key: 'top_price' },
+        { label: 'Sub', key: (d) => (d.on_sub ? 'Yes' : 'No'), text: true },
+      ];
+
+      /**
+       * Export the entire filtered Data Table population as CSV.
+       *
+       * Rows come from getSortedTableRows() — the same function that renders the
+       * table — so the file contains every filtered record in the table's current
+       * sort order, not merely the rows scrolled into view.
+       *
+       * No confidentiality banner row is written into the file: a banner above
+       * the header row would break every tool that expects row 1 to be the
+       * header. The classification travels in the filename instead.
+       */
+      function exportDataTableCSV() {
+        const rows = getSortedTableRows();
+        if (!rows.length) {
+          alert('No rows match the current filters — nothing to export.');
+          return;
+        }
+        const ctx = buildFilterContext();
+        const csv = BTD.exportUtils.toCSV(CSV_COLUMNS, rows);
+        const name = BTD.exportUtils.buildFilename(
+          ['Bushnell Broadway Dashboard', 'Engagement Data', ctx.timeSlug, exportDateSlug()],
+          'csv',
+        );
+        BTD.exportUtils.downloadBlob(BTD.exportUtils.csvBlob(csv), name);
+      }
+
+      /* ── CHART REGISTRY ───────────────────────────────────────────────────── */
+
+      /* Every real Chart.js chart on the dashboard, and nothing else.
+         KPI cards, ranking lists, the theatre-size summary grid and the Data
+         Table are not charts and are deliberately absent.
+         `key` matches the CHARTS registry key used by dc() and renderCharts(). */
+      const EXPORT_CHARTS = [
+        { key: 'sg', group: 'Charts', title: 'Top 12 Shows by Total Gross', sub: 'Total gross — all filtered weeks', panel: 'tab-charts' },
+        { key: 'gp', group: 'Charts', title: 'Avg GG% of Potential by Show', sub: 'By show — color indicates over/under potential', panel: 'tab-charts' },
+        { key: 'wk', group: 'Charts', title: 'Weekly Gross Trend', sub: 'Total gross by report week, with 8-week moving average', panel: 'tab-charts' },
+        { key: 'mc', group: 'Charts', title: '% Capacity Paid by Market', sub: 'Top 20 markets — green ≥ 90%, amber 60–89%, red < 60%', panel: 'tab-charts' },
+        { key: 'sc', group: 'Charts', title: 'Subscription vs Non-Subscription', sub: 'Average gross and capacity comparison', panel: 'tab-charts' },
+        { key: 'ts', group: 'Rankings', title: 'Capacity Utilization by Theatre Size', sub: 'Seat capacity brackets — average % paid and gross', panel: 'tab-rankings' },
+        { key: 'sa', group: 'Analytics', title: 'Seasonality', sub: 'Avg gross by fiscal period (Jul–Jun)', panel: 'tab-analytics' },
+        { key: 'yy', group: 'Analytics', title: 'Year over Year Comparison', sub: 'Gross by fiscal year (Jul–Jun) overlaid', panel: 'tab-analytics' },
+        { key: 'lo', group: 'Analytics', title: 'Show Longevity', sub: 'Number of weeks each show ran — top 20', panel: 'tab-analytics' },
+        { key: 'cr', group: 'Analytics', title: 'Top Shows by % Capacity', sub: 'Avg % capacity paid — ranked, min 3 weeks', panel: 'tab-analytics' },
+        { key: 'co', group: 'Analytics', title: 'Most Consistent Shows', sub: 'Lowest std deviation in weekly gross — min 5 weeks', panel: 'tab-analytics' },
+        { key: 'ne', group: 'Analytics', title: 'No Performance Rate', sub: 'Dark week % of total appearances, min 3 active weeks', panel: 'tab-analytics' },
+        { key: 'pg', group: 'Analytics', title: 'Bushnell vs Peer Gap', sub: 'Weekly avg % capacity — peer venues vs all others', panel: 'tab-analytics' },
+      ];
+
+      /* Which render function owns which panel's charts. */
+      const PANEL_RENDERERS = {
+        'tab-charts': () => renderCharts(),
+        'tab-rankings': () => renderRankings(),
+        'tab-analytics': () => renderAnalytics(),
+      };
+
+      /* ── CHART EXPORT MODAL ───────────────────────────────────────────────── */
+
+      function openChartExport() {
+        const ctx = buildFilterContext();
+        const desc = document.getElementById('exportContextDesc');
+        if (desc)
+          desc.textContent =
+            'Charts export exactly as currently filtered — ' +
+            ctx.timeLabel +
+            (ctx.filters.length ? ' · ' + ctx.filters.join(' · ') : '') +
+            '. Every image carries the classification, the active filters and the export date.';
+
+        // Build the checkbox list, grouped by the tab each chart lives on.
+        const list = document.getElementById('exportChartList');
+        let html = '';
+        let lastGroup = '';
+        EXPORT_CHARTS.forEach((c) => {
+          if (c.group !== lastGroup) {
+            html += `<div class="export-group-label">${c.group}</div>`;
+            lastGroup = c.group;
+          }
+          html += `<label class="export-item">
+            <input type="checkbox" class="exportCb" value="${c.key}" onchange="updateExportCount()" />
+            <span>
+              <span class="export-item-name">${c.title}</span>
+              <span class="export-item-sub" style="display:block">${c.sub}</span>
+            </span>
+          </label>`;
+        });
+        list.innerHTML = html;
+
+        setExportStatus('');
+        updateExportCount();
+        document.getElementById('exportModal').classList.add('open');
+      }
+
+      /* Cancel — closes the dialog without downloading anything. */
+      function closeChartExport() {
+        document.getElementById('exportModal').classList.remove('open');
+        setExportStatus('');
+      }
+
+      function setAllExportCharts(on) {
+        document.querySelectorAll('.exportCb').forEach((cb) => (cb.checked = on));
+        updateExportCount();
+      }
+
+      function selectedExportCharts() {
+        const keys = [...document.querySelectorAll('.exportCb:checked')].map((cb) => cb.value);
+        return EXPORT_CHARTS.filter((c) => keys.includes(c.key));
+      }
+
+      function updateExportCount() {
+        const n = document.querySelectorAll('.exportCb:checked').length;
+        document.getElementById('exportSelCount').textContent =
+          n + ' selected' + (n ? '' : ' — choose at least one chart');
+        document.getElementById('exportPngBtn').disabled = n === 0;
+        document.getElementById('exportPdfBtn').disabled = n === 0;
+      }
+
+      function setExportStatus(msg) {
+        const el = document.getElementById('exportStatus');
+        if (el) el.textContent = msg || '';
+      }
+
+      /* ── CHART CAPTURE ────────────────────────────────────────────────────── */
+
+      /* Backing-store multiplier used while capturing. Chart.js scales its own
+         fonts and line widths by this, so the exported bitmap gains resolution
+         without changing the chart's proportions or what it shows. */
+      const EXPORT_DPR = 2.5;
+
+      /* A composed chart image taller than (width × this) gets a portrait PDF
+         page instead of a landscape one. US Letter landscape is 1.29:1, so a
+         chart at or below roughly square already wastes a landscape page. */
+      const PDF_PORTRAIT_RATIO = 0.95;
+
+      /**
+       * Capture one live Chart.js chart into a composed export canvas carrying
+       * its title, the active filter context and the export date.
+       *
+       * @param {Object}  meta   an EXPORT_CHARTS entry
+       * @param {Array}   lines  filter-context lines
+       * @param {boolean} withClassification
+       *        true  → PNG: the CONFIDENTIAL bands are drawn into the bitmap,
+       *                because the image travels on its own.
+       *        false → PDF: the page draws the bands as real text instead, so
+       *                they stay selectable and searchable.
+       */
+      function captureChartCanvas(meta, lines, withClassification) {
+        const chart = CHARTS[meta.key];
+        if (!chart || !chart.canvas) return null;
+
+        /* resize() re-reads options.devicePixelRatio and redraws at the new
+           backing resolution. Do NOT follow it with update() — update() rebuilds
+           chart.options from the original config and silently discards the
+           override, dropping the capture back to screen resolution. */
+        const hadOwnDpr = Object.prototype.hasOwnProperty.call(chart.options, 'devicePixelRatio');
+        const prevDpr = chart.options.devicePixelRatio;
+        chart.options.devicePixelRatio = EXPORT_DPR;
+        chart.resize();
+        chart.draw();
+
+        const composed = BTD.exportUtils.composeChartCanvas(chart.canvas, {
+          title: meta.title,
+          subtitle: meta.sub,
+          contextLines: lines,
+          exportDate: exportDateLabel(),
+          includeClassification: withClassification,
+        });
+
+        // Restore the on-screen chart to its normal backing resolution.
+        if (hadOwnDpr) chart.options.devicePixelRatio = prevDpr;
+        else delete chart.options.devicePixelRatio;
+        chart.resize();
+        chart.draw();
+
+        return composed;
+      }
+
+      /* Layout width every panel is staged at while charts are captured.
+         Fixing it makes an export byte-comparable run to run: the same chart
+         exports at the same proportions whatever the browser window size is and
+         whichever tab happens to be open. */
+      const EXPORT_STAGE_WIDTH = 1200;
+
+      /**
+       * Give every panel that owns a selected chart real layout, off-screen, and
+       * render its charts into it.
+       *
+       * Charts only exist once their tab has been shown, and a hidden panel has
+       * no dimensions to lay a canvas out in. Every panel involved is staged —
+       * including the one the user is currently on — so that output does not
+       * depend on which tab was open. The export modal covers the viewport while
+       * this runs, so nothing visibly moves; unstageExportPanels() puts each
+       * panel back exactly as it was.
+       */
+      function stageExportPanels(charts) {
+        const staged = [];
+        const panels = [...new Set(charts.map((c) => c.panel))];
+        panels.forEach((panelId) => {
+          const p = document.getElementById(panelId);
+          if (!p) return;
+          staged.push({ el: p, style: p.getAttribute('style'), wasActive: p.classList.contains('active') });
+          p.classList.add('active');
+          p.style.display = 'block';
+          p.style.position = 'absolute';
+          p.style.left = '-20000px';
+          p.style.top = '0';
+          p.style.width = EXPORT_STAGE_WIDTH + 'px';
+          const render = PANEL_RENDERERS[panelId];
+          if (render) render();
+        });
+        return staged;
+      }
+
+      function unstageExportPanels(staged) {
+        staged.forEach((s) => {
+          s.el.classList.toggle('active', s.wasActive);
+          if (s.style === null) s.el.removeAttribute('style');
+          else s.el.setAttribute('style', s.style);
+        });
+      }
+
+      /* ── EXPORT RUNNER ────────────────────────────────────────────────────── */
+
+      /**
+       * Export the selected charts as either a ZIP of PNGs or a single PDF.
+       * @param {'png'|'pdf'} mode
+       */
+      async function runChartExport(mode) {
+        const charts = selectedExportCharts();
+        if (!charts.length) return;
+
+        const ctx = buildFilterContext();
+        const lines = exportContextLines(ctx);
+        const dateSlug = exportDateSlug();
+
+        document.getElementById('exportPngBtn').disabled = true;
+        document.getElementById('exportPdfBtn').disabled = true;
+        setExportStatus('Preparing ' + charts.length + ' chart' + (charts.length === 1 ? '' : 's') + '…');
+
+        // Animations off so every capture reads a fully drawn chart.
+        const prevAnimation = Chart.defaults.animation;
+        Chart.defaults.animation = false;
+        let staged = [];
+
+        try {
+          staged = stageExportPanels(charts);
+
+          const pngEntries = [];
+          const pdfPages = [];
+          const skipped = [];
+
+          for (let i = 0; i < charts.length; i++) {
+            const meta = charts[i];
+            setExportStatus('Rendering ' + (i + 1) + ' of ' + charts.length + ' — ' + meta.title + '…');
+            // Yield to the browser so the status text repaints between charts.
+            await new Promise((r) => setTimeout(r, 0));
+
+            const canvas = captureChartCanvas(meta, lines, mode === 'png');
+            if (!canvas) {
+              // A chart with no data for the current filters never gets created.
+              skipped.push(meta.title);
+              continue;
+            }
+
+            if (mode === 'png') {
+              pngEntries.push({
+                name: BTD.exportUtils.buildFilename([meta.title, ctx.timeSlug, dateSlug], 'png'),
+                data: await BTD.exportUtils.canvasToPngBytes(canvas),
+              });
+            } else {
+              /* One chart per page. A chart whose wrapped show names have made
+                 it taller than it is wide is given a portrait page — forcing it
+                 onto landscape would shrink it until the labels stopped being
+                 legible, which is the thing wrapping was meant to fix. */
+              const portrait = canvas.height > canvas.width * PDF_PORTRAIT_RATIO;
+              pdfPages.push({
+                image: await BTD.exportUtils.canvasToPdfImage(canvas),
+                footerLeft: meta.title + ' · Exported ' + exportDateLabel(),
+                pageWidth: portrait ? 612 : 792,
+                pageHeight: portrait ? 792 : 612,
+              });
+            }
+          }
+
+          const produced = mode === 'png' ? pngEntries.length : pdfPages.length;
+          if (!produced) {
+            setExportStatus('Nothing to export — the selected charts have no data under the current filters.');
+            return;
+          }
+
+          if (mode === 'png') {
+            setExportStatus('Building ZIP…');
+            const zip = BTD.exportUtils.buildZip(pngEntries);
+            BTD.exportUtils.downloadBlob(
+              new Blob([zip], { type: 'application/zip' }),
+              BTD.exportUtils.buildFilename(
+                ['Bushnell Broadway Dashboard', 'Charts', ctx.timeSlug, dateSlug],
+                'zip',
+              ),
+            );
+          } else {
+            setExportStatus('Building PDF…');
+            const pdf = BTD.exportUtils.buildPdf({
+              pages: pdfPages,
+              headerText: BTD.exportUtils.CLASSIFICATION,
+              footerText: BTD.exportUtils.CLASSIFICATION,
+            });
+            BTD.exportUtils.downloadBlob(
+              new Blob([pdf], { type: 'application/pdf' }),
+              BTD.exportUtils.buildFilename(
+                ['Bushnell Broadway Dashboard', 'Charts', ctx.timeSlug, dateSlug],
+                'pdf',
+              ),
+            );
+          }
+
+          setExportStatus(
+            'Downloaded ' + produced + ' chart' + (produced === 1 ? '' : 's') +
+              (skipped.length ? ' · skipped (no data): ' + skipped.join(', ') : ''),
+          );
+        } catch (err) {
+          console.error('Chart export failed', err);
+          setExportStatus('Export failed — see the browser console for details.');
+        } finally {
+          unstageExportPanels(staged);
+          Chart.defaults.animation = prevAnimation;
+          // Re-render whatever tab the user is actually looking at.
+          const active = document.querySelector('.panel.active');
+          const render = active && PANEL_RENDERERS[active.id];
+          if (render) render();
+          updateExportCount();
+        }
       }
 
       function toggleSidebar() {
@@ -3527,10 +4259,12 @@
           .filter((d) => d.n > 0)
           .sort((a, b) => b.n - a.n)
           .slice(0, 20);
+        const loLabels = lonArr.map((d) => showLabel(d.s));
+        fitShowLabelHeight('cLongevity', loLabels, 320);
         CHARTS.lo = new Chart(document.getElementById('cLongevity'), {
           type: 'bar',
           data: {
-            labels: lonArr.map((d) => (d.s.length > 24 ? d.s.slice(0, 24) + '…' : d.s)),
+            labels: loLabels,
             datasets: [{ data: lonArr.map((d) => d.n), backgroundColor: CC.amber, borderRadius: 2 }],
           },
           options: {
@@ -3540,7 +4274,7 @@
             plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw} weeks` } } },
             scales: {
               x: { grid: { color: CC.grid }, ticks: { callback: (v) => v + ' wks' } },
-              y: { grid: { display: false } },
+              y: { grid: { display: false }, ticks: SHOW_LABEL_TICKS },
             },
           },
         });
@@ -3556,10 +4290,12 @@
           .map(([s, v]) => ({ s, avg: v.capSum / v.capCnt }))
           .sort((a, b) => b.avg - a.avg)
           .slice(0, 15);
+        const crLabels = capArr.map((d) => showLabel(d.s));
+        fitShowLabelHeight('cCapRank', crLabels, 320);
         CHARTS.cr = new Chart(document.getElementById('cCapRank'), {
           type: 'bar',
           data: {
-            labels: capArr.map((d) => (d.s.length > 24 ? d.s.slice(0, 24) + '…' : d.s)),
+            labels: crLabels,
             datasets: [
               {
                 data: capArr.map((d) => d.avg),
@@ -3578,7 +4314,7 @@
             },
             scales: {
               x: { grid: { color: CC.grid }, ticks: { callback: (v) => v + '%' } },
-              y: { grid: { display: false } },
+              y: { grid: { display: false }, ticks: SHOW_LABEL_TICKS },
             },
           },
         });
@@ -3601,10 +4337,12 @@
           })
           .sort((a, b) => a.cv - b.cv)
           .slice(0, 15);
+        const coLabels = conArr.map((d) => showLabel(d.s));
+        fitShowLabelHeight('cConsistency', coLabels, 320);
         CHARTS.co = new Chart(document.getElementById('cConsistency'), {
           type: 'bar',
           data: {
-            labels: conArr.map((d) => (d.s.length > 24 ? d.s.slice(0, 24) + '…' : d.s)),
+            labels: coLabels,
             datasets: [
               { data: conArr.map((d) => Math.round(d.cv * 10) / 10), backgroundColor: CC.cobalt, borderRadius: 2 },
             ],
@@ -3624,7 +4362,7 @@
             },
             scales: {
               x: { grid: { color: CC.grid }, ticks: { callback: (v) => v + '%' } },
-              y: { grid: { display: false } },
+              y: { grid: { display: false }, ticks: SHOW_LABEL_TICKS },
             },
           },
         });
@@ -3648,10 +4386,12 @@
           }))
           .sort((a, b) => b.pct - a.pct)
           .slice(0, 15);
+        const neLabels = neArr.map((d) => showLabel(d.s));
+        fitShowLabelHeight('cNoEng', neLabels, 320);
         CHARTS.ne = new Chart(document.getElementById('cNoEng'), {
           type: 'bar',
           data: {
-            labels: neArr.map((d) => (d.s.length > 24 ? d.s.slice(0, 24) + '…' : d.s)),
+            labels: neLabels,
             datasets: [
               { data: neArr.map((d) => Math.round(d.pct * 10) / 10), backgroundColor: CC.rose, borderRadius: 2 },
             ],
@@ -3672,7 +4412,7 @@
             },
             scales: {
               x: { grid: { color: CC.grid }, ticks: { callback: (v) => v + '%' } },
-              y: { grid: { display: false } },
+              y: { grid: { display: false }, ticks: SHOW_LABEL_TICKS },
             },
           },
         });
@@ -4591,9 +5331,9 @@ async function processFile(file) {
       </div>
       <div class="footer-right">
         Broadway Touring Sales Intelligence ·
-        <strong id="pageVersion">v5.1</strong>
+        <strong id="pageVersion">v5.2</strong>
         <br />
-        Build date: <span id="pageDate">August 14, 2026</span>
+        Build date: <span id="pageDate">September 17, 2026</span>
       </div>
     </footer>
   <!-- Mobile Warning Modal -->
@@ -4617,6 +5357,46 @@ async function processFile(file) {
           <div class="info-modal-section-label">What to look for</div>
           <div class="info-modal-text" id="infoLook"></div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── EXPORT CHARTS MODAL ──────────────────────────────────────────────────
+   * Lists only real Chart.js charts. KPI cards, ranking lists, the Data Table
+   * and decorative elements are deliberately absent — they are not charts.
+   * The list is built at open time by openChartExport() from EXPORT_CHARTS.
+   * ───────────────────────────────────────────────────────────────────────── -->
+  <div class="export-overlay" id="exportModal" role="dialog" aria-modal="true" aria-labelledby="exportModalTitle">
+    <div class="export-box">
+      <div class="export-class">CONFIDENTIAL — INTERNAL USE ONLY</div>
+      <div class="export-head">
+        <div>
+          <h3 class="export-title" id="exportModalTitle">Export Charts</h3>
+          <div class="export-desc" id="exportContextDesc">
+            Charts export exactly as currently filtered. Every image carries the classification,
+            the active filters and the export date.
+          </div>
+        </div>
+        <button class="export-close" onclick="closeChartExport()" aria-label="Cancel export">✕</button>
+      </div>
+
+      <div class="export-bulk">
+        <button class="btn btn-ghost" type="button" onclick="setAllExportCharts(true)">Select All</button>
+        <button class="btn btn-ghost" type="button" onclick="setAllExportCharts(false)">Clear All</button>
+        <span class="export-count" id="exportSelCount">0 selected</span>
+      </div>
+
+      <div class="export-list" id="exportChartList"></div>
+
+      <div class="export-foot">
+        <span class="export-status" id="exportStatus"></span>
+        <button class="btn btn-ghost" type="button" onclick="closeChartExport()">Cancel</button>
+        <button class="btn btn-ghost" type="button" id="exportPngBtn" onclick="runChartExport('png')">
+          Download PNGs (ZIP)
+        </button>
+        <button class="btn btn-primary" type="button" id="exportPdfBtn" onclick="runChartExport('pdf')">
+          Download PDF
+        </button>
       </div>
     </div>
   </div>
@@ -4821,11 +5601,21 @@ async function processFile(file) {
     }
 
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') closeInfo();
+      if (e.key === 'Escape') {
+        closeInfo();
+        /* Escape cancels the export picker the same way the Cancel button does —
+           the dialog closes and nothing is downloaded. */
+        if (typeof closeChartExport === 'function') closeChartExport();
+      }
     });
 
     document.getElementById('infoModal').addEventListener('click', function (e) {
       if (e.target === this) closeInfo();
+    });
+
+    /* Clicking the backdrop cancels the export picker. */
+    document.getElementById('exportModal').addEventListener('click', function (e) {
+      if (e.target === this) closeChartExport();
     });
   </script>
   </body>
