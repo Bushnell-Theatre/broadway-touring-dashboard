@@ -699,6 +699,22 @@
         flex-shrink: 0;
       }
 
+      /* ── PRINT FRAME — screen side ────────────────────────────────────────
+       * #printFrame exists only so its thead/tfoot can repeat, and reserve
+       * space, on every printed page. On screen it must not exist as a box at
+       * all: `display: contents` drops the table, row groups, row and cell,
+       * leaving masthead / KPI strip / workspace / footer as direct children of
+       * <body> with exactly the layout they had before the wrapper was added.
+       * ─────────────────────────────────────────────────────────────────── */
+      #printFrame,
+      #printFrame > thead,
+      #printFrame > tfoot,
+      #printFrame > tbody,
+      #printFrame > tbody > tr,
+      #printFrame > tbody > tr > td {
+        display: contents;
+      }
+
       /* page-specific — classification bar shown only when printing */
       .print-class {
         display: none;
@@ -706,35 +722,55 @@
 
       /* page-specific — print layout for full dashboard export */
       @media print {
-        /* Top and bottom margins are widened from 0.5in to 0.75in so the fixed
-           classification bars below have a reserved strip to live in and can
-           never overlap chart or table content. */
+        /* Page whitespace. The classification bars are inside the flow (see the
+           print frame below), so this margin is ordinary breathing room. */
         @page {
           size: landscape;
           margin: 0.75in 0.5in;
         }
 
         /* ── CLASSIFICATION ON EVERY PRINTED PAGE ──────────────────────────
-         * position: fixed inside a print context paints the element once per
-         * printed page, so these two bars repeat on page 1 and page N alike.
-         * They are drawn by the page itself — they do NOT rely on the browser's
-         * optional "Headers and footers" print setting, which users can switch
-         * off and which prints the URL rather than a classification.
-         * The body padding below keeps page content clear of both bars.
+         * The whole printable page sits inside #printFrame. Restoring real
+         * table display values makes the browser repeat its thead at the top
+         * and its tfoot at the bottom of every physical page — and reserve
+         * their space in the flow, so no report content can ever be laid out
+         * underneath them.
          *
-         * KNOWN LIMITATION — the body padding reserves space at the top of the
-         * DOCUMENT, not of every page, so on pages after the first a line of
-         * content can pass beneath the header bar. Offsetting the bars into the
-         * @page margin does not fix it: Chrome clips fixed positioning to the
-         * page content box and the bar is dropped altogether. A real fix needs
-         * the repeating content in a table thead/tfoot, which reserves space on
-         * every page — a DOM change, tracked separately.
+         * This replaces an earlier position:fixed pair. Fixed bars repeated
+         * correctly but reserved no space, so from page 2 onward content slid
+         * beneath the header bar. Offsetting them into the @page margin was
+         * also tried: Chrome clips fixed positioning to the page content box
+         * and dropped the bar entirely.
+         *
+         * The classification is drawn by the page itself — it does NOT rely on
+         * the browser's optional "Headers and footers" print setting, which
+         * users can switch off and which prints the URL instead.
          * ─────────────────────────────────────────────────────────────────── */
+        #printFrame {
+          display: table !important;
+          width: 100% !important;
+          border-collapse: collapse;
+        }
+        #printFrame > thead {
+          display: table-header-group !important;
+        }
+        #printFrame > tfoot {
+          display: table-footer-group !important;
+        }
+        #printFrame > tbody {
+          display: table-row-group !important;
+        }
+        #printFrame > tbody > tr {
+          display: table-row !important;
+        }
+        #printFrame > thead > tr > td,
+        #printFrame > tfoot > tr > td,
+        #printFrame > tbody > tr > td {
+          display: table-cell !important;
+          padding: 0 !important;
+        }
         .print-class {
           display: block !important;
-          position: fixed;
-          left: 0;
-          right: 0;
           text-align: center;
           font-family: 'Libre Franklin', Arial, sans-serif;
           font-size: 9pt;
@@ -742,21 +778,16 @@
           letter-spacing: 0.12em;
           color: #b0303a;
           background: #fff;
-          z-index: 2147483647;
         }
         #printClassHeader {
-          top: 0;
-          padding-bottom: 4pt;
+          padding: 0 0 5pt;
+          margin-bottom: 8pt;
           border-bottom: 1pt solid #b0303a;
         }
         #printClassFooter {
-          bottom: 0;
-          padding-top: 4pt;
+          padding: 5pt 0 0;
+          margin-top: 8pt;
           border-top: 1pt solid #b0303a;
-        }
-        body {
-          padding-top: 26pt !important;
-          padding-bottom: 26pt !important;
         }
 
         /* Screen-only controls — hidden so they never print. */
@@ -898,13 +929,36 @@
     </style>
   </head>
   <body>
-    <!-- ── PRINT CLASSIFICATION BARS ──────────────────────────────────────────
-     * Hidden on screen; repeated on every printed page by the fixed-position
-     * rules in the @media print block above. Any Ctrl+P of this page carries
-     * the classification at the top and the bottom of every sheet.
-     * ─────────────────────────────────────────────────────────────────────── -->
-    <div class="print-class" id="printClassHeader">CONFIDENTIAL — INTERNAL USE ONLY</div>
-    <div class="print-class" id="printClassFooter">CONFIDENTIAL — INTERNAL USE ONLY</div>
+    <!-- ══ PRINT FRAME ══════════════════════════════════════════════════════
+     * The whole printable page lives inside this table so that its thead and
+     * tfoot repeat on every physical printed page — and, crucially, so the
+     * browser RESERVES their space in the flow on every page. A fixed-position
+     * bar repeats too, but reserves nothing, so content slides underneath it
+     * from page 2 onward.
+     *
+     * On screen the table is layout-neutral: `display: contents` removes every
+     * one of its boxes, so masthead, KPI strip, workspace and footer lay out as
+     * direct children of <body>, exactly as before. The @media print block
+     * restores real table display values. See the CSS above.
+     * ═════════════════════════════════════════════════════════════════════ -->
+    <table id="printFrame">
+      <thead>
+        <tr>
+          <td>
+            <div class="print-class" id="printClassHeader">CONFIDENTIAL — INTERNAL USE ONLY</div>
+          </td>
+        </tr>
+      </thead>
+      <tfoot>
+        <tr>
+          <td>
+            <div class="print-class" id="printClassFooter">CONFIDENTIAL — INTERNAL USE ONLY</div>
+          </td>
+        </tr>
+      </tfoot>
+      <tbody>
+        <tr>
+          <td>
 
     <!-- PRINT HEADER (visible only in print) -->
     <div class="print-header" id="printHeader">
@@ -5352,6 +5406,13 @@ async function processFile(file) {
         Build date: <span id="pageDate">September 17, 2026</span>
       </div>
     </footer>
+
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <!-- ══ end print frame ══════════════════════════════════════════════════ -->
+
   <!-- Mobile Warning Modal -->
   <!-- ── CHART INFO MODAL ── -->
   <div id="infoModal" role="dialog" aria-modal="true" aria-labelledby="infoModalTitle">
