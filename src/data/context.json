@@ -3951,9 +3951,17 @@
   },
   "2026-05-31": {
     "weather": {
-      "events": [],
-      "significant": false,
-      "summary": null
+      "events": [
+        {
+          "type": "Thunderstorm Wind",
+          "begin": "2026-06-06",
+          "end": "2026-06-06",
+          "magnitude": "50.00 EG",
+          "narrative": "In Wethersfield, a tree was down on wires on Hartford Ave."
+        }
+      ],
+      "significant": true,
+      "summary": "Thunderstorm Wind"
     },
     "economic": {
       "consumer_confidence": 44.8,
@@ -4074,7 +4082,7 @@
     },
     "economic": {
       "consumer_confidence": 55.2,
-      "ct_unemployment": 5.8,
+      "ct_unemployment": 4.7,
       "confidence_trend": "stable",
       "source_month": "2026-08"
     }
@@ -4087,7 +4095,7 @@
     },
     "economic": {
       "consumer_confidence": 55.2,
-      "ct_unemployment": 5.8,
+      "ct_unemployment": 4.7,
       "confidence_trend": "stable",
       "source_month": "2026-08"
     }
@@ -4100,7 +4108,7 @@
     },
     "economic": {
       "consumer_confidence": 55.2,
-      "ct_unemployment": 5.8,
+      "ct_unemployment": 4.7,
       "confidence_trend": "stable",
       "source_month": "2026-08"
     }
@@ -4113,7 +4121,7 @@
     },
     "economic": {
       "consumer_confidence": 55.2,
-      "ct_unemployment": 5.8,
+      "ct_unemployment": 4.7,
       "confidence_trend": "stable",
       "source_month": "2026-08"
     }
@@ -4126,7 +4134,7 @@
     },
     "economic": {
       "consumer_confidence": 55.2,
-      "ct_unemployment": 5.8,
+      "ct_unemployment": 4.7,
       "confidence_trend": "stable",
       "source_month": "2026-08"
     }
@@ -4139,7 +4147,20 @@
     },
     "economic": {
       "consumer_confidence": 55.2,
-      "ct_unemployment": 5.8,
+      "ct_unemployment": 4.7,
+      "confidence_trend": "stable",
+      "source_month": "2026-09"
+    }
+  },
+  "2026-09-13": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 55.2,
+      "ct_unemployment": 4.7,
       "confidence_trend": "stable",
       "source_month": "2026-09"
     }

@@ -1,29 +1,29 @@
 {
   "2026-2027": {
-    "kind": "highlight",
-    "pulse_reason": null,
+    "kind": "pulse",
+    "pulse_reason": "highlight_validation_failed",
     "scope": "national",
-    "week_of": "2026-09-06",
-    "trigger": "wow_gross_change",
-    "summary": "The Outsiders reported a sharp 53% gross decline week-over-week across its national tour stops, falling from $1.53M to $722K in the week of September 6. This week's data reflects a thinner evidence base than typical for early September, drawing from three records across two venues rather than the monthly average of one. The significant contraction signals weakened near-term demand across The Outsiders' touring markets.",
-    "generated_at": "2026-09-11T13:00:58",
-    "validation_status": "passed",
-    "validation_method": "ai_guard",
+    "week_of": "2026-09-13",
+    "trigger": "all_time_high_cap,cap_band_crossing,show_opens,wow_gross_change",
+    "summary": "Data updated through the week of September 13, 2026. A configured material-change threshold was detected, but the automated narrative did not pass validation. Review the current dashboard metrics for detail.",
+    "generated_at": "2026-09-21T12:35:14",
+    "validation_status": "fallback",
+    "validation_method": "deterministic",
     "guard_version": "2",
     "comparison_status": "available",
     "comparison_detail": {
-      "current_records": 1,
+      "current_records": 4,
       "prior_records": 1,
-      "current_raw_records": 3,
+      "current_raw_records": 4,
       "prior_raw_records": 3,
-      "current_shows": 1,
+      "current_shows": 4,
       "prior_shows": 1,
       "comparable_shows": 1,
       "same_season": true
     },
     "reference_month": "September",
-    "reference_median_records": 1,
-    "reference_week_count": 3,
+    "reference_median_records": 2,
+    "reference_week_count": 4,
     "reference_includes_current_week": true
   }
 }
