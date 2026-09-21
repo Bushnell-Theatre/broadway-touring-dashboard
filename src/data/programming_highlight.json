@@ -1,14 +1,14 @@
 {
   "2026-2027": {
-    "kind": "pulse",
-    "pulse_reason": "highlight_validation_failed",
+    "kind": "highlight",
+    "pulse_reason": null,
     "scope": "national",
     "week_of": "2026-09-13",
     "trigger": "all_time_high_cap,cap_band_crossing,show_opens,wow_gross_change",
-    "summary": "Data updated through the week of September 13, 2026. A configured material-change threshold was detected, but the automated narrative did not pass validation. Review the current dashboard metrics for detail.",
-    "generated_at": "2026-09-21T12:35:14",
-    "validation_status": "fallback",
-    "validation_method": "deterministic",
+    "summary": "Hell's Kitchen set a new all-time high in paid capacity at 97.7%, signaling sustained demand strength. The Outsiders posted exceptional gross growth (+86% week-over-week to $1.35M) alongside a capacity band shift downward, suggesting possible venue-size variation across markets rather than demand softening. Maybe Happy Ending entered the reporting scope with solid 90.3% capacity. This week's data—drawn from four venues versus a typical two for September—reflects concentrated but robust touring activity.",
+    "generated_at": "2026-09-21T12:36:32",
+    "validation_status": "passed",
+    "validation_method": "ai_guard",
     "guard_version": "2",
     "comparison_status": "available",
     "comparison_detail": {
