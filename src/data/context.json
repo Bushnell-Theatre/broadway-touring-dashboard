@@ -4164,5 +4164,18 @@
       "confidence_trend": "stable",
       "source_month": "2026-09"
     }
+  },
+  "2026-09-20": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 55.2,
+      "ct_unemployment": 4.7,
+      "confidence_trend": "stable",
+      "source_month": "2026-09"
+    }
   }
 }
