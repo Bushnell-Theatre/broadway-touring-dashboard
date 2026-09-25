@@ -6,7 +6,7 @@
     "week_of": "2026-09-20",
     "trigger": "",
     "summary": "Data updated through the week of September 20, 2026. Two season-slate shows produced two records at two peer venues. The September reference for this slate at peer venues is a median of one record per week, based on three available reporting weeks, including the current week. Week-over-week comparison was available, and no configured material-change threshold was reached.",
-    "generated_at": "2026-09-25T12:33:49",
+    "generated_at": "2026-09-25T12:34:34",
     "validation_status": "fallback",
     "validation_method": "deterministic",
     "guard_version": "2",
