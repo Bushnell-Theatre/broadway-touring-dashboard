@@ -1,14 +1,14 @@
 {
   "2026-2027": {
-    "kind": "highlight",
-    "pulse_reason": null,
+    "kind": "pulse",
+    "pulse_reason": "highlight_validation_failed",
     "scope": "national",
     "week_of": "2026-09-27",
     "trigger": "all_time_high_cap,all_time_high_gross,wow_gross_change",
-    "summary": "Broadway League data for the week of 2026-09-27 reflects strong national demand across Bushnell's slate: *Maybe Happy Ending* and *Operation Mincemeat: A New Musical* both posted 34% and 168% gross increases respectively, each setting new all-time highs. *Oh, Mary!* reported a 49% gross decline but achieved a record 99.1% paid capacity, signaling consistent sellout-level demand despite lower week-over-week revenue.",
-    "generated_at": "2026-10-02T12:18:06",
-    "validation_status": "passed",
-    "validation_method": "ai_guard",
+    "summary": "Data updated through the week of September 27, 2026. A configured material-change threshold was detected, but the automated narrative did not pass validation. Review the current dashboard metrics for detail.",
+    "generated_at": "2026-10-02T12:19:48",
+    "validation_status": "fallback",
+    "validation_method": "deterministic",
     "guard_version": "2",
     "comparison_status": "available",
     "comparison_detail": {
