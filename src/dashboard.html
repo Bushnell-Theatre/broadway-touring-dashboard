@@ -2426,6 +2426,15 @@
 
       let ACTIVE_YEAR = '';
 
+      /* The Shows search box is a filter on the DATA, not just on the checkbox
+         list. It used to narrow only the list, which made it look as though the
+         filter had run when nothing had actually been applied — the table kept
+         showing every show. Typing now filters the records too; the checkboxes
+         stay as the user left them, so clearing the box restores the selection.
+         The "Only" button still exists to bake a search into the checkboxes. */
+      let SHOW_SEARCH = '';
+      let SHOW_SEARCH_TIMER = null;
+
       function populateShowList() {
         const shows = [...new Set(ALL_DATA.map((d) => d.show))].sort();
         document.getElementById('showList').innerHTML = shows
@@ -2442,17 +2451,39 @@
 
       function filterShowList() {
         const q = document.getElementById('showSearch').value.toLowerCase().trim();
+        const changed = q !== SHOW_SEARCH;
+        SHOW_SEARCH = q;
+
+        /* Narrowing the visible list stays instant — it is pure DOM work. */
         document.querySelectorAll('#showList label').forEach((label) => {
           const name = label.querySelector('input').value.toLowerCase();
           label.classList.toggle('hidden', q !== '' && !name.includes(q));
         });
         updateShowCount();
+
+        /* Re-filtering the data means a cache rebuild, a table re-render and a
+           chart re-render over ~11k records, so it is debounced — otherwise
+           every keystroke would stall the input. */
+        if (!changed) return;
+        clearTimeout(SHOW_SEARCH_TIMER);
+        SHOW_SEARCH_TIMER = setTimeout(applyFilters, 180);
       }
 
       function updateShowCount() {
-        const total = document.querySelectorAll('.sCb').length;
-        const checked = document.querySelectorAll('.sCb:checked').length;
+        const boxes = [...document.querySelectorAll('.sCb')];
+        const total = boxes.length;
+        const checked = boxes.filter((cb) => cb.checked).length;
         const el = document.getElementById('showCount');
+
+        /* While a search is active the checkbox tally is not what is on screen —
+           report the shows the search is actually letting through instead. */
+        if (SHOW_SEARCH) {
+          const matching = boxes.filter((cb) => cb.checked && cb.value.toLowerCase().includes(SHOW_SEARCH)).length;
+          el.textContent = `${matching} show${matching === 1 ? '' : 's'} matching "${SHOW_SEARCH}"`;
+          el.style.color = 'var(--amber)';
+          return;
+        }
+
         el.textContent = checked === total ? `All ${total} shows` : `${checked} of ${total} selected`;
         el.style.color = checked < total ? 'var(--amber)' : 'var(--ink3)';
       }
@@ -2496,6 +2527,7 @@
         if (document.getElementById('fGrossMin')?.value || document.getElementById('fGrossMax')?.value) count++;
         if (document.getElementById('fCapMin')?.value || document.getElementById('fCapMax')?.value) count++;
         if (document.getElementById('fPerfMin')?.value || document.getElementById('fPerfMax')?.value) count++;
+        if (SHOW_SEARCH) count++;
         const badge = document.getElementById('activeFilterCount');
         if (badge) {
           badge.textContent = count;
@@ -2568,6 +2600,10 @@
       }
 
       function applyFilters() {
+        /* A run is happening now, so drop any debounced show-search run queued
+           behind it — otherwise it would repeat this same work moments later. */
+        clearTimeout(SHOW_SEARCH_TIMER);
+
         const venueF = document.getElementById('fVenue')?.value || '';
         const cityF = document.getElementById('fCity')?.value || '';
         const grossMin = parseFloat(document.getElementById('fGrossMin').value) || 0;
@@ -2606,6 +2642,8 @@
             if (d.num_perf < perfMin || d.num_perf > perfMax) return false;
           }
           if (!checked.includes(d.show)) return false;
+          /* Shows search box — narrows the records, not just the sidebar list. */
+          if (SHOW_SEARCH && !d.show.toLowerCase().includes(SHOW_SEARCH)) return false;
           return true;
         });
 
@@ -3691,11 +3729,15 @@
         range('fCapMin', 'fCapMax', '% Cap Paid', '%');
         range('fPerfMin', 'fPerfMax', '# Perf', '');
 
-        // Show list — only noted when it is a real subset of what is available.
+        // Show scope — the search box and the checkbox subset are both reported,
+        // so an exported chart or a printed page records what was actually shown.
         const boxes = [...document.querySelectorAll('.sCb')];
         const checked = boxes.filter((b) => b.checked).length;
-        const showNote =
-          boxes.length && checked < boxes.length ? 'Shows: ' + checked + ' of ' + boxes.length + ' selected' : '';
+        const notes = [];
+        if (SHOW_SEARCH) notes.push('Show search: "' + SHOW_SEARCH + '"');
+        if (boxes.length && checked < boxes.length)
+          notes.push('Shows: ' + checked + ' of ' + boxes.length + ' selected');
+        const showNote = notes.join(' · ');
 
         return { timeLabel, timeSlug, filters, showNote };
       }
