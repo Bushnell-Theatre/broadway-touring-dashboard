@@ -11,7 +11,8 @@
     "test": "node scripts/test_scoring_contract.js",
     "test:export": "node scripts/test_export.js",
     "test:guard": "python scripts/test_highlight_guard.py",
-    "test:pipeline": "python scripts/test_review_pipeline.py"
+    "test:pipeline": "python scripts/test_review_pipeline.py",
+    "test:revision": "python scripts/test_process_revision.py"
   },
   "repository": {
     "type": "git",
