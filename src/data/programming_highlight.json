@@ -1,14 +1,14 @@
 {
   "2026-2027": {
-    "kind": "pulse",
-    "pulse_reason": "highlight_validation_failed",
+    "kind": "highlight",
+    "pulse_reason": null,
     "scope": "national",
-    "week_of": "2026-09-27",
-    "trigger": "all_time_high_cap,all_time_high_gross,wow_gross_change",
-    "summary": "Data updated through the week of September 27, 2026. A configured material-change threshold was detected, but the automated narrative did not pass validation. Review the current dashboard metrics for detail.",
-    "generated_at": "2026-10-02T12:19:48",
-    "validation_status": "fallback",
-    "validation_method": "deterministic",
+    "week_of": "2026-10-04",
+    "trigger": "absent_from_feed,all_time_high_gross,wow_gross_change",
+    "summary": "National touring grosses for the week of October 4, 2026 showed volatility across Bushnell's slate: *Oh, Mary!* surged 800% to $1.87M—a new all-time high—while *Hell's Kitchen* declined 30% to $895K. *Operation Mincemeat* posted 44% growth to $1.12M, also marking a new peak. *Waitress* has not reported for 224 consecutive weeks; status requires confirmation with booking partners.",
+    "generated_at": "2026-10-09T12:12:35",
+    "validation_status": "passed",
+    "validation_method": "ai_guard",
     "guard_version": "2",
     "comparison_status": "available",
     "comparison_detail": {
@@ -21,9 +21,9 @@
       "comparable_shows": 6,
       "same_season": true
     },
-    "reference_month": "September",
-    "reference_median_records": 4,
-    "reference_week_count": 6,
+    "reference_month": "October",
+    "reference_median_records": 2,
+    "reference_week_count": 5,
     "reference_includes_current_week": true
   }
 }
