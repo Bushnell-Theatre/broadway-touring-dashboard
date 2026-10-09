@@ -66,7 +66,7 @@ Use existing CSS custom properties (`var(--ink)`, `var(--teal)`, `var(--amber)`,
 | `src/css/styles.css` | Shared base styles | All dashboards |
 | `src/css/charts.css` | Shared chart styles | All dashboards |
 | `scripts/process_touring.py` | Broadway League XLSX → data.json pipeline | IT (Randale) |
-| `scripts/watcher.py` | File watcher for pipeline automation. Auto-deploys straight to `main` on its own `data-import` branch — the one exception to this project's manual `feat → dev → main` deploy policy. See [CLAUDE.md → Branch Policy](../../CLAUDE.md#branch-policy). | IT |
+| `scripts/watcher.py` | File watcher for pipeline automation. Auto-deploys straight to `main` by pushing a plumbing-built commit by sha, never checking out a branch — the one exception to this project's manual `feat → dev → main` deploy policy. See [CLAUDE.md → Branch Policy](../../CLAUDE.md#branch-policy). | IT |
 
 **Read `references/data-sources.md` for the canonical data file descriptions.**
 

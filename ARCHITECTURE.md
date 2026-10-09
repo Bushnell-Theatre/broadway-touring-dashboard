@@ -19,8 +19,8 @@ A fully static web application. There is no server, no API, no database. All dat
 │       │                              programming_highlight.json│
 │       └─ generate_season_review.py → season_review.json       │
 │                │                                              │
-│    commit on data-import branch, merge → main, push           │
-│    (auto-deploy; then fast-forward main back into dev)        │
+│    commit built with git plumbing, pushed by sha → main       │
+│    (auto-deploy; then folded into dev; no branch checkout)    │
 └─────────────────────────────────────────────────────────────┘
                     │
                     ▼
@@ -49,7 +49,7 @@ A fully static web application. There is no server, no API, no database. All dat
 
 `scrape_shows.py` (show metadata enrichment) is not part of this pipeline — it's suspended. See "Show metadata enrichment" below.
 
-For the `data-import` branch mechanism and why it exists, see [CLAUDE.md → Branch Policy](CLAUDE.md#branch-policy) — that's the canonical description; this doc doesn't restate the mechanics.
+For the watcher's unattended publishing mechanism and why it never checks out a branch, see [CLAUDE.md → Branch Policy](CLAUDE.md#branch-policy) — that's the canonical description; this doc doesn't restate the mechanics.
 
 ---
 
@@ -57,13 +57,42 @@ For the `data-import` branch mechanism and why it exists, see [CLAUDE.md → Bra
 
 ### Stage 1 — process_touring.py
 
-Reads Broadway League XLSX reports and writes/appends to `src/data/data.json`.
+Reads Broadway League XLSX reports and writes `src/data/data.json`. Four modes:
 
-- `--append <file.xlsx> data.json` — merges new records, deduplicates by `canonical_key`
-- `<folder> data.json` — full rebuild from all XLSX files in a folder
+| Mode | Command | Effect |
+|---|---|---|
+| Append | `--append <file.xlsx> data.json` | Adds records whose `canonical_key` is new. A file named as a revision is routed to revision mode automatically. |
+| Revision | `--revision <file.xlsx> data.json` | Record-level upsert for a corrected weekly report. Never deletes. |
+| Rebuild | `<folder> data.json` | Full rebuild from every XLSX in a folder. |
+| Audit | `--audit <folder> data.json [--week YYYY-MM-DD]` | **Read-only** reconciliation of stored data against the archived workbooks. Writes nothing. |
+
 - Canonical key: `week_of|show_normalized|theatre_normalized|city|tier`
 - Normalizes show names (strips suffixes like "(Chicago)", "(Angelica)") for cross-venue matching
 - Flags `similar_bushnell` for venues within ±10% of Bushnell sellable capacity
+
+**Append semantics.** A new key is added. An existing key restated with
+*identical* business values is a clean no-op. An existing key restated with
+*different* values is a conflict: append mode exits non-zero, reports every
+changed field, and writes nothing — because append never overwrites, silently
+skipping the change would lose the correction. Such a file has to be renamed
+with a REV / REVISED marker and re-dropped.
+
+**Revision semantics.** A workbook whose *filename* carries a standalone
+REV / REVISED token is treated as a correction and upserted:
+
+- key absent from the store → **inserted**
+- key present, values differ → **updated**
+- key present, values identical → **unchanged**
+- stored row absent from the revision → **retained, never deleted**
+
+The last rule is deliberate and is the known limitation of this design: a
+revision workbook is not guaranteed to be a complete population for its week.
+Retaining absent rows is documented under "Revision handling" in
+[docs/DEVELOPER.md](docs/DEVELOPER.md) and in
+[docs/OPERATIONS.md](docs/OPERATIONS.md).
+
+Both append and revision write through a temp file that is validated before it
+replaces the live `data.json`, and keep the previous file as `data.json.bak`.
 
 ### Show metadata enrichment — scrape_shows.py (suspended)
 
@@ -122,7 +151,11 @@ Fires once per season, 14 days after the season's last show closes; compares pre
 
 ### Stage 3 — watcher.py
 
-Monitors the OneDrive upload folder for new `.xlsx` files using the `watchdog` library. On detection, runs Stages 1 → 2.5 → 2.75 → 2.8 in sequence, then commits the changed files on a dedicated `data-import` branch, merges that straight to `main` and pushes — auto-deploying to production with no human confirmation step — then fast-forward-merges `main` back into `dev` so `dev` stays current. `data-import` is ephemeral: recreated from `main` and deleted again every run. This is the one exception to this project's otherwise-manual `feat/xxx → dev → main` deploy policy (see [CLAUDE.md](CLAUDE.md#branch-policy)) — it exists so a weekly data import is never blocked on a human, while never touching `dev` directly so it can't collide with in-progress feature work.
+Monitors the OneDrive upload folder for new `.xlsx` files using the `watchdog` library. On detection, runs Stages 1 → 2.5 → 2.75 → 2.8 in sequence, then publishes — auto-deploying to production with no human confirmation step — and folds the same commit into `dev`. This is the one exception to this project's otherwise-manual `feat/xxx → dev → main` deploy policy (see [CLAUDE.md](CLAUDE.md#branch-policy)); it exists so a weekly data import is never blocked on a human.
+
+The commit is assembled with git plumbing — the tree of `origin/main` with only the watcher's own `src/data/*.json` files overlaid — and pushed by sha. **The watcher never checks out a branch, never moves `HEAD`, and never touches the repository index**, so it cannot sweep in-progress work into a deploy. There is no `data-import` branch; that mechanism was removed because the hazard was the checkout, not the branch. `scripts/test_watcher_publish.py` guards this behaviour.
+
+Stage 1 failing — a bad parse, a multi-week revision, or a candidate file that fails validation — exits non-zero and the watcher returns **before** publishing. A revision that processes cleanly continues through the normal downstream generation, validation, commit and deployment path, exactly like a new weekly report.
 
 If `scrape_context.py` fails (e.g. missing FRED key), the watcher logs a warning but continues — `data.json` is still committed. `shows.json` is never part of this commit; it isn't touched by the automated pipeline at all (see "Show metadata enrichment" above).
 

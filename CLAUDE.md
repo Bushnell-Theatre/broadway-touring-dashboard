@@ -140,6 +140,27 @@ else — every change made in a Claude Code session, including data-file edits
 — still follows the full manual `feat/xxx → dev → main` flow, and still
 waits for the user to ask before anything reaches `main` (see Step 3).
 
+### Revised weekly reports
+
+`process_touring.py` recognises a corrected report by a standalone `REV` /
+`REVISED` token in its **filename** and upserts it: new keys inserted,
+differing keys updated, identical keys untouched.
+
+**Stored rows absent from a revision are retained, never deleted.** A revision
+workbook is not guaranteed to be a complete population for its week, so
+absence is reported for human review and never acted on unattended. Do not
+add week-scoped deletion, and do not use filename sort order or file mtime as
+revision precedence — only the numeric ordinal in the filename (`REV2`).
+
+An unmarked file that restates an existing key with different values fails
+closed rather than silently skipping the change. Writes are atomic through a
+validated temp file, with the prior version kept as `data.json.bak`.
+
+`--audit` is read-only. Acting on its findings needs separate authorisation.
+
+`scripts/test_process_revision.py` (`npm run test:revision`) guards all of
+this — run it after any change to the ingestion path.
+
 ### Publishing workflow — follow every time, no exceptions
 
 **Step 1 — Feature branch**

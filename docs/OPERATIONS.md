@@ -60,7 +60,9 @@ Watcher is now LIVE — listening for new files.
 
 Wait for this line before concluding the watcher is ready. Everything above it is the catch-up scan, not a hang.
 
-Once live, drop a new `.xlsx` file into the designated OneDrive upload folder — the watcher detects it, runs all pipeline stages, and commits and **auto-deploys straight to production** on its own `data-import` branch (see [Deployment](#deployment) below). No manual deploy step is needed for weekly data updates.
+Once live, drop a new `.xlsx` file into the designated OneDrive upload folder — the watcher detects it, runs all pipeline stages, and commits and **auto-deploys straight to production** (see [Deployment](#deployment) below). No manual deploy step is needed for weekly data updates.
+
+This applies to **revised** reports too. Drop a workbook whose filename carries a `REV` or `REVISED` marker and the watcher corrects the stored week and deploys it the same way — see [Revised reports](#revised-reports--rev--revised-workbooks) below.
 
 Keep the window open while the watcher is running. Close it or press `Ctrl+C` to stop.
 
@@ -94,13 +96,113 @@ git commit -m "Data update — week of YYYY-MM-DD"
 git push origin dev
 ```
 
+### Revised reports — REV / REVISED workbooks
+
+The League sometimes reissues a week with corrected figures. **Mark the
+revision in the filename** — that is the operational signal the pipeline acts
+on. A standalone `REV` or `REVISED` token, case-insensitive:
+
+```
+TouringReport_2627Wk19_10-4-26 - REVISED.xlsx
+TouringReport_2627Wk19_10-4-26 - REV.xlsx
+TouringReport_2627Wk19_10-4-26 - REV2.xlsx      <- second revision of the same week
+TouringReport_2627Wk19_10-4-26_REV.xlsx
+TouringReport_2627Wk19_10-4-26 (REV).xlsx
+```
+
+Words that merely contain the letters — `Preview`, `Revenue`, `Review` — are
+not treated as revisions.
+
+**If you issue more than one revision for the same week, number them**
+(`REV2`, `REV3`). Two unnumbered revisions for one week cannot be ordered, and
+the audit will report them as ambiguous rather than guess.
+
+Drop the file in the normal upload folder. The watcher handles it like any
+other report; the log will say `MODE: revision` and show exactly what changed:
+
+```
+INFO   | MODE: revision
+INFO   | Added records:     0
+INFO   | Updated records:   1
+INFO   | Identical records: 49
+INFO   | Removed records:   0 (revision mode never deletes)
+INFO   | Week 2026-10-04 record count: 50 -> 50
+INFO   | Week 2026-10-04 gross: 32,219,320 -> 32,358,848 (delta +139,528)
+INFO   | UPDATED | The Outsiders | Pantages Theatre | Los Angeles
+INFO   |     gross_gross: 1334257.0 -> 1473785.0
+```
+
+**A revision never deletes.** A stored row that the revision does not mention
+is kept, because a revision workbook is not guaranteed to contain the whole
+week. If the revision has fewer rows than the stored week you will see:
+
+```
+WARN   | Revision contains fewer records than the stored week.
+         Missing stored records were retained; review may be required.
+```
+
+That is a prompt to look, not something the pipeline acts on. **Removing a
+stored engagement is always a human decision.**
+
+**What stops a bad revision reaching production.** Processing or validation
+failure exits non-zero and the watcher returns before publishing, so nothing
+is committed or deployed. A revision that processes cleanly continues through
+the normal downstream generation, validation, commit and deployment path, the
+same as any weekly report.
+
+**If a plain (unmarked) file restates an existing engagement with different
+numbers**, processing stops with a non-zero exit, lists every changed field
+and writes nothing. Rename the file with a `REV` marker and drop it again.
+
+### Checking the archive — historical audit (read-only)
+
+To reconcile stored data against every archived workbook without changing
+anything:
+
+```bash
+python scripts/process_touring.py --audit "<reports_folder>" src\data\data.json
+
+# one week only — much faster
+python scripts/process_touring.py --audit "<reports_folder>" src\data\data.json --week 2026-10-04
+```
+
+It reports, per week: the original and revision source files, canonical-key
+conflicts, whether stored values match the latest identifiable revision, rows
+present on one side but not the other, and source-derived versus stored weekly
+gross. Originals are applied first, then revisions in ordinal order.
+
+**The audit is read-only and writes nothing.** Acting on what it finds is a
+separate step that needs its own authorisation — do not correct historical
+data straight off an audit report.
+
+### Recovering from a bad import
+
+Every successful write keeps the previous file as `src\data\data.json.bak`
+(gitignored). To roll back by hand:
+
+```bash
+copy src\data\data.json.bak src\data\data.json
+python scripts/validate_data.py --data src\data\data.json --out src\data\validation_report.json
+```
+
+Only the most recent prior version is kept — `.bak` is overwritten on every
+successful write. For anything older, use git history.
+
 ### Manual — individual scripts
 
 Run each script directly if you need fine-grained control. This is the actual current pipeline order (matches `watcher.py`'s Step 1 → 2.5 → 2.75 → 2.8 → 3) — there is no show-metadata enrichment step; that stage was suspended (see the Data Files table below) and dropped from the pipeline entirely, not just skipped by default.
 
 ```bash
 # Step 1: process touring records
+# --append auto-routes to revision mode when the filename carries a REV/REVISED
+# marker, so this one command covers both normal and revised reports.
 python scripts/process_touring.py --append path\to\new_report.xlsx src\data\data.json
+
+# Step 1 (explicit): force revision mode regardless of filename
+python scripts/process_touring.py --revision path\to\report_REVISED.xlsx src\data\data.json
+
+# Reconcile stored data against the archived workbooks — READ-ONLY, writes nothing
+python scripts/process_touring.py --audit path\to\reports_folder src\data\data.json
 
 # Step 2.5: refresh weather and economic context
 python scripts/scrape_context.py
@@ -120,6 +222,8 @@ python scripts/generate_season_review.py --dry-run
 # Validate
 python scripts/validate_data.py --data src\data\data.json --out src\data\validation_report.json
 ```
+
+Running `process_touring.py` directly changes **only the local data file named on the command line**. It does not commit, push or deploy — publishing is the watcher's job, or yours via the manual flow above. There is no dry-run flag on `process_touring.py`; use `--audit` when you want to inspect without changing anything.
 
 `scrape_shows.py` still exists and can be run by hand (`python scripts/scrape_shows.py --season 2026-2027`) if enrichment is ever revived, but it is not part of the regular pipeline — see the Data Files table below.
 
@@ -281,13 +385,13 @@ which scrapes metadata for every show in that season not already enriched (it sk
 |---|---|---|
 | `main` | Production | Auto — push triggers Azure GitHub Actions (~30 sec) |
 | `dev` | Staging | Auto — same Azure app, separate staging URL |
-| `data-import` | — | Ephemeral. `watcher.py` re-creates it from `main` on every weekly run, commits the data update, merges it to `main`, then deletes it. Never used for anything else. |
+| _(none)_ | — | `watcher.py` uses **no branch of its own**. It builds its commit with git plumbing and pushes it by sha. The former ephemeral `data-import` branch was removed: the hazard was checking out a branch in a shared working tree, not the branch itself. |
 
 Push to `main` deploys to production. The GitHub Actions workflow (`.github/workflows/azure-static-web-apps-white-pebble-01710020f.yml`) deploys the `src/` directory only.
 
 **Feature/code work** (anyone working in an editor or Claude Code session) always goes through the manual `feat/* → dev → main` flow below, with an explicit confirmation before the `main` push — see [CLAUDE.md](../CLAUDE.md#branch-policy).
 
-**Weekly data updates** are the one exception: `watcher.py` deploys them straight to `main` on its own `data-import` branch, fully unattended, then fast-forward-merges `main` back into `dev` so `dev` never drifts behind on data files. This is deliberate — the watcher never touches `dev` directly, so an automated weekly import can never pick up or interfere with in-progress feature work sitting there. If folding the deploy back into `dev` hits a conflict (e.g. a feature branch also touched `data.json`), the watcher aborts that merge, leaves `dev` clean, and logs that a human needs to run `git merge main` into `dev` manually — production still got the update either way.
+**Weekly data updates** are the one exception: `watcher.py` deploys them straight to `main` fully unattended, then folds the same commit into `dev` so `dev` never drifts behind on data files. It does this **without checking out any branch** — the commit is the tree of `origin/main` with only the watcher's own `src/data/*.json` files overlaid, pushed by sha — so an automated import can never pick up in-progress feature work from the shared working tree. If folding the deploy back into `dev` hits a conflict (e.g. a feature branch also touched `data.json`), the watcher aborts that merge, leaves `dev` clean, and logs that a human needs to run `git merge main` into `dev` manually — production still got the update either way.
 
 ### Deploy to staging first (recommended for code changes)
 

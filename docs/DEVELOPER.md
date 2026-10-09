@@ -86,7 +86,8 @@ scripts/
 │                               scrape_context.py, and validate_data.py (not
 │                               generate_highlights.py / generate_season_review.py)
 ├── dashboard_config.py         Shared path constants used by all scripts
-├── process_touring.py          Reads XLSX → writes/appends data.json
+├── process_touring.py          Reads XLSX → writes data.json. Four modes:
+│                               append / revision / rebuild / audit (read-only)
 ├── scrape_shows.py             Show metadata enrichment. Suspended — not called by
 │                               watcher.py or run_pipeline.py; see docs/OPERATIONS.md
 ├── scrape_context.py           Fetches NOAA + FRED data → writes context.json
@@ -98,7 +99,8 @@ scripts/
 ├── watcher.py                  Monitors OneDrive folder; on new XLSX runs
 │                               process → context → highlights → review → git
 │                               (no show-enrichment step — that's suspended)
-└── compare_signals.js          QA tool — prints Planning Signal scores for a season
+├── compare_signals.js          QA tool — prints Planning Signal scores for a season
+└── test_process_revision.py    Revision/append/audit behaviour — npm run test:revision
 ```
 
 ---
@@ -381,6 +383,131 @@ it changes what this repository is responsible for.
 
 ---
 
+## Revision handling — corrected weekly reports
+
+The Broadway League sometimes reissues a weekly report with corrected figures.
+`process_touring.py` treats those differently from a first-time report.
+
+### How a revision is recognised
+
+By **filename**, not by content. A standalone `REV` or `REVISED` token,
+matched case-insensitively:
+
+```python
+REVISION_TOKEN = re.compile(r'(?<![A-Za-z0-9])REV(?:ISED)?(\d*)(?![A-Za-z])', re.IGNORECASE)
+```
+
+The token must be delimited by a non-alphanumeric on the left and by anything
+other than a letter on the right, so words that merely contain the letters are
+not misread.
+
+| Recognised | Not recognised |
+|---|---|
+| `… - REV.xlsx` | `Preview_10-4-26.xlsx` |
+| `… - REV2.xlsx` (ordinal 2) | `Revenue_Report.xlsx` |
+| `…_REV.xlsx` | `Review_10-4-26.xlsx` |
+| `… (REV).xlsx` | `Reverb.xlsx` |
+| `… - REVISED.xlsx` | `TouringReportRevisedFinal.xlsx` (no delimiter) |
+
+A trailing integer is the **revision ordinal**. It is the only ordering signal
+the code accepts between two revisions of the same week. Filename sort order
+and filesystem mtime are deliberately never used — neither reflects which
+revision the League actually issued last.
+
+### What a revision does
+
+Record-level upsert, keyed on `canonical_key`:
+
+| Case | Action |
+|---|---|
+| Key absent from the store | **Inserted** |
+| Key present, business values differ | **Updated** |
+| Key present, business values identical | **Unchanged** |
+| Stored row absent from the revision | **Retained** |
+
+"Business values" means every field except `canonical_key`.
+
+### Known limitation — absent rows are retained, never deleted
+
+**A revision workbook is not assumed to be a complete population for its
+week.** It may carry only the corrected tab, or only the rows that changed.
+Deleting stored records merely because a revision does not mention them would
+discard good data on an assumption the pipeline cannot verify.
+
+So absence is never a deletion instruction. Every run logs how many stored
+rows for that week were absent and retained. When the revision carries fewer
+records than the stored week, the log additionally warns:
+
+```
+WARN   | Revision contains fewer records than the stored week.
+         Missing stored records were retained; review may be required.
+```
+
+**A genuine deletion correction therefore requires a human.** There is no
+unattended path that removes a stored engagement.
+
+### Guards — all fail closed
+
+| Guard | Behaviour |
+|---|---|
+| Zero parsed records | Exit non-zero, write nothing |
+| More than one reporting week in the file | Exit non-zero, write nothing |
+| Candidate file fails validation | Exit non-zero, live file untouched |
+
+Validation checks the candidate's record count against the header, that every
+record has a `canonical_key`, and that no key is duplicated.
+
+### Atomic write and recovery
+
+Writes go to `data.json.tmp`, which is re-read and validated **before** it
+replaces the live file via `os.replace()`. The live `data.json` is never opened
+for writing, so a rejected candidate leaves it byte-identical and the temp file
+is removed.
+
+On a successful write the previous file is kept as **`src/data/data.json.bak`**
+(gitignored via `*.bak`). To roll back a bad import by hand:
+
+```bash
+copy src\data\data.json.bak src\data\data.json
+```
+
+Only the most recent prior version is retained — `.bak` is overwritten on every
+successful write. Git history is the durable record.
+
+### Logging
+
+Every revision run reports: mode, source filename, revision ordinal, reporting
+week, added / updated / identical / removed counts, the week's record count
+before and after, the week's gross before and after with the delta, each
+changed field per updated record, and the retention statement.
+
+### Append mode fails closed on conflicts
+
+A file *without* a REV marker that restates an existing key with different
+values exits non-zero, names every changed field and writes nothing. Silently
+skipping a changed value is the defect this replaced.
+
+### Historical audit — read-only
+
+```bash
+python scripts/process_touring.py --audit <reports_folder> src\data\data.json
+python scripts/process_touring.py --audit <reports_folder> src\data\data.json --week 2026-10-04
+```
+
+Per week it reports the original and revision source files, canonical-key
+conflicts, whether stored values match the latest identifiable revision,
+records present on one side but not the other, and source-derived versus
+stored weekly gross. Originals are applied first, then revisions in ordinal
+order.
+
+Where two revisions cannot be ordered — two unnumbered `REVISED` files, say —
+the ambiguity is **reported and neither is applied**. The audit never guesses.
+
+The audit writes nothing, to `data.json` or anywhere else. **Acting on its
+findings is a separate, separately authorised step.**
+
+---
+
 ## CSS Design System
 
 All colors, spacing, and typography are CSS custom properties in `src/css/styles.css`.
@@ -437,6 +564,30 @@ The filter test program covers:
 | 11 | Durable documentation validation for both filter contracts |
 
 Avoid documenting a fixed assertion total; the runner reports the current count. Suite 9 verifies that HTML fallback version and date strings match `src/data/versions.json`. Suite 11 verifies that the maintained documentation continues to state the correct filtering and canonical-evidence contracts.
+
+### `npm run test:revision` — revision, append and audit behaviour
+
+```bash
+npm run test:revision
+```
+
+Runs `scripts/test_process_revision.py`. Fixtures are real `.xlsx` workbooks
+built with openpyxl and parsed by the production parser, so the suite
+exercises the real ingestion path rather than a mock.
+
+| Area | What it validates |
+|---|---|
+| Filename detection | Every supported REV / REVISED form, and the ordinal parsed from each |
+| False matches | `Preview`, `Revenue`, `Review`, `Reverb`, `FOREVER`, undelimited tokens are not revisions |
+| Append | New keys append; a second week appends alongside the first |
+| Append conflict | A plain file restating a key with different values exits non-zero and writes nothing |
+| Revision update | A changed row is applied, field by field |
+| Revision addition | A row the store lacked is inserted |
+| Retention | A stored row absent from the revision survives, and the warning is emitted |
+| Idempotence | Re-running the same revision is a clean no-op |
+| Guards | Zero-record and multi-week revisions abort with `data.json` unchanged |
+| Validation | Duplicate keys and count mismatches are rejected; the live file is untouched; `.bak` holds the prior content |
+| Audit | Conflicts, ambiguity and orphaned stored rows are reported, and nothing is written |
 
 ### Syntax and data checks
 
