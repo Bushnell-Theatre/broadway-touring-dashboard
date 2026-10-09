@@ -1,14 +1,14 @@
 {
   "2026-2027": {
-    "kind": "highlight",
-    "pulse_reason": null,
+    "kind": "pulse",
+    "pulse_reason": "highlight_validation_failed",
     "scope": "national",
     "week_of": "2026-10-04",
     "trigger": "absent_from_feed,all_time_high_gross,wow_gross_change",
-    "summary": "This week's Broadway League data—drawn from six national records, above the typical monthly count—signals strengthening demand across the touring circuit. *Oh, Mary!* surged dramatically to $1.87M (an 800% week-over-week gain and an all-time high), while *Operation Mincemeat* and *Hell's Kitchen* showed divergent trajectories, with the former climbing 44% to a new peak of $1.12M and the latter declining 30%. *Waitress* has not reported for 224 consecutive weeks; confirmation with booking partners is advisable.",
-    "generated_at": "2026-10-09T12:13:50",
-    "validation_status": "passed",
-    "validation_method": "ai_guard",
+    "summary": "Data updated through the week of October 4, 2026. A configured material-change threshold was detected, but the automated narrative did not pass validation. Review the current dashboard metrics for detail.",
+    "generated_at": "2026-10-09T18:50:18",
+    "validation_status": "fallback",
+    "validation_method": "deterministic",
     "guard_version": "2",
     "comparison_status": "available",
     "comparison_detail": {
