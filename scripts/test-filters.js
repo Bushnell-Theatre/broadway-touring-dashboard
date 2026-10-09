@@ -579,6 +579,22 @@ console.log('\n── Suite 9: Source compliance — real page contracts ──'
   );
   const dashSrc = fs.readFileSync(path.join(ROOT, 'src/dashboard.html'), 'utf8');
 
+  /* Data Table default sort — newest reporting week first.
+     The state variables and the header arrow have to agree: if they drift,
+     the table renders week-descending while the arrow sits on another
+     column, and the CSV export (which reads the same sorted rows) silently
+     follows a sort the user cannot see. */
+  assert('dashboard Data Table defaults to sorting on week_of',
+    /let SORT_COL = 'week_of';/.test(dashSrc));
+  assert('dashboard Data Table default sort direction is descending (newest first)',
+    new RegExp("let SORT_COL = 'week_of';\\s*let SORT_DIR = -1;").test(dashSrc));
+  assert('dashboard Week header carries the initial descending indicator',
+    dashSrc.includes('<span id="s-week_of">↓</span>'));
+  assert('dashboard no other column header claims the initial sort indicator',
+    (dashSrc.match(new RegExp('<span id="s-[a-z_]+">↓</span>', 'g')) || []).length === 1);
+  assert('dashboard resetFilters does not override the chosen sort',
+    !/function resetFilters[\s\S]*?\n      }/.exec(dashSrc)[0].includes('SORT_COL'));
+
   assert('dashboard.html fallback version matches versions.json',
     dashSrc.includes(`id="pageVersion">${versionsJson.dashboard.version}`));
   assert('dashboard.html fallback date matches versions.json',

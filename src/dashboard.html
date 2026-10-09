@@ -1401,7 +1401,7 @@
                 <tr>
                   <th onclick="sortBy('week_of')">
                     Week
-                    <span id="s-week_of"></span>
+                    <span id="s-week_of">↓</span>
                   </th>
                   <th onclick="sortBy('tier')">
                     Tier
@@ -1421,7 +1421,7 @@
                   </th>
                   <th onclick="sortBy('gross_gross')">
                     Gross
-                    <span id="s-gross_gross">↓</span>
+                    <span id="s-gross_gross"></span>
                   </th>
                   <th onclick="sortBy('gross_potential')">
                     Potential
@@ -2356,7 +2356,11 @@
       // ── STATE ─────────────────────────────────────────────────────────────────────
       let ALL_DATA = [];
       let FILTERED = [];
-      let SORT_COL = 'gross_gross';
+      /* Data Table default sort: newest reporting week first. The table is read
+         week-first far more often than gross-first, and the most recent week is
+         what people come to look at. -1 is descending; sortBy() flips it, and
+         resetFilters() deliberately leaves the user's chosen sort alone. */
+      let SORT_COL = 'week_of';
       let SORT_DIR = -1;
       let ACTIVE_TIER = '';
       let ACTIVE_SUB = '';
