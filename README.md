@@ -107,6 +107,12 @@ Browser loads JSON and renders the selected experience
 
 The Python processing tools run locally; they are not part of the production website. The local HTTP server described below is also only a preview server. Azure serves the production application as static files.
 
+> **Weekly intelligence is temporarily disabled (October 9, 2026).** The AI
+> weekly callout on Programming and Executive Summary is switched off pending a
+> review of how touring productions are identified. Data ingestion, revision
+> processing, every Dashboard metric and the season retrospectives continue
+> normally. See [docs/OPERATIONS.md](docs/OPERATIONS.md#weekly-intelligence--temporarily-disabled).
+
 When the Broadway League reissues a week with corrected figures, the revised workbook is marked as a revision in its filename (`REV` / `REVISED`) and the pipeline updates the affected records in place. A revision is never assumed to contain the whole week, so stored records it does not mention are retained rather than deleted; removing an engagement is always a human decision. See [docs/OPERATIONS.md](docs/OPERATIONS.md) for the operator workflow and [docs/DEVELOPER.md](docs/DEVELOPER.md) for the mechanics.
 
 The repository also contains optional local automation for watching an upload folder, refreshing enrichment/context data, generating threshold-triggered summaries, validating data, and publishing updates. Those operational mechanics are documented separately because they are not the product itself.

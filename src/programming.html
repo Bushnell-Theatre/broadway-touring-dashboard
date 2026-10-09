@@ -461,8 +461,8 @@
       </div>
       <div>
         Broadway Touring Programming Intelligence ·
-        <strong id="pageVersion">v6.3</strong>
-        · Build date: <span id="pageDate">September 11, 2026</span>
+        <strong id="pageVersion">v7.0</strong>
+        · Build date: <span id="pageDate">October 9, 2026</span>
       </div>
     </footer>
     <script>
@@ -1636,25 +1636,33 @@
           };
         }
 
-        fetch('data/programming_highlight.json', { cache: 'no-store' })
-          .then(function(r) { return r.ok ? r.json() : null; })
-          .catch(function() { return null; })
-          .then(function(h) {
-            var entry = h && h[season.id];
-            var latestWeek = '';
-            for (var i = 0; i < ALL.length; i++) {
-              if (ALL[i].week_of && ALL[i].week_of > latestWeek) latestWeek = ALL[i].week_of;
-            }
-            var meta = weeklyCalloutMeta(entry, latestWeek);
-            var el = document.createElement('div');
-            el.className = 'callout ai-highlight';
-            el.style.cssText = 'border-left-color:' + meta.color + ';margin-bottom:16px;';
-            el.innerHTML =
-              '<div style="font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:' + meta.color + ';margin-bottom:6px;">' + meta.label + '</div>' +
-              '<p style="margin:0;"></p>';
-            el.querySelector('p').textContent = meta.text;
-            document.getElementById('tab-brief').prepend(el);
-          });
+        /* Weekly intelligence is temporarily disabled — see
+           BTD.config.weeklyIntelligenceEnabled in js/core/config.js for why and
+           for the reactivation requirements. While the flag is false the JSON
+           is not fetched and the callout is not rendered AT ALL: no stale copy,
+           no empty card, no "unavailable" message. The whole block below is
+           preserved for reactivation. */
+        if (BTD.config.weeklyIntelligenceEnabled) {
+          fetch('data/programming_highlight.json', { cache: 'no-store' })
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .catch(function() { return null; })
+            .then(function(h) {
+              var entry = h && h[season.id];
+              var latestWeek = '';
+              for (var i = 0; i < ALL.length; i++) {
+                if (ALL[i].week_of && ALL[i].week_of > latestWeek) latestWeek = ALL[i].week_of;
+              }
+              var meta = weeklyCalloutMeta(entry, latestWeek);
+              var el = document.createElement('div');
+              el.className = 'callout ai-highlight';
+              el.style.cssText = 'border-left-color:' + meta.color + ';margin-bottom:16px;';
+              el.innerHTML =
+                '<div style="font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:' + meta.color + ';margin-bottom:6px;">' + meta.label + '</div>' +
+                '<p style="margin:0;"></p>';
+              el.querySelector('p').textContent = meta.text;
+              document.getElementById('tab-brief').prepend(el);
+            });
+        }
       }
 
       function makeInsights(profiles) {

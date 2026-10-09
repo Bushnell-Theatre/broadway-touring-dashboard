@@ -383,6 +383,42 @@ it changes what this repository is responsible for.
 
 ---
 
+## Weekly intelligence — temporarily disabled
+
+The AI weekly highlight / pulse callout is **off** as of October 9, 2026,
+pending the production-title identity review. One shared flag controls it:
+
+```javascript
+BTD.config.weeklyIntelligenceEnabled   // js/core/config.js — currently false
+```
+
+While it is false:
+
+- `programming.html` does not fetch `data/programming_highlight.json` and does
+  not render the callout;
+- `exec_summary.html` does not fetch `data/exec_brief_highlight.json` and skips
+  the weekly branch — the season-retrospective branch is untouched and still
+  fetches `data/season_review.json`;
+- `watcher.py` Step 2.75 is skipped, so no weekly Anthropic call happens during
+  an import, and the stored highlight JSON is not added to the publish set.
+
+Nothing is deleted. `generate_highlights.py`, `highlight_guard.py`, both JSON
+files and all rendering code remain in place; the callout is hidden rather than
+degraded, so no stale copy or placeholder reaches a reader.
+
+The cause is in the shared matcher — `rowsForShow()` in `js/core/signals.js`
+matches by bidirectional substring:
+
+```javascript
+return hay === needle || hay.indexOf(needle) >= 0 || needle.indexOf(hay) >= 0;
+```
+
+so a needle of `waitress 2026` matches a record titled `waitress`. See
+[docs/OPERATIONS.md](OPERATIONS.md#weekly-intelligence--temporarily-disabled)
+for the reactivation requirements.
+
+---
+
 ## Revision handling — corrected weekly reports
 
 The Broadway League sometimes reissues a weekly report with corrected figures.

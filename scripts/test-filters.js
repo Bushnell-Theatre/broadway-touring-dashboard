@@ -579,6 +579,59 @@ console.log('\n── Suite 9: Source compliance — real page contracts ──'
   );
   const dashSrc = fs.readFileSync(path.join(ROOT, 'src/dashboard.html'), 'utf8');
 
+  /* ── WEEKLY INTELLIGENCE DISABLED ────────────────────────────────────────
+     The feature is off pending the production-title identity review. These
+     assertions check the three places it could leak back on: the shared flag,
+     either page fetching its highlight JSON, and the watcher calling the
+     generator. The season retrospective must keep working throughout. */
+  const cfgSrc     = fs.readFileSync(path.join(ROOT, 'src/js/core/config.js'), 'utf8');
+  const watcherSrc = fs.readFileSync(path.join(ROOT, 'scripts/watcher.py'), 'utf8');
+
+  assert('weekly intelligence flag exists and is false',
+    /weeklyIntelligenceEnabled:\s*false/.test(cfgSrc));
+
+  /* Neither page may fetch its weekly JSON unguarded. Every occurrence of the
+     fetch must sit behind the flag. */
+  [['programming', progSrc, 'programming_highlight.json'],
+   ['exec_summary', execSrc, 'exec_brief_highlight.json']].forEach(function (t) {
+    const name = t[0], src = t[1], file = t[2];
+    const fetches = (src.match(new RegExp("fetch\\('data/" + file + "'", 'g')) || []).length;
+    const guarded = (src.match(/weeklyIntelligenceEnabled/g) || []).length;
+    assert(name + ': weekly highlight fetch is guarded by the flag',
+      fetches === 0 || guarded > 0, 'fetches=' + fetches + ' guards=' + guarded);
+    assert(name + ': references the shared flag rather than a local copy',
+      /BTD\.config\.weeklyIntelligenceEnabled/.test(src));
+  });
+
+  /* The retrospective is a different generator and must be unaffected. */
+  assert('exec_summary still fetches season_review.json unconditionally',
+    /fetch\('data\/season_review\.json'/.test(execSrc));
+  /* The retrospective fetch must be a plain array element in the Promise.all,
+     not wrapped in the weekly flag's ternary. Comparing string indexes would
+     be fooled by the explanatory comment above the call, so match structure. */
+  assert('exec_summary season_review fetch is NOT behind the weekly flag',
+    new RegExp("Promise\\.all\\(\\[\\s*fetch\\('data/season_review\\.json'").test(execSrc));
+
+  /* The watcher must make no weekly API call. */
+  assert('watcher does not invoke generate_highlights.py',
+    !/subprocess\.run\(\s*\[\s*"python",\s*HIGHLIGHTS_PATH/.test(watcherSrc));
+  assert('watcher logs that weekly generation is skipped',
+    /Step 2\.75 SKIPPED/.test(watcherSrc));
+  assert('watcher never marks the highlight files as updated',
+    /exec_highlight_updated = False/.test(watcherSrc) &&
+    /prog_highlight_updated = False/.test(watcherSrc));
+  assert('watcher still invokes generate_season_review.py',
+    /subprocess\.run\(\s*\[\s*"python",\s*REVIEW_PATH/.test(watcherSrc));
+
+  /* The generator and guard must survive for reactivation. */
+  assert('generate_highlights.py is preserved',
+    fs.existsSync(path.join(ROOT, 'scripts/generate_highlights.py')));
+  assert('highlight_guard.py is preserved',
+    fs.existsSync(path.join(ROOT, 'scripts/highlight_guard.py')));
+  assert('stored weekly highlight JSON is preserved',
+    fs.existsSync(path.join(ROOT, 'src/data/exec_brief_highlight.json')) &&
+    fs.existsSync(path.join(ROOT, 'src/data/programming_highlight.json')));
+
   /* Data Table default sort — newest reporting week first.
      The state variables and the header arrow have to agree: if they drift,
      the table renders week-descending while the arrow sits on another

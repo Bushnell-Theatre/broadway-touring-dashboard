@@ -859,8 +859,8 @@
     <footer class="footer">
       <div>
         THE BUSHNELL CENTER FOR THE PERFORMING ARTS · BROADWAY TOURING EXEC SUMMARY ·
-        <strong id="pageVersion">v6.3</strong>
-        · Build date: <span id="pageDate">September 11, 2026</span>
+        <strong id="pageVersion">v7.0</strong>
+        · Build date: <span id="pageDate">October 9, 2026</span>
       </div>
       <div id="footerMeta">Static feed</div>
     </footer>
@@ -2408,9 +2408,16 @@
           };
         }
 
+        /* The season retrospective is unaffected and still fetched. The
+           weekly highlight is temporarily disabled — see
+           BTD.config.weeklyIntelligenceEnabled in js/core/config.js. While the
+           flag is false exec_brief_highlight.json is NOT requested at all, and
+           the weekly callout is not rendered in any form. */
         Promise.all([
           fetch('data/season_review.json', { cache: 'no-store' }).then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; }),
-          fetch('data/exec_brief_highlight.json', { cache: 'no-store' }).then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; })
+          BTD.config.weeklyIntelligenceEnabled
+            ? fetch('data/exec_brief_highlight.json', { cache: 'no-store' }).then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; })
+            : Promise.resolve(null)
         ]).then(function(results) {
           var reviewData    = results[0];
           var highlightData = results[1];
@@ -2428,13 +2435,17 @@
               '<p style="margin:0;"></p>';
             el.querySelector('p').textContent = reviewEntry.summary;
             document.getElementById('tab-brief').prepend(el);
-          } else {
+          } else if (BTD.config.weeklyIntelligenceEnabled) {
             /* Five distinguishable states. Previously there was no else-branch
                at all, so "nothing rendered" meant any of: no data, the watcher
                never ran, the guard rejected the copy, or a genuinely quiet
                week — and a prior week's callout could sit on screen reading as
                current. week_of is now always shown, and an entry older than
-               the latest week in the loaded data is labelled as earlier. */
+               the latest week in the loaded data is labelled as earlier.
+
+               Reached only while weekly intelligence is enabled. With the flag
+               false there is no retrospective-less fallback: the callout is
+               absent entirely rather than showing an explanatory placeholder. */
             var latestWeek = '';
             for (var i = 0; i < ALL.length; i++) {
               if (ALL[i].week_of && ALL[i].week_of > latestWeek) latestWeek = ALL[i].week_of;

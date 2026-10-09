@@ -76,7 +76,7 @@ WATCH_FOLDER = r"C:\Users\rnunley\Bushnell Center for the Performing Arts\AI Tas
 REPO_FOLDER = r"C:\Users\rnunley\OneDrive - Bushnell Center for the Performing Arts\Documents\GitHub\broadway-touring-dashboard"
 SCRIPT_PATH    = os.path.join(REPO_FOLDER, "scripts", "process_touring.py")
 CONTEXT_PATH   = os.path.join(REPO_FOLDER, "scripts", "scrape_context.py")
-HIGHLIGHTS_PATH = os.path.join(REPO_FOLDER, "scripts", "generate_highlights.py")
+HIGHLIGHTS_PATH = os.path.join(REPO_FOLDER, "scripts", "generate_highlights.py")  # unused while Step 2.75 is disabled — kept for reactivation
 REVIEW_PATH    = os.path.join(REPO_FOLDER, "scripts", "generate_season_review.py")
 DATA_JSON      = os.path.join(REPO_FOLDER, "src", "data", "data.json")
 SEASONS_JSON   = os.path.join(REPO_FOLDER, "src", "data", "seasons.json")
@@ -144,22 +144,31 @@ def process_new_file(filepath):
             log.warning(ctx_result.stderr.strip())
     context_updated = ctx_result.returncode == 0
 
-    # Step 2.75: Generate AI weekly highlight blurbs
-    # Failure is non-fatal — logs a warning and pipeline continues.
-    log.info("Running: generate_highlights.py")
-    hl_result = subprocess.run(
-        ["python", HIGHLIGHTS_PATH],
-        capture_output=True, text=True, cwd=REPO_FOLDER
-    )
-    if hl_result.stdout:
-        for line in hl_result.stdout.strip().splitlines():
-            log.info(f"  {line}")
-    if hl_result.returncode != 0:
-        log.warning("generate_highlights.py failed — highlight files may be stale")
-        if hl_result.stderr:
-            log.warning(hl_result.stderr.strip())
-    exec_highlight_updated = hl_result.returncode == 0 and os.path.isfile(EXEC_HIGHLIGHT_JSON)
-    prog_highlight_updated = hl_result.returncode == 0 and os.path.isfile(PROG_HIGHLIGHT_JSON)
+    # Step 2.75: Generate AI weekly highlight blurbs — TEMPORARILY DISABLED
+    #
+    # Paused October 9, 2026 pending the production-title identity review. The
+    # shared title matcher resolves a slate entry to records by bidirectional
+    # substring, so where the Broadway League distinguishes productions with a
+    # year/version suffix the match blends them — weekly copy can then state an
+    # absence, a record high or a week-over-week change that belongs to a
+    # different production. Rather than publish claims nobody can verify, no
+    # weekly copy is generated at all.
+    #
+    # generate_highlights.py and highlight_guard.py are untouched and still run
+    # by hand. The stored highlight JSON is left exactly as last committed and
+    # is NOT republished, so nothing downstream sees a changed file. Both pages
+    # hide the callout via BTD.config.weeklyIntelligenceEnabled.
+    #
+    # Season retrospectives (Step 2.8) are a separate generator and still run.
+    #
+    # To re-enable: restore the subprocess call below, set
+    # weeklyIntelligenceEnabled true in src/js/core/config.js, and satisfy the
+    # reactivation requirements recorded there.
+    log.info("Step 2.75 SKIPPED: weekly highlight generation is temporarily "
+             "disabled pending the production-title identity review "
+             "(see src/js/core/config.js). No API call made.")
+    exec_highlight_updated = False
+    prog_highlight_updated = False
 
     # Step 2.8: Generate AI end-of-season reviews (fires at most once per season)
     # Failure is non-fatal — logs a warning and pipeline continues.
