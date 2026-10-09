@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-09T18:50:41.159023+00:00",
+  "generated_at": "2026-10-09T19:24:42.242527+00:00",
   "record_count": 11257,
   "records": [
     {
@@ -281211,16 +281211,16 @@
       "ticket_range": "$41.00-$191.00",
       "top_price": 242.25,
       "num_perf": 8.0,
-      "gross_gross": 1334257.0,
+      "gross_gross": 1473785.0,
       "gross_potential": 1823950.0,
-      "gg_pct_gp": 73.2,
+      "gg_pct_gp": 80.8,
       "paid_tix": 17940.0,
       "total_tix": 18807.0,
       "capacity": 21624.0,
       "cap_paid": 83.0,
       "cap_total": 87.0,
       "on_sub": true,
-      "avg_adm": 70.94,
+      "avg_adm": 78.36,
       "venue_sellable": 2703.0,
       "similar_bushnell": true,
       "non_equity": false,
