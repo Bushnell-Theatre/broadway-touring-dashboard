@@ -6,7 +6,7 @@
     "week_of": "2026-10-04",
     "trigger": "absent_from_feed,all_time_high_gross,wow_gross_change",
     "summary": "Data updated through the week of October 4, 2026. A configured material-change threshold was detected, but the automated narrative did not pass validation. Review the current dashboard metrics for detail.",
-    "generated_at": "2026-10-09T18:50:18",
+    "generated_at": "2026-10-09T18:51:05",
     "validation_status": "fallback",
     "validation_method": "deterministic",
     "guard_version": "2",
