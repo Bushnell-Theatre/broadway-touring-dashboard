@@ -2349,7 +2349,7 @@
           .sort();
         LAST_REPORT_DATE = allDates[allDates.length - 1] ? allDates[allDates.length - 1].slice(0, 10) : null;
         // Default to current season
-        ACTIVE_SEASONS.add('2025-2026');
+        ACTIVE_SEASONS.add(currentSeasonId());
         boot();
       }
 
@@ -2373,13 +2373,23 @@
       let LAST_REPORT_DATE = null;
       let DEFAULT_RANGE = null;
 
+      /* The season the dashboard defaults to on load and on reset — the fiscal
+         year that contains today, July 1 boundary. This was duplicated in three
+         places and one copy was a hardcoded '2025-2026', which silently left the
+         prior season selected alongside the current one on every page load: the
+         pills showed one season while the charts aggregated two. Derive it here,
+         once, and never hardcode a season id again. */
+      function currentSeasonId() {
+        const now = new Date(), yr = now.getFullYear(), mo = now.getMonth() + 1;
+        return mo >= 7 ? `${yr}-${yr + 1}` : `${yr - 1}-${yr}`;
+      }
+
       // ── BOOT ──────────────────────────────────────────────────────────────────────
       function boot() {
         // Render season pills dynamically
         const pillContainer = document.getElementById('seasonPills');
         if (pillContainer) {
-          const now = new Date(), yr = now.getFullYear(), mo = now.getMonth() + 1;
-          const defaultSeason = mo >= 7 ? `${yr}-${yr + 1}` : `${yr - 1}-${yr}`;
+          const defaultSeason = currentSeasonId();
           pillContainer.innerHTML =
             `<button class="pill" data-season="" onclick="setSeasonFilter('')" aria-label="All seasons">All</button>` +
             SEASONS.map((s) => {
@@ -2679,8 +2689,7 @@
         if (document.getElementById('fCity')) document.getElementById('fCity').value = '';
         BTD.page.resetDateMode(); // resets radio to Season, clears _DATE_RANGE and inputs
         // Reset to default season (dynamic — July 1 fiscal year)
-        const _rNow = new Date(), _rYr = _rNow.getFullYear(), _rMo = _rNow.getMonth() + 1;
-        const _rDef = _rMo >= 7 ? `${_rYr}-${_rYr + 1}` : `${_rYr - 1}-${_rYr}`;
+        const _rDef = currentSeasonId();
         ACTIVE_SEASONS.clear();
         ACTIVE_SEASONS.add(_rDef);
         document
