@@ -370,12 +370,44 @@ with tempfile.TemporaryDirectory() as td:
 print()
 print("Suite K - only the current reporting season is written")
 
+# WEEKLY INTELLIGENCE GATE — see src/js/core/config.js.
+#
+# While the weekly highlight/pulse feature is on, each file must carry an
+# entry for the current reporting season, dated to the latest reporting week.
+#
+# While it is OFF (paused October 9, 2026 for the production-title identity
+# review), watcher.py Step 2.75 does not run and the stored JSON is not
+# republished, so data.json advances every week and these files do not.
+# Requiring a current-season, current-week entry would then fail on every
+# ingestion for a reason the pause creates deliberately.
+#
+# What the disabled branch checks instead: every entry actually present is
+# well-formed and not dated past the data. That is all it establishes — it
+# does NOT prove the files were never regenerated, and it is not evidence
+# that the pause held.
+_weekly_on = not re.search(
+    r"weeklyIntelligenceEnabled:\s*false",
+    (_root / "src/js/core/config.js").read_text(encoding="utf-8"))
+
 for f in ("exec_brief_highlight.json", "programming_highlight.json"):
     data = json.loads((_root / "src/data" / f).read_text(encoding="utf-8"))
-    check(f"{f} contains only fiscal_year(latest_week)",
-          list(data) == [gh2.fiscal_year(latest)], list(data))
-    check(f"{f} entry is for the latest reporting week",
-          data[gh2.fiscal_year(latest)]["week_of"] == latest)
+    if _weekly_on:
+        check(f"{f} contains only fiscal_year(latest_week)",
+              list(data) == [gh2.fiscal_year(latest)], list(data))
+        check(f"{f} entry is for the latest reporting week",
+              data[gh2.fiscal_year(latest)]["week_of"] == latest)
+    else:
+        check(f"{f} (weekly intelligence off) retains at least one entry",
+              len(data) > 0, list(data))
+        for _season, _entry in sorted(data.items()):
+            check(f"{f}[{_season}] carries a valid week_of",
+                  isinstance(_entry.get("week_of"), str)
+                  and bool(re.fullmatch(r"\d{4}-\d{2}-\d{2}", _entry["week_of"])),
+                  _entry.get("week_of"))
+            check(f"{f}[{_season}] is not dated past the latest reporting week",
+                  isinstance(_entry.get("week_of"), str)
+                  and _entry["week_of"] <= latest,
+                  f'{_entry.get("week_of")} vs latest {latest}')
 
 # historical entries are preserved, never regenerated
 with tempfile.TemporaryDirectory() as td:
