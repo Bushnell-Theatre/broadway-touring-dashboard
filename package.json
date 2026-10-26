@@ -12,7 +12,8 @@
     "test:export": "node scripts/test_export.js",
     "test:guard": "python scripts/test_highlight_guard.py",
     "test:pipeline": "python scripts/test_review_pipeline.py",
-    "test:revision": "python scripts/test_process_revision.py"
+    "test:revision": "python scripts/test_process_revision.py",
+    "test:watcher": "python scripts/test_watcher_dedup.py && python scripts/test_watcher_publish.py"
   },
   "repository": {
     "type": "git",
