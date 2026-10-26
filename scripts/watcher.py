@@ -44,9 +44,13 @@ OneDrive compatibility
 ----------------------
 OneDrive-synced folders do not always fire on_created when a file
 syncs from the cloud — they often fire on_modified on a placeholder
-instead. The handler responds to on_created, on_modified, and on_moved
-and deduplicates by (path, mtime) so each unique file version is
-processed exactly once.
+instead. The handler responds to on_created, on_modified, and on_moved,
+and (path, mtime) keeps a burst of events for one file from piling up.
+
+What decides whether any work actually happens is the file's CONTENT:
+see should_ingest(). OneDrive re-stamps the modified time once more when
+it finishes syncing, which looked like a second arrival and ran the whole
+pipeline twice for one report — two context scrapes, two deploys.
 
 Requirements:
     pip install watchdog
@@ -58,6 +62,7 @@ Keep this running in the background. It will log all activity to watcher.log
 in the same directory as this script.
 """
 
+import hashlib
 import os
 import json
 import sys
@@ -100,6 +105,55 @@ log = logging.getLogger(__name__)
 
 # ── PROCESSING ──────────────────────────────────────────────────────────
 
+# Content digests of reports already handled, keyed (path, sha256). See
+# should_ingest() for why this is content-based and not modified-time based.
+_ingested = set()
+
+
+
+def file_digest(filepath):
+    """SHA-256 of a file's bytes, or None if it could not be read."""
+    h = hashlib.sha256()
+    try:
+        with open(filepath, "rb") as f:
+            for chunk in iter(lambda: f.read(1024 * 1024), b""):
+                h.update(chunk)
+    except OSError:
+        return None
+    return h.hexdigest()
+
+
+def should_ingest(filepath):
+    """
+    True the first time these exact bytes are seen at this path.
+
+    A report only ever changes because somebody dropped a new or edited
+    workbook on SharePoint, so identical bytes at the same path mean there
+    is nothing new to do. OneDrive re-stamps a file's modified time when it
+    finishes syncing it, and that used to read as a second arrival: the
+    whole pipeline ran again, re-scraped context, and deployed a second
+    time for a file that had not changed.
+
+    Keyed on (path, digest) rather than the digest alone, because the same
+    workbook dropped under a new name is a different instruction — the
+    filename is what marks a revision (see process_touring.py).
+    """
+    digest = file_digest(filepath)
+    if digest is None:
+        return None                 # unreadable; caller decides what to say
+    key = (filepath, digest)
+    if key in _ingested:
+        return False
+    _ingested.add(key)
+    return True
+
+
+def remember_ingested(filepath):
+    """Record a file as already handled, without processing it."""
+    digest = file_digest(filepath)
+    if digest is not None:
+        _ingested.add((filepath, digest))
+
 
 def process_new_file(filepath):
     """Run append mode, then commit updated files to GitHub."""
@@ -112,6 +166,16 @@ def process_new_file(filepath):
     if not os.path.isfile(filepath):
         log.warning(
             f"File no longer present after sync wait — skipped: {fname}")
+        return
+
+    fresh = should_ingest(filepath)
+    if fresh is None:
+        log.warning(f"Could not read {fname} to check whether it changed — "
+                    f"skipping this event.")
+        return
+    if not fresh:
+        log.info(f"{fname} is byte-for-byte what was already processed — "
+                 f"nothing to do.")
         return
 
     # Step 1: Append to data.json
@@ -552,8 +616,13 @@ class XLSXHandler(FileSystemEventHandler):
     OneDrive-synced folders often do NOT fire on_created when a file syncs
     from the cloud — they fire on_modified on a placeholder instead. To
     handle this reliably we respond to on_created, on_modified, AND
-    on_moved, then deduplicate with a seen-set keyed by (path, mtime) so
-    a legitimate re-upload of a revised file is still picked up.
+    on_moved.
+
+    The (path, mtime) seen-set here only damps down a burst of events for
+    the same file; it is a cheap pre-filter, not the real guard. Whether a
+    report is actually processed is decided by its contents in
+    should_ingest(), because OneDrive changes a file's mtime without its
+    contents having changed at all.
     """
 
     def __init__(self, already_processed: set):
@@ -666,9 +735,11 @@ def startup_scan():
 
         if week is None:
             log.info(f"Startup scan: {fname} — could not determine week, skipping.")
+            remember_ingested(fpath)
             n_unreadable += 1
         elif week in known_weeks:
             log.info(f"Startup scan: {fname} — week {week} already in data.json, skipping.")
+            remember_ingested(fpath)
             n_skipped += 1
         else:
             log.info(f"Startup scan: {fname} — week {week} NOT in data.json, processing now.")
