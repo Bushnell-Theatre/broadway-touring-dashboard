@@ -184,10 +184,14 @@ try:
     check("dev has the new data",
           weeks("show", "origin/dev:src/data/data.json")[-1] == "w4")
 
-    print("\n--- 4. dev and main both changed the data file (conflict) ---")
+    print("\n--- 4. dev holds an older version of the data file ---")
+    # dev edits the data file AND an unrelated file, then the watcher fires.
+    # The data file must resolve to the watcher's version with no human
+    # involved; the unrelated change on dev must survive untouched.
     out("fetch", "-q", "origin")
     out("merge", "-q", "--ff-only", "origin/dev")
-    write("src/data/data.json", data("conflicting"))
+    write("src/data/data.json", data("stale-dev-copy"))
+    write("dashboard.html", "<h1>later dev work</h1>\n")
     out("add", "-A")
     out("commit", "-qm", "someone edited data.json on dev")
     out("push", "-q", "origin", "dev")
@@ -201,12 +205,75 @@ try:
 
     check("production still deployed",
           weeks("show", "origin/main:src/data/data.json")[-1] == "w5")
-    check("dev left untouched on conflict",
-          out("rev-parse", "origin/dev") == dev_before)
+    check("dev folded automatically, no human needed",
+          out("rev-parse", "origin/dev") != dev_before)
+    check("dev took the watcher's version of the data file",
+          weeks("show", "origin/dev:src/data/data.json")[-1] == "w5")
+    check("dev's unrelated work survived the resolution",
+          out("show", "origin/dev:dashboard.html") == "<h1>later dev work</h1>")
     check("repo not left mid-merge", not (WORK / ".git" / "MERGE_HEAD").exists())
     check("still on dev, HEAD intact", out("branch", "--show-current") == "dev")
     check("new data NOT reverted in the working tree",
           json.loads(read("src/data/data.json"))["weeks"][-1] == "w5")
+
+    print("\n--- 4b. a transient git failure is retried, not escalated ---")
+    # The repo lives in a OneDrive-synced folder, where an object file can be
+    # locked mid-sync and a perfectly good git command fails once. That must
+    # not turn into a message asking a human to merge by hand.
+    w.GIT_RETRY_SECONDS = 0
+    real_git = w._git
+    state = {"failed": False}
+
+    def flaky(args, index_file=None):
+        if args[0] == "read-tree" and "--aggressive" in args and not state["failed"]:
+            state["failed"] = True
+            return subprocess.CompletedProcess(
+                args, 1, "", "fatal: Unable to create '.git/index.lock'")
+        return real_git(args, index_file)
+
+    write("dashboard.html", "<h1>dev work again</h1>\n")
+    out("add", "-A")
+    out("commit", "-qm", "more dev work")
+    out("push", "-q", "origin", "dev")
+    dev_before = out("rev-parse", "origin/dev")
+
+    write("src/data/data.json", data("w1", "w2", "w3", "w4", "w5", "w5b"))
+    w._git = flaky
+    try:
+        w.publish("TouringReport_wk5b.xlsx", DATA)
+    finally:
+        w._git = real_git
+
+    check("setup: the transient failure actually fired", state["failed"])
+    check("fold succeeded on retry",
+          out("rev-parse", "origin/dev") != dev_before)
+    check("dev has the data after the retry",
+          weeks("show", "origin/dev:src/data/data.json")[-1] == "w5b")
+
+    print("\n--- 4c. a transient failure deploying to main is retried too ---")
+    state = {"failed": False}
+
+    def flaky_push(args, index_file=None):
+        if args[0] == "push" and "refs/heads/main" in args[-1] \
+                and not state["failed"]:
+            state["failed"] = True
+            return subprocess.CompletedProcess(
+                args, 1, "", "fatal: unable to access remote")
+        return real_git(args, index_file)
+
+    main_before = out("rev-parse", "origin/main")
+    write("src/data/data.json", data("w1", "w2", "w3", "w4", "w5", "w5b", "w5c"))
+    w._git = flaky_push
+    try:
+        w.publish("TouringReport_wk5c.xlsx", DATA)
+    finally:
+        w._git = real_git
+
+    check("setup: the transient push failure actually fired", state["failed"])
+    check("production deployed on retry",
+          out("rev-parse", "origin/main") != main_before)
+    check("main has the data after the retry",
+          weeks("show", "origin/main:src/data/data.json")[-1] == "w5c")
 
     print("\n--- 5. re-run with unchanged data ---")
     before = out("rev-parse", "origin/main")
