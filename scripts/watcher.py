@@ -221,6 +221,15 @@ def process_new_file(filepath):
 # convention somebody has to remember.
 
 
+# Why a fold attempt failed. A genuine conflict needs a human; anything
+# else is a transient git failure and is retried. This repository lives in
+# a OneDrive-synced folder, where an object file can be momentarily locked
+# mid-sync and an otherwise fine git command fails for no lasting reason.
+CONFLICT = "conflict"
+GIT_ATTEMPTS = 3
+GIT_RETRY_SECONDS = 10
+
+
 def _git(args, index_file=None):
     """Run a git command against REPO_FOLDER. Never checks anything out."""
     env = None
@@ -293,41 +302,76 @@ def build_data_commit(files, message):
     return commit
 
 
-def fold_into_dev(data_commit, fname):
+def fold_into_dev(data_commit, fname, files):
     """
     Work out what dev should point at, without checking dev out.
 
-    A fast-forward when dev carries no work of its own; otherwise a merge
-    commit built in a scratch index. Returns None if the merge conflicts,
-    which means a human has to resolve it.
+    Returns (sha, error). error is None on success, CONFLICT when dev and
+    this update disagree over a file this script does not own — the only
+    case a human has to settle — or a short description of a transient git
+    failure, which the caller retries.
     """
     dev = _git_out(["rev-parse", "--verify", "origin/dev"])
     if not dev:
-        log.error("Cannot resolve origin/dev.")
-        return None
+        return None, "cannot resolve origin/dev"
     if _git(["merge-base", "--is-ancestor", dev, data_commit]).returncode == 0:
-        return data_commit          # plain fast-forward, no merge commit
+        return data_commit, None    # plain fast-forward, no merge commit
 
     base = _git_out(["merge-base", dev, data_commit])
     if not base:
-        return None
+        return None, "no merge base with origin/dev"
 
     index = _scratch_index("merge")
     try:
-        if _git(["read-tree", "-m", "--aggressive", base, dev, data_commit],
-                index).returncode != 0:
-            return None
-        # write-tree fails if any path is left unmerged — that is how a
-        # conflict is detected here, with no working tree involved.
+        r = _git(["read-tree", "-m", "--aggressive", base, dev, data_commit],
+                 index)
+        if r.returncode != 0:
+            return None, f"read-tree failed: {r.stderr.strip()}"
+
+        # Paths --aggressive could not settle by itself. The data commit
+        # only ever touches the files listed in `files`, so an unmerged path
+        # outside that set should be impossible — if one appears, something
+        # is wrong in a way a human should look at.
+        raw = _git_out(["ls-files", "--unmerged"], index)
+        if raw is None:
+            return None, "could not list unmerged paths"
+        stuck = {line.split("\t", 1)[1] for line in raw.splitlines()
+                 if "\t" in line}
+
+        outside = stuck - set(files)
+        if outside:
+            log.error(f"dev and this update disagree over "
+                      f"{', '.join(sorted(outside))}, which this script does "
+                      f"not own and must not overwrite.")
+            return None, CONFLICT
+
+        for rel in sorted(stuck):
+            # dev is holding an older version of a file this script owns.
+            # The version just generated is the newest one and is already
+            # live on main, so dev takes it — that is what stops the two
+            # branches drifting, and it is the whole reason this fold runs.
+            blob = _git_out(["rev-parse", f"{data_commit}:{rel}"])
+            if not blob:
+                return None, f"could not read {rel} from the data commit"
+            if _git(["update-index", "--add", "--cacheinfo",
+                     f"100644,{blob},{rel}"], index).returncode != 0:
+                return None, f"could not resolve {rel}"
+        if stuck:
+            log.info(f"dev had an older {', '.join(sorted(stuck))}; resolved "
+                     f"in favour of this week's data.")
+
         tree = _git_out(["write-tree"], index)
     finally:
         if os.path.exists(index):
             os.remove(index)
 
     if not tree:
-        return None
-    return _git_out(["commit-tree", tree, "-p", dev, "-p", data_commit,
-                     "-m", f"sync: fold {fname} update into dev"])
+        return None, "write-tree failed"
+    sha = _git_out(["commit-tree", tree, "-p", dev, "-p", data_commit,
+                    "-m", f"sync: fold {fname} update into dev"])
+    if not sha:
+        return None, "commit-tree failed"
+    return sha, None
 
 
 def sync_local_refs(data_commit, files):
@@ -413,51 +457,87 @@ def sync_local_refs(data_commit, files):
                     f"{r.stderr.strip()}")
 
 
+def deploy_to_main(fname, files):
+    """
+    Build the data commit and push it to main.
+
+    Returns the commit sha, "" when the data is already live, or None if it
+    could not be done. Retried: a momentary git failure must not cost a
+    week's import and send somebody looking for the file to re-drop.
+    """
+    message = (f"Weekly update: {fname} — "
+               f"{datetime.now().strftime('%Y-%m-%d %H:%M')}")
+
+    for attempt in range(1, GIT_ATTEMPTS + 1):
+        if _git(["fetch", "origin"]).returncode != 0:
+            err = "git fetch failed"
+        else:
+            data_commit = build_data_commit(files, message)
+            if data_commit == "":
+                log.info("Data files are already identical to origin/main — "
+                         "nothing to deploy.")
+                return ""
+            if data_commit is None:
+                err = "could not build the data commit"
+            else:
+                # Rejected if origin/main moved since that fetch: the commit
+                # is parented on that exact sha, so a non-fast-forward means
+                # somebody else pushed. Rebuilding on the next attempt picks
+                # their commit up rather than forcing over it.
+                r = _git(["push", "origin", f"{data_commit}:refs/heads/main"])
+                if r.returncode == 0:
+                    log.info(f"Deployed to production for {fname} "
+                             f"({data_commit[:7]}).")
+                    return data_commit
+                err = f"push to main failed: {r.stderr.strip()}"
+
+        if attempt < GIT_ATTEMPTS:
+            log.warning(f"Deploy attempt {attempt} failed ({err}); retrying "
+                        f"in {GIT_RETRY_SECONDS}s.")
+            time.sleep(GIT_RETRY_SECONDS)
+        else:
+            log.error(f"Could not deploy {fname} after {GIT_ATTEMPTS} "
+                      f"attempts ({err}). The repo was not modified — "
+                      f"re-drop the file to retry.")
+    return None
+
+
 def publish(fname, files):
     """Commit the data files, deploy them to main, then fold them into dev."""
     log.info(f"Publishing {', '.join(files)} ...")
 
-    if _git(["fetch", "origin"]).returncode != 0:
-        log.error("git fetch failed — nothing published for this file.")
-        return
-
-    message = (f"Weekly update: {fname} — "
-               f"{datetime.now().strftime('%Y-%m-%d %H:%M')}")
-    data_commit = build_data_commit(files, message)
-    if data_commit is None:
-        log.error(f"Aborting publish for {fname}. The repo was not modified.")
-        return
-    if data_commit == "":
-        log.info("Data files are already identical to origin/main — "
-                 "nothing to deploy.")
+    data_commit = deploy_to_main(fname, files)
+    if not data_commit:             # None: failed. "": already live.
         log.info("-" * 60)
         return
 
-    # Rejected if origin/main moved since the fetch above: the commit is
-    # parented on that exact sha, so a non-fast-forward means somebody else
-    # pushed and this run's tree is stale. Fail rather than force.
-    r = _git(["push", "origin", f"{data_commit}:refs/heads/main"])
-    if r.returncode != 0:
-        log.error(f"Could not push to main: {r.stderr.strip()}")
-        log.error(f"Nothing was deployed for {fname}. The repo was not "
-                  f"modified — re-drop the file to retry.")
-        return
-    log.info(f"Deployed to production for {fname} ({data_commit[:7]}).")
+    for attempt in range(1, GIT_ATTEMPTS + 1):
+        dev_target, err = fold_into_dev(data_commit, fname, files)
+        if dev_target:
+            r = _git(["push", "origin", f"{dev_target}:refs/heads/dev"])
+            if r.returncode == 0:
+                log.info("Folded into dev.")
+                break
+            # dev moved under us, or the push itself hiccuped. Either way the
+            # next attempt refetches and rebuilds the fold from current refs.
+            err = f"push to dev failed: {r.stderr.strip()}"
 
-    dev_target = fold_into_dev(data_commit, fname)
-    if dev_target is None:
-        log.error(f"Production deploy for {fname} succeeded, but folding it "
-                  f"into dev conflicts with work already on dev. dev was left "
-                  f"untouched — a human needs to merge main into dev manually "
-                  f"before the next feature merges to main.")
-    else:
-        r = _git(["push", "origin", f"{dev_target}:refs/heads/dev"])
-        if r.returncode != 0:
-            log.error(f"Could not push to dev: {r.stderr.strip()}")
-            log.error("Production has the update; dev does not. Merge main "
-                      "into dev manually.")
+        if err == CONFLICT:
+            log.error(f"Production deploy for {fname} succeeded, but dev "
+                      f"carries a change this script must not overwrite. dev "
+                      f"was left untouched — a human needs to merge main into "
+                      f"dev manually before the next feature merges to main.")
+            break
+
+        if attempt < GIT_ATTEMPTS:
+            log.warning(f"Folding into dev failed ({err}); retrying in "
+                        f"{GIT_RETRY_SECONDS}s.")
+            time.sleep(GIT_RETRY_SECONDS)
+            _git(["fetch", "origin", "dev"])
         else:
-            log.info("Folded into dev.")
+            log.error(f"Could not fold {fname} into dev after "
+                      f"{GIT_ATTEMPTS} attempts ({err}). Production has the "
+                      f"update; dev does not. Merge main into dev manually.")
 
     sync_local_refs(data_commit, files)
     log.info("-" * 60)
