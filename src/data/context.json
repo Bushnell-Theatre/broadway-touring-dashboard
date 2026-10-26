@@ -4146,9 +4146,9 @@
       "summary": null
     },
     "economic": {
-      "consumer_confidence": 51.7,
-      "ct_unemployment": 4.7,
-      "confidence_trend": "stable",
+      "consumer_confidence": 48.1,
+      "ct_unemployment": 5.1,
+      "confidence_trend": "falling",
       "source_month": "2026-09"
     }
   },
@@ -4159,9 +4159,9 @@
       "summary": null
     },
     "economic": {
-      "consumer_confidence": 51.7,
-      "ct_unemployment": 4.7,
-      "confidence_trend": "stable",
+      "consumer_confidence": 48.1,
+      "ct_unemployment": 5.1,
+      "confidence_trend": "falling",
       "source_month": "2026-09"
     }
   },
@@ -4172,9 +4172,9 @@
       "summary": null
     },
     "economic": {
-      "consumer_confidence": 51.7,
-      "ct_unemployment": 4.7,
-      "confidence_trend": "stable",
+      "consumer_confidence": 48.1,
+      "ct_unemployment": 5.1,
+      "confidence_trend": "falling",
       "source_month": "2026-09"
     }
   },
@@ -4185,9 +4185,9 @@
       "summary": null
     },
     "economic": {
-      "consumer_confidence": 51.7,
-      "ct_unemployment": 4.7,
-      "confidence_trend": "stable",
+      "consumer_confidence": 48.1,
+      "ct_unemployment": 5.1,
+      "confidence_trend": "falling",
       "source_month": "2026-09"
     }
   },
@@ -4198,8 +4198,8 @@
       "summary": null
     },
     "economic": {
-      "consumer_confidence": 51.7,
-      "ct_unemployment": 4.7,
+      "consumer_confidence": 48.1,
+      "ct_unemployment": 5.1,
       "confidence_trend": "stable",
       "source_month": "2026-10"
     }
@@ -4211,8 +4211,21 @@
       "summary": null
     },
     "economic": {
-      "consumer_confidence": 51.7,
-      "ct_unemployment": 4.7,
+      "consumer_confidence": 48.1,
+      "ct_unemployment": 5.1,
+      "confidence_trend": "stable",
+      "source_month": "2026-10"
+    }
+  },
+  "2026-10-18": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 48.1,
+      "ct_unemployment": 5.1,
       "confidence_trend": "stable",
       "source_month": "2026-10"
     }
