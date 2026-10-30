@@ -4011,9 +4011,17 @@
   },
   "2026-06-28": {
     "weather": {
-      "events": [],
-      "significant": false,
-      "summary": null
+      "events": [
+        {
+          "type": "Thunderstorm Wind",
+          "begin": "2026-07-04",
+          "end": "2026-07-04",
+          "magnitude": "50.00 EG",
+          "narrative": "In Bristol, multiple power lines were down across town."
+        }
+      ],
+      "significant": true,
+      "summary": "Thunderstorm Wind"
     },
     "economic": {
       "consumer_confidence": 49.5,
@@ -4218,6 +4226,19 @@
     }
   },
   "2026-10-18": {
+    "weather": {
+      "events": [],
+      "significant": false,
+      "summary": null
+    },
+    "economic": {
+      "consumer_confidence": 48.1,
+      "ct_unemployment": 5.1,
+      "confidence_trend": "stable",
+      "source_month": "2026-10"
+    }
+  },
+  "2026-10-25": {
     "weather": {
       "events": [],
       "significant": false,
