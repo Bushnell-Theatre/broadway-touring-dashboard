@@ -32,11 +32,17 @@
    * when chaining deltas - a tryout sit-down is not a tour, and scoring the
    * following tour against it reads as a collapse that never happened.
    *
-   * Known limitation: grouping is inferred from the trailing marker, so a
-   * feed RENAME is not detected. "SIX: The Musical (Boleyn)" does not join
-   * the "Six" family, because the difference is in the stem, not the marker.
-   * Pass an alias map (normalized -> normalized, as title_aliases.json
-   * produces) to correct those by hand.
+   * Grouping is inferred from the trailing marker, so a feed RENAME is not
+   * detected on its own: "SIX: The Musical (Boleyn)" differs from "Six
+   * (Boleyn)" in the stem, not the marker. setAliases() takes the raw
+   * title_aliases.json and folds those together by hand.
+   *
+   * The map is normalized HERE rather than reused from BTD.state.titleAliases,
+   * which data.js builds with its own normalizeName. The two normalizers
+   * disagree - data.js strips a leading "the", signals.js keeps it - so
+   * data.js's map is keyed "lion king rafiki" where this module looks up
+   * "the lion king rafiki", and every aliased title beginning with "The"
+   * would silently miss.
    */
 
   var CYCLE_MARKER = /\s+(?:pre|i{1,3}|\d{4}|\d{1,2})$/;
@@ -47,10 +53,24 @@
       .replace(/\([^)]*\)/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
   }
 
+  /* Raw title_aliases.json -> a map keyed by THIS module's normalizer. */
+  var _aliases = null;
+  function normalizeAliasMap(raw) {
+    var out = {};
+    if (!raw || typeof raw !== 'object') return out;
+    Object.keys(raw).forEach(function (k) { out[norm(k)] = norm(raw[k]); });
+    return out;
+  }
+  function setAliases(raw) {
+    _aliases = normalizeAliasMap(raw);
+    return _aliases;
+  }
+
   function familyKey(title, aliases) {
     var key = norm(title);
     if (!key) return '';
-    if (aliases && aliases[key]) key = aliases[key];
+    var map = aliases || _aliases;
+    if (map && map[key]) key = map[key];
     var prev = key;
     while (true) {
       var next = key.replace(CYCLE_MARKER, '').trim();
@@ -87,7 +107,7 @@
    */
   function cyclesFor(title, records, options) {
     options = options || {};
-    var aliases = options.aliases || (root.BTD.state && root.BTD.state.titleAliases) || null;
+    var aliases = options.aliases || _aliases || null;
     var fam = familyKey(title, aliases);
     if (!fam) return null;
 
@@ -151,5 +171,5 @@
     };
   }
 
-  root.BTD.cycles = { familyKey: familyKey, cyclesFor: cyclesFor };
+  root.BTD.cycles = { familyKey: familyKey, cyclesFor: cyclesFor, setAliases: setAliases };
 })(window);
