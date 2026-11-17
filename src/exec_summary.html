@@ -1980,10 +1980,16 @@
           fetch('data/factsheets.json', { cache: 'no-store' })
             .then((r) => (r.ok ? r.json() : {}))
             .catch(() => ({})),
+          fetch('data/title_aliases.json', { cache: 'no-store' })
+            .then((r) => (r.ok ? r.json() : {}))
+            .catch(() => ({})),
         ])
-          .then(([data, peers, seasonsRaw, ctxRaw, fsRaw]) => {
+          .then(([data, peers, seasonsRaw, ctxRaw, fsRaw, aliasRaw]) => {
             if (seasonsRaw) _buildSeasons(seasonsRaw);
             _factsheets = fsRaw && fsRaw.shows ? fsRaw.shows : {};
+            /* Raw map on purpose - cycles.js normalizes it with its own
+             * normalizer, which differs from data.js's. See cycles.js. */
+            if (window.BTD && BTD.cycles) BTD.cycles.setAliases(aliasRaw || {});
             CONTEXT = ctxRaw || {};
             window.PEER_META = {};
             (peers.venues || []).forEach((v) => (PEER_META[v.theatre + '|' + v.city] = v));
