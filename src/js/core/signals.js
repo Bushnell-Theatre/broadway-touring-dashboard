@@ -25,10 +25,23 @@
   function uniq(rows, fn) { return root.BTD.metrics.uniqueCount(rows || [], fn); }
   function activeRows(rows) { return (rows || []).filter(function (r) { return !r.no_engagement || hasPerformanceData(r); }); }
   function hasPerformanceData(r) { return !!r && ['num_perf','gross_gross','gross_potential','gg_pct_gp','paid_tix','total_tix','capacity','cap_paid','cap_total','avg_adm'].some(function (k) { var v = r[k]; return v != null && v !== '' && Number.isFinite(+v); }); }
+  /* A season show may set match_exact to bind itself to exactly one feed title.
+   * The substring fallback below is deliberately loose - it is what lets
+   * "Mamma Mia!" reach "Mamma Mia! (25th Anniversary)" - but it also merges
+   * separate tour cycles whose feed names nest inside one another, such as
+   * "Jersey Boys 2" inside "Jersey Boys 2026", or "Waitress" inside
+   * "Waitress 2026". Those merges cannot be undone from seasons.json alone,
+   * because the shorter stored title is always a substring of the longer
+   * needle. match_exact opts a single show out of the fallback; every show
+   * without it keeps the existing behaviour. */
   function rowsForShow(show, records) {
     var needle = normalizeName(matchOf(show));
     if (!needle) return [];
-    return (records || root.BTD.state.all || []).filter(function (r) {
+    var all = records || root.BTD.state.all || [];
+    if (show && typeof show === 'object' && show.match_exact) {
+      return all.filter(function (r) { return normalizeName(r.show) === needle; });
+    }
+    return all.filter(function (r) {
       var hay = normalizeName(r.show);
       return hay === needle || hay.indexOf(needle) >= 0 || needle.indexOf(hay) >= 0;
     });
