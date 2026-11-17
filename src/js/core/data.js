@@ -92,6 +92,7 @@
           return {
             title: s.title || s.name || s.league_name || '',
             match: s.match || s.league_name || s.name || s.title || '',
+            match_exact: !!s.match_exact,
             open: s.open || null,
             close: s.close || null,
             sub: !!s.sub
