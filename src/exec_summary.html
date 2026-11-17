@@ -2130,6 +2130,14 @@
       }
 
       function showTab(t) {
+        /* Guard — a tab name with no matching panel would deactivate every
+           panel and then throw on the missing element, leaving the page blank
+           until reload. Bail before touching anything. Same guard on all four
+           pages. */
+        if (!$('tab-' + t)) {
+          console.warn('showTab: no panel #tab-' + t);
+          return;
+        }
         document
           .querySelectorAll('.nav-tab')
           .forEach((n, i) =>
