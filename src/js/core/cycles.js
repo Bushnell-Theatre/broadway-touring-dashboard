@@ -66,20 +66,23 @@
     return _aliases;
   }
 
+  /* Alias and marker-strip are interleaved, because either can expose the
+   * other. "A Beautiful Noise Pre" only reaches its alias once "Pre" is
+   * stripped, while "SIX: The Musical (Boleyn)" is aliased before any
+   * stripping happens. The guard bounds a map that cycles back on itself. */
   function familyKey(title, aliases) {
     var key = norm(title);
     if (!key) return '';
     var map = aliases || _aliases;
-    if (map && map[key]) key = map[key];
-    var prev = key;
-    while (true) {
+    var guard = 0;
+    while (guard++ < 8) {
+      if (map && map[key] && map[key] !== key) { key = map[key]; continue; }
       var next = key.replace(CYCLE_MARKER, '').trim();
       /* A title that is nothing but a marker ("1776") must keep its name. */
       if (!next || next === key) break;
-      prev = key;
       key = next;
     }
-    return key || prev;
+    return key;
   }
 
   var PERF = ['num_perf', 'gross_gross', 'gross_potential', 'gg_pct_gp', 'paid_tix',
