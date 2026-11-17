@@ -5330,6 +5330,13 @@
       }
 
       function showTab(name) {
+        /* Guard — a tab name with no matching panel would leave every panel
+           hidden and the page blank. Bail before touching anything. Same
+           guard on all four pages. */
+        if (!document.getElementById('tab-' + name)) {
+          console.warn('showTab: no panel #tab-' + name);
+          return;
+        }
         const names = ['charts', 'rankings', 'analytics', 'seasons', 'peers', 'table', 'faq'];
         document.querySelectorAll('.nav-tab').forEach((t, i) => {
           t.classList.toggle('active', names[i] === name);
