@@ -1,5 +1,5 @@
 {
   "dashboard":   { "version": "v5.2", "date": "September 17, 2026" },
-  "programming": { "version": "v7.1", "date": "November 17, 2026" },
-  "exec_summary":{ "version": "v7.1", "date": "November 17, 2026" }
+  "programming": { "version": "v7.2", "date": "November 17, 2026" },
+  "exec_summary":{ "version": "v7.2", "date": "November 17, 2026" }
 }

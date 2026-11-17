@@ -87,8 +87,8 @@ bump with a stale date is misleading.
 | Page | Current | Last meaningful change |
 |---|---|---|
 | dashboard.html | v5.2 | September 17, 2026 — dashboard export: filtered Data Table CSV, chart PNG/ZIP and PDF, classified browser print |
-| programming.html | v7.1 | November 17, 2026 — per-show tour-cycle pinning (`match_exact`); Waitress and Jersey Boys now score on their 2026 tours only |
-| exec_summary.html | v7.1 | November 17, 2026 — per-show tour-cycle pinning (`match_exact`); Waitress and Jersey Boys now score on their 2026 tours only |
+| programming.html | v7.2 | November 17, 2026 — Tour History panel: a title’s performance across every League feed cycle, with the current version broken out and concurrent companies and pre-Broadway tryouts handled separately |
+| exec_summary.html | v7.2 | November 17, 2026 — Tour History panel: a title’s performance across every League feed cycle, with the current version broken out and concurrent companies and pre-Broadway tryouts handled separately |
 
 ---
 
