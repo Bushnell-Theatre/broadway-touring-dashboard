@@ -1169,6 +1169,16 @@
             _factsheets = fsj && fsj.shows ? fsj.shows : {};
           }
         } catch (e) {}
+        /* Tour-cycle grouping reads the alias map raw and normalizes it with
+         * its own normalizer - see cycles.js. Absent aliases it still groups
+         * by the feed's trailing cycle marker, so a failure here is degraded,
+         * not fatal. */
+        try {
+          const tar = await fetch('data/title_aliases.json', { cache: 'no-store' });
+          if (tar.ok && window.BTD && BTD.cycles) BTD.cycles.setAliases(await tar.json());
+        } catch {
+          /* optional: without it, grouping falls back to the feed's cycle markers */
+        }
         ALL = (Array.isArray(data) ? data : data.records || []).map((d) => ({
           ...d,
           week_of: d.week_of ? d.week_of.slice(0, 10) : null,
