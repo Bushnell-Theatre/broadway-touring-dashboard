@@ -130,7 +130,9 @@ export default [
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'commonjs',
-      globals: { ...globals.node },
+      // Node for the test file itself, browser for the callbacks handed to
+      // page.evaluate() — those run inside the page, not in Node.
+      globals: { ...globals.node, ...globals.browser },
     },
     rules: SHARED_RULES,
   },

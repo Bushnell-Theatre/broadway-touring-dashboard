@@ -171,3 +171,35 @@ test.describe('tab navigation', () => {
     });
   }
 });
+
+/*
+ * The guard itself. Every page's showTab() returns early when the named panel
+ * does not exist, instead of clearing .active from every panel and then
+ * failing on the missing element.
+ *
+ * This is the regression test for the bug that started this suite: the
+ * programming.html Decision View pills called showTab('current') and
+ * showTab('future') for panels that were never built, and the page went blank.
+ * The test above catches a *control* that names a missing panel; this one
+ * catches the removal of the guard that makes such a mistake survivable.
+ */
+test.describe('showTab guard', () => {
+  for (const name of PAGES) {
+    test(`${name} — an unknown tab name leaves the page intact`, async ({ page }) => {
+      const errors = collectErrors(page);
+      await load(page, name);
+
+      const before = await page.locator('.panel.active').getAttribute('id');
+      expect(before, `${name}: no panel was active to begin with`).toBeTruthy();
+
+      await page.evaluate(() => window.showTab('definitely-not-a-tab'));
+
+      const after = page.locator('.panel.active');
+      await expect(after, `${name}: the unknown tab name deactivated every panel`).toHaveCount(1);
+      expect(await after.getAttribute('id'), `${name}: the active panel changed`).toBe(before);
+
+      const thrown = errors.filter((e) => e.startsWith('pageerror:'));
+      expect(thrown, `${name}: showTab threw on an unknown tab name:\n${thrown.join('\n')}`).toEqual([]);
+    });
+  }
+});
