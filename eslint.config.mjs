@@ -123,4 +123,15 @@ export default [
     },
     rules: SHARED_RULES,
   },
+
+  // Playwright smoke tests and their config.
+  {
+    files: ['test/**/*.js', 'playwright.config.js'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'commonjs',
+      globals: { ...globals.node },
+    },
+    rules: SHARED_RULES,
+  },
 ];

@@ -19,3 +19,8 @@ src/data/validation_report.json
 
 # Raw source data — processed versions live in src/data/
 data/*.csv
+
+# Playwright smoke-test output
+test-results/
+playwright-report/
+.playwright/
