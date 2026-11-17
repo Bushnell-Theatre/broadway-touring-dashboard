@@ -335,9 +335,7 @@
           <span class="sidebar-label">Decision View</span>
           <div class="pill-row">
             <button class="pill active" data-tab="brief" onclick="showTab('brief')">Brief</button>
-            <button class="pill" data-tab="current" onclick="showTab('current')">Current</button>
             <button class="pill" data-tab="history" onclick="showTab('history')">History</button>
-            <button class="pill" data-tab="future" onclick="showTab('future')">Future</button>
           </div>
         </div>
         <div class="sidebar-section">
@@ -1267,6 +1265,14 @@
       }
 
       function showTab(tab) {
+        /* Guard — a tab name with no matching panel would deactivate every
+           panel and then throw on the missing element, leaving the page blank
+           until reload. Bail before touching anything. Same guard on all four
+           pages. */
+        if (!$('tab-' + tab)) {
+          console.warn('showTab: no panel #tab-' + tab);
+          return;
+        }
         STATE.tab = tab;
         document.querySelectorAll('.panel').forEach((p) => p.classList.remove('active'));
         $('tab-' + tab).classList.add('active');
