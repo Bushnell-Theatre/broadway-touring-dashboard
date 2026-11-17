@@ -1,6 +1,11 @@
 {
   "routes": [
     {
+      "route": "/box_office.html",
+      "redirect": "/index.html",
+      "statusCode": 301
+    },
+    {
       "route": "/.auth/login/github",
       "statusCode": 404
     },

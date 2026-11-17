@@ -174,7 +174,6 @@ body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-
 
 /* ── SIDEBAR TOGGLE (tablet/iPad) ───────────────────────────────────────────
  * Shared across dashboard.html, programming.html, exec_summary.html.
- * box_office.html has no sidebar toggle — unaffected.
  * Reveal rule lives here; slide-in behavior is in the 900px breakpoint below.
  * ────────────────────────────────────────────────────────────────────────── */
 .sidebar-toggle {
@@ -251,7 +250,7 @@ select:focus, input:focus { outline: 2px solid var(--amber); outline-offset: 2px
 .nav-tab:hover { color: var(--ink); background: rgba(0,56,101,.06); border-bottom-color: var(--ink2); }
 .nav-tab:focus-visible { outline: 2px solid var(--amber); outline-offset: -2px; border-bottom-color: var(--amber); }
 .nav-tab.active { color: var(--bg); background: var(--ink); border-bottom-color: var(--ink); }
-/* Push tab(s) to the right edge — used on dashboard and box_office */
+/* Push tab(s) to the right edge — used on dashboard */
 .nav-tab.tab-right { margin-left: auto; }
 .nav-tab.tab-right ~ .nav-tab.tab-right { margin-left: 0; }
 
