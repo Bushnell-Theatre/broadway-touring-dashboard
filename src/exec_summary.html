@@ -30,6 +30,7 @@
     <script src="js/core/filters.js"></script>
     <script src="js/core/data.js"></script>
     <script src="js/core/signals.js"></script>
+    <script src="js/core/cycles.js"></script>
     <script src="js/core/context.js"></script>
     <script src="js/core/seasons.js"></script>
     <script src="js/core/tabs.js"></script>
@@ -2679,6 +2680,68 @@
         }
       }
 
+      /* Tour History - see programming.html; the two pages share this panel
+       * and must not diverge. Reads ALL, not the filtered window: the
+       * question is the title's whole touring life. */
+      function tourHistoryHtml(p) {
+        if (!window.BTD || !BTD.cycles || !BTD.cycles.cyclesFor) return '';
+        var tc = BTD.cycles.cyclesFor(p.show.match || p.show.title, ALL);
+        if (!tc) return '';
+        var h = '<div style="margin-top:14px"><div class="card-hd" style="margin-bottom:8px">Tour History</div>';
+        if (tc.cycles.length < 2) {
+          h +=
+            '<div style="font-size:.6rem;color:var(--ink3)">First touring cycle on record - ' +
+            tc.overall.weeks + ' active ' + (tc.overall.weeks === 1 ? 'week' : 'weeks') +
+            ' at ' + pct(tc.overall.capPaid) + ' paid capacity. No earlier version in the feed.</div></div>';
+          return h;
+        }
+        h +=
+          '<div style="font-size:.6rem;color:var(--ink3);margin-bottom:6px">Title across all versions: <strong>' +
+          tc.overall.weeks + '</strong> active weeks, <strong>' + pct(tc.overall.capPaid) +
+          '</strong> paid capacity, <strong>' + fmt$(tc.overall.avgGross) + '</strong> average gross.</div>';
+        h +=
+          '<table class="mini-table"><thead><tr><th>Version</th><th class="num">Wks</th><th>Ran</th>' +
+          '<th class="num">Cap</th><th class="num">Avg Gross</th><th class="num">vs prior</th></tr></thead><tbody>';
+        tc.cycles.forEach(function (c, i) {
+          var tag = c.isPre
+            ? ' <span class="badge badge-secondary">tryout</span>'
+            : !tc.concurrent && i === tc.cycles.length - 1
+              ? ' <span class="badge badge-primary">current</span>'
+              : '';
+          var delta = '<span style="color:var(--ink3)">-</span>';
+          if (c.capDelta != null) {
+            var up = c.capDelta > 0;
+            delta =
+              '<span style="color:' + (up ? 'var(--cobalt)' : 'var(--rose)') + '">' +
+              (up ? '+' : '') + c.capDelta.toFixed(1) + '</span>';
+          }
+          h +=
+            '<tr><td>' + esc(c.title) + tag + '</td><td class="num">' + c.weeks + '</td><td>' +
+            fmtDate(c.first) + ' - ' + fmtDate(c.last) + '</td><td class="num">' + pct(c.capPaid) +
+            '</td><td class="num">' + fmt$(c.avgGross) + '</td><td class="num">' + delta + '</td></tr>';
+        });
+        h += '</tbody></table>';
+        if (tc.concurrent) {
+          h +=
+            '<div style="font-size:.58rem;color:var(--ink3);margin-top:4px">These companies toured at the ' +
+            'same time rather than one after another - parallel companies of one production, so no ' +
+            'version-over-version change is shown.</div>';
+        } else {
+          if (tc.cycles.some(function (c) { return c.overlapsPrev; })) {
+            h +=
+              '<div style="font-size:.58rem;color:var(--ink3);margin-top:4px">A version that overlaps the one ' +
+              'before it is a handover rather than a fresh cycle, so no change is shown against it.</div>';
+          }
+          if (tc.cycles.some(function (c) { return c.isPre; })) {
+            h +=
+              '<div style="font-size:.58rem;color:var(--ink3);margin-top:4px">A pre-Broadway tryout is not a ' +
+              'tour and is skipped when comparing versions.</div>';
+          }
+        }
+        h += '</div>';
+        return h;
+      }
+
       function detailHtml(p, mode = seasonMode()) {
         const _psig = BTD.page.planningSignals(p);
         const recent = [...p.rows].sort((a, b) => (b.week_of || '').localeCompare(a.week_of || '')).slice(0, 8);
@@ -2805,7 +2868,7 @@
         }
         // Display values (cap, peerCap, count) use filteredDisplay; signal uses canonical
         const _fd = p.filteredDisplay || p.metrics;
-        return `<div class="card-title">${p.show.title}</div><div class="card-sub">Matched on "${p.show.match || p.show.title}" · ${p.show.sub ? 'subscription package' : 'non-subscription/add-on'} · ${_fd.count} records</div><div class="explainer"><p><strong>${mode === 'past' ? 'Historical read' : 'Planning Signal'}:</strong> ${_psig.planningRead}. ${_psig.interpretation} Confidence is <strong>${p.signals.confidence.label}</strong>: ${confidenceText(p)}</p></div>${signalRow(_psig)}<div class="metric-row"><div class="metric"><div class="val ${p.score != null && p.score >= SCORE_MED ? 'good' : 'warn'}">${scoreCellText(p)}</div><div class="lbl">${label}</div></div><div class="metric"><div class="val">${pct(_fd.cap)}</div><div class="lbl">Avg Cap</div></div><div class="metric"><div class="val">${pct(_fd.peerCap)}</div><div class="lbl">Peer Cap</div></div>${velocityHtml}</div><table class="mini-table" style="margin-top:14px"><thead><tr><th>${mode === 'past' ? 'Historical Markets' : 'Recent Market'}</th><th>Week</th><th class="num">Gross</th><th class="num">Cap</th></tr></thead><tbody>${recent.length ? recent.map((r) => `<tr><td>${r.theatre}<br><span style="color:var(--ink3);font-size:.58rem">${r.city}</span></td><td>${fmtDate(r.week_of)}${contextBadge(r.week_of)}</td><td class="num">${fmt$(r.gross_gross)}</td><td class="num">${pct(r.cap_paid)}</td></tr>`).join('') : '<tr><td colspan="4" class="empty">No active tour records found.</td></tr>'}</tbody></table></div>${salesWindowHtml}${headwindHtml}${(() => {
+        return `<div class="card-title">${p.show.title}</div><div class="card-sub">Matched on "${p.show.match || p.show.title}" · ${p.show.sub ? 'subscription package' : 'non-subscription/add-on'} · ${_fd.count} records</div><div class="explainer"><p><strong>${mode === 'past' ? 'Historical read' : 'Planning Signal'}:</strong> ${_psig.planningRead}. ${_psig.interpretation} Confidence is <strong>${p.signals.confidence.label}</strong>: ${confidenceText(p)}</p></div>${signalRow(_psig)}<div class="metric-row"><div class="metric"><div class="val ${p.score != null && p.score >= SCORE_MED ? 'good' : 'warn'}">${scoreCellText(p)}</div><div class="lbl">${label}</div></div><div class="metric"><div class="val">${pct(_fd.cap)}</div><div class="lbl">Avg Cap</div></div><div class="metric"><div class="val">${pct(_fd.peerCap)}</div><div class="lbl">Peer Cap</div></div>${velocityHtml}</div><table class="mini-table" style="margin-top:14px"><thead><tr><th>${mode === 'past' ? 'Historical Markets' : 'Recent Market'}</th><th>Week</th><th class="num">Gross</th><th class="num">Cap</th></tr></thead><tbody>${recent.length ? recent.map((r) => `<tr><td>${r.theatre}<br><span style="color:var(--ink3);font-size:.58rem">${r.city}</span></td><td>${fmtDate(r.week_of)}${contextBadge(r.week_of)}</td><td class="num">${fmt$(r.gross_gross)}</td><td class="num">${pct(r.cap_paid)}</td></tr>`).join('') : '<tr><td colspan="4" class="empty">No active tour records found.</td></tr>'}</tbody></table></div>${tourHistoryHtml(p)}${salesWindowHtml}${headwindHtml}${(() => {
           // Revenue Questions section — uses filteredDisplay for display values
           const _m = p.filteredDisplay || p.metrics;
           if (p.isFutureNewTour || _m.count < 2) return '';
