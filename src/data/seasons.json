@@ -7,8 +7,8 @@
       { "name": "BOOP! The Betty Boop Musical",           "league_name": "BOOP! The Musical",                                 "sub": true,  "open": "2026-11-10", "close": "2026-11-15" },
       { "name": "Hell's Kitchen",                         "league_name": "Hell's Kitchen",                                    "sub": true,  "open": "2026-12-08", "close": "2026-12-13" },
       { "name": "Maybe Happy Ending",                     "league_name": "Maybe Happy Ending",                                "sub": true,  "open": "2027-02-16", "close": "2027-02-21" },
-      { "name": "Jersey Boys",                            "league_name": "Jersey Boys 2026",       "match_exact": true,       "sub": false, "open": "2027-03-09", "close": "2027-03-14" },
-      { "name": "Waitress",                               "league_name": "Waitress 2026",          "match_exact": true,       "sub": true,  "open": "2027-03-30", "close": "2027-04-04" },
+      { "name": "Jersey Boys",                            "league_name": "Jersey Boys",                                       "sub": false, "open": "2027-03-09", "close": "2027-03-14" },
+      { "name": "Waitress",                               "league_name": "Waitress",                                          "sub": true,  "open": "2027-03-30", "close": "2027-04-04" },
       { "name": "Operation Mincemeat: A New Musical",     "league_name": "Operation Mincemeat: A New Musical",                "sub": true,  "open": "2027-05-04", "close": "2027-05-09" },
       { "name": "The Outsiders",                          "league_name": "The Outsiders",                                     "sub": true,  "open": "2027-06-01", "close": "2027-06-06" }
     ]
