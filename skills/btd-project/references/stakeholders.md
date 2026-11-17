@@ -1,23 +1,5 @@
 # BTD Stakeholders Reference
 
-## Brandon — Box Office Manager
-
-**Dashboard:** `box_office.html`
-**Role:** Pricing decisions and scenario modeling for Broadway shows
-**Needs:**
-- Per-show, per-performance pricing scenario modeling
-- Section-level sold/unsold visibility
-- Print-ready justification record for internal approval
-- Paciolan POS integration (future)
-
-**Key concepts Brandon works with:**
-- Contract Gross Potential vs Current Gross vs Adjusted Gross
-- Price Levels A/B/C (from fact sheets — not Broadway League tiers)
-- Holds (house, presenter, trouble) reducing sellable inventory
-- Face value pricing excluding $4.00 restoration fee
-
----
-
 ## Tom — Director of Programming
 
 **Dashboard:** `programming.html`

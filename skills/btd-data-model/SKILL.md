@@ -1,6 +1,6 @@
 ---
 name: btd-data-model
-description: Broadway Touring Dashboard (BTD) data model, JSON schemas, field definitions, and data integrity rules for The Bushnell Center for the Performing Arts. Use this skill when working with any BTD JSON data file (data.json, seasons.json, venues.json, factsheets.json, peers.json, context.json, shows.json, awards.json), when writing process_touring.py pipeline changes, when adding new fields to any BTD data file, when cross-referencing data between BTD files, or when the user asks about seat counts, gross calculations, price levels, holds, sellable capacity, or any BTD data field definition.
+description: Broadway Touring Dashboard (BTD) data model, JSON schemas, field definitions, and data integrity rules for The Bushnell Center for the Performing Arts. Use this skill when working with any BTD JSON data file (data.json, seasons.json, factsheets.json, peers.json, context.json, shows.json, awards.json), when writing process_touring.py pipeline changes, when adding new fields to any BTD data file, when cross-referencing data between BTD files, or when the user asks about seat counts, gross calculations, price levels, holds, sellable capacity, or any BTD data field definition.
 ---
 
 # BTD Data Model Skill
@@ -20,34 +20,11 @@ These have caused real bugs. Get them right.
 | Concept | Value | Source | Use for |
 |---|---|---|---|
 | Contracted sellable per perf | 2,704 | factsheets.json `contractedSellablePerPerf` | All revenue calculations |
-| Section sum (sellable) | 2,704 | Sum of venues.json `sections[].seats` | Validation check |
-| Physical house capacity | 2,799 | venues.json `physicalHouseReference.totalHouseCapacity` | Reference only — NOT for calculations |
 | Run total sellable | varies | factsheets.json `sellableCapacityRunTotal` | Informational only |
 
-**The 2,704 vs 2,799 gap (95 seats):** Physical seats that are not in named sellable sections (wheelchair, companion, aisle, etc.). Physical-to-sellable section mapping is not yet complete — do not use 2,799 in any calculation.
+**Always use the contracted sellable figure from factsheets.json.** Physical house capacity (2,799 for Mortensen) is a larger number that includes seats not in named sellable sections — wheelchair, companion, aisle. It lived in `venues.json`, which was removed with the box office tooling, and it was never valid for revenue calculations.
 
 **The 2,781 bug (fixed):** Six shows previously had `contractedSellablePerPerf: 2781` — this was the run total (22,248) mistakenly stored in the per-performance field. All corrected to 2,704.
-
-### Gross Metric Definitions
-
-> **The box office scenario model (`src/box_office.html`) is abandoned** — not an
-> active product experience. The `contractPotential`/`captured`/`adjusted`/`delta`
-> field names below describe that model's `calcRunTotals()` output; its
-> per-performance function (`calcPerfTotals()`) actually names the per-performance
-> field `current`, not `contractPotential` (that name is only used at the
-> run-level sum), and also tracks a `hasAdjustments` flag not listed here. Given
-> the model is abandoned, this table is kept as historical reference, not
-> verified against the current code field-for-field.
-
-| Field name | Meaning | Never confuse with |
-|---|---|---|
-| `contractPotential` | All sellable × contracted price (full sell-through) — run-level only; per-performance uses `current` | Current sales |
-| `captured` | Sold seats × contracted price (actual revenue) | Projected revenue |
-| `adjusted` | Unsold × adjusted price + sold × contracted price | Contract potential |
-| `delta` | adjusted − contractPotential | adjusted − captured |
-| `splitPointGross` | Contractual gross threshold from fact sheet | Profitability threshold |
-| `grossPotentialExclRest` | Fact sheet GP excluding $4 restoration | League reporting gross |
-| `grossPotentialWithRest` | Fact sheet GP including $4 restoration | Display reference only |
 
 ### Price Level vs Broadway League Tier
 
@@ -78,22 +55,6 @@ These have caused real bugs. Get them right.
 | seasons.json | `shows[].name` | factsheets.json `shows{}` keys (exact match for 2026-27) |
 | seasons.json | `shows[].league_name` | data.json `show` field |
 | factsheets.json | `shows{}` keys (nested under `shows`, not top-level — file shape is `{_meta, shows: {...}}`) | seasons.json `name` (exact) |
-| venues.json | `sections[].name` | factsheets.json `pricing[level]` keys |
-| venues.json | `sections[].nameAliases[]` | Subscriber pricing sheet names |
-
-**Name matching helper for venues.json → factsheets.json:**
-```javascript
-function resolveSectionName(hallKey, rawName) {
-  var hall = VENUES[hallKey];
-  if (!hall) return null;
-  for (var i = 0; i < hall.sections.length; i++) {
-    var s = hall.sections[i];
-    if (s.name === rawName) return s;
-    if (s.nameAliases && s.nameAliases.indexOf(rawName) !== -1) return s;
-  }
-  return null;
-}
-```
 
 ---
 
@@ -111,14 +72,13 @@ Before adding or changing any field in any BTD JSON file:
 
 ## Holds Data Model
 
-Holds appear in two places with different granularity:
+`factsheets.json holds{}` carries performance-level totals, and that is the only
+holds data in this repository.
 
-| Source | Granularity | Use |
-|---|---|---|
-| `factsheets.json holds{}` | Performance-level totals | Reference display; not distributed to sections |
-| Per-section `holds` in box_office.html `_performances` | Section-level | Actual calculation input |
-
-**Do not auto-distribute fact sheet holds across sections.** Brandon manually allocates holds per section in the box office modal. Fact sheet holds are displayed as a reference note only.
+**Do not distribute fact sheet holds across sections.** They are performance-level
+figures; splitting them per section requires a human allocation that used to happen
+in the box office tooling, which has been deprecated and moved to its own project.
+Treat these as a reference display only.
 
 ---
 
@@ -142,7 +102,6 @@ All data files live at `src/data/` in the repo and are served from:
 |---|---|
 | `data.json` | Broadway League touring records (machine-generated, do not edit manually). Shape: `{generated_at, record_count, records: [...]}` |
 | `seasons.json` | Bushnell Broadway season show list (manually maintained) |
-| `venues.json` | Hall/section/seat canonical data |
 | `factsheets.json` | Per-show contracted engagement data. Shape: `{_meta, shows: {...}}` — see Cross-File Name Matching above |
 | `peers.json` | Peer venue definitions — 5 types (`size`, `proximity`, `market`, `size_extended`, `reference_only`); each venue's `peer_types` is an array |
 | `context.json` | NOAA weather + FRED economic enrichment, keyed by `week_of` |

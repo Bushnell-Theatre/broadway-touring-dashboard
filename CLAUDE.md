@@ -89,7 +89,6 @@ bump with a stale date is misleading.
 | dashboard.html | v5.2 | September 17, 2026 — dashboard export: filtered Data Table CSV, chart PNG/ZIP and PDF, classified browser print |
 | programming.html | v7.0 | October 9, 2026 — weekly intelligence callout temporarily disabled pending the production-title identity review |
 | exec_summary.html | v7.0 | October 9, 2026 — weekly intelligence callout temporarily disabled pending the production-title identity review |
-| box_office.html | v2.1 | June 30, 2026 — venues.json integration |
 
 ---
 

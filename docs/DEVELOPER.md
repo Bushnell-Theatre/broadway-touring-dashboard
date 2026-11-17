@@ -16,8 +16,6 @@ src/
 ├── programming.html        Programming team page
 ├── exec_summary.html       Executive summary page
 ├── dashboard.html          Operations / QA page
-├── box_office.html         Box office scenario model — suspended, not an
-│                           active product experience
 ├── unauthorized.html       Azure Entra auth failure page
 │
 ├── css/
@@ -62,7 +60,6 @@ src/
     ├── media_signals.json           Media/press signal tracking
     ├── media_sources.json           Media source metadata
     ├── title_aliases.json           Show title alias/normalization map
-    ├── venues.json                  Venue metadata for the box office model
     ├── versions.json                Page version numbers (see CLAUDE.md → Versioning)
     ├── exec_brief_highlight.json    Season-keyed AI weekly callout for exec_summary.html
     ├── programming_highlight.json   Season-keyed AI weekly callout for programming.html

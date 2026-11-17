@@ -37,7 +37,7 @@ records that context on the image or page.
 Export is currently **Dashboard-only**. Programming and Executive Summary have no
 export controls.
 
-The former Box Office scenario model remains in the repository, but its work is suspended and it is not presented as an active product experience.
+The Box Office scenario model that used to live here has been deprecated — that work moved to its own project.
 
 All active pages are in development. They are different views of the same evidence, not production/demonstration versions of one another.
 

@@ -1,6 +1,6 @@
 ---
 name: btd-project
-description: Broadway Touring Dashboard (BTD) project conventions, architecture, and coding standards for The Bushnell Center for the Performing Arts. Use this skill for ANY task involving the BTD project files: dashboard.html, exec_summary.html, programming.html, box_office.html, index.html, utils.js, styles.css, charts.css, process_touring.py, watcher.py, or any file in src/data/. Also use when writing Claude Code prompts targeting BTD files, when working with BTD JSON data files (data.json, seasons.json, peers.json, venues.json, factsheets.json, context.json, shows.json, awards.json), or when the user mentions Brandon, Tom, Stephanie, Alex, Paciolan, Broadway League, Bushnell Broadway, or the box office scenario model.
+description: Broadway Touring Dashboard (BTD) project conventions, architecture, and coding standards for The Bushnell Center for the Performing Arts. Use this skill for ANY task involving the BTD project files: dashboard.html, exec_summary.html, programming.html, index.html, utils.js, styles.css, charts.css, process_touring.py, watcher.py, or any file in src/data/. Also use when writing Claude Code prompts targeting BTD files, when working with BTD JSON data files (data.json, seasons.json, peers.json, factsheets.json, context.json, shows.json, awards.json), or when the user mentions Tom, Stephanie, Alex, Paciolan, Broadway League, or Bushnell Broadway.
 ---
 
 # Broadway Touring Dashboard — Project Skill
@@ -58,7 +58,6 @@ Use existing CSS custom properties (`var(--ink)`, `var(--teal)`, `var(--amber)`,
 | `src/dashboard.html` | Primary Sales Intelligence Dashboard | Tom (programming) |
 | `src/exec_summary.html` | Executive summary / retrospective | Stephanie (COO) |
 | `src/programming.html` | Programming decision support | Tom |
-| `src/box_office.html` | Box office scenario modeler | Brandon |
 | `src/index.html` | Development hub / landing page | All |
 | `src/js/utils.js` | Shared JavaScript utilities (true globals — NOT an IIFE) | All dashboards |
 | `src/js/core/*.js` | BTD namespace modules — 16 files, loaded in dependency order | All dashboards |
@@ -74,7 +73,7 @@ Use existing CSS custom properties (`var(--ink)`, `var(--teal)`, `var(--amber)`,
 
 ## JavaScript Architecture
 
-### Load order (all pages except box_office.html)
+### Load order
 
 ```
 utils.js                           ← true globals (fmt$, pct, avg, etc.)
@@ -99,8 +98,6 @@ js/core/page-common.js             → BTD.page
 js/core/dashboard-analytics.js    → BTD.dashboardAnalytics (dashboard.html only)
 ```
 
-`box_office.html` omits `js/core/charts.js` and `dashboard-analytics.js` (no Chart.js CDN on that page).
-
 ### Key invariants
 
 - **utils.js is NOT an IIFE.** Its remaining functions (`fmt$`, `pct`, etc.) are true globals — no `BTD.` prefix needed. Scoring functions (`planningSignal`, `SIGNAL_WEIGHTS`) were removed in Phase 4; only a deprecation comment remains.
@@ -122,7 +119,6 @@ All dashboards also fetch:
 - `src/data/seasons.json` — Bushnell's Broadway season show list
 - `src/data/peers.json` — Peer venue definitions
 - `src/data/context.json` — External enrichment (NOAA weather, FRED economic data)
-- `src/data/venues.json` — Hall/section physical and sellable seat data
 - `src/data/factsheets.json` — Per-show contracted data from event fact sheets
 
 `data.json` is always fetched from the live Azure URL first, with local fallback.
@@ -130,16 +126,6 @@ All dashboards also fetch:
 ---
 
 ## Dashboard-Specific Notes
-
-### box_office.html
-- Has `toggleSidebar()`, `.sidebar-toggle` button, and `.sidebar-backdrop` — identical to all other pages
-- Uses `venues.json` as the canonical source for hall/section/seat data — do NOT hardcode section arrays
-- Uses `factsheets.json` for per-show contracted pricing, holds, and performance schedules
-- Scenario model works per-performance, per-section — no global pricing grid
-- Pre-sale mode vs Live mode is auto-detected based on whether any sold counts exist
-- Revenue Signal ≠ Net Profit — this caveat must appear wherever revenue data is shown
-- Face value always excludes $4.00 restoration fee (League-compliant reporting)
-- See `references/box-office-model.md` for the full calculation spec
 
 ### dashboard.html
 - Has `toggleSidebar()`, sidebar toggle button, and sidebar backdrop — all four pages share this pattern
@@ -168,9 +154,6 @@ All dashboards also fetch:
 | GG | Gross Grosses (total revenue) | Anything else |
 | GP | Gross Potential | |
 | Cap % | GG ÷ GP × 100 — CAN exceed 100% | A simple fill rate |
-| Contract Gross Potential | All sellable seats × contracted price at full sell-through | Current collected revenue |
-| Current Gross | Actual captured revenue from sold tickets | Contract potential |
-| Adjusted Gross | Projected gross using Brandon's modified prices | |
 
 ---
 
@@ -185,7 +168,6 @@ Any change to a script, pipeline behavior, scoring formula, or data file schema 
 | Data file schema (new/renamed field) | `skills/btd-project/references/data-sources.md` |
 | How the system works at a high level | `docs/HOW_IT_WORKS.md` |
 | AI pipeline (highlights, season review) | `docs/AI_PIPELINE_PLAN.md` (`docs/AI_HIGHLIGHT_PIPELINE.md` is superseded — don't update it) |
-| Box office model calculations | `skills/btd-project/references/box-office-model.md` |
 
 Do not commit a behavior change without updating the matching doc in the same branch. If you are unsure which doc applies, ask.
 
@@ -197,8 +179,6 @@ Do not commit a behavior change without updating the matching doc in the same br
 - Any change to `process_touring.py` or `watcher.py`
 - Any new field added to `data.json` schema
 - Any rename of a CSS class used across multiple files
-- Any change to `venues.json` section names or seat counts
-- Physical seat maximum caps (not yet confirmed — do not enforce in code)
 
 ---
 
@@ -207,7 +187,6 @@ Do not commit a behavior change without updating the matching doc in the same br
 For detailed reference on specific topics, read these files as needed:
 
 - `references/data-sources.md` — All JSON file schemas and field descriptions
-- `references/box-office-model.md` — Box office calculation spec, mode detection, holds logic
 - `references/stakeholders.md` — Who uses what, what they care about
 
 ---

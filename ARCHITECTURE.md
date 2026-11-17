@@ -38,9 +38,6 @@ A fully static web application. There is no server, no API, no database. All dat
 │  src/dashboard.html      ← operations                   │
 │  src/programming.html    ← programming team             │
 │  src/exec_summary.html   ← leadership                   │
-│  src/box_office.html     ← box office scenario model     │
-│                             (suspended, not an active     │
-│                              product experience)           │
 │  src/data/*.json         ← all data files               │
 │  src/css/*.css                                          │
 │  src/js/utils.js                                        │

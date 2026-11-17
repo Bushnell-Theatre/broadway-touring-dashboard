@@ -84,69 +84,6 @@ Key notes:
 
 ---
 
-## venues.json
-
-Canonical source for Bushnell hall/section/seat data. **box_office.html must fetch this instead of using hardcoded section arrays.**
-
-**Structure:**
-```json
-{
-  "halls": {
-    "mortensen": {
-      "name": "Mortensen Hall",
-      "defaultCapacity": 2704,
-      "physicalHouseReference": {
-        "totalHouseCapacity": 2799,
-        "note": "Physical zones do not map 1:1 to sellable pricing zones"
-      },
-      "sections": [
-        {
-          "name": "Broadway Circle",
-          "seats": 244,
-          "group": "premium",
-          "nameAliases": []
-        }
-      ],
-      "standardHolds": {
-        "house": 40,
-        "presenter": 50,
-        "troubleBO": 10,
-        "troubleFOH": 10
-      }
-    },
-    "belding": {
-      "name": "Belding Theater",
-      "defaultCapacity": 908,
-      "subscriberPricingConfigured": false
-    }
-  }
-}
-```
-
-Key notes:
-- `defaultCapacity` (2704) = sum of sellable section seats = the working number for calculations
-- `physicalHouseReference.totalHouseCapacity` (2799) = confirmed from official house chart — for reference only, do not use in calculations until physical-to-sellable section mapping is complete
-- `sections[].group` = "premium" / "mid" / "economy" — for UI grouping
-- `nameAliases` = alternate names for the same section seen in fact sheets and pricing sheets
-- `standardHolds` are typical defaults — always override with show's own fact sheet holds when available
-- **Belding has no subscriber pricing configured** — hide subscriber inputs for Belding
-
-**Section name resolution helper:**
-```javascript
-function resolveSectionName(hallKey, rawName) {
-  var hall = VENUES[hallKey];
-  if (!hall) return null;
-  for (var i = 0; i < hall.sections.length; i++) {
-    var s = hall.sections[i];
-    if (s.name === rawName) return s;
-    if (s.nameAliases && s.nameAliases.indexOf(rawName) !== -1) return s;
-  }
-  return null;
-}
-```
-
----
-
 ## factsheets.json
 
 Per-show contracted engagement data for 2026-27 Broadway season. Extracted from event fact sheets.
@@ -201,7 +138,7 @@ Key notes:
 - `sellableCapacityRunTotal` = run total across all performances
 - `tier` on each performance = Price Level A/B/C (NOT Broadway League tier)
 - **Don't hardcode a "standard" price-level pattern — always read each show's own `performances[].tier`.** Checked against the live file (Aug 2026): all nine current 8-performance Mortensen shows use Tue=B, Wed=B, Thu=B, Fri=A, SatMat=A, SatEve=A, SunMat=A, SunEve=C (4×A / 3×B / 1×C), except BOOP! which starts Tue/Wed=C instead of B. A prior version of this doc claimed a different "corrected" split that doesn't match any current fact sheet — this pattern can and does change per contract, so treat any hardcoded pattern here as a snapshot, not a rule.
-- `pricing` keys use canonical section names matching `venues.json`
+- `pricing` keys use canonical Bushnell section names
 - Prices are **face value excluding $4.00 restoration** — League-compliant
 - `grossPotentialWithRest` is display-only; never use in League gross calculations
 - `splitPointGross` is contractual threshold — NOT a profitability measure; always label it as such

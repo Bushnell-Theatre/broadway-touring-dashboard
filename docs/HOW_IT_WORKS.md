@@ -36,7 +36,7 @@ Use it to review Bushnell season slates and candidate titles, compare production
 
 Use it for a condensed view of season performance, candidate signals, peer context, and notable changes.
 
-The Development Hub is the entry point to these experiences. The former Box Office scenario model is suspended and is not an active experience, even though its files remain in the repository.
+The Development Hub is the entry point to these experiences. The Box Office scenario model that used to live here has been deprecated — that work moved to its own project.
 
 ---
 
