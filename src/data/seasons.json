@@ -4,7 +4,7 @@
       { "name": "Oh, Mary!",                              "league_name": "Oh, Mary!",                                         "sub": false, "open": "2026-09-19", "close": "2026-09-23" },
       { "name": "The Great Gatsby",                       "league_name": "The Great Gatsby",                                  "sub": true,  "open": "2026-09-29", "close": "2026-10-04" },
       { "name": "Mamma Mia!",                             "league_name": "Mamma Mia!",                                        "sub": true,  "open": "2026-10-20", "close": "2026-10-25" },
-      { "name": "BOOP! The Betty Boop Musical",           "league_name": "BOOP! The Betty Boop Musical",                      "sub": true,  "open": "2026-11-10", "close": "2026-11-15" },
+      { "name": "BOOP! The Betty Boop Musical",           "league_name": "BOOP! The Musical",                                 "sub": true,  "open": "2026-11-10", "close": "2026-11-15" },
       { "name": "Hell's Kitchen",                         "league_name": "Hell's Kitchen",                                    "sub": true,  "open": "2026-12-08", "close": "2026-12-13" },
       { "name": "Maybe Happy Ending",                     "league_name": "Maybe Happy Ending",                                "sub": true,  "open": "2027-02-16", "close": "2027-02-21" },
       { "name": "Jersey Boys",                            "league_name": "Jersey Boys",                                       "sub": false, "open": "2027-03-09", "close": "2027-03-14" },
