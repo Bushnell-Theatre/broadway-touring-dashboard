@@ -1490,11 +1490,20 @@
 
         /* ── Tab switching ── */
         window.showTab = function (tab) {
+          /* Guard — a tab name with no matching panel would deactivate every
+             panel and leave the page blank. The null check below stopped the
+             throw but not the blanking, because the panels were already
+             cleared by then. Bail before touching anything. Same guard on all
+             four pages. */
+          var el = document.getElementById('tab-' + tab);
+          if (!el) {
+            console.warn('showTab: no panel #tab-' + tab);
+            return;
+          }
           document.querySelectorAll('.panel').forEach(function (p) {
             p.classList.remove('active');
           });
-          var el = document.getElementById('tab-' + tab);
-          if (el) el.classList.add('active');
+          el.classList.add('active');
           document.querySelectorAll('[data-tab]').forEach(function (b) {
             b.classList.toggle('active', b.dataset.tab === tab);
           });
