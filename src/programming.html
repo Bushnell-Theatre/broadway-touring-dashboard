@@ -25,6 +25,7 @@
     <script src="js/core/filters.js"></script>
     <script src="js/core/data.js"></script>
     <script src="js/core/signals.js"></script>
+    <script src="js/core/cycles.js"></script>
     <script src="js/core/context.js"></script>
     <script src="js/core/seasons.js"></script>
     <script src="js/core/tabs.js"></script>
@@ -1732,6 +1733,72 @@
         chartRadar(p, 'cCurrent');
       }
 
+      /* Tour History - how the title has performed across every cycle the
+       * League feed carries, with the current version broken out. Reads ALL
+       * rather than the filtered window on purpose: the question here is the
+       * title's whole touring life, not the active evidence range. */
+      function tourHistoryHtml(p) {
+        if (!window.BTD || !BTD.cycles || !BTD.cycles.cyclesFor) return '';
+        var tc = BTD.cycles.cyclesFor(p.show.match || p.show.title, ALL);
+        if (!tc) return '';
+        var esc = (BTD.format && BTD.format.escapeHtml) || function (x) { return x; };
+        var h = '<div style="margin-top:12px"><div class="card-hd" style="margin-bottom:6px">Tour History</div>';
+        if (tc.cycles.length < 2) {
+          h +=
+            '<div style="font-size:.6rem;color:var(--ink3)">First touring cycle on record - ' +
+            tc.overall.weeks + ' active ' + (tc.overall.weeks === 1 ? 'week' : 'weeks') +
+            ' at ' + pct(tc.overall.capPaid) + ' paid capacity. No earlier version in the feed.</div></div>';
+          return h;
+        }
+        h +=
+          '<div style="font-size:.6rem;color:var(--ink3);margin-bottom:6px">Title across all versions: <strong>' +
+          tc.overall.weeks + '</strong> active weeks, <strong>' + pct(tc.overall.capPaid) +
+          '</strong> paid capacity, <strong>' + fmt$(tc.overall.avgGross) + '</strong> average gross.</div>';
+        h +=
+          '<table class="mini-table"><thead><tr><th>Version</th><th class="num">Wks</th><th>Ran</th>' +
+          '<th class="num">Cap</th><th class="num">Avg Gross</th><th class="num">vs prior</th></tr></thead><tbody>';
+        tc.cycles.forEach(function (c, i) {
+          /* No "current" badge on a concurrent family: several companies run
+           * at once, so the last row by start date is not the live one. */
+          var tag = c.isPre
+            ? ' <span class="badge badge-secondary">tryout</span>'
+            : !tc.concurrent && i === tc.cycles.length - 1
+              ? ' <span class="badge badge-primary">current</span>'
+              : '';
+          var delta = '<span style="color:var(--ink3)">-</span>';
+          if (c.capDelta != null) {
+            var up = c.capDelta > 0;
+            delta =
+              '<span style="color:' + (up ? 'var(--cobalt)' : 'var(--rose)') + '">' +
+              (up ? '+' : '') + c.capDelta.toFixed(1) + '</span>';
+          }
+          h +=
+            '<tr><td>' + esc(c.title) + tag + '</td><td class="num">' + c.weeks + '</td><td>' +
+            fmtDate(c.first) + ' - ' + fmtDate(c.last) + '</td><td class="num">' + pct(c.capPaid) +
+            '</td><td class="num">' + fmt$(c.avgGross) + '</td><td class="num">' + delta + '</td></tr>';
+        });
+        h += '</tbody></table>';
+        if (tc.concurrent) {
+          h +=
+            '<div style="font-size:.58rem;color:var(--ink3);margin-top:4px">These companies toured at the ' +
+            'same time rather than one after another - parallel companies of one production, so no ' +
+            'version-over-version change is shown.</div>';
+        } else {
+          if (tc.cycles.some(function (c) { return c.overlapsPrev; })) {
+            h +=
+              '<div style="font-size:.58rem;color:var(--ink3);margin-top:4px">A version that overlaps the one ' +
+              'before it is a handover rather than a fresh cycle, so no change is shown against it.</div>';
+          }
+          if (tc.cycles.some(function (c) { return c.isPre; })) {
+            h +=
+              '<div style="font-size:.58rem;color:var(--ink3);margin-top:4px">A pre-Broadway tryout is not a ' +
+              'tour and is skipped when comparing versions.</div>';
+          }
+        }
+        h += '</div>';
+        return h;
+      }
+
       function detailHtml(p) {
         var _sig = BTD.page.planningSignals(p);
         // Display metrics use filteredDisplay (governed by Display Evidence).
@@ -1838,6 +1905,7 @@
         h += '<div class="metric"><div class="val">' + pct(m.gg, 1) + '</div><div class="lbl">Revenue GG%</div></div>';
         h += '<div class="metric"><div class="val">' + fmt$(m.gross) + '</div><div class="lbl">Avg Gross</div></div>';
         h += '</div>';
+        h += tourHistoryHtml(p);
         // Revenue quality section
         if (m.count >= 2) {
           var yieldGap = m.cap != null && m.gg != null ? m.cap - m.gg : null;
