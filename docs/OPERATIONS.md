@@ -582,6 +582,6 @@ NOAA Storm Events data needs no token — it's a public bulk CSV download. None 
 
 **Validation shows unexpected duplicates.** Check that the new XLSX doesn't overlap with previously ingested reports. The pipeline deduplicates by canonical key (`week_of|show_normalized|theatre_normalized|city|tier`). Different spellings of the same show name won't merge automatically.
 
-**Azure deploy failed.** Check the Actions tab on GitHub. The most common cause is a JavaScript syntax error — run `node --check src/js/core/*.js src/js/pages/*.js` locally before pushing.
+**Azure deploy failed.** Check the Actions tab on GitHub. The most common cause is a JavaScript syntax error — run `npm run lint` locally before pushing. It parses `src/js/**` and the inline `<script>` blocks in the HTML pages, which `node --check` could not reach.
 
 **Push rejected.** Confirm you're on the right branch (`git branch`) and pull first if behind (`git pull`).

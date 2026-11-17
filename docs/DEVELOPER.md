@@ -48,11 +48,6 @@ src/
 │   │   ├── tabs.js             Tab show/hide logic
 │   │   ├── page-common.js      Shared callout, headline, and copy logic
 │   │   └── dashboard-analytics.js  Dashboard-specific calculations
-│   │
-│   └── pages/              NOT currently loaded by any page — see note below
-│       ├── programming.page.js
-│       ├── exec-summary.page.js
-│       └── dashboard.page.js
 │
 └── data/
     ├── data.json                    All weekly touring records (~10k rows)
@@ -75,7 +70,9 @@ src/
     └── validation_report.json       Output of validate_data.py (generated on demand)
 ```
 
-**`js/pages/*.page.js` are not wired into any HTML page** — none of `dashboard.html`, `programming.html`, or `exec_summary.html` has a `<script src="js/pages/...">` tag; all three pages' actual logic lives in their inline `<script>` blocks instead. This looks like a stalled module-split refactor rather than dead weight left on purpose — worth a decision on whether to finish wiring these in or remove them, rather than treating the file tree above as a description of what's actually running.
+**`js/pages/*.page.js` has been removed.** It held a stalled module-split refactor — three page controllers that no HTML page ever loaded, while each page's real logic stayed in its inline `<script>` block. The copies had drifted far enough to be actively misleading: commit `79c811e` fixed a tab-dispatch bug in `dashboard.page.js` and shipped nothing, because the live page was the inline block all along. They were deleted in the commit that introduced this note; recover from git history if needed (`git log --diff-filter=D -- 'src/js/pages/*'`).
+
+The extraction itself is still worth doing, but it has to start from the inline blocks as they are now, not from those files. See "Page Controllers" below.
 
 ### Data pipeline (scripts/)
 
@@ -139,7 +136,10 @@ Each file opens with `window.BTD = window.BTD || {}` before adding its sub-names
 <script src="js/core/page-common.js"></script>
 
 <!-- 3. Page controller (always last) -->
-<script src="js/pages/programming.page.js"></script>
+<script>
+  /* Today this is the page's inline block. When a page's controller is
+     extracted to its own file, it goes here, in this position. */
+</script>
 ```
 
 ---
@@ -272,6 +272,12 @@ The defensive guard (`BTD.page && BTD.page.myHelper`) ensures the page degrades 
 ---
 
 ## Page Controllers
+
+**Each page's controller is currently the inline `<script>` block in its own
+`.html` file** — roughly 10,000 lines across the four pages. There are no
+separate controller files; the ones that existed were never loaded and have
+been removed. Everything in this section describes that inline code, and
+applies equally to a controller extracted into its own file later.
 
 Each page controller is a **classic non-module script**. It uses module-level `let`/`var` globals and `DOMContentLoaded`. It is intentionally not an ES module because inline HTML event handlers (e.g., `onclick="showTab('brief')"`) require globals.
 
@@ -630,11 +636,14 @@ exercises the real ingestion path rather than a mock.
 Run before any push:
 
 ```bash
-node --check src/js/core/*.js
-node --check src/js/pages/*.js
-node --check scripts/compare_signals.js
+npm run lint
 python -m py_compile scripts/*.py
 ```
+
+`npm run lint` replaces the old `node --check` pass over `src/js/**`. It is a
+superset: it parses the same files and also the inline `<script>` blocks in the
+HTML pages, which is where most of the page JavaScript lives and where a syntax
+error would otherwise reach production unseen.
 
 Run after a data update:
 

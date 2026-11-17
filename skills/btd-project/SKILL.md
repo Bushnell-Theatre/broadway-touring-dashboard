@@ -62,7 +62,7 @@ Use existing CSS custom properties (`var(--ink)`, `var(--teal)`, `var(--amber)`,
 | `src/index.html` | Development hub / landing page | All |
 | `src/js/utils.js` | Shared JavaScript utilities (true globals — NOT an IIFE) | All dashboards |
 | `src/js/core/*.js` | BTD namespace modules — 16 files, loaded in dependency order | All dashboards |
-| `src/js/pages/*.page.js` | Extracted page controllers — **NOT yet wired in; inline scripts are authoritative** | — |
+| *(removed)* | `src/js/pages/*.page.js` held page controllers nothing ever loaded. Deleted — **each page's inline `<script>` block is its controller** | — |
 | `src/css/styles.css` | Shared base styles | All dashboards |
 | `src/css/charts.css` | Shared chart styles | All dashboards |
 | `scripts/process_touring.py` | Broadway League XLSX → data.json pipeline | IT (Randale) |
@@ -105,7 +105,7 @@ js/core/dashboard-analytics.js    → BTD.dashboardAnalytics (dashboard.html onl
 
 - **utils.js is NOT an IIFE.** Its remaining functions (`fmt$`, `pct`, etc.) are true globals — no `BTD.` prefix needed. Scoring functions (`planningSignal`, `SIGNAL_WEIGHTS`) were removed in Phase 4; only a deprecation comment remains.
 - **All core modules ARE IIFEs.** They expose via `BTD.X` namespace. Inline scripts check `if(window.BTD && BTD.X)` before using any BTD API.
-- **pages/*.page.js files are OUT OF SYNC with current HTML.** `exec-summary.page.js` predates the Part 3 Planning Signal redesign (commit `695eb6c`). Do NOT wire any `.page.js` file until it is re-synced with its HTML page's inline script.
+- **There are no page-controller files — the inline `<script>` block in each `.html` file IS the controller.** `src/js/pages/*.page.js` was deleted; it was a stalled extraction that no page loaded and that had drifted out of sync with the live inline code. Edits made there looked right, reviewed fine and shipped nothing — commit `79c811e` is the proof. Change live page behaviour in the `.html` file.
 
 ---
 
