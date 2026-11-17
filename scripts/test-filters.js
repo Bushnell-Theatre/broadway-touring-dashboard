@@ -536,6 +536,7 @@ console.log('\n── Suite 9: Source compliance — real page contracts ──'
     assert('fixture: a non-JSON fetch is not governed',
       !isGoverned("fetch('https://api.example.com/ping')"));
     assert('fixture: the governed pattern holds no control characters',
+      // eslint-disable-next-line no-control-regex -- the control range is the point of this assertion
       !/[\x00-\x1f]/.test(GOVERNED_FETCH.source), GOVERNED_FETCH.source);
 
     // The files that must never be stale, named explicitly.
@@ -646,6 +647,7 @@ console.log('\n── Suite 9: Source compliance — real page contracts ──'
   assert('dashboard no other column header claims the initial sort indicator',
     (dashSrc.match(new RegExp('<span id="s-[a-z_]+">↓</span>', 'g')) || []).length === 1);
   assert('dashboard resetFilters does not override the chosen sort',
+    // eslint-disable-next-line no-regex-spaces -- the six spaces match the source's indentation exactly
     !/function resetFilters[\s\S]*?\n      }/.exec(dashSrc)[0].includes('SORT_COL'));
 
   assert('dashboard.html fallback version matches versions.json',

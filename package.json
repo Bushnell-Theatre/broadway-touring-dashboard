@@ -8,6 +8,8 @@
     "test": "test"
   },
   "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "test": "node scripts/test_scoring_contract.js",
     "test:export": "node scripts/test_export.js",
     "test:guard": "python scripts/test_highlight_guard.py",
@@ -28,6 +30,10 @@
   },
   "homepage": "https://github.com/Bushnell-Theatre/broadway-touring-dashboard#readme",
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.15.0",
+    "eslint-plugin-html": "^8.2.1",
+    "globals": "^17.14.0",
     "prettier": "^3.9.3"
   }
 }
