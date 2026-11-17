@@ -953,12 +953,11 @@ section('9. CLAUDE.md current-versions table matches versions.json');
 const versionsJson = JSON.parse(src('src/data/versions.json'));
 const claudeSrc    = src('CLAUDE.md');
 
-// The four pages tracked in versions.json; label is how they appear in CLAUDE.md.
+// The three pages tracked in versions.json; label is how they appear in CLAUDE.md.
 const VERSION_PAGES = [
   { key: 'dashboard',    label: 'dashboard.html'    },
   { key: 'programming',  label: 'programming.html'  },
   { key: 'exec_summary', label: 'exec_summary.html' },
-  { key: 'box_office',   label: 'box_office.html'   },
 ];
 
 VERSION_PAGES.forEach(function (p) {
@@ -1068,7 +1067,6 @@ section('11. index.html version card invariants');
 const indexSrc = src('src/index.html');
 
 // Active ver-* elements that must exist in index.html and carry no hardcoded version.
-// box_office is suspended (commented out) — excluded from active checks.
 const ACTIVE_CARD_KEYS = ['dashboard', 'programming', 'exec_summary'];
 
 ACTIVE_CARD_KEYS.forEach(function (key) {

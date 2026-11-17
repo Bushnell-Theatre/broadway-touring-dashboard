@@ -99,7 +99,7 @@ export default [
        *
        *   - `window.loadData = function () {...}` followed by a bare
        *     `loadData()` call. ESLint does not connect the two, so every such
-       *     call reports undefined. box_office.html alone has ten.
+       *     call reports undefined.
        *   - A function declared in one <script> block and called from another.
        *     The plugin is documented to share scope across blocks for
        *     non-module scripts, but it is not resolving them here.

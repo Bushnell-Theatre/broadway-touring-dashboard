@@ -14,7 +14,7 @@ const { test, expect } = require('@playwright/test');
  * reload. Nothing short of a real browser notices.
  */
 
-const PAGES = ['dashboard.html', 'exec_summary.html', 'programming.html', 'box_office.html'];
+const PAGES = ['dashboard.html', 'exec_summary.html', 'programming.html'];
 
 /*
  * Errors we accept, and why. Keep this list short and specific — a broad
@@ -90,10 +90,10 @@ test.describe('tab navigation', () => {
 
       /*
        * Discover controls by the onclick that actually runs, not by data-tab.
-       * The markup has drifted between pages: programming.html and
-       * box_office.html put data-tab on their nav tabs, dashboard.html and
-       * exec_summary.html do not. Selecting on data-tab finds nothing on half
-       * the pages and quietly passes.
+       * The markup has drifted between pages: programming.html puts data-tab
+       * on its nav tabs, dashboard.html and exec_summary.html do not.
+       * Selecting on data-tab finds nothing on two of the three pages and
+       * quietly passes.
        *
        * A page may offer the same tab twice (a nav tab and a sidebar pill).
        * Both get clicked — either one can be the broken one.
