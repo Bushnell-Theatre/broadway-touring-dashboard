@@ -882,6 +882,7 @@
               shows: (data.shows || []).map((s) => ({
                 title: s.name,
                 match: s.league_name,
+                match_exact: !!s.match_exact,
                 open: s.open || null,
                 close: s.close || null,
                 sub: s.sub,
