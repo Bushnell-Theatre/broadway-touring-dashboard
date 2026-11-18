@@ -36,6 +36,10 @@ const SUITES = [
     label: 'test-filters.js',
     script: path.join(SCRIPTS_DIR, 'test-filters.js'),
   },
+  {
+    label: 'test_cycles.js',
+    script: path.join(SCRIPTS_DIR, 'test_cycles.js'),
+  },
 ];
 
 /* ── Runner ─────────────────────────────────────────────────────────────────── */

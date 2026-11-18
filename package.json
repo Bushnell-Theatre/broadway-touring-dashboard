@@ -12,6 +12,7 @@
     "lint:fix": "eslint . --fix",
     "test": "node scripts/test_scoring_contract.js",
     "test:smoke": "playwright test",
+    "test:cycles": "node scripts/test_cycles.js",
     "test:export": "node scripts/test_export.js",
     "test:guard": "python scripts/test_highlight_guard.py",
     "test:pipeline": "python scripts/test_review_pipeline.py",

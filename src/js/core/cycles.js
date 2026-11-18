@@ -85,6 +85,61 @@
     return key;
   }
 
+  /* cycleKey(title) -> the identity of ONE cycle inside a family.
+   *
+   * familyKey answers "which show is this". This answers "which run of it",
+   * which is a different question and cannot be the raw feed string.
+   *
+   * The feed marks a run three ways, and one run can carry two of them:
+   *   - a parenthetical company       "Six (Boleyn)", "Hamilton (Angelica)"
+   *   - a trailing marker             "...Christmas 2019", "Holidaze II"
+   *   - a hyphenated year-and-company "...Christmas 2024-Old Max"
+   * plus the combination, "The Lion King (Toronto) 2024".
+   *
+   * Keying on the raw string splits a company the moment the feed renames
+   * its stem. "Six (Boleyn)" ran to 2025-02-02 and "SIX: The Musical
+   * (Boleyn)" picked up the very next reporting week; they showed as two
+   * versions, and the cycle-over-cycle delta compared the company against
+   * itself (-5.8 points). "MJ" / "MJ The Musical" split the same way.
+   *
+   * So: strip the run markers off, alias what is left — that is the family —
+   * then put the markers back as the distinguishing part. A rename folds
+   * together because only the stem changed; (Aragon) stays apart from
+   * (Boleyn), and 2019 from 2021, because their markers differ.
+   *
+   * Marker extraction runs on the ORIGINAL title, before aliasing, because
+   * title_aliases.json also carries whole-title entries that fold one run
+   * into its family ("...Christmas 2024-Old Max" -> "...Christmas"). Alias
+   * first and every Grinch run collapses into one.
+   */
+  var HYPHEN_RUN = /\s(\d{4})\s*[-–]\s*(\S.*)$/;
+
+  function cycleKey(title, aliases) {
+    var raw = String(title || '');
+    var parts = [];
+
+    /* Unwrap before normalizing: norm() deletes a parenthetical whole, so
+     * norm('(Boleyn)') is the empty string and every company would collapse
+     * into one. The brackets come off first, then the contents normalize. */
+    var parens = raw.match(/\([^)]*\)/g);
+    var rest = parens ? raw.replace(/\([^)]*\)/g, ' ') : raw;
+    if (parens) {
+      parts.push(norm(parens.map(function (p) { return p.slice(1, -1); }).join(' ')));
+    }
+
+    var hy = rest.match(HYPHEN_RUN);
+    if (hy) {
+      parts.push(norm(hy[1] + ' ' + hy[2]));
+      rest = rest.slice(0, hy.index);
+    }
+
+    var tail = norm(rest).match(CYCLE_MARKER);
+    if (tail) parts.push(tail[0].trim());
+
+    var key = familyKey(rest, aliases);
+    return parts.length ? key + '|' + parts.join('|') : key;
+  }
+
   var PERF = ['num_perf', 'gross_gross', 'gross_potential', 'gg_pct_gp', 'paid_tix',
               'total_tix', 'capacity', 'cap_paid', 'cap_total', 'avg_adm'];
   function isActive(r) {
@@ -118,15 +173,24 @@
     var mine = all.filter(function (r) { return familyKey(r.show, aliases) === fam; });
     if (!mine.length) return null;
 
+    /* Group by run identity, not by the raw feed string — see cycleKey. */
     var byTitle = {};
-    mine.forEach(function (r) { (byTitle[r.show] = byTitle[r.show] || []).push(r); });
+    mine.forEach(function (r) {
+      var k = cycleKey(r.show, aliases);
+      (byTitle[k] = byTitle[k] || []).push(r);
+    });
 
-    var cycles = Object.keys(byTitle).map(function (t) {
-      var active = byTitle[t].filter(isActive);
+    var cycles = Object.keys(byTitle).map(function (k) {
+      var active = byTitle[k].filter(isActive);
       var weeks = active.map(function (r) { return r.week_of; }).filter(Boolean).sort();
+      /* A renamed run carries both feed names. Display the newer one: it is
+       * what the League calls the tour now and what the user will recognise. */
+      var named = byTitle[k].filter(function (r) { return r.show && r.week_of; })
+        .sort(function (a, b) { return String(a.week_of).localeCompare(String(b.week_of)); });
+      var t = named.length ? named[named.length - 1].show : byTitle[k][0].show;
       return {
         title: t,
-        rows: byTitle[t],
+        rows: byTitle[k],
         isPre: norm(t).split(' ').pop() === 'pre',
         overlapsPrev: false,
         comparedTo: null,
