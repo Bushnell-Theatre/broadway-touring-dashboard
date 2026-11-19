@@ -92,6 +92,22 @@ bump with a stale date is misleading.
 
 ---
 
+## Known Issues
+
+`docs/ISSUES.md` is the durable register of known defects, structural risks and
+cleanup work. Read it before starting an audit — the finding is probably already
+in there with its evidence, and re-deriving it wastes a session.
+
+IDs (`BTD-007`) are permanent and never reused. When you fix something, move its
+entry to the *Resolved* section with the commit sha, keeping the ID. When you
+find something new, add an entry rather than only mentioning it in chat: an
+issue that lives in a conversation is lost when the conversation ends.
+
+Entries marked **Needs decision** are blocked on a Bushnell call, not on
+engineering. Do not implement one by picking an answer yourself.
+
+---
+
 ## The Golden Rule — One File, One Change
 
 Make one file change, commit, verify in the browser, then move to the next.
