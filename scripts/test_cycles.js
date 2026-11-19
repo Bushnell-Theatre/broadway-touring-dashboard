@@ -218,6 +218,107 @@ section('8. Nothing to group');
   ok('a family with no active weeks returns null', cycles.cyclesFor('Dark Only', dark) === null);
 }
 
+/* ── 9. Punctuation-only renames (BTD-001) ───────────────────────────────── */
+section('9. A punctuation-only rename does not split a family');
+{
+  /* norm() turns an apostrophe into a space, so "The Band's Visit" keys as
+   * "the band s visit" and "The Bands Visit" as "the bands visit". The feed
+   * carries both spellings for the same tour; only an alias folds them. */
+  cycles.setAliases({ 'The Bands Visit': "The Band's Visit" });
+  const rows = [
+    ...run("The Band's Visit", '2019-10-07', 10, 72, 420000),
+    ...run('The Bands Visit', '2021-11-01', 12, 69, 400000),
+  ];
+  const tc = cycles.cyclesFor("The Band's Visit", rows);
+
+  eq('both spellings reach the same family', tc.family, 'the band s visit');
+  eq('the shutdown gap does not start a new cycle', tc.cycles.length, 1);
+  eq('every week is carried', tc.cycles[0].weeks, 22);
+  eq('it spans both runs', [tc.cycles[0].first, tc.cycles[0].last], ['2019-10-07', '2022-01-17']);
+  ok(
+    'the un-aliased spelling alone finds the same family',
+    cycles.cyclesFor('The Bands Visit', rows).family === 'the band s visit',
+  );
+}
+
+/* ── 10. A tryout whose stem was renamed (BTD-002) ───────────────────────── */
+section('10. A renamed tryout joins its family but stays its own cycle');
+{
+  /* "BOOP! The Betty Boop Musical Pre" and "BOOP! The Musical" share no stem,
+   * so without the alias the tryout lands in a family of its own and the
+   * isPre delta-skip never fires for it. The alias is keyed WITHOUT "Pre":
+   * familyKey strips the marker first, then looks the stem up again. */
+  cycles.setAliases({ 'BOOP! The Betty Boop Musical': 'BOOP! The Musical' });
+  const rows = [
+    ...run('BOOP! The Betty Boop Musical Pre', '2023-12-03', 4, 55, 210000),
+    ...run('BOOP! The Musical', '2026-10-04', 6, 71, 390000),
+  ];
+  const tc = cycles.cyclesFor('BOOP! The Musical', rows);
+
+  eq('the tryout reaches the family through the stripped-marker lookup',
+    cycles.familyKey('BOOP! The Betty Boop Musical Pre'), 'boop the musical');
+  eq('tryout and tour are two cycles, not one', tc.cycles.length, 2);
+  const pre = tc.cycles.find((c) => c.isPre);
+  ok('the tryout is still flagged isPre', !!pre, titles(tc).join(' | '));
+  eq('the tryout keeps its own weeks', pre.weeks, 4);
+  ok(
+    'the tour is not scored against the tryout',
+    tc.cycles[tc.cycles.length - 1].capDelta === null,
+    'capDelta was ' + tc.cycles[tc.cycles.length - 1].capDelta,
+  );
+  eq('both runs count toward the family total', tc.overall.weeks, 10);
+}
+
+/* ── 11. The shipped alias map actually carries the known splits ─────────── */
+section('11. src/data/title_aliases.json resolves the known split families');
+{
+  /* Sections 1-10 set their aliases inline, so they pass even if an entry is
+   * dropped from the shipped file. This section reads the real map.
+   *
+   * Safe to assert against: title_aliases.json is hand-maintained and is NOT
+   * one of the files the weekly watcher rewrites. Only the feed TITLES are
+   * named here, never record counts or dates, so a weekly import cannot
+   * break it.
+   */
+  const aliasPath = path.join(ROOT, 'src/data/title_aliases.json');
+  const shipped = JSON.parse(fs.readFileSync(aliasPath, 'utf8'));
+  cycles.setAliases(shipped);
+
+  const PAIRS = [
+    ['BTD-000', 'Six (Boleyn)', 'SIX: The Musical (Boleyn)'],
+    ['BTD-000', 'MJ', 'MJ The Musical'],
+    ['BTD-001', "The Band's Visit", 'The Bands Visit'],
+    ['BTD-002', 'BOOP! The Betty Boop Musical Pre', 'BOOP! The Musical'],
+  ];
+
+  PAIRS.forEach(([id, a, b]) => {
+    const ka = cycles.familyKey(a);
+    const kb = cycles.familyKey(b);
+    ok(
+      `${id}: "${a}" and "${b}" share a family`,
+      ka === kb && !!ka,
+      `"${a}" -> "${ka}"  vs  "${b}" -> "${kb}"`,
+    );
+  });
+
+  /* The guard against over-folding: distinct shows that merely look alike
+   * must NOT collapse. These have burned us in the other direction. */
+  const DISTINCT = [
+    ['Once', 'Once on This Island'],
+    ['Once', 'Once Upon a Mattress'],
+    ['Peter Pan', 'Peter Pan Goes Wrong'],
+    ['Riverdance - The New 25th Anniversary Production', 'Riverdance 30 The New Generation'],
+  ];
+
+  DISTINCT.forEach(([a, b]) => {
+    ok(
+      `"${a}" stays apart from "${b}"`,
+      cycles.familyKey(a) !== cycles.familyKey(b),
+      'both resolved to "' + cycles.familyKey(a) + '"',
+    );
+  });
+}
+
 /* ── Summary ─────────────────────────────────────────────────────────────── */
 console.log('\n' + '─'.repeat(60));
 console.log(`  test_cycles.js   ${passed} / ${passed + failed} passed`);
