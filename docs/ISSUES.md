@@ -32,8 +32,6 @@ not a code decision.
 
 | ID | Sev | Status | Issue |
 |---|---|---|---|
-| [BTD-001](#btd-001) | P1 | Open | `The Band's Visit` splits into two families — 40 records hidden |
-| [BTD-002](#btd-002) | P1 | Open | `BOOP!` tryout and tour are separate families |
 | [BTD-003](#btd-003) | P1 | Open | `familyKey` cannot strip hyphenated run markers — Cirque Dreams 2025 A/B lost |
 | [BTD-004](#btd-004) | P1 | Open | No detector for new split titles; `title_aliases.json` is hand-maintained |
 | [BTD-005](#btd-005) | P1 | Needs decision | `concurrent` is all-or-nothing, so `capDelta`'s comparison partner is sort order |
@@ -50,7 +48,7 @@ not a code decision.
 
 ### Suggested order
 
-1. **BTD-001, BTD-002** — two JSON lines fixes two titles today
+1. ~~**BTD-001, BTD-002**~~ — resolved 19 Nov in `4214856`
 2. **BTD-003, BTD-004** — the structural gap and the detector that catches the next one
 3. **BTD-005 + BTD-006** — decide together what a `capDelta` is allowed to compare
 4. **BTD-008** — reverse the fetch order; removes the smoke-suite allowlist too
@@ -58,8 +56,10 @@ not a code decision.
 6. **BTD-007** — lift the 21 identical functions to `page-common.js`
 7. **BTD-013, BTD-014**, then **BTD-015**
 
-BTD-001 through BTD-004 are the ones that change what a programmer reads off
-the screen.
+BTD-003 and BTD-004 are the remaining ones that change what a programmer reads
+off the screen. BTD-003 is the more important of the two: BTD-001 and BTD-002
+were each one line of JSON, but they existed *because* the parser cannot see
+the marker shapes the alias file keeps absorbing by hand.
 
 ---
 
@@ -67,41 +67,6 @@ the screen.
 
 Same class as the SIX/MJ bug ([BTD-000](#btd-000), fixed in `63bcdcb`): the page
 shows a confident figure that is not what it claims to be.
-
-<a id="btd-001"></a>
-## BTD-001 — `The Band's Visit` splits into two families
-
-**Severity** P1 · **Status** Open · **Area** `src/js/core/cycles.js`, `src/data/title_aliases.json`
-
-The feed carries two spellings. `norm()` turns the apostrophe into a space, so
-the stems differ and `familyKey` builds two families:
-
-```
-familyKey("The Band's Visit") -> "the band s visit"    32 records, 2019-07-21..2020-03-08
-familyKey("The Bands Visit")  -> "the bands visit"     40 records, 2021-10-24..2022-07-31
-```
-
-Tour History shows **31 weeks**. The entire 2021‑22 run is invisible — more than
-half the title's touring record.
-
-**Fix.** One line in `title_aliases.json`.
-
-<a id="btd-002"></a>
-## BTD-002 — `BOOP!` tryout and tour are separate families
-
-**Severity** P1 · **Status** Open · **Area** `src/data/title_aliases.json`
-
-```
-familyKey("BOOP! The Betty Boop Musical Pre") -> "boop the betty boop musical"   4 records
-familyKey("BOOP! The Musical")                -> "boop the musical"              6 records
-```
-
-The tour reads 4 weeks. Because the tryout lands in a different family, the
-`isPre` skip logic in `cyclesFor` never fires for it — the exact case that logic
-exists to handle. `cycles.js` even uses this title as its worked example of a
-tryout in the module header.
-
-**Fix.** One line in `title_aliases.json`.
 
 <a id="btd-003"></a>
 ## BTD-003 — `familyKey` cannot strip hyphenated run markers
@@ -144,6 +109,12 @@ and adjacent or overlapping date ranges. The throwaway version was noisy —
 token overlap on "the musical" produced roughly 45 false pairs that had to be
 filtered by hand. A real one should weight rare tokens and require the date
 ranges to be adjacent, not merely similar.
+
+**Partial mitigation already in place.** Section 11 of `scripts/test_cycles.js`
+reads the *shipped* `title_aliases.json` and asserts the known split pairs still
+resolve together, so an entry cannot be dropped without failing `npm test`. That
+protects the splits we have found. It does nothing about the ones we have not —
+which is what this issue is for.
 
 <a id="btd-005"></a>
 ## BTD-005 — `concurrent` is all-or-nothing, so the comparison partner is sort order
@@ -354,6 +325,52 @@ CLAUDE.md.
 
 # Resolved
 
+<a id="btd-001"></a>
+## BTD-001 — `The Band's Visit` split into two families
+
+**Resolved** 19 Nov 2026 · `4214856` · `src/data/title_aliases.json`
+
+The feed carried two spellings. `norm()` turns the apostrophe into a space, so
+the stems keyed differently and `familyKey` built two families:
+
+```
+familyKey("The Band's Visit") -> "the band s visit"    32 records, 2019-07-21..2020-03-08
+familyKey("The Bands Visit")  -> "the bands visit"     40 records, 2021-10-24..2022-07-31
+```
+
+Tour History showed **31 weeks** and hid the entire 2021‑22 run — more than half
+the title's touring record. Now one cycle, **60 active weeks**,
+2019‑07‑21..2022‑07‑31.
+
+**Why merged across the shutdown rather than split.** Every other title that
+paused for COVID and resumed under the same feed name is already a single
+cycle — Come From Away (121w), Dear Evan Hansen (105w), Mean Girls (107w),
+Frozen (150w), Wicked (288w). The feed starts a new cycle by assigning a new
+marker (`Cats 2019` / `Cats 2021`, `Aladdin` / `Aladdin 2022`). It assigned none
+here; it only changed the spelling.
+
+<a id="btd-002"></a>
+## BTD-002 — `BOOP!` tryout and tour were separate families
+
+**Resolved** 19 Nov 2026 · `4214856` · `src/data/title_aliases.json`
+
+```
+familyKey("BOOP! The Betty Boop Musical Pre") -> "boop the betty boop musical"   4 records
+familyKey("BOOP! The Musical")                -> "boop the musical"              6 records
+```
+
+The tryout sat in a family of its own, so the `isPre` delta-skip in `cyclesFor`
+could never fire for it — the exact case that logic exists to handle. `cycles.js`
+uses this very title as its worked example of a tryout in the module header.
+
+The alias is keyed **without** `Pre`: `familyKey` strips the marker first, then
+looks the stem up again, which is the alias/marker interleaving the module
+header describes.
+
+**No visible change today.** All four tryout rows are `no_engagement` with no
+performance data, so `isActive` filters the cycle out. This is correct ahead of
+data arriving, not a fix anyone can see on the page.
+
 <a id="btd-000"></a>
 ## BTD-000 — A feed rename split one company into two cycles
 
@@ -372,7 +389,9 @@ reattaches the markers as the distinguishing part. Guarded by
 Hamilton collapse the first version of the fix nearly introduced.
 
 This is the issue that prompted the 19 Nov audit and the rest of this register.
-BTD-001 through BTD-004 are the same defect class, still live.
+BTD-001 and BTD-002 were the same defect class and are now resolved alongside
+it. **BTD-003 and BTD-004 are still live** — the parser gap that produces this
+class, and the absence of anything watching for the next one.
 
 ---
 
